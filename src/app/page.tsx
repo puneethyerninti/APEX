@@ -4,6 +4,114 @@ import React from 'react';
 import Link from 'next/link';
 
 export default function Home() {
+  React.useEffect(() => {
+    // 1. Deals of the day countdown
+    const countdownEl = document.getElementById('countdown-timer');
+    let countdownInterval: NodeJS.Timeout | null = null;
+    if (countdownEl) {
+        let timeLeft = 23 * 3600 + 42 * 60 + 15; // 23h 42m 15s
+        countdownInterval = setInterval(() => {
+            if (timeLeft <= 0) return;
+            timeLeft--;
+            const h = Math.floor(timeLeft / 3600);
+            const m = Math.floor((timeLeft % 3600) / 60);
+            const s = timeLeft % 60;
+            countdownEl.innerText = `${String(h).padStart(2, '0')}h : ${String(m).padStart(2, '0')}m : ${String(s).padStart(2, '0')}s left`;
+        }, 1000);
+    }
+
+    // 2. Promo Carousel auto-slide and dots click listeners
+    const promoTrack = document.getElementById('promo-track');
+    const promoDots = document.querySelectorAll('.promo-dot');
+    let promoIndex = 0;
+    let promoTimer: NodeJS.Timeout | null = null;
+    const totalPromo = 3;
+
+    const goPromo = (idx: number) => {
+        if (!promoTrack) return;
+        promoIndex = ((idx % totalPromo) + totalPromo) % totalPromo;
+        promoTrack.style.transform = `translateX(-${promoIndex * 100}%)`;
+        promoDots.forEach((d, i) => d.classList.toggle('active', i === promoIndex));
+    };
+
+    const startPromo = () => {
+        stopPromo();
+        promoTimer = setInterval(() => goPromo(promoIndex + 1), 4200);
+    };
+
+    const stopPromo = () => {
+        if (promoTimer) clearInterval(promoTimer);
+    };
+
+    if (promoDots.length > 0) {
+        promoDots.forEach(dot => {
+            dot.addEventListener('click', () => {
+                stopPromo();
+                const indexAttr = dot.getAttribute('data-index');
+                if (indexAttr) {
+                    goPromo(parseInt(indexAttr, 10));
+                }
+                startPromo();
+            });
+        });
+        const promoViewport = document.getElementById('promo-viewport');
+        if (promoViewport) {
+            promoViewport.addEventListener('mouseenter', stopPromo);
+            promoViewport.addEventListener('mouseleave', startPromo);
+        }
+        startPromo();
+    }
+
+    // 3. Realty Carousel prev/next buttons
+    const realtyTrack = document.getElementById('realty-carousel-track');
+    const realtyPrev = document.getElementById('realty-prev');
+    const realtyNext = document.getElementById('realty-next');
+
+    const handlePrev = () => {
+        if (realtyTrack) {
+            const card = realtyTrack.querySelector('.carousel-card');
+            if (card) {
+                const cardWidth = card.getBoundingClientRect().width + 12; // width + mr-3 gap
+                realtyTrack.scrollBy({ left: -cardWidth, behavior: 'smooth' });
+            }
+        }
+    };
+
+    const handleNext = () => {
+        if (realtyTrack) {
+            const card = realtyTrack.querySelector('.carousel-card');
+            if (card) {
+                const cardWidth = card.getBoundingClientRect().width + 12; // width + mr-3 gap
+                realtyTrack.scrollBy({ left: cardWidth, behavior: 'smooth' });
+            }
+        }
+    };
+
+    if (realtyPrev) realtyPrev.addEventListener('click', handlePrev);
+    if (realtyNext) realtyNext.addEventListener('click', handleNext);
+
+    // 4. Scroll Reveal
+    const revealEls = document.querySelectorAll('.reveal-up, .reveal-left, .reveal-right, .reveal-zoom');
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('reveal-active');
+                obs.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.07, rootMargin: '0px 0px -30px 0px' });
+    revealEls.forEach(el => observer.observe(el));
+
+    // Cleanup
+    return () => {
+        if (countdownInterval) clearInterval(countdownInterval);
+        stopPromo();
+        if (realtyPrev) realtyPrev.removeEventListener('click', handlePrev);
+        if (realtyNext) realtyNext.removeEventListener('click', handleNext);
+        observer.disconnect();
+    };
+  }, []);
+
   return (
     <>
       
