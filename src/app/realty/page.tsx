@@ -154,7 +154,7 @@ export default function Page() {
                             </div>
                             <h3 className="text-xl font-black text-gray-900 mb-2">Inquiry Sent!</h3>
                             <p className="text-sm text-gray-500 max-w-[250px] mx-auto mb-6">
-                                An APEX Realty agent will contact you shortly regarding '{selectedProperty}'.
+                                An APEX Realty agent will contact you shortly regarding &apos;{selectedProperty}&apos;.
                             </p>
                             <button onClick={closeForm} className="w-full py-3 bg-gray-900 text-white font-bold rounded-xl shadow-md">
                                 Done

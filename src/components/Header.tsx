@@ -35,7 +35,7 @@ export default function Header() {
     ];
 
     if (query.length > 3) {
-      let found = sections.find((s) => s.keywords.some((k) => query.includes(k)));
+      const found = sections.find((s) => s.keywords.some((k) => query.includes(k)));
       if (found) {
         showToast("Found results for '" + query + "'. Scroll down!");
       }

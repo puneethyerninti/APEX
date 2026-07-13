@@ -67,7 +67,7 @@ export default function Page() {
                         <i className="fa-solid fa-shield-heart"></i>
                     </div>
                     <h2 className="text-xl font-black mb-1">100% Verified Profiles</h2>
-                    <p className="text-rose-100 text-[10px] mb-4">India's most trusted premium matchmaking service. Find
+                    <p className="text-rose-100 text-[10px] mb-4">India&apos;s most trusted premium matchmaking service. Find
                         your perfect partner today.</p>
                     <div className="flex gap-2 justify-center">
                         <button className="bg-white text-rose-600 text-[10px] font-black px-4 py-1.5 rounded-full shadow-sm">Complete
@@ -160,7 +160,7 @@ export default function Page() {
                         <span className="absolute bottom-2 left-2 text-white font-black text-[10px]">Aanya S. <i className="fa-solid fa-circle-check text-blue-400 ml-0.5"></i></span>
                     </div>
                     <div className="p-3">
-                        <p className="text-[9px] text-gray-500 mb-1">26 Yrs, 5'5"</p>
+                        <p className="text-[9px] text-gray-500 mb-1">26 Yrs, 5&apos;5&quot;</p>
                         <p className="text-[9px] font-bold text-gray-700 truncate">Software Engineer</p>
                         <p className="text-[9px] text-gray-500 mb-2 truncate">Bangalore</p>
                         <button onClick={() => {}} className="w-full bg-rose-50 text-rose-600 font-bold text-[9px] py-1.5 rounded border border-rose-100 hover:bg-rose-100"><i className="fa-solid fa-comment-dots mr-1"></i> Chat Now</button>
@@ -176,7 +176,7 @@ export default function Page() {
                         <span className="absolute bottom-2 left-2 text-white font-black text-[10px]">Rohan P. <i className="fa-solid fa-circle-check text-blue-400 ml-0.5"></i></span>
                     </div>
                     <div className="p-3">
-                        <p className="text-[9px] text-gray-500 mb-1">29 Yrs, 5'11"</p>
+                        <p className="text-[9px] text-gray-500 mb-1">29 Yrs, 5&apos;11&quot;</p>
                         <p className="text-[9px] font-bold text-gray-700 truncate">Business Analyst</p>
                         <p className="text-[9px] text-gray-500 mb-2 truncate">Mumbai</p>
                         <button className="w-full bg-rose-600 text-white font-bold text-[9px] py-1.5 rounded hover:bg-rose-700">Unlock

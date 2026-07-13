@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "migrate.js",
+    "migrate-all.js",
+    "migrate-cheerio.js",
+    "migrate-index.js",
+    "fix-links.js",
   ]),
 ]);
 
