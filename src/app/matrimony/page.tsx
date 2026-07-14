@@ -6,11 +6,14 @@ export default function Page() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isPaymentStep, setIsPaymentStep] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
     name: '',
     age: '',
+    contactNumber: '',
     profession: '',
     photo: null as File | null,
     idDocument: null as File | null,
@@ -24,6 +27,7 @@ export default function Page() {
   const closeForm = () => {
     setSelectedPlan(null);
     setIsSuccess(false);
+    setIsPaymentStep(false);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'photo' | 'idDocument') => {
@@ -34,12 +38,24 @@ export default function Page() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    // Simulate network request
-    setTimeout(() => {
+    setIsPaymentStep(true);
+  };
+
+  React.useEffect(() => {
+    const handleSuccess = () => {
       setIsSubmitting(false);
       setIsSuccess(true);
-    }, 1500);
+      setIsPaymentStep(false);
+    };
+    window.addEventListener('paymentSuccess', handleSuccess);
+    return () => window.removeEventListener('paymentSuccess', handleSuccess);
+  }, []);
+
+  const triggerCheckout = () => {
+    let amount = selectedPlan === 'Premium' ? '₹20,000' : selectedPlan === 'Gold' ? '₹10,000' : '₹5,000';
+    window.dispatchEvent(new CustomEvent('openModal', { 
+        detail: { type: 'checkout', data: { amount, plan: `Matrimony ${selectedPlan} Plan` } }
+    }));
   };
 
   return (
@@ -163,7 +179,7 @@ export default function Page() {
                         <p className="text-[9px] text-gray-500 mb-1">26 Yrs, 5&apos;5&quot;</p>
                         <p className="text-[9px] font-bold text-gray-700 truncate">Software Engineer</p>
                         <p className="text-[9px] text-gray-500 mb-2 truncate">Bangalore</p>
-                        <button onClick={() => {}} className="w-full bg-rose-50 text-rose-600 font-bold text-[9px] py-1.5 rounded border border-rose-100 hover:bg-rose-100"><i className="fa-solid fa-comment-dots mr-1"></i> Chat Now</button>
+                        <button onClick={() => setChatOpen(true)} className="w-full bg-rose-50 text-rose-600 font-bold text-[9px] py-1.5 rounded border border-rose-100 hover:bg-rose-100"><i className="fa-solid fa-comment-dots mr-1"></i> Chat Now</button>
                     </div>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0 overflow-hidden cursor-pointer relative">
@@ -216,7 +232,7 @@ export default function Page() {
                                     Done
                                 </button>
                             </div>
-                        ) : (
+                        ) : !isPaymentStep ? (
                             <form onSubmit={handleSubmit} className="flex flex-col gap-4 pb-6">
                                 {/* Inputs */}
                                 <div>
@@ -229,10 +245,14 @@ export default function Page() {
                                         <input required type="number" placeholder="e.g. 26" value={formData.age} onChange={(e) => setFormData({...formData, age: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all" />
                                     </div>
                                     <div>
+                                        <label className="block text-[11px] font-bold text-gray-700 mb-1">Contact No.</label>
+                                        <input required type="tel" placeholder="e.g. 9876543210" value={formData.contactNumber} onChange={(e) => setFormData({...formData, contactNumber: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all" />
+                                    </div>
+                                </div>
+                                    <div>
                                         <label className="block text-[11px] font-bold text-gray-700 mb-1">Profession</label>
                                         <input required type="text" placeholder="e.g. Engineer" value={formData.profession} onChange={(e) => setFormData({...formData, profession: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all" />
                                     </div>
-                                </div>
                                 
                                 {/* File Uploads */}
                                 <div className="mt-2">
@@ -259,15 +279,75 @@ export default function Page() {
                                     </div>
                                 </div>
 
-                                <button type="submit" disabled={isSubmitting} className="mt-4 w-full py-3.5 bg-rose-600 text-white font-bold rounded-xl shadow-lg shadow-rose-600/30 hover:bg-rose-700 active:scale-[0.98] transition-all flex justify-center items-center gap-2">
-                                    {isSubmitting ? (
-                                        <><i className="fa-solid fa-circle-notch fa-spin"></i> Processing...</>
-                                    ) : (
-                                        'Submit Application'
-                                    )}
+                                <button type="submit" className="mt-4 w-full py-3.5 bg-rose-600 text-white font-bold rounded-xl shadow-lg shadow-rose-600/30 hover:bg-rose-700 active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+                                    Proceed to Payment <i className="fa-solid fa-arrow-right"></i>
                                 </button>
                             </form>
+                        ) : (
+                            <div className="py-6 flex flex-col items-center animate-[fadeIn_0.5s_ease-out]">
+                                <div className="w-16 h-16 bg-violet-100 text-violet-600 rounded-full flex items-center justify-center text-3xl mb-4 shadow-sm">
+                                    <i className="fa-solid fa-file-invoice"></i>
+                                </div>
+                                <h3 className="text-xl font-black text-gray-900 mb-1">Order Summary</h3>
+                                <p className="text-sm text-gray-500 mb-6 text-center">Complete payment to activate your profile.</p>
+                                
+                                <div className="w-full bg-gray-50 p-5 rounded-2xl border border-gray-200 mb-6 flex justify-between items-center">
+                                    <div>
+                                        <p className="font-bold text-gray-900">{selectedPlan} Plan</p>
+                                        <p className="text-[10px] text-gray-500">APEX Matrimony</p>
+                                    </div>
+                                    <span className="font-black text-lg text-gray-900">
+                                        {selectedPlan === 'Premium' ? '₹20,000' : selectedPlan === 'Gold' ? '₹10,000' : '₹5,000'}
+                                    </span>
+                                </div>
+
+                                <button onClick={triggerCheckout} className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl shadow-lg shadow-gray-900/30 hover:bg-black active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+                                    Proceed to Pay <i className="fa-solid fa-lock text-sm"></i>
+                                </button>
+                            </div>
                         )}
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* CHAT MODAL */}
+        {chatOpen && (
+            <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center">
+                <div className="bg-white w-full max-w-md h-[70vh] sm:h-[600px] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col animate-[slideUp_0.3s_ease-out]">
+                    {/* Chat Header */}
+                    <div className="p-4 border-b border-gray-100 flex items-center gap-3 bg-rose-600 text-white rounded-t-3xl sm:rounded-t-3xl">
+                        <button onClick={() => setChatOpen(false)} className="w-8 h-8 flex items-center justify-center hover:bg-rose-700 rounded-full transition-colors">
+                            <i className="fa-solid fa-arrow-left"></i>
+                        </button>
+                        <div className="flex-1 flex items-center gap-2">
+                            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&amp;fit=crop&amp;q=80" alt="Aanya" className="w-8 h-8 rounded-full border border-white" />
+                            <div>
+                                <h3 className="font-bold text-sm leading-tight">Aanya S.</h3>
+                                <p className="text-[10px] text-rose-200">Online</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Chat Body */}
+                    <div className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3">
+                        <div className="flex justify-center">
+                            <span className="text-[9px] bg-gray-200 text-gray-500 px-2 py-1 rounded-full">Today</span>
+                        </div>
+                        <div className="flex gap-2">
+                            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&amp;fit=crop&amp;q=80" alt="Aanya" className="w-6 h-6 rounded-full self-end" />
+                            <div className="bg-white p-3 rounded-2xl rounded-bl-none shadow-sm text-sm text-gray-700 max-w-[75%]">
+                                Hi there! I saw your profile and it looks interesting. Would you like to connect?
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Chat Input */}
+                    <div className="p-3 bg-white border-t border-gray-100 flex gap-2 items-center">
+                        <input type="text" placeholder="Type a message..." className="flex-1 bg-gray-100 border-none rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20" />
+                        <button className="w-10 h-10 bg-rose-600 text-white rounded-full flex items-center justify-center hover:bg-rose-700 shadow-sm flex-shrink-0">
+                            <i className="fa-solid fa-paper-plane text-sm"></i>
+                        </button>
                     </div>
                 </div>
             </div>

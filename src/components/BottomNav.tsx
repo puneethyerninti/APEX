@@ -27,7 +27,7 @@ export default function BottomNav() {
         <span>Donate</span>
       </Link>
       <button
-        onClick={() => alert("Wallet Drawer Coming Soon")}
+        onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'payment' }))}
         className="flex flex-col items-center gap-0.5 text-gray-400 hover:text-apex-purple font-bold text-[9px] transition-colors border-none bg-none outline-none"
       >
         <i className="fa-solid fa-indian-rupee-sign text-base"></i>
@@ -43,7 +43,7 @@ export default function BottomNav() {
         <span>Matches</span>
       </Link>
       <button
-        onClick={() => alert("Profile Drawer Coming Soon")}
+        onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'account' }))}
         className="flex flex-col items-center gap-0.5 text-gray-400 hover:text-apex-purple font-bold text-[9px] transition-colors border-none bg-none outline-none"
       >
         <i className="fa-solid fa-user-gear text-base"></i>

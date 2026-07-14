@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
+import AutoCarousel from '@/components/AutoCarousel';
 
 export default function Page() {
   const [selectedProperty, setSelectedProperty] = useState<string | null>(null);
@@ -99,34 +100,36 @@ export default function Page() {
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Premium Collections</h3>
             <Link href="#" className="text-[9px] font-bold text-emerald-600">View All</Link>
         </div>
-        <div className="flex gap-3 overflow-x-auto px-4 scrollbar-none flex-nowrap pb-2">
-            <div className="realty-card bg-white rounded-xl shadow-sm border border-gray-100 min-w-[200px] flex-shrink-0 overflow-hidden group cursor-pointer" data-category="villas hyderabad skyline" onClick={() => openInquiry('Skyline Penthouses (₹12.5 Cr)')}>
-                <div className="h-28 w-full bg-gray-200 overflow-hidden relative">
-                    <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&amp;fit=crop&amp;q=80" alt="Villa" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                    <span className="absolute top-2 left-2 bg-black/60 text-white text-[8px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Verified</span>
-                </div>
-                <div className="p-3">
-                    <h4 className="font-black text-xs text-gray-900 truncate mb-1">Skyline Penthouses</h4>
-                    <p className="text-[10px] text-gray-500 mb-2 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>Banjara Hills, Hyderabad</p>
-                    <div className="flex items-end justify-between">
-                        <span className="text-emerald-600 font-black text-sm">₹12.5 Cr</span>
-                        <span className="text-[9px] text-gray-400 font-bold">4 BHK</span>
+        <div className="px-4 mb-2">
+            <AutoCarousel interval={4000}>
+                <div className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" data-category="villas hyderabad skyline" onClick={() => openInquiry('Skyline Penthouses (₹12.5 Cr)')}>
+                    <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&amp;fit=crop&amp;q=80" alt="Villa" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <span className="absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-3 py-1 rounded uppercase tracking-wider">Verified</span>
+                    </div>
+                    <div className="p-4">
+                        <h4 className="font-black text-sm text-gray-900 truncate mb-1">Skyline Penthouses</h4>
+                        <p className="text-xs text-gray-500 mb-3 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>Banjara Hills, Hyderabad</p>
+                        <div className="flex items-end justify-between">
+                            <span className="text-emerald-600 font-black text-lg">₹12.5 Cr</span>
+                            <span className="text-xs text-gray-400 font-bold">4 BHK</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div className="realty-card bg-white rounded-xl shadow-sm border border-gray-100 min-w-[200px] flex-shrink-0 overflow-hidden group cursor-pointer" data-category="apartments bangalore prestige" onClick={() => openInquiry('Prestige Oasis (₹4.2 Cr)')}>
-                <div className="h-28 w-full bg-gray-200 overflow-hidden relative">
-                    <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&amp;fit=crop&amp;q=80" alt="Apartment" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                </div>
-                <div className="p-3">
-                    <h4 className="font-black text-xs text-gray-900 truncate mb-1">Prestige Oasis</h4>
-                    <p className="text-[10px] text-gray-500 mb-2 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>Whitefield, Bangalore</p>
-                    <div className="flex items-end justify-between">
-                        <span className="text-emerald-600 font-black text-sm">₹4.2 Cr</span>
-                        <span className="text-[9px] text-gray-400 font-bold">3 BHK</span>
+                <div className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" data-category="apartments bangalore prestige" onClick={() => openInquiry('Prestige Oasis (₹4.2 Cr)')}>
+                    <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&amp;fit=crop&amp;q=80" alt="Apartment" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div className="p-4">
+                        <h4 className="font-black text-sm text-gray-900 truncate mb-1">Prestige Oasis</h4>
+                        <p className="text-xs text-gray-500 mb-3 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>Whitefield, Bangalore</p>
+                        <div className="flex items-end justify-between">
+                            <span className="text-emerald-600 font-black text-lg">₹4.2 Cr</span>
+                            <span className="text-xs text-gray-400 font-bold">3 BHK</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </AutoCarousel>
         </div>
     </div>
 

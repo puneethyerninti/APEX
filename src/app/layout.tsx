@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import BottomNav from "@/components/BottomNav";
-import Header from "@/components/Header";
+import NavigationWrapper from "@/components/NavigationWrapper";
+import GlobalModals from "@/components/GlobalModals";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,9 +29,10 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col pb-14 bg-slate-900 text-gray-800">
         <div className="max-w-md w-full mx-auto bg-[#F4F6FB] min-h-screen relative shadow-2xl overflow-x-hidden border-x border-slate-800">
-          <Header />
-          {children}
-          <BottomNav />
+          <NavigationWrapper>
+            {children}
+          </NavigationWrapper>
+          <GlobalModals />
         </div>
       </body>
     </html>

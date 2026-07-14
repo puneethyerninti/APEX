@@ -113,7 +113,7 @@ export default function Home() {
   }, []);
 
   return (
-    <>
+    <main className="w-full">
       
 
 {/* Loader */}
@@ -125,7 +125,7 @@ export default function Home() {
 {/* Flipkart-style Categories Compact Grid */}
 <div className="grid grid-cols-4 gap-y-3 gap-x-2 px-4 py-3 bg-white shadow-xs border-b border-gray-100">
     {/* Priority 1: Financial Services */}
-    <Link href="/finance" className="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
+    <Link href="/utility" className="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
             <i className="fa-solid fa-chart-line"></i>
         </div>
@@ -146,7 +146,7 @@ export default function Home() {
         <span className="text-[9px] font-bold text-gray-600 tracking-tight text-center leading-tight">Cab<br />Booking</span>
     </Link>
     {/* 4: Realty */}
-    <Link href="#realty" className="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
+    <Link href="/realty" className="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
             <i className="fa-solid fa-house-chimney"></i>
         </div>
@@ -194,17 +194,17 @@ export default function Home() {
             </div>
         </div>
         <div className="flex items-center gap-2">
-            <button onClick={() => {}} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs shadow-sm transition-all" aria-label="QR">
+            <button onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'payment' }))} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs shadow-sm transition-all" aria-label="QR">
                 <i className="fa-solid fa-qrcode"></i>
             </button>
-            <button onClick={() => {}} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs shadow-sm transition-all" aria-label="Account">
+            <button onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'account' }))} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs shadow-sm transition-all" aria-label="Account">
                 <i className="fa-solid fa-user-gear"></i>
             </button>
         </div>
     </div>
 
     {/* Payments (Flipkart Deck Style Compact) */}
-    <div onClick={() => {}} className="bg-white rounded-2xl p-3 mb-4 shadow-md reveal-up delay-100 cursor-pointer hover:scale-[1.01] transition-transform">
+    <div onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'payment' }))} className="bg-white rounded-2xl p-3 mb-4 shadow-md reveal-up delay-100 cursor-pointer hover:scale-[1.01] transition-transform">
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-purple-50 text-apex-purple flex items-center justify-center shadow-inner flex-shrink-0">
@@ -244,7 +244,7 @@ export default function Home() {
                         <p className="text-yellow-300 text-[8px] font-extrabold uppercase tracking-widest mb-0.5">Invest Smarter</p>
                         <h2 className="text-white text-base font-black leading-tight mb-0.5">Build Wealth &amp; Secures SIP</h2>
                         <p className="text-purple-200 text-[9px] mb-2">Make smart Investments today!</p>
-                        <Link href="#finance" className="inline-block bg-white text-apex-purple font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-yellow-50 transition-colors shadow">Invest Now</Link>
+                        <Link href="/utility" className="inline-block bg-white text-apex-purple font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-yellow-50 transition-colors shadow">Invest Now</Link>
                     </div>
                 </div>
                 {/* Slide 2: Real Estate */}
@@ -255,7 +255,7 @@ export default function Home() {
                         <p className="text-emerald-200 text-[8px] font-extrabold uppercase tracking-widest mb-0.5">Dream Home</p>
                         <h2 className="text-white text-base font-black leading-tight mb-0.5">Find Your Perfect Home</h2>
                         <p className="text-emerald-100 text-[9px] mb-2">Premium properties across India</p>
-                        <Link href="#realty" className="inline-block bg-white text-emerald-700 font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-emerald-50 transition-colors shadow">Explore Now</Link>
+                        <Link href="/realty" className="inline-block bg-white text-emerald-700 font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-emerald-50 transition-colors shadow">Explore Now</Link>
                     </div>
                 </div>
                 {/* Slide 3: Matrimony */}
@@ -266,7 +266,7 @@ export default function Home() {
                         <p className="text-rose-200 text-[8px] font-extrabold uppercase tracking-widest mb-0.5">Find Your Match</p>
                         <h2 className="text-white text-base font-black leading-tight mb-0.5">Anand Matrimony</h2>
                         <p className="text-rose-100 text-[9px] mb-2">Premium verified profiles</p>
-                        <Link href="#matrimony" className="inline-block bg-white text-rose-600 font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-rose-50 transition-colors shadow">View Profiles</Link>
+                        <Link href="/matrimony" className="inline-block bg-white text-rose-600 font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-rose-50 transition-colors shadow">View Profiles</Link>
                     </div>
                 </div>
             </div>
@@ -296,7 +296,7 @@ export default function Home() {
     {/* Swipeable Cards */}
     <div className="flex gap-3 overflow-x-auto scrollbar-none flex-nowrap pb-1">
         {/* Deal 1 */}
-        <Link href="#store" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
+        <Link href="https://www.apextradingcompanystore.co.in/" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
             <div className="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
                 <img src="https://images.unsplash.com/photo-1589810635657-232948472d98?w=300&amp;q=80&amp;auto=format&amp;fit=crop" className="w-full h-full object-cover" />
                 <span className="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">50% OFF</span>
@@ -309,7 +309,7 @@ export default function Home() {
             </div>
         </Link>
         {/* Deal 2 */}
-        <Link href="#store" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
+        <Link href="https://www.apextradingcompanystore.co.in/" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
             <div className="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
                 <img src="https://images.unsplash.com/photo-1603487742131-4160ec999306?w=300&amp;q=80&amp;auto=format&amp;fit=crop" className="w-full h-full object-cover" />
                 <span className="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">40% OFF</span>
@@ -322,7 +322,7 @@ export default function Home() {
             </div>
         </Link>
         {/* Deal 3 */}
-        <Link href="#realty" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
+        <Link href="/realty" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
             <div className="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
                 <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=300&amp;q=80&amp;auto=format&amp;fit=crop" className="w-full h-full object-cover" />
                 <span className="absolute top-1 left-1 bg-emerald-500 text-white text-[7px] font-extrabold px-1 rounded-sm">SAVE ₹5L</span>
@@ -335,7 +335,7 @@ export default function Home() {
             </div>
         </Link>
         {/* Deal 4 */}
-        <Link href="#academy" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
+        <Link href="/academy" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
             <div className="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
                 <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=300&amp;q=80&amp;auto=format&amp;fit=crop" className="w-full h-full object-cover" />
                 <span className="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">30% OFF</span>
@@ -357,28 +357,28 @@ export default function Home() {
     <div className="px-4">
         <h2 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-4.5 reveal-up">Quick Payments</h2>
         <div className="grid grid-cols-5 gap-1.5 reveal-up delay-100">
-            <Link href="/finance" className="quick-action group">
+            <Link href="/utility" className="quick-action group">
                 <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style={{ background: "linear-gradient(135deg,#e0edff,#c7d9ff)", color: "#2563eb" }}>
                     <i className="fa-solid fa-receipt"></i></div>
                 <span>Pay Bills</span>
             </Link>
-            <Link href="/finance" className="quick-action group">
+            <Link href="/utility" className="quick-action group">
                 <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style={{ background: "linear-gradient(135deg,#d1fae5,#a7f3d0)", color: "#059669" }}>
                     <i className="fa-solid fa-mobile-screen-button"></i></div>
                 <span>Recharge</span>
             </Link>
-            <Link href="/finance" className="quick-action group">
+            <Link href="/utility" className="quick-action group">
                 <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style={{ background: "linear-gradient(135deg,#fef3c7,#fde68a)", color: "#d97706" }}>
                     <i className="fa-solid fa-paper-plane"></i></div>
                 <span>Send</span>
             </Link>
-            <div onClick={() => {}} className="quick-action group cursor-pointer">
+            <div onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'payment' }))} className="quick-action group cursor-pointer">
                 <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style={{ background: "linear-gradient(135deg,#ede9ff,#ddd6fe)", color: "#7c3aed" }}>
                     <i className="fa-solid fa-qrcode"></i>
                 </div>
                 <span>Scan QR</span>
             </div>
-            <Link href="/finance" className="quick-action group">
+            <Link href="/utility" className="quick-action group">
                 <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style={{ background: "linear-gradient(135deg,#fce7f3,#fbcfe8)", color: "#db2777" }}>
                     <i className="fa-solid fa-ellipsis"></i>
                 </div>
@@ -720,12 +720,12 @@ export default function Home() {
             <div className="reveal-up delay-100">
                 <h4 className="font-black text-gray-900 mb-3 uppercase text-[10px] tracking-wider">Ecosystem</h4>
                 <ul className="space-y-2">
-                    <li><Link href="#finance" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-chart-line text-[10px] text-apex-purple"></i>Finance</Link></li>
-                    <li><Link href="#realty" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-house-chimney text-[10px] text-apex-purple"></i>Realty</Link></li>
-                    <li><Link href="#academy" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-user-graduate text-[10px] text-apex-purple"></i>Academy</Link></li>
-                    <li><Link href="#store" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-store text-[10px] text-apex-purple"></i>Store</Link></li>
-                    <li><Link href="#matrimony" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-ring text-[10px] text-apex-purple"></i>Matrimony</Link></li>
-                    <li><Link href="#utility" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-bolt text-[10px] text-apex-purple"></i>Utility</Link></li>
+                    <li><Link href="/utility" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-chart-line text-[10px] text-apex-purple"></i>Finance</Link></li>
+                    <li><Link href="/realty" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-house-chimney text-[10px] text-apex-purple"></i>Realty</Link></li>
+                    <li><Link href="/academy" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-user-graduate text-[10px] text-apex-purple"></i>Academy</Link></li>
+                    <li><Link href="/store" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-store text-[10px] text-apex-purple"></i>Store</Link></li>
+                    <li><Link href="/matrimony" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-ring text-[10px] text-apex-purple"></i>Matrimony</Link></li>
+                    <li><Link href="/utility" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-bolt text-[10px] text-apex-purple"></i>Utility</Link></li>
                 </ul>
             </div>
             {/* Foundation */}
@@ -771,60 +771,11 @@ export default function Home() {
 {/* ═══ JAVASCRIPT ═══ */}
 
 
-{/* Sticky Bottom Navigation (Centered inside parent max-w-md container) */}
-<div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-100 h-14 flex justify-around items-center z-45 px-2 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-    <Link href="#" onClick={() => {}} className="flex flex-col items-center gap-0.5 text-apex-purple font-black text-[9px] transition-colors">
-        <i className="fa-solid fa-house-chimney text-base"></i>
-        <span>Home</span>
-    </Link>
-    <Link href="/charity" className="flex flex-col items-center gap-0.5 text-gray-400 hover:text-apex-purple font-bold text-[9px] transition-colors">
-        <i className="fa-solid fa-hand-holding-heart text-base"></i>
-        <span>Donate</span>
-    </Link>
-    <button onClick={() => {}} className="flex flex-col items-center gap-0.5 text-gray-400 hover:text-apex-purple font-bold text-[9px] transition-colors border-none bg-none outline-none">
-        <i className="fa-solid fa-indian-rupee-sign text-base"></i>
-        <span>Payments</span>
-    </button>
-    <Link href="#matrimony" className="flex flex-col items-center gap-0.5 text-gray-400 hover:text-apex-purple font-bold text-[9px] transition-colors">
-        <i className="fa-solid fa-heart text-base"></i>
-        <span>Matches</span>
-    </Link>
-    <button onClick={() => {}} className="flex flex-col items-center gap-0.5 text-gray-400 hover:text-apex-purple font-bold text-[9px] transition-colors border-none bg-none outline-none">
-        <i className="fa-solid fa-user-gear text-base"></i>
-        <span>Account</span>
-    </button>
-</div>
-
-{/* Profile Drawer Overlay */}
-
-
-{/* Wallet Drawer Overlay */}
-
-
-{/* QR Code Modal */}
-<div id="qr-modal" className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-    <div id="qr-modal-content" className="bg-white w-full max-w-sm rounded-3xl shadow-2xl transform scale-95 transition-transform duration-300 overflow-hidden mx-4">
-        <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-            <div>
-                <h2 className="text-lg font-black text-gray-900">Scan and Pay</h2>
-                <p className="text-[10px] text-gray-500 font-bold">APEX Quick Payments</p>
-            </div>
-            <button onClick={() => {}} className="w-8 h-8 bg-white border border-gray-200 rounded-full text-gray-500 flex items-center justify-center hover:bg-gray-100 transition-colors">
-                <i className="fa-solid fa-times"></i>
-            </button>
-        </div>
-        <div className="p-6 text-center">
-            <div className="inline-block p-3 bg-white border-2 border-dashed border-gray-300 rounded-2xl mb-4">
-                <img src="apex_payment_qr.png" alt="Scan QR Code" className="w-56 h-56 object-contain rounded-xl" />
-            </div>
-            <p className="text-[11px] font-bold text-gray-600">Scan this QR code with any UPI app</p>
-        </div>
-    </div>
-</div>
+{/* Replaced with GlobalModals and global BottomNav */}
 
 
 
 
-    </>
+    </main>
   );
 }

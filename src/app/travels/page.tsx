@@ -6,6 +6,16 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<'cab' | 'bus' | 'train' | 'flight'>('cab');
   const [isBooking, setIsBooking] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState<{type: string, message: string} | null>(null);
+  const [pickupLocation, setPickupLocation] = useState('');
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+
+  const handleLocationFetch = () => {
+    setIsFetchingLocation(true);
+    setTimeout(() => {
+        setPickupLocation('123 APEX Tech Park, New Delhi');
+        setIsFetchingLocation(false);
+    }, 1000);
+  };
 
   const handleBook = (type: string, e: React.FormEvent | React.MouseEvent) => {
     if ('preventDefault' in e) e.preventDefault();
@@ -83,8 +93,10 @@ export default function Page() {
                         <div className="absolute left-2 top-[52px] w-3 h-3 rounded-sm bg-red-500"></div>
 
                         <div className="relative">
-                            <input type="text" placeholder="Current Location" defaultValue="My Live Location" className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 mb-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple pr-10" />
-                            <button type="button" className="absolute right-2 top-1.5 text-apex-purple bg-white shadow-sm p-1.5 rounded-md hover:bg-purple-50 transition-colors"><i className="fa-solid fa-location-crosshairs"></i></button>
+                            <input type="text" placeholder="Current Location" value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 mb-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple pr-10" />
+                            <button type="button" onClick={handleLocationFetch} disabled={isFetchingLocation} className="absolute right-2 top-1.5 text-apex-purple bg-white shadow-sm p-1.5 rounded-md hover:bg-purple-50 transition-colors">
+                                {isFetchingLocation ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-location-crosshairs"></i>}
+                            </button>
                         </div>
                         <input type="text" placeholder="Where to?" className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple" />
                     </div>

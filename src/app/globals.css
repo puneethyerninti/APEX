@@ -89,3 +89,9 @@ body {
 
 .backdrop-blur-xs { backdrop-filter: blur(2px); }
 
+
+img {
+  object-fit: cover;
+  max-width: 100%;
+}
+
