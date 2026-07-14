@@ -19,6 +19,7 @@ export default function Page() {
   const socket = socketContext?.socket;
   const [activeRideId, setActiveRideId] = useState<string | null>(null);
   const [cabLocation, setCabLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
     if (activeRideId && socket) {
@@ -44,6 +45,8 @@ export default function Page() {
 
     navigator.geolocation.getCurrentPosition(
         async (position) => {
+            const { latitude, longitude } = position.coords;
+            setUserLocation({ lat: latitude, lng: longitude });
             try {
                 // Reverse geocoding using free OpenStreetMap Nominatim API
                 const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`);
@@ -58,7 +61,7 @@ export default function Page() {
                 setPickupLocation(formattedLocation.replace(/, $/, '')); // clean up trailing commas
             } catch (err) {
                 console.error("Reverse geocoding failed", err);
-                setPickupLocation(`${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
+                setPickupLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
             }
             setIsFetchingLocation(false);
         },
@@ -80,7 +83,9 @@ export default function Page() {
         socket.emit('start_ride', {
             rideId,
             origin: pickupLocation || 'Current Location',
-            destination: 'Selected Destination'
+            destination: 'Selected Destination',
+            lat: userLocation?.lat,
+            lng: userLocation?.lng
         });
         setActiveRideId(rideId);
     }
@@ -137,7 +142,7 @@ export default function Page() {
     {activeTab === 'cab' && (
         <div className="tab-content active h-screen relative">
             <div className="absolute inset-0 z-0">
-                <TravelsMap cabLocation={cabLocation} />
+                <TravelsMap cabLocation={cabLocation} userLocation={userLocation} />
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent z-0 pointer-events-none"></div>
             

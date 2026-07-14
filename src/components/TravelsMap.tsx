@@ -20,22 +20,31 @@ const carIcon = new L.Icon({
   popupAnchor: [0, -20]
 });
 
-// Component to recenter map when cab moves
-function RecenterMap({ lat, lng }: { lat: number, lng: number }) {
+// Component to recenter map dynamically
+function RecenterMap({ lat, lng, animate }: { lat: number, lng: number, animate: boolean }) {
   const map = useMap();
   useEffect(() => {
-    map.setView([lat, lng], map.getZoom(), { animate: true });
-  }, [lat, lng, map]);
+    if (animate) {
+      map.flyTo([lat, lng], 16, { duration: 2 });
+    } else {
+      map.setView([lat, lng], map.getZoom());
+    }
+  }, [lat, lng, map, animate]);
   return null;
 }
 
 interface TravelsMapProps {
   cabLocation: { lat: number, lng: number } | null;
+  userLocation: { lat: number, lng: number } | null;
 }
 
-export default function TravelsMap({ cabLocation }: TravelsMapProps) {
-  // Default to Vizag coords if no cab yet
-  const center: [number, number] = cabLocation ? [cabLocation.lat, cabLocation.lng] : [17.6868, 83.2185];
+export default function TravelsMap({ cabLocation, userLocation }: TravelsMapProps) {
+  // Default to Vizag coords if no user or cab yet
+  const center: [number, number] = cabLocation 
+    ? [cabLocation.lat, cabLocation.lng] 
+    : userLocation 
+      ? [userLocation.lat, userLocation.lng] 
+      : [17.6868, 83.2185];
 
   return (
     <MapContainer 
@@ -48,9 +57,16 @@ export default function TravelsMap({ cabLocation }: TravelsMapProps) {
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
       />
+      
+      {/* If user fetched location but ride hasn't started, animate to them */}
+      {userLocation && !cabLocation && (
+          <RecenterMap lat={userLocation.lat} lng={userLocation.lng} animate={true} />
+      )}
+
+      {/* If ride started, track the cab */}
       {cabLocation && (
         <>
-          <RecenterMap lat={cabLocation.lat} lng={cabLocation.lng} />
+          <RecenterMap lat={cabLocation.lat} lng={cabLocation.lng} animate={false} />
           <Marker position={[cabLocation.lat, cabLocation.lng]} icon={carIcon}>
             <Popup>APEX Cab (En route)</Popup>
           </Marker>
