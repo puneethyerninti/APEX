@@ -1,6 +1,11 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { SocketContext } from '@/context/SocketContext';
+
+// Dynamically import the map to avoid SSR issues with Leaflet
+const TravelsMap = dynamic(() => import('@/components/TravelsMap'), { ssr: false });
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<'cab' | 'bus' | 'train' | 'flight'>('cab');
@@ -8,6 +13,25 @@ export default function Page() {
   const [bookingSuccess, setBookingSuccess] = useState<{type: string, message: string} | null>(null);
   const [pickupLocation, setPickupLocation] = useState('');
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+  
+  // Real-time tracking state
+  const socketContext = useContext(SocketContext);
+  const socket = socketContext?.socket;
+  const [activeRideId, setActiveRideId] = useState<string | null>(null);
+  const [cabLocation, setCabLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  useEffect(() => {
+    if (activeRideId && socket) {
+      const handleRideUpdate = (data: any) => {
+        setCabLocation({ lat: data.lat, lng: data.lng });
+      };
+      
+      socket.on(`ride_update_${activeRideId}`, handleRideUpdate);
+      return () => {
+        socket.off(`ride_update_${activeRideId}`, handleRideUpdate);
+      };
+    }
+  }, [activeRideId, socket]);
 
   const handleLocationFetch = () => {
     setIsFetchingLocation(true);
@@ -20,6 +44,18 @@ export default function Page() {
   const handleBook = (type: string, e: React.FormEvent | React.MouseEvent) => {
     if ('preventDefault' in e) e.preventDefault();
     setIsBooking(true);
+    
+    // If it's a cab, we trigger real-time tracking
+    if (type === 'APEX Cab Ride' && socket) {
+        const rideId = `ride_${Date.now()}`;
+        socket.emit('start_ride', {
+            rideId,
+            origin: pickupLocation || 'Current Location',
+            destination: 'Selected Destination'
+        });
+        setActiveRideId(rideId);
+    }
+
     setTimeout(() => {
         setIsBooking(false);
         setBookingSuccess({
@@ -71,15 +107,19 @@ export default function Page() {
     {/* CAB SECTION */}
     {activeTab === 'cab' && (
         <div className="tab-content active h-screen relative">
-            <div className="absolute inset-0 map-bg z-0 opacity-80" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80')", backgroundSize: 'cover' }}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 to-transparent z-0"></div>
-            
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
-                <div className="bg-gray-900 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg mb-1">Pickup Location</div>
-                <div className="w-5 h-5 rounded-full bg-green-500 border-2 border-white pulse-dot"></div>
-                <div className="w-1 h-8 bg-gray-900"></div>
-                <div className="w-2 h-1 bg-gray-900 rounded-full blur-[1px]"></div>
+            <div className="absolute inset-0 z-0">
+                <TravelsMap cabLocation={cabLocation} />
             </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent z-0 pointer-events-none"></div>
+            
+            {!activeRideId && (
+                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center pointer-events-none">
+                    <div className="bg-gray-900 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg mb-1">Pickup Location</div>
+                    <div className="w-5 h-5 rounded-full bg-green-500 border-2 border-white pulse-dot"></div>
+                    <div className="w-1 h-8 bg-gray-900"></div>
+                    <div className="w-2 h-1 bg-gray-900 rounded-full blur-[1px]"></div>
+                </div>
+            )}
 
             <div className="absolute bottom-0 w-full bg-white rounded-t-3xl shadow-[0_-10px_20px_rgba(0,0,0,0.1)] z-20 overflow-hidden flex flex-col" style={{ maxHeight: "70vh" }}>
                 <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-3"></div>
@@ -133,9 +173,21 @@ export default function Page() {
                         </label>
                     </div>
 
-                    <button onClick={(e) => handleBook('APEX Cab Ride', e)} disabled={isBooking} className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-black transition-colors text-sm flex justify-center items-center gap-2">
-                        {isBooking ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Booking...</> : 'Book APEX Mini'}
-                    </button>
+                    {activeRideId ? (
+                        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center justify-between">
+                            <div>
+                                <h3 className="font-black text-green-700 text-lg">Driver is on the way!</h3>
+                                <p className="text-xs text-green-600">APEX Mini • AP 31 X 9999</p>
+                            </div>
+                            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-green-500 shadow-sm border border-green-100 text-xl">
+                                <i className="fa-solid fa-car-side"></i>
+                            </div>
+                        </div>
+                    ) : (
+                        <button onClick={(e) => handleBook('APEX Cab Ride', e)} disabled={isBooking} className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-black transition-colors text-sm flex justify-center items-center gap-2">
+                            {isBooking ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Booking...</> : 'Book APEX Mini'}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

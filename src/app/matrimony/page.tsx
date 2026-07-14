@@ -1,6 +1,8 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import Link from 'next/link';
+import { useAppStore } from '@/store/useAppStore';
+import { SocketContext } from '@/context/SocketContext';
 
 export default function Page() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -8,6 +10,16 @@ export default function Page() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isPaymentStep, setIsPaymentStep] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState<{senderId: string, text: string, timestamp: string}[]>([
+      { senderId: 'aanya', text: 'Hi there! I saw your profile and it looks interesting. Would you like to connect?', timestamp: new Date().toISOString() }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAppStore();
+  const socketContext = useContext(SocketContext);
+  const socket = socketContext?.socket;
+  
+  const ROOM_ID = 'match_123'; // Mock room ID for demo
 
   // Form state
   const [formData, setFormData] = useState({
@@ -41,7 +53,7 @@ export default function Page() {
     setIsPaymentStep(true);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleSuccess = () => {
       setIsSubmitting(false);
       setIsSuccess(true);
@@ -50,6 +62,42 @@ export default function Page() {
     window.addEventListener('paymentSuccess', handleSuccess);
     return () => window.removeEventListener('paymentSuccess', handleSuccess);
   }, []);
+
+  useEffect(() => {
+    if (chatOpen && socket) {
+      socket.emit('join_room', ROOM_ID);
+      
+      const handleNewMessage = (data: any) => {
+        setMessages((prev) => [...prev, data]);
+      };
+      
+      socket.on('receive_message', handleNewMessage);
+      
+      return () => {
+        socket.off('receive_message', handleNewMessage);
+      };
+    }
+  }, [chatOpen, socket]);
+
+  useEffect(() => {
+    if (chatEndRef.current) {
+        chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, chatOpen]);
+
+  const handleSendMessage = () => {
+      if (!chatInput.trim() || !socket) return;
+      
+      const msgData = {
+          roomId: ROOM_ID,
+          senderId: user?.id || 'guest',
+          text: chatInput,
+          timestamp: new Date().toISOString()
+      };
+      
+      socket.emit('send_message', msgData);
+      setChatInput('');
+  };
 
   const triggerCheckout = () => {
     let amount = selectedPlan === 'Premium' ? '₹20,000' : selectedPlan === 'Gold' ? '₹10,000' : '₹5,000';
@@ -334,18 +382,31 @@ export default function Page() {
                         <div className="flex justify-center">
                             <span className="text-[9px] bg-gray-200 text-gray-500 px-2 py-1 rounded-full">Today</span>
                         </div>
-                        <div className="flex gap-2">
-                            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&amp;fit=crop&amp;q=80" alt="Aanya" className="w-6 h-6 rounded-full self-end" />
-                            <div className="bg-white p-3 rounded-2xl rounded-bl-none shadow-sm text-sm text-gray-700 max-w-[75%]">
-                                Hi there! I saw your profile and it looks interesting. Would you like to connect?
-                            </div>
-                        </div>
+                        {messages.map((msg, i) => {
+                            const isMe = msg.senderId === (user?.id || 'guest');
+                            return (
+                                <div key={i} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
+                                    {!isMe && <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&amp;fit=crop&amp;q=80" alt="Aanya" className="w-6 h-6 rounded-full self-end" />}
+                                    <div className={`p-3 rounded-2xl shadow-sm text-sm max-w-[75%] ${isMe ? 'bg-rose-600 text-white rounded-br-none' : 'bg-white text-gray-700 rounded-bl-none'}`}>
+                                        {msg.text}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        <div ref={chatEndRef} />
                     </div>
 
                     {/* Chat Input */}
                     <div className="p-3 bg-white border-t border-gray-100 flex gap-2 items-center">
-                        <input type="text" placeholder="Type a message..." className="flex-1 bg-gray-100 border-none rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20" />
-                        <button className="w-10 h-10 bg-rose-600 text-white rounded-full flex items-center justify-center hover:bg-rose-700 shadow-sm flex-shrink-0">
+                        <input 
+                            type="text" 
+                            placeholder="Type a message..." 
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                            className="flex-1 bg-gray-100 border-none rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20" 
+                        />
+                        <button onClick={handleSendMessage} className="w-10 h-10 bg-rose-600 text-white rounded-full flex items-center justify-center hover:bg-rose-700 shadow-sm flex-shrink-0">
                             <i className="fa-solid fa-paper-plane text-sm"></i>
                         </button>
                     </div>
