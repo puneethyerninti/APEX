@@ -35,10 +35,39 @@ export default function Page() {
 
   const handleLocationFetch = () => {
     setIsFetchingLocation(true);
-    setTimeout(() => {
-        setPickupLocation('123 APEX Tech Park, New Delhi');
+    
+    if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser');
         setIsFetchingLocation(false);
-    }, 1000);
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            try {
+                // Reverse geocoding using free OpenStreetMap Nominatim API
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`);
+                const data = await res.json();
+                
+                // Format a nice address string from the returned details
+                const address = data.address;
+                const formattedLocation = address.road 
+                    ? `${address.road}, ${address.city || address.town || address.county || ''}`
+                    : data.display_name;
+                
+                setPickupLocation(formattedLocation.replace(/, $/, '')); // clean up trailing commas
+            } catch (err) {
+                console.error("Reverse geocoding failed", err);
+                setPickupLocation(`${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
+            }
+            setIsFetchingLocation(false);
+        },
+        (error) => {
+            console.error("Error getting location", error);
+            alert("Unable to retrieve your location. Please check browser permissions.");
+            setIsFetchingLocation(false);
+        }
+    );
   };
 
   const handleBook = (type: string, e: React.FormEvent | React.MouseEvent) => {
@@ -121,7 +150,7 @@ export default function Page() {
                 </div>
             )}
 
-            <div className="absolute bottom-0 w-full bg-white rounded-t-3xl shadow-[0_-10px_20px_rgba(0,0,0,0.1)] z-20 overflow-hidden flex flex-col" style={{ maxHeight: "70vh" }}>
+            <div className="absolute bottom-0 w-full bg-white rounded-t-3xl shadow-[0_-10px_20px_rgba(0,0,0,0.1)] z-20 overflow-hidden flex flex-col" style={{ maxHeight: "50vh" }}>
                 <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-3"></div>
                 
                 <div className="px-5 pb-6 overflow-y-auto custom-scrollbar">
