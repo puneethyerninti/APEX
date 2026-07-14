@@ -49,12 +49,12 @@ io.on('connection', (socket) => {
 
   // --- TRAVELS GPS TRACKING ---
   socket.on('start_ride', (data) => {
-    const { rideId, origin, destination } = data;
+    const { rideId, origin, destination, lat: startLat, lng: startLng } = data;
     console.log(`Started tracking ride ${rideId} from ${origin} to ${destination}`);
     
-    // Simulate moving car for now (placeholder for real routing later)
-    let lat = 17.6868;
-    let lng = 83.2185; // Vizag base coords
+    // Start from user's location, or fallback to Vizag
+    let lat = startLat || 17.6868;
+    let lng = startLng || 83.2185;
     
     const intervalId = setInterval(() => {
       lat += (Math.random() - 0.5) * 0.001;
