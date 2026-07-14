@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import NavigationWrapper from "@/components/NavigationWrapper";
 import GlobalModals from "@/components/GlobalModals";
+import Providers from "@/components/Providers";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -28,11 +29,13 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col pb-14 bg-slate-900 text-gray-800">
-        <div className="max-w-md w-full mx-auto bg-[#F4F6FB] min-h-screen relative shadow-2xl overflow-x-hidden border-x border-slate-800">
-          <NavigationWrapper>
-            {children}
-          </NavigationWrapper>
-          <GlobalModals />
+        <div className="max-w-md w-full mx-auto bg-[#F4F6FB] min-h-screen relative shadow-[0_0_40px_rgba(0,0,0,0.1)] overflow-hidden border-x border-gray-200 pb-20">
+          <Providers>
+            <NavigationWrapper>
+              {children}
+            </NavigationWrapper>
+            <GlobalModals />
+          </Providers>
         </div>
       </body>
     </html>

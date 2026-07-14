@@ -1,11 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useAppStore } from '@/store/useAppStore';
+import { api } from '@/services/api';
 
 export default function GlobalModals() {
     const [modal, setModal] = useState<string | null>(null);
     const [modalData, setModalData] = useState<any>(null);
     const [checkoutStep, setCheckoutStep] = useState<'methods' | 'qr' | 'processing'>('methods');
+    
+    // Global state
+    const walletBalance = useAppStore((state) => state.walletBalance);
+    const deductMoney = useAppStore((state) => state.deductMoney);
 
     useEffect(() => {
         const handleOpenModal = (e: any) => {
@@ -25,14 +31,29 @@ export default function GlobalModals() {
 
     if (!modal) return null;
 
-    const handleCheckout = () => {
+    const handleCheckout = async () => {
         setCheckoutStep('processing');
-        setTimeout(() => {
+        
+        try {
+            if (modalData?.amount) {
+                const num = parseFloat(modalData.amount.replace(/[^0-9.]/g, ''));
+                if (!isNaN(num)) {
+                    await api.post('/finance/wallet/deduct', {
+                        amount: num,
+                        category: modalData?.plan || 'payment'
+                    });
+                    deductMoney(num); // Update local store visually
+                }
+            }
+            
             setCheckoutStep('methods');
             setModal(null);
-            // Dispatch a generic payment success event that the caller can listen to
             window.dispatchEvent(new CustomEvent('paymentSuccess'));
-        }, 2000);
+        } catch (error) {
+            console.error("Payment failed", error);
+            alert("Payment failed. Please check your wallet balance.");
+            setCheckoutStep('methods');
+        }
     };
 
     const handleUPISelection = () => {
@@ -146,7 +167,7 @@ export default function GlobalModals() {
                                     <i className="fa-solid fa-wallet text-6xl"></i>
                                 </div>
                                 <p className="text-[10px] text-violet-200 uppercase tracking-wider mb-1">Available Balance</p>
-                                <h3 className="text-3xl font-black mb-4">₹ 4,250.00</h3>
+                                <h3 className="text-3xl font-black mb-4">₹ {walletBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h3>
                                 <div className="flex gap-2">
                                     <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-[10px] font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
                                         <i className="fa-solid fa-plus"></i> Add Money

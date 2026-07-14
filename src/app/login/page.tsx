@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { api } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -10,15 +12,22 @@ export default function LoginPage() {
     const [phone, setPhone] = useState('');
     const [otp, setOtp] = useState(['', '', '', '']);
     const [isLoading, setIsLoading] = useState(false);
+    const { login } = useAuth();
+    const [errorMsg, setErrorMsg] = useState('');
 
-    const handlePhoneSubmit = (e: React.FormEvent) => {
+    const handlePhoneSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setErrorMsg('');
         if (phone.length === 10) {
             setIsLoading(true);
-            setTimeout(() => {
-                setIsLoading(false);
+            try {
+                await api.post('/auth/send-otp', { phone });
                 setStep('otp');
-            }, 1000);
+            } catch (err: any) {
+                setErrorMsg(err.response?.data?.error || 'Failed to send OTP');
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -36,14 +45,21 @@ export default function LoginPage() {
         }
     };
 
-    const handleOtpSubmit = (e: React.FormEvent) => {
+    const handleOtpSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (otp.join('').length === 4) {
+        setErrorMsg('');
+        const fullOtp = otp.join('');
+        if (fullOtp.length === 4) {
             setIsLoading(true);
-            setTimeout(() => {
-                setIsLoading(false);
+            try {
+                const response = await api.post('/auth/verify-otp', { phone, otp: fullOtp });
+                login(response.data.token, response.data.user);
                 router.push('/');
-            }, 1500);
+            } catch (err: any) {
+                setErrorMsg(err.response?.data?.error || 'Invalid OTP');
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -80,6 +96,8 @@ export default function LoginPage() {
                             </div>
                         </div>
 
+                        {errorMsg && <p className="text-red-500 text-[10px] font-bold text-center">{errorMsg}</p>}
+
                         <button 
                             type="submit" 
                             disabled={phone.length !== 10 || isLoading}
@@ -113,6 +131,8 @@ export default function LoginPage() {
                                 />
                             ))}
                         </div>
+
+                        {errorMsg && <p className="text-red-500 text-[10px] font-bold text-center mt-2">{errorMsg}</p>}
 
                         <div className="flex flex-col gap-3 mt-4">
                             <button 

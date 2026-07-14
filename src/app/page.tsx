@@ -2,6 +2,7 @@
 "use client";
 import React from 'react';
 import Link from 'next/link';
+import Header from '@/components/Header';
 
 export default function Home() {
   React.useEffect(() => {
@@ -113,6 +114,8 @@ export default function Home() {
   }, []);
 
   return (
+    <>
+    <Header />
     <main className="w-full">
       
 
@@ -125,7 +128,7 @@ export default function Home() {
 {/* Flipkart-style Categories Compact Grid */}
 <div className="grid grid-cols-4 gap-y-3 gap-x-2 px-4 py-3 bg-white shadow-xs border-b border-gray-100">
     {/* Priority 1: Financial Services */}
-    <Link href="/utility" className="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
+    <Link href="/finance" className="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
             <i className="fa-solid fa-chart-line"></i>
         </div>
@@ -194,7 +197,7 @@ export default function Home() {
             </div>
         </div>
         <div className="flex items-center gap-2">
-            <button onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'payment' }))} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs shadow-sm transition-all" aria-label="QR">
+            <button onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: { type: 'checkout', data: { amount: '₹ 0.00', plan: 'Scan & Pay' } } }))} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs shadow-sm transition-all" aria-label="QR">
                 <i className="fa-solid fa-qrcode"></i>
             </button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'account' }))} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs shadow-sm transition-all" aria-label="Account">
@@ -204,7 +207,7 @@ export default function Home() {
     </div>
 
     {/* Payments (Flipkart Deck Style Compact) */}
-    <div onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'payment' }))} className="bg-white rounded-2xl p-3 mb-4 shadow-md reveal-up delay-100 cursor-pointer hover:scale-[1.01] transition-transform">
+    <div onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: { type: 'checkout', data: { amount: '₹ 0.00', plan: 'Scan & Pay' } } }))} className="bg-white rounded-2xl p-3 mb-4 shadow-md reveal-up delay-100 cursor-pointer hover:scale-[1.01] transition-transform">
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-purple-50 text-apex-purple flex items-center justify-center shadow-inner flex-shrink-0">
@@ -372,7 +375,7 @@ export default function Home() {
                     <i className="fa-solid fa-paper-plane"></i></div>
                 <span>Send</span>
             </Link>
-            <div onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'payment' }))} className="quick-action group cursor-pointer">
+            <div onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: { type: 'checkout', data: { amount: '₹ 0.00', plan: 'Scan & Pay' } } }))} className="quick-action group cursor-pointer">
                 <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style={{ background: "linear-gradient(135deg,#ede9ff,#ddd6fe)", color: "#7c3aed" }}>
                     <i className="fa-solid fa-qrcode"></i>
                 </div>
@@ -777,5 +780,6 @@ export default function Home() {
 
 
     </main>
+    </>
   );
 }
