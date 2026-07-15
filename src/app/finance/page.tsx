@@ -43,23 +43,56 @@ export default function FinancePage() {
       {/* SERVICES GRID */}
       <div className="px-4 mb-5">
           <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Our Services</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <button className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-2 hover:border-blue-200 hover:shadow-md transition-all">
-                  <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 text-xl"><i className="fa-solid fa-hand-holding-dollar"></i></div>
-                  <span className="text-xs font-bold text-gray-800">Loans</span>
-              </button>
-              <button className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-2 hover:border-blue-200 hover:shadow-md transition-all">
-                  <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-xl"><i className="fa-solid fa-arrow-trend-up"></i></div>
-                  <span className="text-xs font-bold text-gray-800">Investment</span>
-              </button>
-              <button className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-2 hover:border-blue-200 hover:shadow-md transition-all">
-                  <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 text-xl"><i className="fa-solid fa-shield-halved"></i></div>
-                  <span className="text-xs font-bold text-gray-800">Insurance</span>
-              </button>
-              <button className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-2 hover:border-blue-200 hover:shadow-md transition-all">
-                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-xl"><i className="fa-solid fa-credit-card"></i></div>
-                  <span className="text-xs font-bold text-gray-800">Credit Cards</span>
-              </button>
+          <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all">
+                  <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 text-lg"><i className="fa-solid fa-hand-holding-dollar"></i></div>
+                      <span className="text-sm font-bold text-gray-800">Loans</span>
+                  </div>
+                  <ul className="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-rose-100">
+                      <li><a href="https://apextradingcompany.banksupport.in/" target="_blank" rel="noopener noreferrer" className="hover:text-rose-600 font-medium block">Personal Loan</a></li>
+                      <li><a href="#" className="hover:text-rose-600 font-medium block">Home Loan</a></li>
+                      <li><a href="#" className="hover:text-rose-600 font-medium block">Business Loan</a></li>
+                  </ul>
+              </div>
+              
+              <div className="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all">
+                  <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-arrow-trend-up"></i></div>
+                      <span className="text-sm font-bold text-gray-800">Investment</span>
+                  </div>
+                  <ul className="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-emerald-100">
+                      <li><a href="#" className="hover:text-emerald-600 font-medium block">Mutual Funds</a></li>
+                      <li><a href="#" className="hover:text-emerald-600 font-medium block">Fixed Deposit</a></li>
+                      <li><a href="#" className="hover:text-emerald-600 font-medium block">NPS</a></li>
+                      <li><a href="#" className="hover:text-emerald-600 font-medium block">Bonds</a></li>
+                  </ul>
+              </div>
+              
+              <div className="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all">
+                  <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 text-lg"><i className="fa-solid fa-shield-halved"></i></div>
+                      <span className="text-sm font-bold text-gray-800">Insurance</span>
+                  </div>
+                  <ul className="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-purple-100">
+                      <li><a href="#" className="hover:text-purple-600 font-medium block">Health Insurance</a></li>
+                      <li><a href="#" className="hover:text-purple-600 font-medium block">Life Insurance</a></li>
+                      <li><a href="#" className="hover:text-purple-600 font-medium block">Motor Insurance</a></li>
+                      <li><a href="#" className="hover:text-purple-600 font-medium block">Travel Insurance</a></li>
+                  </ul>
+              </div>
+              
+              <div className="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all justify-start">
+                  <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-lg"><i className="fa-solid fa-credit-card"></i></div>
+                      <span className="text-sm font-bold text-gray-800">Credit Cards</span>
+                  </div>
+                  <ul className="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-blue-100">
+                      <li><a href="#" className="hover:text-blue-600 font-medium block">Apply New</a></li>
+                      <li><a href="#" className="hover:text-blue-600 font-medium block">Pay Bill</a></li>
+                      <li><a href="#" className="hover:text-blue-600 font-medium block">Offers</a></li>
+                  </ul>
+              </div>
           </div>
       </div>
     </>

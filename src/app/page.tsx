@@ -244,7 +244,7 @@ export default function Home() {
                     <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&amp;q=80&amp;auto=format&amp;fit=crop" alt="" className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay" />
                     <div className="absolute inset-0 bg-gradient-to-r from-[#1E0E4B] via-[#6C3FC5]/75 to-transparent"></div>
                     <div className="relative p-4 z-10 flex-1">
-                        <p className="text-yellow-300 text-[8px] font-extrabold uppercase tracking-widest mb-0.5">Invest Smarter</p>
+                        <p className="text-yellow-300 text-[8px] font-extrabold uppercase tracking-widest mb-0.5">APEX TRADING COMPANY<br/>AMFI - ARN NO - 327302</p>
                         <h2 className="text-white text-base font-black leading-tight mb-0.5">Build Wealth &amp; Secures SIP</h2>
                         <p className="text-purple-200 text-[9px] mb-2">Make smart Investments today!</p>
                         <Link href="/finance" className="inline-block bg-white text-apex-purple font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-yellow-50 transition-colors shadow">Invest Now</Link>
