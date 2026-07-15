@@ -5,6 +5,7 @@ interface UserProfile {
   uid: string;
   phone: string | null;
   name?: string;
+  email?: string;
   isPremium?: boolean;
 }
 
@@ -16,6 +17,7 @@ interface AppState {
   // Actions
   setWalletBalance: (balance: number) => void;
   setUser: (user: UserProfile | null) => void;
+  updateUserProfile: (data: Partial<UserProfile>) => void;
   setCartCount: (count: number) => void;
   addMoney: (amount: number) => void;
   deductMoney: (amount: number) => void;
@@ -30,6 +32,9 @@ export const useAppStore = create<AppState>()(
 
       setWalletBalance: (balance) => set({ walletBalance: balance }),
       setUser: (user) => set({ user }),
+      updateUserProfile: (data) => set((state) => ({
+        user: state.user ? { ...state.user, ...data } : null
+      })),
       setCartCount: (count) => set({ cartCount: count }),
       
       addMoney: (amount) => set((state) => ({ walletBalance: state.walletBalance + amount })),

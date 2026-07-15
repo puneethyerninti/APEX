@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useAppStore } from "@/store/useAppStore";
 
 const SEARCH_CATALOG = [
   { title: "Full-Stack Web Development", category: "Academy", icon: "fa-code", href: "/academy" },
@@ -23,6 +24,7 @@ const SEARCH_CATALOG = [
 
 export default function Header() {
   const router = useRouter();
+  const user = useAppStore((state) => state.user);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState(SEARCH_CATALOG);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -130,7 +132,7 @@ export default function Header() {
             className="w-7 h-7 rounded-full bg-white text-violet-700 flex items-center justify-center text-[10px] font-bold shadow-sm"
             aria-label="Profile"
           >
-            RS
+            {user?.name ? user.name.substring(0, 2).toUpperCase() : <i className="fa-solid fa-user"></i>}
           </button>
         </div>
       </div>

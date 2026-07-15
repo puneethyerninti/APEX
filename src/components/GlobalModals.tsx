@@ -4,16 +4,24 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
+import { db } from '@/firebase.config';
+import { doc, updateDoc } from 'firebase/firestore';
 
 export default function GlobalModals() {
     const [modal, setModal] = useState<string | null>(null);
     const [modalData, setModalData] = useState<any>(null);
     const [checkoutStep, setCheckoutStep] = useState<'methods' | 'qr' | 'processing'>('methods');
     
+    // Profile Edit State
+    const [editName, setEditName] = useState('');
+    const [editEmail, setEditEmail] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    
     // Global state
     const walletBalance = useAppStore((state) => state.walletBalance);
     const deductMoney = useAppStore((state) => state.deductMoney);
     const user = useAppStore((state) => state.user);
+    const updateUserProfile = useAppStore((state) => state.updateUserProfile);
     const { logout } = useAuth();
 
     useEffect(() => {
@@ -33,6 +41,25 @@ export default function GlobalModals() {
     }, []);
 
     if (!modal) return null;
+
+    const handleSaveProfile = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user?.uid) return;
+        setIsSaving(true);
+        try {
+            const userDocRef = doc(db, 'users', user.uid);
+            await updateDoc(userDocRef, {
+                name: editName,
+                email: editEmail,
+            });
+            updateUserProfile({ name: editName, email: editEmail });
+            setModal('account'); // Go back to account modal
+        } catch (error) {
+            console.error("Failed to update profile", error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleCheckout = async () => {
         setCheckoutStep('processing');
@@ -228,10 +255,19 @@ export default function GlobalModals() {
                                     <i className="fa-solid fa-box text-violet-500 text-xl"></i>
                                     <span className="text-[10px] font-bold text-gray-700">My Orders</span>
                                 </button>
+                                <button onClick={() => {
+                                    setEditName(user?.name || '');
+                                    setEditEmail(user?.email || '');
+                                    setModal('edit_profile');
+                                }} className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
+                                    <i className="fa-solid fa-user-pen text-blue-500 text-xl"></i>
+                                    <span className="text-[10px] font-bold text-gray-700">Edit Profile</span>
+                                </button>
                                 <button className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
                                     <i className="fa-solid fa-heart text-rose-500 text-xl"></i>
                                     <span className="text-[10px] font-bold text-gray-700">Saved Matches</span>
                                 </button>
+
                                 <button className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
                                     <i className="fa-solid fa-graduation-cap text-blue-500 text-xl"></i>
                                     <span className="text-[10px] font-bold text-gray-700">My Courses</span>
@@ -246,6 +282,42 @@ export default function GlobalModals() {
                                 <i className="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
                             </button>
                         </div>
+                    )}
+
+                    {/* EDIT PROFILE MODAL */}
+                    {modal === 'edit_profile' && (
+                        <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs font-bold text-gray-700">Full Name</label>
+                                <input 
+                                    type="text" 
+                                    value={editName}
+                                    onChange={(e) => setEditName(e.target.value)}
+                                    placeholder="Enter your name"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                                    required
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs font-bold text-gray-700">Email Address</label>
+                                <input 
+                                    type="email" 
+                                    value={editEmail}
+                                    onChange={(e) => setEditEmail(e.target.value)}
+                                    placeholder="Enter your email"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                                />
+                            </div>
+                            
+                            <div className="flex gap-3 mt-4">
+                                <button type="button" onClick={() => setModal('account')} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold text-sm rounded-xl hover:bg-gray-200 transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit" disabled={isSaving} className="flex-1 py-3 bg-[#6C3FC5] text-white font-bold text-sm rounded-xl hover:bg-[#5a34a8] disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                    {isSaving ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Saving...</> : 'Save Profile'}
+                                </button>
+                            </div>
+                        </form>
                     )}
                 </div>
             </div>

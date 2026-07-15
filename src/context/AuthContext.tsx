@@ -2,8 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { auth } from '@/firebase.config';
+import { auth, db } from '@/firebase.config';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 
 interface AuthContextType {
@@ -23,13 +24,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Listen for Firebase auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: User | null) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
       if (firebaseUser) {
-        // User is logged in
-        setUser({
-          uid: firebaseUser.uid,
-          phone: firebaseUser.phoneNumber,
-        });
+        try {
+          // Check if user exists in Firestore
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUser({
+              uid: firebaseUser.uid,
+              phone: firebaseUser.phoneNumber,
+              name: userData.name,
+              email: userData.email,
+              isPremium: userData.isPremium,
+            });
+          } else {
+            // First time login, create user doc
+            await setDoc(userDocRef, {
+              phone: firebaseUser.phoneNumber,
+              createdAt: serverTimestamp(),
+            });
+            setUser({
+              uid: firebaseUser.uid,
+              phone: firebaseUser.phoneNumber,
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching/creating user doc:", error);
+          // Fallback if firestore fails
+          setUser({
+            uid: firebaseUser.uid,
+            phone: firebaseUser.phoneNumber,
+          });
+        }
+        
         setIsAuthenticated(true);
         if (pathname === '/login') {
           router.push('/');
