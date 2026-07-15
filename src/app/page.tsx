@@ -632,18 +632,24 @@ export default function Home() {
 
 
 {/* ═══ 10. MATRIMONY ═══ */}
-<section id="matrimony" className="py-6 relative overflow-hidden">
-    <div className="absolute inset-0 z-0">
-        <img src="./Matrimony%20Hero.png" alt="Matrimony" className="w-full h-full object-cover" />
-    </div>
-    <div className="relative z-10 px-4">
-
-        <div className="flex flex-col items-center mb-5 reveal-up">
-            <img src="Anand%20Matrimony%20logo.jpeg" alt="Anand Matrimony" className="h-10 object-contain rounded-lg shadow-md mb-1.5" />
+<section id="matrimony" className="py-4 px-4">
+    <div className="relative rounded-2xl overflow-hidden shadow-lg border border-rose-100 group">
+        <div className="h-48 relative">
+            <img src="./Matrimony%20Hero.png" alt="Matrimony" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="absolute inset-0 bg-gradient-to-t from-rose-900/90 via-rose-900/30 to-transparent"></div>
         </div>
-
-        <div className="text-center mt-4">
-            <Link href="/matrimony" className="inline-block bg-white text-rose-600 border border-rose-150 font-bold text-[10px] py-1.5 px-6 rounded-full shadow-xs hover:bg-rose-50 transition-colors reveal-up delay-500">View All Matches</Link>
+        
+        <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between z-10 reveal-up">
+            <div className="flex flex-col">
+                <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-lg inline-block mb-2 border border-white/30 shadow-sm self-start">
+                    <img src="Anand%20Matrimony%20logo.jpeg" alt="Anand Matrimony" className="h-8 object-contain rounded-md" />
+                </div>
+                <h3 className="text-white font-black text-sm tracking-wide leading-tight drop-shadow-md">Find Your<br/>Perfect Match</h3>
+            </div>
+            
+            <Link href="/matrimony" className="bg-rose-500 hover:bg-rose-600 text-white font-bold text-[10px] py-2 px-4 rounded-full shadow-md transition-colors flex items-center gap-1.5 mb-1 shrink-0 backdrop-blur-md">
+                Explore <i className="fa-solid fa-arrow-right text-[8px]"></i>
+            </Link>
         </div>
     </div>
 </section>
