@@ -247,7 +247,7 @@ export default function Home() {
                         <p className="text-yellow-300 text-[8px] font-extrabold uppercase tracking-widest mb-0.5">Invest Smarter</p>
                         <h2 className="text-white text-base font-black leading-tight mb-0.5">Build Wealth &amp; Secures SIP</h2>
                         <p className="text-purple-200 text-[9px] mb-2">Make smart Investments today!</p>
-                        <Link href="/utility" className="inline-block bg-white text-apex-purple font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-yellow-50 transition-colors shadow">Invest Now</Link>
+                        <Link href="/finance" className="inline-block bg-white text-apex-purple font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-yellow-50 transition-colors shadow">Invest Now</Link>
                     </div>
                 </div>
                 {/* Slide 2: Real Estate */}
