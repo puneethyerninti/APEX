@@ -635,49 +635,11 @@ export default function Home() {
 <section id="matrimony" className="py-6 relative overflow-hidden">
     <div className="absolute inset-0 z-0">
         <img src="./Matrimony%20Hero.png" alt="Matrimony" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/90"></div>
     </div>
     <div className="relative z-10 px-4">
 
         <div className="flex flex-col items-center mb-5 reveal-up">
             <img src="Anand%20Matrimony%20logo.jpeg" alt="Anand Matrimony" className="h-10 object-contain rounded-lg shadow-md mb-1.5" />
-            <p className="text-rose-100 text-[10px] text-center font-bold tracking-tight">Verified profiles &amp; premium matchmaking.</p>
-        </div>
-
-        {/* Match Profiles (Side by Side Deck) */}
-        <div className="grid grid-cols-2 gap-2.5 max-w-md mx-auto">
-            <div className="bg-white p-3 rounded-xl flex flex-col gap-2 shadow-sm hover:scale-[1.01] transition-all duration-300 reveal-left delay-300">
-                <div className="flex items-center gap-2">
-                    <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Aanya" className="w-9 h-9 object-cover rounded-full border border-rose-100 shadow-sm flex-shrink-0" />
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-0.5">
-                            <h3 className="font-bold text-gray-800 text-[9px] truncate">Aanya S, 28</h3>
-                            <i className="fa-solid fa-circle-check text-blue-500 text-[8px] flex-shrink-0"></i>
-                        </div>
-                        <p className="text-[8px] text-gray-400 truncate">S/W Eng · BLR</p>
-                    </div>
-                </div>
-                <div className="flex gap-1.5 mt-1">
-                    <button className="w-full flex items-center justify-center border border-gray-150 text-gray-400 rounded py-1 hover:text-rose-500 hover:border-rose-200 transition-colors" aria-label="Save"><i className="fa-solid fa-star text-[9px]"></i></button>
-                </div>
-            </div>
-            
-            <div className="bg-white p-3 rounded-xl flex flex-col gap-2 shadow-sm hover:scale-[1.01] transition-all duration-300 relative reveal-right delay-400">
-                <div className="absolute top-1.5 right-1.5 bg-rose-500 text-white text-[6px] font-black px-1 py-0.2 rounded uppercase">New</div>
-                <div className="flex items-center gap-2">
-                    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Rohan" className="w-9 h-9 object-cover rounded-full border border-rose-100 shadow-sm flex-shrink-0" />
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-0.5">
-                            <h3 className="font-bold text-gray-800 text-[9px] truncate">Rohan P, 31</h3>
-                            <i className="fa-solid fa-circle-check text-blue-500 text-[8px] flex-shrink-0"></i>
-                        </div>
-                        <p className="text-[8px] text-gray-400 truncate">Biz Owner · BOM</p>
-                    </div>
-                </div>
-                <div className="flex gap-1.5 mt-1">
-                    <button className="w-full flex items-center justify-center border border-gray-150 text-gray-400 rounded py-1 hover:text-rose-500 hover:border-rose-200 transition-colors" aria-label="Save"><i className="fa-solid fa-star text-[9px]"></i></button>
-                </div>
-            </div>
         </div>
 
         <div className="text-center mt-4">
