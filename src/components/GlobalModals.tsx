@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
 
 export default function GlobalModals() {
@@ -12,6 +13,8 @@ export default function GlobalModals() {
     // Global state
     const walletBalance = useAppStore((state) => state.walletBalance);
     const deductMoney = useAppStore((state) => state.deductMoney);
+    const user = useAppStore((state) => state.user);
+    const { logout } = useAuth();
 
     useEffect(() => {
         const handleOpenModal = (e: any) => {
@@ -212,12 +215,12 @@ export default function GlobalModals() {
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
                                 <div className="w-16 h-16 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-xl font-black">
-                                    RS
+                                    {user?.name ? user.name.substring(0, 2).toUpperCase() : <i className="fa-solid fa-user"></i>}
                                 </div>
                                 <div>
-                                    <h3 className="font-black text-lg text-gray-900">Rohan Sharma</h3>
-                                    <p className="text-[10px] text-gray-500">+91 98765 43210</p>
-                                    <span className="mt-1 inline-block bg-green-100 text-green-700 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider">Premium Member</span>
+                                    <h3 className="font-black text-lg text-gray-900">{user?.name || 'User'}</h3>
+                                    <p className="text-[10px] text-gray-500">{user?.phone || 'No phone number'}</p>
+                                    {user?.isPremium && <span className="mt-1 inline-block bg-green-100 text-green-700 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider">Premium Member</span>}
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3 mt-2">
@@ -239,7 +242,7 @@ export default function GlobalModals() {
                                 </button>
                             </div>
                             
-                            <button onClick={() => window.location.href='/login'} className="w-full mt-2 py-3 bg-red-50 text-red-600 font-bold text-sm rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+                            <button onClick={() => { logout(); setModal(null); }} className="w-full mt-2 py-3 bg-red-50 text-red-600 font-bold text-sm rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
                                 <i className="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
                             </button>
                         </div>
