@@ -243,14 +243,14 @@ export default function Home() {
                 <div className="promo-slide relative flex items-center overflow-hidden bg-gray-900">
                     <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&amp;q=80&amp;auto=format&amp;fit=crop" alt="" className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay" />
                     <div className="absolute inset-0 bg-gradient-to-r from-[#1E0E4B] via-[#6C3FC5]/75 to-transparent"></div>
-                    <div className="relative p-4 z-10 flex-1">
-                        <div className="absolute top-4 right-4 flex flex-col items-end gap-0.5 z-20 reveal-up">
-                            <span className="text-yellow-400 text-xs font-black uppercase tracking-widest drop-shadow-md">APEX Trading Company</span>
-                            <span className="text-white/95 text-[10px] font-bold tracking-widest uppercase drop-shadow-md">AMFI - ARN NO - 327302</span>
+                    <div className="relative p-4 z-10 flex-1 flex flex-col items-center justify-center text-center">
+                        <div className="mb-2">
+                            <span className="block text-yellow-400 text-xs font-black uppercase tracking-widest drop-shadow-md">APEX Trading Company</span>
+                            <span className="block text-white/95 text-[10px] font-bold tracking-widest uppercase drop-shadow-md">AMFI - ARN NO - 327302</span>
                         </div>
-                        <h2 className="text-white text-base font-black leading-tight mb-0.5">Build Wealth &amp; Secures SIP</h2>
-                        <p className="text-purple-200 text-[9px] mb-2">Make smart Investments today!</p>
-                        <Link href="/finance" className="inline-block bg-white text-apex-purple font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-yellow-50 transition-colors shadow">Invest Now</Link>
+                        <h2 className="text-white text-lg font-black leading-tight mb-1">Build Wealth &amp; Secures SIP</h2>
+                        <p className="text-purple-200 text-[10px] mb-3">Make smart Investments today!</p>
+                        <Link href="/finance" className="inline-block bg-white text-apex-purple font-black text-[10px] px-5 py-2 rounded-full hover:bg-yellow-50 transition-colors shadow-lg">Invest Now</Link>
                     </div>
                 </div>
                 {/* Slide 2: Real Estate */}
