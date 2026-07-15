@@ -5,7 +5,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
 import { db } from '@/firebase.config';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function GlobalModals() {
     const [modal, setModal] = useState<string | null>(null);
@@ -15,7 +15,6 @@ export default function GlobalModals() {
     // Profile Edit State
     const [editName, setEditName] = useState('');
     const [editEmail, setEditEmail] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
     
     // Global state
     const walletBalance = useAppStore((state) => state.walletBalance);
@@ -45,19 +44,21 @@ export default function GlobalModals() {
     const handleSaveProfile = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user?.uid) return;
-        setIsSaving(true);
+        
+        // Optimistic UI Update: Instantly update local store and close modal
+        updateUserProfile({ name: editName, email: editEmail });
+        setModal('account'); 
+        
+        // Background sync to Firestore using setDoc with merge
         try {
             const userDocRef = doc(db, 'users', user.uid);
-            await updateDoc(userDocRef, {
+            await setDoc(userDocRef, {
                 name: editName,
                 email: editEmail,
-            });
-            updateUserProfile({ name: editName, email: editEmail });
-            setModal('account'); // Go back to account modal
+            }, { merge: true });
         } catch (error) {
             console.error("Failed to update profile", error);
-        } finally {
-            setIsSaving(false);
+            // Optionally could revert the store update here if it failed
         }
     };
 
@@ -313,8 +314,8 @@ export default function GlobalModals() {
                                 <button type="button" onClick={() => setModal('account')} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold text-sm rounded-xl hover:bg-gray-200 transition-colors">
                                     Cancel
                                 </button>
-                                <button type="submit" disabled={isSaving} className="flex-1 py-3 bg-[#6C3FC5] text-white font-bold text-sm rounded-xl hover:bg-[#5a34a8] disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
-                                    {isSaving ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Saving...</> : 'Save Profile'}
+                                <button type="submit" className="flex-1 py-3 bg-[#6C3FC5] text-white font-bold text-sm rounded-xl hover:bg-[#5a34a8] transition-colors flex justify-center items-center gap-2">
+                                    Save Profile
                                 </button>
                             </div>
                         </form>
