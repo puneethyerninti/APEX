@@ -244,15 +244,9 @@ export default function Home() {
                     <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&amp;q=80&amp;auto=format&amp;fit=crop" alt="" className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay" />
                     <div className="absolute inset-0 bg-gradient-to-r from-[#1E0E4B] via-[#6C3FC5]/75 to-transparent"></div>
                     <div className="relative p-4 z-10 flex-1">
-                        <div className="flex flex-col items-start gap-1 mb-2 reveal-up">
-                            <div className="inline-flex items-center gap-1.5 bg-yellow-400/20 border border-yellow-400/40 px-2 py-1 rounded shadow-sm backdrop-blur-sm">
-                                <i className="fa-solid fa-building-columns text-yellow-400 text-[9px]"></i>
-                                <span className="text-yellow-400 text-[9px] font-black uppercase tracking-widest drop-shadow-md">APEX Trading Company</span>
-                            </div>
-                            <div className="inline-flex items-center gap-1.5 bg-white/10 border border-white/20 px-2 py-0.5 rounded shadow-sm backdrop-blur-sm">
-                                <i className="fa-solid fa-certificate text-white/90 text-[8px]"></i>
-                                <span className="text-white/90 text-[8px] font-bold tracking-widest uppercase drop-shadow-md">AMFI - ARN NO - 327302</span>
-                            </div>
+                        <div className="absolute top-4 right-4 flex flex-col items-end gap-0.5 z-20 reveal-up">
+                            <span className="text-yellow-400 text-xs font-black uppercase tracking-widest drop-shadow-md">APEX Trading Company</span>
+                            <span className="text-white/95 text-[10px] font-bold tracking-widest uppercase drop-shadow-md">AMFI - ARN NO - 327302</span>
                         </div>
                         <h2 className="text-white text-base font-black leading-tight mb-0.5">Build Wealth &amp; Secures SIP</h2>
                         <p className="text-purple-200 text-[9px] mb-2">Make smart Investments today!</p>
