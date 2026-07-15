@@ -54,9 +54,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
           console.error("Error fetching/creating user doc:", error);
           // Fallback if firestore fails
+          const currentUser = useAppStore.getState().user;
           setUser({
             uid: firebaseUser.uid,
             phone: firebaseUser.phoneNumber,
+            ...(currentUser?.uid === firebaseUser.uid ? {
+              name: currentUser.name,
+              email: currentUser.email,
+              isPremium: currentUser.isPremium
+            } : {})
           });
         }
         

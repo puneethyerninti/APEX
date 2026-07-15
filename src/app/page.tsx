@@ -24,8 +24,9 @@ export default function Home() {
     }
 
 
-    // 3. Realty Carousel prev/next buttons
+    // 3. Realty & Academy Auto Carousels
     const realtyTrack = document.getElementById('realty-carousel-track');
+    const academyTrack = document.getElementById('academy-carousel-track');
     const realtyPrev = document.getElementById('realty-prev');
     const realtyNext = document.getElementById('realty-next');
 
@@ -52,6 +53,34 @@ export default function Home() {
     if (realtyPrev) realtyPrev.addEventListener('click', handlePrev);
     if (realtyNext) realtyNext.addEventListener('click', handleNext);
 
+    let realtyDir = 1;
+    const realtyTimer = setInterval(() => {
+        if (!realtyTrack) return;
+        const maxScroll = realtyTrack.scrollWidth - realtyTrack.clientWidth;
+        if (realtyTrack.scrollLeft >= maxScroll - 5) realtyDir = -1;
+        else if (realtyTrack.scrollLeft <= 5) realtyDir = 1;
+        
+        const card = realtyTrack.querySelector('.carousel-card');
+        if (card) {
+            const cardWidth = card.getBoundingClientRect().width + 12;
+            realtyTrack.scrollBy({ left: cardWidth * realtyDir, behavior: 'smooth' });
+        }
+    }, 3000);
+
+    let academyDir = 1;
+    const academyTimer = setInterval(() => {
+        if (!academyTrack) return;
+        const maxScroll = academyTrack.scrollWidth - academyTrack.clientWidth;
+        if (academyTrack.scrollLeft >= maxScroll - 5) academyDir = -1;
+        else if (academyTrack.scrollLeft <= 5) academyDir = 1;
+        
+        const card = academyTrack.firstElementChild;
+        if (card) {
+            const cardWidth = card.getBoundingClientRect().width + 12;
+            academyTrack.scrollBy({ left: cardWidth * academyDir, behavior: 'smooth' });
+        }
+    }, 3000);
+
     // 4. Scroll Reveal
     const revealEls = document.querySelectorAll('.reveal-up, .reveal-left, .reveal-right, .reveal-zoom');
     const observer = new IntersectionObserver((entries, obs) => {
@@ -67,7 +96,8 @@ export default function Home() {
     // Cleanup
     return () => {
         if (countdownInterval) clearInterval(countdownInterval);
-        stopPromo();
+        if (realtyTimer) clearInterval(realtyTimer);
+        if (academyTimer) clearInterval(academyTimer);
         if (realtyPrev) realtyPrev.removeEventListener('click', handlePrev);
         if (realtyNext) realtyNext.removeEventListener('click', handleNext);
         observer.disconnect();
@@ -527,7 +557,7 @@ export default function Home() {
         </div>
         
         {/* Horizontal Scroll Academy Deck */}
-        <div className="flex gap-3 overflow-x-auto scrollbar-none flex-nowrap pb-1">
+        <div id="academy-carousel-track" className="flex gap-3 overflow-x-auto scrollbar-none flex-nowrap pb-1">
             <div className="section-card p-4 flex flex-col w-56 flex-shrink-0 hover:scale-[1.01] transition-transform reveal-zoom delay-100">
                 <div className="flex items-center gap-2.5 mb-2.5">
                     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-base flex-shrink-0"><i className="fa-solid fa-chalkboard-user"></i></div>

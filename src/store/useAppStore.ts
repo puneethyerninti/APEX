@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import Cookies from 'js-cookie';
 
 interface UserProfile {
   uid: string;
@@ -23,6 +24,18 @@ interface AppState {
   deductMoney: (amount: number) => void;
 }
 
+const cookieStorage = {
+  getItem: (name: string) => {
+    return Cookies.get(name) || null;
+  },
+  setItem: (name: string, value: string) => {
+    Cookies.set(name, value, { expires: 365, path: '/' });
+  },
+  removeItem: (name: string) => {
+    Cookies.remove(name, { path: '/' });
+  },
+};
+
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
@@ -41,7 +54,8 @@ export const useAppStore = create<AppState>()(
       deductMoney: (amount) => set((state) => ({ walletBalance: Math.max(0, state.walletBalance - amount) })),
     }),
     {
-      name: 'apex-storage', // Saves to localStorage
+      name: 'apex-storage', // Saves to cookies now
+      storage: createJSONStorage(() => cookieStorage),
     }
   )
 );
