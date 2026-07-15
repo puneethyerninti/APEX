@@ -2,13 +2,14 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { api } from '@/services/api';
+import { auth } from '@/firebase.config';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (token: string, userData: any) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,46 +18,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const setUser = useAppStore((state) => state.setUser);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // Check for existing session on mount
-    const checkAuth = async () => {
-      const token = localStorage.getItem('apex_token');
-      if (token) {
-        try {
-          // Verify token with backend
-          // const response = await api.get('/auth/me');
-          // setUser(response.data);
-          
-          // For now, simulate success if token exists
-          setIsAuthenticated(true);
-        } catch (error) {
-          console.error("Token verification failed", error);
-          localStorage.removeItem('apex_token');
-          setIsAuthenticated(false);
+    // Listen for Firebase auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: User | null) => {
+      if (firebaseUser) {
+        // User is logged in
+        setUser({
+          uid: firebaseUser.uid,
+          phone: firebaseUser.phoneNumber,
+        });
+        setIsAuthenticated(true);
+        if (pathname === '/login') {
+          router.push('/');
+        }
+      } else {
+        // User is logged out
+        setUser(null);
+        setIsAuthenticated(false);
+        if (pathname !== '/login') {
+          router.push('/login');
         }
       }
       setIsLoading(false);
-    };
+    });
 
-    checkAuth();
-  }, [setUser]);
+    return () => unsubscribe();
+  }, [setUser, router, pathname]);
 
-  const login = (token: string, userData: any) => {
-    localStorage.setItem('apex_token', token);
-    setUser(userData);
-    setIsAuthenticated(true);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('apex_token');
-    setUser(null);
-    setIsAuthenticated(false);
-    window.location.href = '/login';
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, logout }}>
       {children}
     </AuthContext.Provider>
   );

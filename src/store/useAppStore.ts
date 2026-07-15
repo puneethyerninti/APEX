@@ -2,11 +2,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  isPremium: boolean;
+  uid: string;
+  phone: string | null;
+  name?: string;
+  isPremium?: boolean;
 }
 
 interface AppState {
@@ -25,9 +24,9 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      walletBalance: 4250.00, // Default for UI purposes, will be overridden by real API
+      walletBalance: 0, // Default to 0 for real app
       user: null,
-      cartCount: 3,
+      cartCount: 0, // Default to 0 for real app
 
       setWalletBalance: (balance) => set({ walletBalance: balance }),
       setUser: (user) => set({ user }),

@@ -1,19 +1,28 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { api } from '@/services/api';
-import { useAuth } from '@/context/AuthContext';
+import { auth } from '@/firebase.config';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 
 export default function LoginPage() {
     const router = useRouter();
     const [step, setStep] = useState<'phone' | 'otp'>('phone');
     const [phone, setPhone] = useState('');
-    const [otp, setOtp] = useState(['', '', '', '']);
+    const [otp, setOtp] = useState(['', '', '', '', '', '']); // Firebase OTP is 6 digits
     const [isLoading, setIsLoading] = useState(false);
-    const { login } = useAuth();
     const [errorMsg, setErrorMsg] = useState('');
+    const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
+    useEffect(() => {
+        // Initialize RecaptchaVerifier
+        if (!(window as any).recaptchaVerifier) {
+            (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                size: 'invisible',
+            });
+        }
+    }, []);
 
     const handlePhoneSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -21,10 +30,20 @@ export default function LoginPage() {
         if (phone.length === 10) {
             setIsLoading(true);
             try {
-                await api.post('/auth/send-otp', { phone });
+                const phoneNumber = `+91${phone}`;
+                const appVerifier = (window as any).recaptchaVerifier;
+                const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+                setConfirmationResult(confirmation);
                 setStep('otp');
             } catch (err: any) {
-                setErrorMsg(err.response?.data?.error || 'Failed to send OTP');
+                console.error("SMS Error:", err);
+                setErrorMsg(err.message || 'Failed to send OTP. Try again.');
+                // Reset recaptcha if error
+                if ((window as any).recaptchaVerifier) {
+                    (window as any).recaptchaVerifier.render().then((widgetId: any) => {
+                        window.grecaptcha.reset(widgetId);
+                    });
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -38,7 +57,7 @@ export default function LoginPage() {
             setOtp(newOtp);
             
             // Auto-focus next input
-            if (value !== '' && index < 3) {
+            if (value !== '' && index < 5) {
                 const nextInput = document.getElementById(`otp-${index + 1}`);
                 nextInput?.focus();
             }
@@ -49,14 +68,14 @@ export default function LoginPage() {
         e.preventDefault();
         setErrorMsg('');
         const fullOtp = otp.join('');
-        if (fullOtp.length === 4) {
+        if (fullOtp.length === 6 && confirmationResult) {
             setIsLoading(true);
             try {
-                const response = await api.post('/auth/verify-otp', { phone, otp: fullOtp });
-                login(response.data.token, response.data.user);
-                router.push('/');
+                await confirmationResult.confirm(fullOtp);
+                // AuthContext will automatically catch this and redirect to '/'
             } catch (err: any) {
-                setErrorMsg(err.response?.data?.error || 'Invalid OTP');
+                console.error("OTP Error:", err);
+                setErrorMsg(err.message || 'Invalid OTP. Please try again.');
             } finally {
                 setIsLoading(false);
             }
@@ -65,14 +84,15 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
+            <div id="recaptcha-container"></div>
             {/* Background elements */}
             <div className="absolute top-0 w-full h-64 hero-gradient rounded-b-[40px] shadow-sm pointer-events-none"></div>
 
             <div className="w-full max-w-sm z-10 bg-white rounded-3xl shadow-xl p-8 animate-[slideUp_0.4s_ease-out]">
                 {/* Logo & Brand */}
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-[#F4F6FB] rounded-2xl mx-auto flex items-center justify-center text-[#6C3FC5] text-3xl font-black mb-4 shadow-sm border border-gray-100">
-                        A
+                    <div className="w-16 h-16 bg-[#F4F6FB] rounded-2xl mx-auto flex items-center justify-center text-[#6C3FC5] text-3xl font-black mb-4 shadow-sm border border-gray-100 overflow-hidden">
+                        <img src="/icon.jpeg" alt="APEX Logo" className="w-full h-full object-cover" />
                     </div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">Welcome to APEX</h1>
                     <p className="text-xs text-gray-500 mt-2 font-medium">Your Life. Simplified.</p>
@@ -117,7 +137,7 @@ export default function LoginPage() {
                             <p className="text-xs text-gray-500">OTP sent to +91 {phone}</p>
                         </div>
                         
-                        <div className="flex justify-center gap-3">
+                        <div className="flex justify-center gap-2">
                             {otp.map((digit, idx) => (
                                 <input
                                     key={idx}
@@ -126,7 +146,7 @@ export default function LoginPage() {
                                     maxLength={1}
                                     value={digit}
                                     onChange={(e) => handleOtpChange(idx, e.target.value)}
-                                    className="w-12 h-14 bg-[#F4F6FB] border-0 rounded-xl text-center text-xl font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#6C3FC5]/30 transition-all"
+                                    className="w-10 h-12 sm:w-12 sm:h-14 bg-[#F4F6FB] border-0 rounded-xl text-center text-lg sm:text-xl font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#6C3FC5]/30 transition-all px-0"
                                     required
                                 />
                             ))}
@@ -137,7 +157,7 @@ export default function LoginPage() {
                         <div className="flex flex-col gap-3 mt-4">
                             <button 
                                 type="submit" 
-                                disabled={otp.join('').length !== 4 || isLoading}
+                                disabled={otp.join('').length !== 6 || isLoading}
                                 className="w-full bg-[#6C3FC5] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-purple-500/20 hover:bg-[#5a34a8] disabled:opacity-50 disabled:shadow-none transition-all flex justify-center items-center gap-2"
                             >
                                 {isLoading ? (
@@ -154,7 +174,7 @@ export default function LoginPage() {
                 )}
 
                 <div className="mt-8 text-center">
-                    <p className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Secure Login</p>
+                    <p className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Secure Firebase Login</p>
                 </div>
             </div>
 

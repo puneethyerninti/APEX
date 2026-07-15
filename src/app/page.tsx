@@ -3,8 +3,10 @@
 import React from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import { useAppStore } from '@/store/useAppStore';
 
 export default function Home() {
+  const user = useAppStore((state) => state.user);
   React.useEffect(() => {
     // 1. Deals of the day countdown
     const countdownEl = document.getElementById('countdown-timer');
@@ -192,8 +194,8 @@ export default function Home() {
         <div>
             <p className="text-purple-200 text-[10px] font-bold uppercase tracking-wider">Welcome back,</p>
             <div className="flex items-center gap-2 mt-0.5">
-                <h1 className="text-white text-lg font-black">Rohit Sharma</h1>
-                <span className="prime-badge">★ PRIME</span>
+                <h1 className="text-white text-lg font-black">{user?.name || user?.phone || 'Guest'}</h1>
+                {user?.isPremium && <span className="prime-badge">★ PRIME</span>}
             </div>
         </div>
         <div className="flex items-center gap-2">
