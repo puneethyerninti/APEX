@@ -33,22 +33,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (userDoc.exists()) {
             const userData = userDoc.data();
+            const currentUser = useAppStore.getState().user;
+            // Merge firestore data with current local state to prevent wiping
             setUser({
               uid: firebaseUser.uid,
               phone: firebaseUser.phoneNumber,
-              name: userData.name,
-              email: userData.email,
-              isPremium: userData.isPremium,
+              name: userData.name || currentUser?.name,
+              email: userData.email || currentUser?.email,
+              isPremium: userData.isPremium || currentUser?.isPremium,
             });
           } else {
-            // First time login, create user doc
+            // First time login, create user doc but KEEP local state if it exists
+            const currentUser = useAppStore.getState().user;
             await setDoc(userDocRef, {
               phone: firebaseUser.phoneNumber,
+              name: currentUser?.name || null,
+              email: currentUser?.email || null,
               createdAt: serverTimestamp(),
             });
             setUser({
               uid: firebaseUser.uid,
               phone: firebaseUser.phoneNumber,
+              name: currentUser?.name,
+              email: currentUser?.email,
+              isPremium: currentUser?.isPremium,
             });
           }
         } catch (error) {
