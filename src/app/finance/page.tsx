@@ -88,7 +88,7 @@ export default function FinancePage() {
                       <span className="text-sm font-bold text-gray-800">Credit Cards</span>
                   </div>
                   <ul className="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-blue-100">
-                      <li><a href="#" className="hover:text-blue-600 font-medium block">Apply New</a></li>
+                      <li><a href="https://apextradingcompany.banksupport.in/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 font-medium block">Apply New</a></li>
                       <li><a href="#" className="hover:text-blue-600 font-medium block">Pay Bill</a></li>
                       <li><a href="#" className="hover:text-blue-600 font-medium block">Offers</a></li>
                   </ul>
