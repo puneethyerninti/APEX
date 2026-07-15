@@ -14,6 +14,17 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
     const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+    const [resendTimer, setResendTimer] = useState(0);
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (resendTimer > 0) {
+            interval = setInterval(() => {
+                setResendTimer((prev) => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [resendTimer]);
 
     useEffect(() => {
         // Initialize RecaptchaVerifier
@@ -37,6 +48,7 @@ export default function LoginPage() {
                 const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
                 setConfirmationResult(confirmation);
                 setStep('otp');
+                setResendTimer(30);
             } catch (err: any) {
                 console.error("SMS Error:", err);
                 setErrorMsg(err.message || 'Failed to send OTP. Try again.');
@@ -70,6 +82,32 @@ export default function LoginPage() {
         if (e.key === 'Backspace' && otp[index] === '' && index > 0) {
             const prevInput = document.getElementById(`otp-${index - 1}`);
             prevInput?.focus();
+        } else if (e.key === 'ArrowLeft' && index > 0) {
+            const prevInput = document.getElementById(`otp-${index - 1}`);
+            prevInput?.focus();
+            setTimeout(() => (prevInput as HTMLInputElement)?.setSelectionRange(1, 1), 0);
+        } else if (e.key === 'ArrowRight' && index < 5) {
+            const nextInput = document.getElementById(`otp-${index + 1}`);
+            nextInput?.focus();
+            setTimeout(() => (nextInput as HTMLInputElement)?.setSelectionRange(1, 1), 0);
+        }
+    };
+
+    const handleResendOtp = async () => {
+        if (resendTimer > 0 || phone.length !== 10) return;
+        setIsLoading(true);
+        setErrorMsg('');
+        try {
+            const phoneNumber = `+91${phone}`;
+            const appVerifier = (window as any).recaptchaVerifier;
+            const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+            setConfirmationResult(confirmation);
+            setResendTimer(30);
+        } catch (err: any) {
+            console.error("Resend SMS Error:", err);
+            setErrorMsg(err.message || 'Failed to resend OTP.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -156,7 +194,7 @@ export default function LoginPage() {
                                     value={digit}
                                     onChange={(e) => handleOtpChange(idx, e.target.value)}
                                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                                    className="w-[2.3rem] h-11 sm:w-10 sm:h-12 shrink-0 bg-[#F4F6FB] border-0 rounded-xl text-center text-lg font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#6C3FC5]/30 transition-all px-0"
+                                    className="w-[2.3rem] h-11 sm:w-10 sm:h-12 shrink-0 bg-gray-50 border border-gray-300 rounded-xl text-center text-lg font-black text-gray-900 focus:outline-none focus:border-[#6C3FC5] focus:ring-1 focus:ring-[#6C3FC5] transition-all px-0"
                                     required
                                 />
                             ))}
@@ -176,9 +214,19 @@ export default function LoginPage() {
                                     'Verify & Login'
                                 )}
                             </button>
-                            <button type="button" onClick={() => setStep('phone')} className="text-xs font-bold text-gray-500 hover:text-[#6C3FC5]">
-                                Change Number
-                            </button>
+                            
+                            <div className="flex items-center justify-between mt-1 px-1">
+                                <button type="button" onClick={() => setStep('phone')} className="text-xs font-bold text-gray-500 hover:text-[#6C3FC5]">
+                                    Change Number
+                                </button>
+                                {resendTimer > 0 ? (
+                                    <span className="text-xs font-medium text-gray-400">Resend in {resendTimer}s</span>
+                                ) : (
+                                    <button type="button" onClick={handleResendOtp} disabled={isLoading} className="text-xs font-bold text-[#6C3FC5] hover:underline disabled:opacity-50">
+                                        Resend OTP
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </form>
                 )}
