@@ -209,31 +209,31 @@ export default function Home() {
     </div>
 
     {/* Payments (Flipkart Deck Style Compact) */}
-    <div onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: { type: 'checkout', data: { amount: '₹ 0.00', plan: 'Scan & Pay' } } }))} className="bg-white rounded-2xl p-3 mb-4 shadow-md reveal-up delay-100 cursor-pointer hover:scale-[1.01] transition-transform">
-        <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-purple-50 text-apex-purple flex items-center justify-center shadow-inner flex-shrink-0">
-                    <i className="fa-solid fa-indian-rupee-sign text-sm"></i>
+    <div onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: { type: 'checkout', data: { amount: '₹ 0.00', plan: 'Scan & Pay' } } }))} className="bg-white rounded-2xl p-4 mb-4 shadow-md reveal-up delay-100 cursor-pointer hover:scale-[1.01] transition-transform overflow-visible">
+        <div className="flex items-center justify-between h-full">
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 text-apex-purple flex items-center justify-center shadow-inner flex-shrink-0">
+                    <i className="fa-solid fa-indian-rupee-sign text-base"></i>
                 </div>
-                <div>
-                    <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider block">Payments</span>
-                    <span className="text-sm font-black text-gray-900">Scan &amp; Pay</span>
-                </div>
-            </div>
-            
-            <div className="w-px h-6 bg-gray-100"></div>
-            
-            <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center shadow-inner flex-shrink-0">
-                    <i className="fa-solid fa-coins text-sm"></i>
-                </div>
-                <div>
-                    <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider block">APEX Coins</span>
-                    <span className="text-sm font-black text-gray-900 flex items-center gap-0.5">2,560</span>
+                <div className="flex flex-col justify-center gap-1">
+                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider leading-none">Payments</span>
+                    <span className="text-sm font-black text-gray-900 leading-none">Scan &amp; Pay</span>
                 </div>
             </div>
             
-            <i className="fa-solid fa-chevron-right text-gray-300 text-xs pl-1"></i>
+            <div className="w-px h-8 bg-gray-200"></div>
+            
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center shadow-inner flex-shrink-0">
+                    <i className="fa-solid fa-coins text-base"></i>
+                </div>
+                <div className="flex flex-col justify-center gap-1">
+                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider leading-none">APEX Coins</span>
+                    <span className="text-sm font-black text-gray-900 leading-none flex items-center gap-0.5">2,560</span>
+                </div>
+            </div>
+            
+            <i className="fa-solid fa-chevron-right text-gray-300 text-sm pl-1 flex-shrink-0"></i>
         </div>
     </div>
 
@@ -254,11 +254,77 @@ export default function Home() {
                         </div>
                         
                         <div className="mt-auto">
-                            <h2 className="text-white text-sm font-bold leading-tight mb-1">Build Wealth &amp; Secures SIP</h2>
-                            <p className="text-purple-200 text-[10px] mb-3">Make smart Investments today!</p>
-                            <Link href="/finance" className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-black text-[10px] px-5 py-2.5 rounded-full hover:scale-[1.02] active:scale-95 transition-all shadow-lg">
-                                Invest Now <i className="fa-solid fa-arrow-right"></i>
-                            </Link>
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 className="text-white text-sm font-bold leading-tight mb-0.5">Build Wealth &amp; Secures SIP</h2>
+                                    <p className="text-purple-200 text-[10px]">Make smart Investments today!</p>
+                                </div>
+                                <Link href="/finance" className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-black text-[10px] px-4 py-2 rounded-full hover:scale-[1.02] active:scale-95 transition-all shadow-lg whitespace-nowrap">
+                                    Invest Now <i className="fa-solid fa-arrow-right"></i>
+                                </Link>
+                            </div>
+
+                            {/* Investment Grid */}
+                            <div className="mb-3">
+                                <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Investment</h3>
+                                <div className="grid grid-cols-4 gap-2">
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-rose-400 shadow-inner">
+                                            <i className="fa-solid fa-calendar-day text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Daily SIP<br/>₹100</span>
+                                    </div>
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-blue-400 shadow-inner">
+                                            <i className="fa-solid fa-calendar-days text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Monthly SIP<br/>₹2,000</span>
+                                    </div>
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-orange-400 shadow-inner">
+                                            <i className="fa-solid fa-piggy-bank text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Small SIP<br/>₹50</span>
+                                    </div>
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-emerald-400 shadow-inner">
+                                            <i className="fa-solid fa-arrow-trend-up text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Top<br/>SIPs</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Insurance Grid */}
+                            <div>
+                                <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Insurance</h3>
+                                <div className="grid grid-cols-4 gap-2">
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-red-400 shadow-inner">
+                                            <i className="fa-solid fa-heart-pulse text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Health<br/>Insurance</span>
+                                    </div>
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-teal-400 shadow-inner">
+                                            <i className="fa-solid fa-umbrella text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Life<br/>Insurance</span>
+                                    </div>
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-purple-400 shadow-inner">
+                                            <i className="fa-solid fa-car-burst text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Motor<br/>Insurance</span>
+                                    </div>
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-blue-400 shadow-inner">
+                                            <i className="fa-solid fa-plane-departure text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Travel<br/>Insurance</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
