@@ -146,7 +146,7 @@ export default function LoginPage() {
                             <p className="text-xs text-gray-500">OTP sent to +91 {phone}</p>
                         </div>
                         
-                        <div className="flex justify-between sm:justify-center gap-1 sm:gap-2">
+                        <div className="flex justify-center gap-1.5 sm:gap-2">
                             {otp.map((digit, idx) => (
                                 <input
                                     key={idx}
@@ -156,7 +156,7 @@ export default function LoginPage() {
                                     value={digit}
                                     onChange={(e) => handleOtpChange(idx, e.target.value)}
                                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                                    className="w-9 h-11 sm:w-11 sm:h-12 bg-[#F4F6FB] border-0 rounded-xl text-center text-lg font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#6C3FC5]/30 transition-all px-0"
+                                    className="w-[2.3rem] h-11 sm:w-10 sm:h-12 shrink-0 bg-[#F4F6FB] border-0 rounded-xl text-center text-lg font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#6C3FC5]/30 transition-all px-0"
                                     required
                                 />
                             ))}
