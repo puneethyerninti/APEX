@@ -23,47 +23,6 @@ export default function Home() {
         }, 1000);
     }
 
-    // 2. Promo Carousel auto-slide and dots click listeners
-    const promoTrack = document.getElementById('promo-track');
-    const promoDots = document.querySelectorAll('.promo-dot');
-    let promoIndex = 0;
-    let promoTimer: NodeJS.Timeout | null = null;
-    const totalPromo = 3;
-
-    const goPromo = (idx: number) => {
-        if (!promoTrack) return;
-        promoIndex = ((idx % totalPromo) + totalPromo) % totalPromo;
-        promoTrack.style.transform = `translateX(-${promoIndex * 100}%)`;
-        promoDots.forEach((d, i) => d.classList.toggle('active', i === promoIndex));
-    };
-
-    const startPromo = () => {
-        stopPromo();
-        promoTimer = setInterval(() => goPromo(promoIndex + 1), 4200);
-    };
-
-    const stopPromo = () => {
-        if (promoTimer) clearInterval(promoTimer);
-    };
-
-    if (promoDots.length > 0) {
-        promoDots.forEach(dot => {
-            dot.addEventListener('click', () => {
-                stopPromo();
-                const indexAttr = dot.getAttribute('data-index');
-                if (indexAttr) {
-                    goPromo(parseInt(indexAttr, 10));
-                }
-                startPromo();
-            });
-        });
-        const promoViewport = document.getElementById('promo-viewport');
-        if (promoViewport) {
-            promoViewport.addEventListener('mouseenter', stopPromo);
-            promoViewport.addEventListener('mouseleave', startPromo);
-        }
-        startPromo();
-    }
 
     // 3. Realty Carousel prev/next buttons
     const realtyTrack = document.getElementById('realty-carousel-track');
@@ -208,34 +167,6 @@ export default function Home() {
         </div>
     </div>
 
-    {/* Payments (Flipkart Deck Style Compact) */}
-    <div onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: { type: 'checkout', data: { amount: '₹ 0.00', plan: 'Scan & Pay' } } }))} className="bg-white rounded-2xl p-4 mb-4 shadow-md reveal-up delay-100 cursor-pointer hover:scale-[1.01] transition-transform overflow-visible">
-        <div className="flex items-center justify-between h-full">
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 text-apex-purple flex items-center justify-center shadow-inner flex-shrink-0">
-                    <i className="fa-solid fa-indian-rupee-sign text-base"></i>
-                </div>
-                <div className="flex flex-col justify-center gap-1">
-                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider leading-none">Payments</span>
-                    <span className="text-sm font-black text-gray-900 leading-none">Scan &amp; Pay</span>
-                </div>
-            </div>
-            
-            <div className="w-px h-8 bg-gray-200"></div>
-            
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center shadow-inner flex-shrink-0">
-                    <i className="fa-solid fa-coins text-base"></i>
-                </div>
-                <div className="flex flex-col justify-center gap-1">
-                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider leading-none">APEX Coins</span>
-                    <span className="text-sm font-black text-gray-900 leading-none flex items-center gap-0.5">2,560</span>
-                </div>
-            </div>
-            
-            <i className="fa-solid fa-chevron-right text-gray-300 text-sm pl-1 flex-shrink-0"></i>
-        </div>
-    </div>
 
     {/* Promo Carousel (Compact & Premium) */}
     <div className="reveal-up delay-200">
@@ -328,37 +259,8 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
-                {/* Slide 2: Real Estate */}
-                <div className="promo-slide relative flex items-center overflow-hidden bg-emerald-900">
-                    <img src="./APEX%20Hero(APEX%20Store).jpeg" alt="" className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#064e3b] via-[#047857]/75 to-transparent"></div>
-                    <div className="relative p-4 z-10 flex-1">
-                        <p className="text-emerald-200 text-[8px] font-extrabold uppercase tracking-widest mb-0.5">Dream Home</p>
-                        <h2 className="text-white text-base font-black leading-tight mb-0.5">Find Your Perfect Home</h2>
-                        <p className="text-emerald-100 text-[9px] mb-2">Premium properties across India</p>
-                        <Link href="/realty" className="inline-block bg-white text-emerald-700 font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-emerald-50 transition-colors shadow">Explore Now</Link>
-                    </div>
-                </div>
-                {/* Slide 3: Matrimony */}
-                <div className="promo-slide relative flex items-center overflow-hidden bg-rose-900">
-                    <img src="./Matrimony%20Hero.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#7f1d1d] via-[#be123c]/75 to-transparent"></div>
-                    <div className="relative p-4 z-10 flex-1">
-                        <p className="text-rose-200 text-[8px] font-extrabold uppercase tracking-widest mb-0.5">Find Your Match</p>
-                        <h2 className="text-white text-base font-black leading-tight mb-0.5">Anand Matrimony</h2>
-                        <p className="text-rose-100 text-[9px] mb-2">Premium verified profiles</p>
-                        <Link href="/matrimony" className="inline-block bg-white text-rose-600 font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-rose-50 transition-colors shadow">View Profiles</Link>
-                    </div>
-                </div>
             </div>
-        </div>
-        {/* Dots */}
-        <div className="flex justify-center gap-1.5 mt-2" id="promo-dots">
-            <button className="promo-dot active" data-index="0" aria-label="Slide 1"></button>
-            <button className="promo-dot" data-index="1" aria-label="Slide 2"></button>
-            <button className="promo-dot" data-index="2" aria-label="Slide 3"></button>
-        </div>
-    </div>
+        </div>    </div>
 </section>
 
 {/* Deals of the Day Deck */}
