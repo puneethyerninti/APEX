@@ -90,7 +90,7 @@ export default function Page() {
       
       const msgData = {
           roomId: ROOM_ID,
-          senderId: user?.id || 'guest',
+          senderId: user?.uid || 'guest',
           text: chatInput,
           timestamp: new Date().toISOString()
       };
@@ -383,7 +383,7 @@ export default function Page() {
                             <span className="text-[9px] bg-gray-200 text-gray-500 px-2 py-1 rounded-full">Today</span>
                         </div>
                         {messages.map((msg, i) => {
-                            const isMe = msg.senderId === (user?.id || 'guest');
+                            const isMe = msg.senderId === (user?.uid || 'guest');
                             return (
                                 <div key={i} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
                                     {!isMe && <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&amp;fit=crop&amp;q=80" alt="Aanya" className="w-6 h-6 rounded-full self-end" />}
