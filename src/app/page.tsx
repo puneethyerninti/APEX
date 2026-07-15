@@ -243,14 +243,21 @@ export default function Home() {
                 <div className="promo-slide relative flex items-center overflow-hidden bg-gray-900">
                     <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&amp;q=80&amp;auto=format&amp;fit=crop" alt="" className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay" />
                     <div className="absolute inset-0 bg-gradient-to-r from-[#1E0E4B] via-[#6C3FC5]/75 to-transparent"></div>
-                    <div className="relative p-4 z-10 flex-1 flex flex-col items-center justify-center text-center">
-                        <div className="mb-2">
-                            <span className="block text-yellow-400 text-xs font-black uppercase tracking-widest drop-shadow-md">APEX Trading Company</span>
-                            <span className="block text-white/95 text-[10px] font-bold tracking-widest uppercase drop-shadow-md">AMFI - ARN NO - 327302</span>
+                    <div className="relative p-5 z-10 flex-1 flex flex-col justify-between h-full reveal-up">
+                        <div className="flex flex-col items-start border-l-4 border-yellow-400 pl-3.5 mb-3 shadow-sm">
+                            <h1 className="text-white text-xl sm:text-2xl font-black uppercase tracking-[0.15em] drop-shadow-xl leading-tight">
+                                APEX <span className="text-yellow-400">Trading Company</span>
+                            </h1>
+                            <p className="text-white/90 text-[9px] font-bold tracking-[0.2em] mt-1.5 bg-black/30 px-2.5 py-1 rounded shadow-inner backdrop-blur-sm">AMFI - ARN NO - 327302</p>
                         </div>
-                        <h2 className="text-white text-lg font-black leading-tight mb-1">Build Wealth &amp; Secures SIP</h2>
-                        <p className="text-purple-200 text-[10px] mb-3">Make smart Investments today!</p>
-                        <Link href="/finance" className="inline-block bg-white text-apex-purple font-black text-[10px] px-5 py-2 rounded-full hover:bg-yellow-50 transition-colors shadow-lg">Invest Now</Link>
+                        
+                        <div className="mt-auto">
+                            <h2 className="text-white text-sm font-bold leading-tight mb-1">Build Wealth &amp; Secures SIP</h2>
+                            <p className="text-purple-200 text-[10px] mb-3">Make smart Investments today!</p>
+                            <Link href="/finance" className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-black text-[10px] px-5 py-2.5 rounded-full hover:scale-[1.02] active:scale-95 transition-all shadow-lg">
+                                Invest Now <i className="fa-solid fa-arrow-right"></i>
+                            </Link>
+                        </div>
                     </div>
                 </div>
                 {/* Slide 2: Real Estate */}
