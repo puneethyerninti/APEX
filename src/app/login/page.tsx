@@ -18,9 +18,11 @@ export default function LoginPage() {
     useEffect(() => {
         // Initialize RecaptchaVerifier
         if (!(window as any).recaptchaVerifier) {
-            (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
                 size: 'invisible',
             });
+            (window as any).recaptchaVerifier = verifier;
+            verifier.render(); // Pre-warm recaptcha
         }
     }, []);
 
@@ -64,6 +66,13 @@ export default function LoginPage() {
         }
     };
 
+    const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Backspace' && otp[index] === '' && index > 0) {
+            const prevInput = document.getElementById(`otp-${index - 1}`);
+            prevInput?.focus();
+        }
+    };
+
     const handleOtpSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrorMsg('');
@@ -83,12 +92,12 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 relative">
             <div id="recaptcha-container"></div>
             {/* Background elements */}
             <div className="absolute top-0 w-full h-64 hero-gradient rounded-b-[40px] shadow-sm pointer-events-none"></div>
 
-            <div className="w-full max-w-sm z-10 bg-white rounded-3xl shadow-xl p-8 animate-[slideUp_0.4s_ease-out]">
+            <div className="w-full max-w-sm z-10 bg-white rounded-3xl shadow-xl p-6 sm:p-8 animate-[slideUp_0.4s_ease-out]">
                 {/* Logo & Brand */}
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-[#F4F6FB] rounded-2xl mx-auto flex items-center justify-center text-[#6C3FC5] text-3xl font-black mb-4 shadow-sm border border-gray-100 overflow-hidden">
@@ -137,7 +146,7 @@ export default function LoginPage() {
                             <p className="text-xs text-gray-500">OTP sent to +91 {phone}</p>
                         </div>
                         
-                        <div className="flex justify-center gap-2">
+                        <div className="flex justify-between sm:justify-center gap-1 sm:gap-2">
                             {otp.map((digit, idx) => (
                                 <input
                                     key={idx}
@@ -146,7 +155,8 @@ export default function LoginPage() {
                                     maxLength={1}
                                     value={digit}
                                     onChange={(e) => handleOtpChange(idx, e.target.value)}
-                                    className="w-10 h-12 sm:w-12 sm:h-14 bg-[#F4F6FB] border-0 rounded-xl text-center text-lg sm:text-xl font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#6C3FC5]/30 transition-all px-0"
+                                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                                    className="w-9 h-11 sm:w-11 sm:h-12 bg-[#F4F6FB] border-0 rounded-xl text-center text-lg font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#6C3FC5]/30 transition-all px-0"
                                     required
                                 />
                             ))}
