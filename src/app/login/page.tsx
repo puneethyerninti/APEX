@@ -41,7 +41,7 @@ export default function LoginPage() {
                 // Reset recaptcha if error
                 if ((window as any).recaptchaVerifier) {
                     (window as any).recaptchaVerifier.render().then((widgetId: any) => {
-                        window.grecaptcha.reset(widgetId);
+                        (window as any).grecaptcha.reset(widgetId);
                     });
                 }
             } finally {
