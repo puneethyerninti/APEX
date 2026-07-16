@@ -225,9 +225,9 @@ export default function Home() {
                                 </Link>
                             </div>
 
-                            {/* Investment Grid */}
+                            {/* Mutual Funds Grid */}
                             <div className="mb-3">
-                                <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Investment</h3>
+                                <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Mutual Funds</h3>
                                 <div className="grid grid-cols-4 gap-2">
                                     <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-rose-400 shadow-inner">
@@ -252,6 +252,68 @@ export default function Home() {
                                             <i className="fa-solid fa-arrow-trend-up text-lg"></i>
                                         </div>
                                         <span className="text-white text-[8px] font-medium leading-tight">Top<br/>SIPs</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Investments Grid */}
+                            <div className="mb-3">
+                                <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Investments</h3>
+                                <div className="grid grid-cols-4 gap-2">
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-amber-400 shadow-inner">
+                                            <i className="fa-solid fa-vault text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Fixed Deposit<br/>(FD)</span>
+                                    </div>
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-cyan-400 shadow-inner">
+                                            <i className="fa-solid fa-landmark text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">NPS<br/>&nbsp;</span>
+                                    </div>
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-indigo-400 shadow-inner">
+                                            <i className="fa-solid fa-chart-pie text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">NFO<br/>&nbsp;</span>
+                                    </div>
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-fuchsia-400 shadow-inner">
+                                            <i className="fa-solid fa-file-contract text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Bonds<br/>&nbsp;</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Loans Grid */}
+                            <div className="mb-3">
+                                <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Loans</h3>
+                                <div className="grid grid-cols-4 gap-2">
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-sky-400 shadow-inner">
+                                            <i className="fa-solid fa-user-tag text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Personal<br/>Loan</span>
+                                    </div>
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-lime-400 shadow-inner">
+                                            <i className="fa-solid fa-briefcase text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Business<br/>Loan</span>
+                                    </div>
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-pink-400 shadow-inner">
+                                            <i className="fa-solid fa-house-chimney text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Home<br/>Loan</span>
+                                    </div>
+                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-yellow-400 shadow-inner">
+                                            <i className="fa-solid fa-building-columns text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">LAP<br/>(Property)</span>
                                     </div>
                                 </div>
                             </div>

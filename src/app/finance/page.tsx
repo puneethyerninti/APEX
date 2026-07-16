@@ -59,7 +59,7 @@ export default function FinancePage() {
               <div className="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all">
                   <div className="flex items-center gap-2">
                       <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-arrow-trend-up"></i></div>
-                      <span className="text-sm font-bold text-gray-800">Investment</span>
+                      <span className="text-sm font-bold text-gray-800">Mutual Funds</span>
                   </div>
                   <ul className="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-emerald-100">
                       <li><a href="#" className="hover:text-emerald-600 font-medium block">Mutual Funds</a></li>
