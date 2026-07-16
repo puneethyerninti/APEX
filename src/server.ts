@@ -8,6 +8,7 @@ import authRoutes from './routes/authRoutes';
 import financeRoutes from './routes/financeRoutes';
 import jobsRoutes from './routes/jobsRoutes';
 import matrimonyRoutes from './routes/matrimonyRoutes';
+import userRoutes from './routes/userRoutes';
 
 dotenv.config();
 
@@ -84,6 +85,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/api/matrimony', matrimonyRoutes);
+app.use('/api/user', userRoutes);
 
 // Routes Placeholder
 app.get('/', (req, res) => {
