@@ -11,14 +11,14 @@ export default function Page() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isPaymentStep, setIsPaymentStep] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [activeChatProfile, setActiveChatProfile] = useState<any>(null);
   const [messages, setMessages] = useState<{senderId: string, text: string, timestamp: string}[]>([]);
   const [chatInput, setChatInput] = useState('');
+  const [matches, setMatches] = useState<any[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAppStore();
   const socketContext = useContext(SocketContext);
   const socket = socketContext?.socket;
-  
-  const ROOM_ID = 'match_123'; // Mock room ID for demo
 
   // Form state
   const [formData, setFormData] = useState({
@@ -63,13 +63,21 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    if (chatOpen && socket) {
+    // Fetch live matches
+    api.get('/matrimony/profiles')
+      .then(res => setMatches(res.data))
+      .catch(err => console.error("Failed to fetch matches:", err));
+  }, []);
+
+  useEffect(() => {
+    if (chatOpen && socket && activeChatProfile) {
+      const roomId = `match_${user?.uid}_${activeChatProfile._id}`;
       // Fetch existing messages
-      api.get(`/matrimony/messages/${ROOM_ID}`).then(res => {
+      api.get(`/matrimony/messages/${roomId}`).then(res => {
         setMessages(res.data);
       }).catch(err => console.error(err));
 
-      socket.emit('join_room', ROOM_ID);
+      socket.emit('join_room', roomId);
       
       const handleNewMessage = (data: any) => {
         setMessages((prev) => [...prev, data]);
@@ -81,7 +89,7 @@ export default function Page() {
         socket.off('receive_message', handleNewMessage);
       };
     }
-  }, [chatOpen, socket]);
+  }, [chatOpen, socket, activeChatProfile, user]);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -90,11 +98,13 @@ export default function Page() {
   }, [messages, chatOpen]);
 
   const handleSendMessage = () => {
-      if (!chatInput.trim() || !socket) return;
+      if (!chatInput.trim() || !socket || !activeChatProfile) return;
       
+      const roomId = `match_${user?.uid}_${activeChatProfile._id}`;
       const msgData = {
-          roomId: ROOM_ID,
+          roomId,
           senderId: user?.uid || 'guest',
+          receiverId: activeChatProfile.user?._id || activeChatProfile._id,
           text: chatInput,
           timestamp: new Date().toISOString()
       };
@@ -221,36 +231,31 @@ export default function Page() {
                 <button onClick={() => {}} className="text-[9px] font-bold text-rose-600">View All</button>
             </div>
             <div className="flex gap-3 overflow-x-auto px-4 scrollbar-none flex-nowrap pb-2">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0 overflow-hidden cursor-pointer relative">
-                    <div className="h-32 bg-gray-200 relative">
-                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&amp;fit=crop&amp;q=80" alt="Profile" className="w-full h-full object-cover" />
-                        <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-black/80 to-transparent"></div>
-                        <span className="absolute bottom-2 left-2 text-white font-black text-[10px]">Aanya S. <i className="fa-solid fa-circle-check text-blue-400 ml-0.5"></i></span>
+                {matches.length === 0 ? (
+                    <div className="text-xs text-gray-500 w-full text-center py-4 bg-white rounded-xl border border-gray-100">
+                        No matches available right now.
                     </div>
-                    <div className="p-3">
-                        <p className="text-[9px] text-gray-500 mb-1">26 Yrs, 5&apos;5&quot;</p>
-                        <p className="text-[9px] font-bold text-gray-700 truncate">Software Engineer</p>
-                        <p className="text-[9px] text-gray-500 mb-2 truncate">Bangalore</p>
-                        <button onClick={() => setChatOpen(true)} className="w-full bg-rose-50 text-rose-600 font-bold text-[9px] py-1.5 rounded border border-rose-100 hover:bg-rose-100"><i className="fa-solid fa-comment-dots mr-1"></i> Chat Now</button>
-                    </div>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0 overflow-hidden cursor-pointer relative">
-                    <div className="h-32 bg-gray-200 relative">
-                        <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&amp;fit=crop&amp;q=80" alt="Profile" className="w-full h-full object-cover blur-sm" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <i className="fa-solid fa-lock text-white/80 text-xl drop-shadow-md"></i>
+                ) : (
+                    matches.map((match) => (
+                        <div key={match._id} className="bg-white rounded-xl shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0 overflow-hidden cursor-pointer relative">
+                            <div className="h-32 bg-gray-200 relative">
+                                {/* Use uploaded images or fallback */}
+                                <img src={match.images?.[0] || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80"} alt={match.user?.name} className="w-full h-full object-cover" />
+                                <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-black/80 to-transparent"></div>
+                                <span className="absolute bottom-2 left-2 text-white font-black text-[10px] truncate max-w-[120px]">{match.user?.name} <i className="fa-solid fa-circle-check text-blue-400 ml-0.5"></i></span>
+                            </div>
+                            <div className="p-3">
+                                <p className="text-[9px] text-gray-500 mb-1">{match.age} Yrs, {match.height || 'N/A'}</p>
+                                <p className="text-[9px] font-bold text-gray-700 truncate">{match.profession}</p>
+                                <p className="text-[9px] text-gray-500 mb-2 truncate">{match.location}</p>
+                                <button onClick={() => {
+                                    setActiveChatProfile(match);
+                                    setChatOpen(true);
+                                }} className="w-full bg-rose-50 text-rose-600 font-bold text-[9px] py-1.5 rounded border border-rose-100 hover:bg-rose-100"><i className="fa-solid fa-comment-dots mr-1"></i> Chat Now</button>
+                            </div>
                         </div>
-                        <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-black/80 to-transparent"></div>
-                        <span className="absolute bottom-2 left-2 text-white font-black text-[10px]">Rohan P. <i className="fa-solid fa-circle-check text-blue-400 ml-0.5"></i></span>
-                    </div>
-                    <div className="p-3">
-                        <p className="text-[9px] text-gray-500 mb-1">29 Yrs, 5&apos;11&quot;</p>
-                        <p className="text-[9px] font-bold text-gray-700 truncate">Business Analyst</p>
-                        <p className="text-[9px] text-gray-500 mb-2 truncate">Mumbai</p>
-                        <button className="w-full bg-rose-600 text-white font-bold text-[9px] py-1.5 rounded hover:bg-rose-700">Unlock
-                            Photo</button>
-                    </div>
-                </div>
+                    ))
+                )}
             </div>
         </div>
 
@@ -373,9 +378,9 @@ export default function Page() {
                             <i className="fa-solid fa-arrow-left"></i>
                         </button>
                         <div className="flex-1 flex items-center gap-2">
-                            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&amp;fit=crop&amp;q=80" alt="Aanya" className="w-8 h-8 rounded-full border border-white" />
+                            <img src={activeChatProfile?.images?.[0] || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80"} alt="Profile" className="w-8 h-8 rounded-full border border-white object-cover" />
                             <div>
-                                <h3 className="font-bold text-sm leading-tight">Aanya S.</h3>
+                                <h3 className="font-bold text-sm leading-tight">{activeChatProfile?.user?.name}</h3>
                                 <p className="text-[10px] text-rose-200">Online</p>
                             </div>
                         </div>
@@ -390,7 +395,7 @@ export default function Page() {
                             const isMe = msg.senderId === (user?.uid || 'guest');
                             return (
                                 <div key={i} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                                    {!isMe && <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&amp;fit=crop&amp;q=80" alt="Aanya" className="w-6 h-6 rounded-full self-end" />}
+                                    {!isMe && <img src={activeChatProfile?.images?.[0] || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80"} alt="Profile" className="w-6 h-6 rounded-full self-end object-cover" />}
                                     <div className={`p-3 rounded-2xl shadow-sm text-sm max-w-[75%] ${isMe ? 'bg-rose-600 text-white rounded-br-none' : 'bg-white text-gray-700 rounded-bl-none'}`}>
                                         {msg.text}
                                     </div>
