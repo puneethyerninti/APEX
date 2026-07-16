@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import NavigationWrapper from "@/components/NavigationWrapper";
 import GlobalModals from "@/components/GlobalModals";
+import GlobalToasts from "@/components/GlobalToasts";
 import Providers from "@/components/Providers";
 
 const inter = Inter({
@@ -35,6 +36,7 @@ export default function RootLayout({
               {children}
             </NavigationWrapper>
             <GlobalModals />
+            <GlobalToasts />
           </Providers>
         </div>
       </body>

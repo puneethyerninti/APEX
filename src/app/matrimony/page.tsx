@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/store/useAppStore';
 import { SocketContext } from '@/context/SocketContext';
+import { api } from '@/services/api';
 
 export default function Page() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -10,9 +11,7 @@ export default function Page() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isPaymentStep, setIsPaymentStep] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [messages, setMessages] = useState<{senderId: string, text: string, timestamp: string}[]>([
-      { senderId: 'aanya', text: 'Hi there! I saw your profile and it looks interesting. Would you like to connect?', timestamp: new Date().toISOString() }
-  ]);
+  const [messages, setMessages] = useState<{senderId: string, text: string, timestamp: string}[]>([]);
   const [chatInput, setChatInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAppStore();
@@ -65,6 +64,11 @@ export default function Page() {
 
   useEffect(() => {
     if (chatOpen && socket) {
+      // Fetch existing messages
+      api.get(`/matrimony/messages/${ROOM_ID}`).then(res => {
+        setMessages(res.data);
+      }).catch(err => console.error(err));
+
       socket.emit('join_room', ROOM_ID);
       
       const handleNewMessage = (data: any) => {
