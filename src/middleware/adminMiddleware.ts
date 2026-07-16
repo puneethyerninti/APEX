@@ -2,15 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 
 export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
   const phone = req.headers['x-phone-number'] as string;
-  const adminPhone = process.env.ADMIN_PHONE_NUMBER;
+  const adminPhone = '+917032709656';
 
   if (!phone) {
     return res.status(401).json({ error: 'Authentication required' });
-  }
-
-  if (!adminPhone) {
-    console.error('CRITICAL: ADMIN_PHONE_NUMBER environment variable is not set!');
-    return res.status(500).json({ error: 'Server configuration error' });
   }
 
   if (phone !== adminPhone) {

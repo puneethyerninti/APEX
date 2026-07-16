@@ -34,6 +34,12 @@ export const createProfile = async (req: Request, res: Response) => {
       images: [] // Handle image uploads in real implementation
     });
     
+    // Emit live event to admin dashboard
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin_room').emit('admin_data_refresh');
+    }
+    
     res.status(201).json(newProfile);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });

@@ -31,6 +31,7 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
   },
 });
+app.set('io', io); // Bind io to express app
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
@@ -39,6 +40,12 @@ io.on('connection', (socket) => {
   socket.on('join_room', (roomId) => {
     socket.join(roomId);
     console.log(`User ${socket.id} joined room ${roomId}`);
+  });
+
+  // --- ADMIN ROOM ---
+  socket.on('join_admin_room', () => {
+    socket.join('admin_room');
+    console.log(`Admin ${socket.id} joined admin_room`);
   });
 
   socket.on('send_message', async (data) => {

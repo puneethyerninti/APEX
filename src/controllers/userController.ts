@@ -48,6 +48,12 @@ export const updateUserProfile = async (req: Request, res: Response) => {
         email: email || `${phone}@apex.local`,
         walletBalance: 0,
       });
+      
+      // Emit live event to admin dashboard
+      const io = req.app.get('io');
+      if (io) {
+        io.to('admin_room').emit('admin_data_refresh');
+      }
     }
 
     res.json({ 
