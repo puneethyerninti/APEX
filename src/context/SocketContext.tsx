@@ -16,7 +16,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Only connect if we have a real backend URL, otherwise stay disconnected gracefully
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+    // Use Socket URL if provided, otherwise derive from API URL, otherwise fallback
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    
     if (!socketUrl) {
       console.warn('Socket URL not provided. Real-time features disabled.');
       return;
