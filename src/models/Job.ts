@@ -8,6 +8,7 @@ export interface IJob extends Document {
   salary: string;
   description: string;
   postedBy?: mongoose.Types.ObjectId;
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 const JobSchema = new Schema<IJob>(
@@ -19,6 +20,7 @@ const JobSchema = new Schema<IJob>(
     salary: { type: String },
     description: { type: String },
     postedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   },
   { timestamps: true }
 );

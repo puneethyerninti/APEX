@@ -9,6 +9,8 @@ import financeRoutes from './routes/financeRoutes';
 import jobsRoutes from './routes/jobsRoutes';
 import matrimonyRoutes from './routes/matrimonyRoutes';
 import userRoutes from './routes/userRoutes';
+import adminRoutes from './routes/adminRoutes';
+import Message from './models/Message';
 
 dotenv.config();
 
@@ -39,9 +41,22 @@ io.on('connection', (socket) => {
     console.log(`User ${socket.id} joined room ${roomId}`);
   });
 
-  socket.on('send_message', (data) => {
-    // data should contain { roomId, senderId, text, timestamp }
-    io.to(data.roomId).emit('receive_message', data);
+  socket.on('send_message', async (data) => {
+    // data should contain { roomId, senderId, receiverId, text, timestamp }
+    try {
+      const newMessage = new Message({
+        roomId: data.roomId,
+        senderId: data.senderId,
+        receiverId: data.receiverId,
+        text: data.text,
+        timestamp: data.timestamp || new Date()
+      });
+      await newMessage.save();
+      
+      io.to(data.roomId).emit('receive_message', data);
+    } catch (err) {
+      console.error('Error saving message', err);
+    }
   });
 
   socket.on('typing', (data) => {
@@ -86,6 +101,7 @@ app.use('/api/finance', financeRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/api/matrimony', matrimonyRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Routes Placeholder
 app.get('/', (req, res) => {

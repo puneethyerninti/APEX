@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import MatrimonyProfile from '../models/MatrimonyProfile';
+import Message from '../models/Message';
 
-// Get all profiles
+// Get all approved profiles
 export const getProfiles = async (req: Request, res: Response) => {
   try {
-    const profiles = await MatrimonyProfile.find().populate('user', 'name');
+    const profiles = await MatrimonyProfile.find({ status: 'approved' }).populate('user', 'name phone');
     res.json(profiles);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -36,5 +37,16 @@ export const createProfile = async (req: Request, res: Response) => {
     res.status(201).json(newProfile);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// Get chat messages for a specific room
+export const getMessages = async (req: Request, res: Response) => {
+  const { roomId } = req.params;
+  try {
+    const messages = await Message.find({ roomId }).sort({ timestamp: 1 });
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error fetching messages' });
   }
 };

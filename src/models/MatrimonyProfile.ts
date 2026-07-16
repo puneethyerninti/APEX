@@ -9,6 +9,7 @@ export interface IMatrimonyProfile extends Document {
   location: string;
   bio: string;
   images: string[];
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 const MatrimonyProfileSchema = new Schema<IMatrimonyProfile>(
@@ -21,6 +22,7 @@ const MatrimonyProfileSchema = new Schema<IMatrimonyProfile>(
     location: { type: String },
     bio: { type: String },
     images: [{ type: String }],
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   },
   { timestamps: true }
 );
