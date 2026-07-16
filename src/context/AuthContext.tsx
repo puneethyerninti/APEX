@@ -2,10 +2,10 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { auth, db } from '@/firebase.config';
+import { auth } from '@/firebase.config';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
+import { api } from '@/services/api';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -27,14 +27,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
       if (firebaseUser) {
         try {
-          // Check if user exists in Firestore
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          const userDoc = await getDoc(userDocRef);
+          // Check if user exists in Node.js backend
+          const response = await api.get(`/user/profile?phone=${encodeURIComponent(firebaseUser.phoneNumber || '')}`);
           
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
+          if (response.data) {
+            const userData = response.data;
             const currentUser = useAppStore.getState().user;
-            // Merge firestore data with current local state to prevent wiping
+            
             setUser({
               uid: firebaseUser.uid,
               phone: firebaseUser.phoneNumber,
@@ -42,25 +41,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: userData.email || currentUser?.email,
               isPremium: userData.isPremium || currentUser?.isPremium,
             });
-          } else {
-            // First time login, create user doc but KEEP local state if it exists
+          }
+        } catch (error: any) {
+          if (error.response?.status === 404) {
+            // First time login, create user doc in backend but KEEP local state if it exists
             const currentUser = useAppStore.getState().user;
-            await setDoc(userDocRef, {
-              phone: firebaseUser.phoneNumber,
-              name: currentUser?.name || null,
-              email: currentUser?.email || null,
-              createdAt: serverTimestamp(),
-            });
+            try {
+              await api.post('/user/profile', {
+                phone: firebaseUser.phoneNumber,
+                name: currentUser?.name || 'User',
+                email: currentUser?.email || '',
+              });
+            } catch (createErr) {
+              console.error("Error creating user profile in backend:", createErr);
+            }
             setUser({
               uid: firebaseUser.uid,
               phone: firebaseUser.phoneNumber,
-              name: currentUser?.name,
-              email: currentUser?.email,
+              name: currentUser?.name || 'User',
+              email: currentUser?.email || '',
               isPremium: currentUser?.isPremium,
             });
-          }
-        } catch (error) {
-          console.error("Error fetching/creating user doc:", error);
+          } else {
+            console.error("Error fetching user profile:", error);
           // Fallback if firestore fails
           const currentUser = useAppStore.getState().user;
           setUser({
@@ -72,7 +75,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               isPremium: currentUser.isPremium
             } : {})
           });
-        }
+        } // End of else
+        } // End of catch block
         
         setIsAuthenticated(true);
         if (pathname === '/login') {

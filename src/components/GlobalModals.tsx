@@ -5,7 +5,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
 import { db } from '@/firebase.config';
-import { doc, setDoc } from 'firebase/firestore';
+// doc, setDoc removed as they are no longer used for profile
 
 export default function GlobalModals() {
     const [modal, setModal] = useState<string | null>(null);
@@ -43,19 +43,19 @@ export default function GlobalModals() {
 
     const handleSaveProfile = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user?.uid) return;
+        if (!user?.phone) return;
         
         // Optimistic UI Update: Instantly update local store and close modal
         updateUserProfile({ name: editName, email: editEmail });
         setModal('account'); 
         
-        // Background sync to Firestore using setDoc with merge
+        // Background sync to Node.js Backend API
         try {
-            const userDocRef = doc(db, 'users', user.uid);
-            await setDoc(userDocRef, {
+            await api.post('/user/profile', {
+                phone: user.phone,
                 name: editName,
                 email: editEmail,
-            }, { merge: true });
+            });
         } catch (error) {
             console.error("Failed to update profile", error);
             // Optionally could revert the store update here if it failed
