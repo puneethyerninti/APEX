@@ -559,6 +559,21 @@ export default function Home() {
         <div className="carousel-viewport reveal-zoom delay-100">
             <div className="carousel-track scrollbar-none overflow-x-auto flex flex-nowrap pb-1" id="realty-carousel-track">
 
+                <div className="carousel-card flex-shrink-0 group cursor-pointer w-64 mr-3" onClick={() => window.location.href='/realty'}>
+                    <div className="relative overflow-hidden rounded-xl mb-2 h-36">
+                        <img src="/property.jpeg" alt="Simplex Property" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                        <div className="absolute top-2 left-2 bg-black text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">Premium</div>
+                    </div>
+                    <div className="p-1">
+                        <h3 className="text-xs font-bold text-gray-800 mb-0.5">Simplex Property</h3>
+                        <p className="text-gray-400 text-[10px] mb-2 flex items-center gap-1"><i className="fa-solid fa-location-dot text-apex-purple"></i>Prime Location</p>
+                        <div className="flex justify-between items-center">
+                            <span className="text-apex-purple font-black text-sm">₹46 Lakhs</span>
+                            <span className="text-[9px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded"><i className="fa-solid fa-vector-square mr-1 text-[8px]"></i>2 BHK</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="carousel-card flex-shrink-0 group cursor-pointer w-64 mr-3">
                     <div className="relative overflow-hidden rounded-xl mb-2 h-36">
                         <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&amp;q=80&amp;auto=format&amp;fit=crop" alt="The Crown Villas" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
