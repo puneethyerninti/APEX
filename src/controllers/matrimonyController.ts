@@ -5,7 +5,14 @@ import Message from '../models/Message';
 // Get all approved profiles
 export const getProfiles = async (req: Request, res: Response) => {
   try {
-    const profiles = await MatrimonyProfile.find({ status: 'approved' }).populate('user', 'name phone');
+    const { userId } = req.query;
+    const query: any = { status: 'approved' };
+    
+    if (userId && userId !== 'undefined') {
+      query.user = { $ne: userId };
+    }
+    
+    const profiles = await MatrimonyProfile.find(query).populate('user', 'name phone');
     res.json(profiles);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -54,5 +61,35 @@ export const getMessages = async (req: Request, res: Response) => {
     res.json(messages);
   } catch (error) {
     res.status(500).json({ error: 'Server error fetching messages' });
+  }
+};
+
+// Get inbox for a user
+export const getInbox = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  try {
+    const messages = await Message.find({ $or: [{ senderId: userId }, { receiverId: userId }] })
+      .sort({ timestamp: -1 });
+
+    const inboxMap = new Map();
+    
+    for (const msg of messages) {
+      if (!inboxMap.has(msg.roomId)) {
+        const otherUserId = msg.senderId === userId ? msg.receiverId : msg.senderId;
+        const otherProfile = await MatrimonyProfile.findOne({ user: otherUserId }).populate('user', 'name phone');
+        
+        if (otherProfile) {
+          inboxMap.set(msg.roomId, {
+            latestMessage: msg,
+            profile: otherProfile
+          });
+        }
+      }
+    }
+
+    const inbox = Array.from(inboxMap.values());
+    res.json(inbox);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error fetching inbox' });
   }
 };
