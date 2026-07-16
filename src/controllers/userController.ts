@@ -45,7 +45,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
       user = await User.create({
         phone,
         name: name || 'User',
-        email: email || '',
+        email: email || `${phone}@apex.local`,
         walletBalance: 0,
       });
     }
