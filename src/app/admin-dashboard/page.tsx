@@ -3,8 +3,9 @@ import React from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/store/useAppStore';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { api } from '@/services/api';
+import { SocketContext } from '@/context/SocketContext';
 
 export default function AdminDashboardPage() {
   const user = useAppStore((state) => state.user);
@@ -14,9 +15,12 @@ export default function AdminDashboardPage() {
   const [pendingApprovals, setPendingApprovals] = useState<{jobs: any[], profiles: any[]}>({jobs: [], profiles: []});
   const [users, setUsers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'approvals' | 'users'>('overview');
+  
+  const socketContext = useContext(SocketContext);
+  const socket = socketContext?.socket;
 
   useEffect(() => {
-    const adminPhone = process.env.NEXT_PUBLIC_ADMIN_PHONE_NUMBER;
+    const adminPhone = '+917032709656';
     
     if (user === undefined) return; // Still loading state
     
@@ -39,7 +43,7 @@ export default function AdminDashboardPage() {
 
   const fetchApprovalsAndUsers = async () => {
     try {
-      const adminPhone = process.env.NEXT_PUBLIC_ADMIN_PHONE_NUMBER || '';
+      const adminPhone = '+917032709656';
       const headers = { 'x-phone-number': adminPhone };
       const [approvalsRes, usersRes] = await Promise.all([
         api.get('/admin/approvals', { headers }),
@@ -55,12 +59,27 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (isAuthorized) {
       fetchApprovalsAndUsers();
+      
+      if (socket) {
+        socket.emit('join_admin_room');
+        
+        const handleDataRefresh = () => {
+          console.log("Admin Dashboard: Live data refreshed");
+          fetchApprovalsAndUsers();
+          fetchStats('+917032709656');
+        };
+        
+        socket.on('admin_data_refresh', handleDataRefresh);
+        return () => {
+          socket.off('admin_data_refresh', handleDataRefresh);
+        };
+      }
     }
-  }, [isAuthorized]);
+  }, [isAuthorized, socket]);
 
   const handleApproval = async (type: 'job' | 'profile', id: string, status: 'approved' | 'rejected') => {
     try {
-      const adminPhone = process.env.NEXT_PUBLIC_ADMIN_PHONE_NUMBER || '';
+      const adminPhone = '+917032709656';
       await api.post('/admin/approvals/status', { type, id, status }, { headers: { 'x-phone-number': adminPhone } });
       fetchApprovalsAndUsers(); // refresh data
       fetchStats(adminPhone);
@@ -156,9 +175,9 @@ export default function AdminDashboardPage() {
             <div className="mt-5">
               <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Quick Actions</h3>
               <div className="grid grid-cols-3 gap-2">
-                <button className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm flex flex-col items-center gap-2 hover:shadow-md transition-all">
-                  <i className="fa-solid fa-user-plus text-violet-500"></i>
-                  <span className="text-[9px] font-bold text-gray-600">Add User</span>
+                <button onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'account' }))} className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm flex flex-col items-center gap-2 hover:shadow-md transition-all">
+                  <i className="fa-solid fa-user-pen text-violet-500"></i>
+                  <span className="text-[9px] font-bold text-gray-600">Edit Profile</span>
                 </button>
                 <button className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm flex flex-col items-center gap-2 hover:shadow-md transition-all">
                   <i className="fa-solid fa-paper-plane text-blue-500"></i>
