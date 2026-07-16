@@ -18,13 +18,13 @@ export default function BottomNav() {
         <span>Home</span>
       </Link>
       <Link
-        href="/charity"
+        href="/finance"
         className={`flex flex-col items-center gap-0.5 font-bold text-[9px] transition-colors ${
-          pathname === "/charity" ? "text-apex-purple font-black" : "text-gray-400 hover:text-apex-purple"
+          pathname === "/finance" ? "text-apex-purple font-black" : "text-gray-400 hover:text-apex-purple"
         }`}
       >
-        <i className="fa-solid fa-hand-holding-heart text-base"></i>
-        <span>Donate</span>
+        <i className="fa-solid fa-chart-line text-base"></i>
+        <span>Invest</span>
       </Link>
       <button
         onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'payment' }))}

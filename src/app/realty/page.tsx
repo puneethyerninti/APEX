@@ -102,6 +102,20 @@ export default function Page() {
         </div>
         <div className="px-4 mb-2">
             <AutoCarousel interval={4000}>
+                <div className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" data-category="simplex 2bhk" onClick={() => openInquiry('Simplex Property (₹46 Lakhs)')}>
+                    <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
+                        <img src="/property.jpeg" alt="Simplex" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <span className="absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-3 py-1 rounded uppercase tracking-wider">Premium</span>
+                    </div>
+                    <div className="p-4">
+                        <h4 className="font-black text-sm text-gray-900 truncate mb-1">Simplex Property</h4>
+                        <p className="text-xs text-gray-500 mb-3 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>Prime Location</p>
+                        <div className="flex items-end justify-between">
+                            <span className="text-emerald-600 font-black text-lg">₹46 Lakhs</span>
+                            <span className="text-xs text-gray-400 font-bold">2 BHK</span>
+                        </div>
+                    </div>
+                </div>
                 <div className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" data-category="villas hyderabad skyline" onClick={() => openInquiry('Skyline Penthouses (₹12.5 Cr)')}>
                     <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
                         <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&amp;fit=crop&amp;q=80" alt="Villa" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
