@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import MatrimonyProfile from '../models/MatrimonyProfile';
 import Message from '../models/Message';
 
@@ -76,13 +77,16 @@ export const getInbox = async (req: Request, res: Response) => {
     for (const msg of messages) {
       if (!inboxMap.has(msg.roomId)) {
         const otherUserId = msg.senderId === userId ? msg.receiverId : msg.senderId;
-        const otherProfile = await MatrimonyProfile.findOne({ user: otherUserId }).populate('user', 'name phone');
         
-        if (otherProfile) {
-          inboxMap.set(msg.roomId, {
-            latestMessage: msg,
-            profile: otherProfile
-          });
+        if (mongoose.Types.ObjectId.isValid(otherUserId)) {
+          const otherProfile = await MatrimonyProfile.findOne({ user: otherUserId }).populate('user', 'name phone');
+          
+          if (otherProfile) {
+            inboxMap.set(msg.roomId, {
+              latestMessage: msg,
+              profile: otherProfile
+            });
+          }
         }
       }
     }
