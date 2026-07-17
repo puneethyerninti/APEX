@@ -11,6 +11,7 @@ import matrimonyRoutes from './routes/matrimonyRoutes';
 import userRoutes from './routes/userRoutes';
 import adminRoutes from './routes/adminRoutes';
 import Message from './models/Message';
+import User from './models/User';
 
 dotenv.config();
 
@@ -61,6 +62,21 @@ io.on('connection', (socket) => {
       await newMessage.save();
       
       io.to(data.roomId).emit('receive_message', data);
+
+      // Send global toast notification to receiver
+      try {
+        const sender = await User.findById(data.senderId);
+        const receiver = await User.findById(data.receiverId);
+        
+        if (sender && receiver && receiver.phone) {
+          io.to(`user_${receiver.phone}`).emit('system_notice', {
+            message: `New message from ${sender.name}: ${data.text.length > 20 ? data.text.substring(0, 20) + '...' : data.text}`
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching users for notification', err);
+      }
+
     } catch (err) {
       console.error('Error saving message', err);
     }
