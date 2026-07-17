@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import MatrimonyProfile from '../models/MatrimonyProfile';
 import Message from '../models/Message';
+import User from '../models/User';
 
 // Get all approved profiles
 export const getProfiles = async (req: Request, res: Response) => {
@@ -79,8 +80,18 @@ export const getInbox = async (req: Request, res: Response) => {
         const otherUserId = msg.senderId === userId ? msg.receiverId : msg.senderId;
         
         if (mongoose.Types.ObjectId.isValid(otherUserId)) {
-          const otherProfile = await MatrimonyProfile.findOne({ user: otherUserId }).populate('user', 'name phone');
+          let otherProfile = await MatrimonyProfile.findOne({ user: otherUserId }).populate('user', 'name phone');
           
+          if (!otherProfile) {
+            const fallbackUser = await User.findById(otherUserId);
+            if (fallbackUser) {
+              otherProfile = {
+                user: fallbackUser,
+                images: []
+              } as any;
+            }
+          }
+
           if (otherProfile) {
             inboxMap.set(msg.roomId, {
               latestMessage: msg,
