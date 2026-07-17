@@ -1,9 +1,20 @@
 "use client";
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/store/useAppStore';
 import { SocketContext } from '@/context/SocketContext';
 import { api } from '@/services/api';
+
+const formatSmartTimestamp = (timestamp: string) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    if (isToday) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const isYesterday = new Date(new Date().setDate(now.getDate() - 1)).getDate() === date.getDate();
+    if (isYesterday) return 'Yesterday';
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+};
 
 export default function Page() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -17,6 +28,9 @@ export default function Page() {
   const [matches, setMatches] = useState<any[]>([]);
   const [inboxOpen, setInboxOpen] = useState(false);
   const [inboxChats, setInboxChats] = useState<any[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAppStore();
   const socketContext = useContext(SocketContext);
@@ -77,13 +91,23 @@ export default function Page() {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (inboxOpen && user?.uid) {
+  const fetchInbox = useCallback(() => {
+    if (user?.uid) {
       api.get(`/matrimony/inbox/${user.uid}`)
-        .then(res => setInboxChats(res.data))
+        .then(res => {
+            setInboxChats(res.data);
+            const unread = res.data.filter((chat: any) => !chat.latestMessage.isRead && chat.latestMessage.receiverId === user.uid).length;
+            setUnreadCount(unread);
+        })
         .catch(err => console.error("Failed to fetch inbox:", err));
     }
-  }, [inboxOpen, user]);
+  }, [user]);
+
+  useEffect(() => {
+    if (inboxOpen || chatOpen) {
+      fetchInbox();
+    }
+  }, [inboxOpen, chatOpen, messages, fetchInbox]);
 
   useEffect(() => {
     if (chatOpen && socket && activeChatProfile) {
@@ -98,12 +122,24 @@ export default function Page() {
       
       const handleNewMessage = (data: any) => {
         setMessages((prev) => [...prev, data]);
+        // Also ping backend to mark it as read since we are actively in chat
+        if (data.senderId !== user?.uid) {
+            api.put(`/matrimony/messages/${roomId}/read`, { userId: user?.uid }).catch(()=>{});
+        }
+      };
+      
+      const handleTyping = (data: any) => {
+          if (data.roomId === roomId && data.isTyping !== undefined) {
+              setIsTyping(data.isTyping);
+          }
       };
       
       socket.on('receive_message', handleNewMessage);
+      socket.on('typing', handleTyping);
       
       return () => {
         socket.off('receive_message', handleNewMessage);
+        socket.off('typing', handleTyping);
       };
     }
   }, [chatOpen, socket, activeChatProfile, user]);
@@ -113,6 +149,20 @@ export default function Page() {
         chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, chatOpen]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setChatInput(e.target.value);
+      if (!socket || !activeChatProfile) return;
+      
+      const participants = [user?.uid || 'guest', activeChatProfile.user?._id || activeChatProfile._id].sort();
+      const roomId = `match_${participants[0]}_${participants[1]}`;
+      
+      socket.emit('typing', { roomId, isTyping: true });
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+          socket.emit('typing', { roomId, isTyping: false });
+      }, 1500);
+  };
 
   const handleSendMessage = () => {
       if (!chatInput.trim() || !socket || !activeChatProfile) return;
@@ -129,6 +179,22 @@ export default function Page() {
       
       socket.emit('send_message', msgData);
       setChatInput('');
+      socket.emit('typing', { roomId, isTyping: false });
+  };
+
+  const openChat = async (chat: any) => {
+      setActiveChatProfile(chat.profile);
+      setChatOpen(true);
+      setInboxOpen(false);
+      
+      if (!user?.uid) return;
+      const participants = [user.uid, chat.profile.user?._id || chat.profile._id].sort();
+      const roomId = `match_${participants[0]}_${participants[1]}`;
+      
+      try {
+          await api.put(`/matrimony/messages/${roomId}/read`, { userId: user.uid });
+          fetchInbox();
+      } catch(err) {}
   };
 
   const triggerCheckout = () => {
@@ -150,7 +216,11 @@ export default function Page() {
             </div>
             <button onClick={() => setInboxOpen(true)} className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center relative">
                 <i className="fa-solid fa-message"></i>
-                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border border-white text-[9px] font-black text-white flex items-center justify-center">
+                        {unreadCount}
+                    </span>
+                )}
             </button>
         </div>
 
@@ -400,10 +470,18 @@ export default function Page() {
                             <i className="fa-solid fa-arrow-left"></i>
                         </button>
                         <div className="flex-1 flex items-center gap-2">
-                            <img src={activeChatProfile?.images?.[0] || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80"} alt="Profile" className="w-8 h-8 rounded-full border border-white object-cover" />
+                            {activeChatProfile?.images?.[0] ? (
+                                <img src={activeChatProfile.images[0]} alt="Profile" className="w-8 h-8 rounded-full border border-white object-cover shadow-sm" />
+                            ) : (
+                                <div className="w-8 h-8 rounded-full border border-white bg-rose-200 text-rose-700 flex items-center justify-center font-black shadow-sm text-xs">
+                                    {activeChatProfile?.user?.name ? activeChatProfile.user.name.substring(0, 2).toUpperCase() : 'U'}
+                                </div>
+                            )}
                             <div>
-                                <h3 className="font-bold text-sm leading-tight">{activeChatProfile?.user?.name}</h3>
-                                <p className="text-[10px] text-rose-200">Online</p>
+                                <h3 className="font-bold text-sm leading-tight">{activeChatProfile?.user?.name || 'User'}</h3>
+                                <p className="text-[10px] text-rose-200">
+                                    {isTyping ? <span className="animate-pulse">typing...</span> : 'Online'}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -416,10 +494,23 @@ export default function Page() {
                         {messages.map((msg, i) => {
                             const isMe = msg.senderId === (user?.uid || 'guest');
                             return (
-                                <div key={i} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                                    {!isMe && <img src={activeChatProfile?.images?.[0] || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80"} alt="Profile" className="w-6 h-6 rounded-full self-end object-cover" />}
-                                    <div className={`p-3 rounded-2xl shadow-sm text-sm max-w-[75%] ${isMe ? 'bg-rose-600 text-white rounded-br-none' : 'bg-white text-gray-700 rounded-bl-none'}`}>
-                                        {msg.text}
+                                <div key={i} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''} group`}>
+                                    {!isMe && (
+                                        activeChatProfile?.images?.[0] ? (
+                                            <img src={activeChatProfile.images[0]} alt="Profile" className="w-6 h-6 rounded-full self-end object-cover flex-shrink-0" />
+                                        ) : (
+                                            <div className="w-6 h-6 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center text-[10px] font-black self-end flex-shrink-0">
+                                                {activeChatProfile?.user?.name ? activeChatProfile.user.name.substring(0, 2).toUpperCase() : 'U'}
+                                            </div>
+                                        )
+                                    )}
+                                    <div className="flex flex-col">
+                                        <div className={`p-3 rounded-2xl shadow-sm text-sm max-w-[200px] sm:max-w-[280px] break-words ${isMe ? 'bg-rose-600 text-white rounded-br-none' : 'bg-white text-gray-700 rounded-bl-none border border-gray-100'}`}>
+                                            {msg.text}
+                                        </div>
+                                        <span className={`text-[9px] text-gray-400 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${isMe ? 'text-right' : 'text-left'}`}>
+                                            {formatSmartTimestamp(msg.timestamp)}
+                                        </span>
                                     </div>
                                 </div>
                             );
@@ -433,9 +524,9 @@ export default function Page() {
                             type="text" 
                             placeholder="Type a message..." 
                             value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
+                            onChange={handleInputChange}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                            className="flex-1 bg-gray-100 border-none rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20" 
+                            className="flex-1 bg-gray-100 border-none rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20" 
                         />
                         <button onClick={handleSendMessage} className="w-10 h-10 bg-rose-600 text-white rounded-full flex items-center justify-center hover:bg-rose-700 shadow-sm flex-shrink-0">
                             <i className="fa-solid fa-paper-plane text-sm"></i>
@@ -468,26 +559,38 @@ export default function Page() {
                             </div>
                         ) : (
                             <div className="flex flex-col gap-1">
-                                {inboxChats.map((chat, idx) => (
-                                    <div 
-                                        key={idx} 
-                                        onClick={() => {
-                                            setActiveChatProfile(chat.profile);
-                                            setChatOpen(true);
-                                            setInboxOpen(false);
-                                        }}
-                                        className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm hover:shadow-md cursor-pointer border border-transparent hover:border-rose-100 transition-all"
-                                    >
-                                        <img src={chat.profile.images?.[0] || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80"} alt="Profile" className="w-12 h-12 rounded-full object-cover border border-gray-100" />
-                                        <div className="flex-1 overflow-hidden">
-                                            <div className="flex justify-between items-center mb-0.5">
-                                                <h3 className="font-bold text-sm text-gray-900 truncate">{chat.profile.user?.name || 'User'}</h3>
-                                                <span className="text-[9px] text-gray-400">{new Date(chat.latestMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                {inboxChats.map((chat, idx) => {
+                                    const isUnread = !chat.latestMessage.isRead && chat.latestMessage.receiverId === user?.uid;
+                                    return (
+                                        <div 
+                                            key={idx} 
+                                            onClick={() => openChat(chat)}
+                                            className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm hover:shadow-md cursor-pointer border border-transparent hover:border-rose-100 transition-all relative"
+                                        >
+                                            {chat.profile.images?.[0] ? (
+                                                <img src={chat.profile.images[0]} alt="Profile" className="w-12 h-12 rounded-full object-cover border border-gray-100 flex-shrink-0" />
+                                            ) : (
+                                                <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-lg font-black flex-shrink-0 border border-rose-50">
+                                                    {chat.profile.user?.name ? chat.profile.user.name.substring(0, 2).toUpperCase() : 'U'}
+                                                </div>
+                                            )}
+                                            <div className="flex-1 overflow-hidden min-w-0">
+                                                <div className="flex justify-between items-center mb-0.5">
+                                                    <h3 className={`font-bold text-sm truncate ${isUnread ? 'text-gray-900' : 'text-gray-700'}`}>{chat.profile.user?.name || 'User'}</h3>
+                                                    <span className={`text-[9px] whitespace-nowrap ml-2 ${isUnread ? 'text-rose-600 font-black' : 'text-gray-400'}`}>
+                                                        {formatSmartTimestamp(chat.latestMessage.timestamp)}
+                                                    </span>
+                                                </div>
+                                                <p className={`text-xs truncate ${isUnread ? 'font-bold text-gray-900' : 'text-gray-500'}`}>
+                                                    {chat.latestMessage.senderId === user?.uid ? 'You: ' : ''}{chat.latestMessage.text}
+                                                </p>
                                             </div>
-                                            <p className="text-xs text-gray-500 truncate">{chat.latestMessage.text}</p>
+                                            {isUnread && (
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-rose-600 rounded-full border border-white shadow-sm"></div>
+                                            )}
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

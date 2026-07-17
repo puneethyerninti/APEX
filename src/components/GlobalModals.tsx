@@ -15,6 +15,7 @@ export default function GlobalModals() {
     // Profile Edit State
     const [editName, setEditName] = useState('');
     const [editEmail, setEditEmail] = useState('');
+    const [editProfilePicture, setEditProfilePicture] = useState('');
     
     // Global state
     const walletBalance = useAppStore((state) => state.walletBalance);
@@ -46,7 +47,7 @@ export default function GlobalModals() {
         if (!user?.phone) return;
         
         // Optimistic UI Update: Instantly update local store and close modal
-        updateUserProfile({ name: editName, email: editEmail });
+        updateUserProfile({ name: editName, email: editEmail, profilePicture: editProfilePicture });
         setModal('account'); 
         
         // Background sync to Node.js Backend API
@@ -55,10 +56,22 @@ export default function GlobalModals() {
                 phone: user.phone,
                 name: editName,
                 email: editEmail,
+                profilePicture: editProfilePicture,
             });
         } catch (error) {
             console.error("Failed to update profile", error);
             // Optionally could revert the store update here if it failed
+        }
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setEditProfilePicture(reader.result as string);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
@@ -242,9 +255,13 @@ export default function GlobalModals() {
                     {modal === 'account' && (
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                <div className="w-16 h-16 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-xl font-black">
-                                    {user?.name ? user.name.substring(0, 2).toUpperCase() : <i className="fa-solid fa-user"></i>}
-                                </div>
+                                {user?.profilePicture ? (
+                                    <img src={user.profilePicture} alt={user?.name || 'User'} className="w-16 h-16 rounded-full object-cover shadow-sm border-2 border-white" />
+                                ) : (
+                                    <div className="w-16 h-16 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-xl font-black">
+                                        {user?.name ? user.name.substring(0, 2).toUpperCase() : <i className="fa-solid fa-user"></i>}
+                                    </div>
+                                )}
                                 <div>
                                     <h3 className="font-black text-lg text-gray-900">{user?.name || 'User'}</h3>
                                     <p className="text-[10px] text-gray-500">{user?.phone || 'No phone number'}</p>
@@ -259,6 +276,7 @@ export default function GlobalModals() {
                                 <button onClick={() => {
                                     setEditName(user?.name || '');
                                     setEditEmail(user?.email || '');
+                                    setEditProfilePicture(user?.profilePicture || '');
                                     setModal('edit_profile');
                                 }} className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
                                     <i className="fa-solid fa-user-pen text-blue-500 text-xl"></i>
@@ -288,6 +306,23 @@ export default function GlobalModals() {
                     {/* EDIT PROFILE MODAL */}
                     {modal === 'edit_profile' && (
                         <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
+                            <div className="flex flex-col items-center gap-2 mb-2">
+                                <div className="relative group cursor-pointer">
+                                    {editProfilePicture ? (
+                                        <img src={editProfilePicture} alt="Profile" className="w-24 h-24 rounded-full object-cover shadow-md border-4 border-white" />
+                                    ) : (
+                                        <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-3xl shadow-inner border-4 border-white">
+                                            <i className="fa-solid fa-user"></i>
+                                        </div>
+                                    )}
+                                    <label className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                        <i className="fa-solid fa-camera text-white text-xl"></i>
+                                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                                    </label>
+                                </div>
+                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Tap to change photo</p>
+                            </div>
+
                             <div className="flex flex-col gap-1">
                                 <label className="text-xs font-bold text-gray-700">Full Name</label>
                                 <input 

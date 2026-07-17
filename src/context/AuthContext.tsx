@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               name: userData.name || currentUser?.name,
               email: userData.email || currentUser?.email,
               isPremium: userData.isPremium || currentUser?.isPremium,
+              profilePicture: userData.profilePicture || currentUser?.profilePicture,
             });
           }
         } catch (error: any) {
@@ -65,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               name: currentUser?.name || 'User',
               email: currentUser?.email || '',
               isPremium: currentUser?.isPremium,
+              profilePicture: currentUser?.profilePicture,
             });
           } else {
             console.error("Error fetching user profile:", error);
