@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const currentUser = useAppStore.getState().user;
             
             setUser({
-              uid: firebaseUser.uid,
+              uid: userData._id || firebaseUser.uid,
               phone: firebaseUser.phoneNumber,
               name: userData.name || currentUser?.name,
               email: userData.email || currentUser?.email,
@@ -46,17 +46,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (error.response?.status === 404) {
             // First time login, create user doc in backend but KEEP local state if it exists
             const currentUser = useAppStore.getState().user;
+            let dbId = firebaseUser.uid;
             try {
-              await api.post('/user/profile', {
+              const res = await api.post('/user/profile', {
                 phone: firebaseUser.phoneNumber,
                 name: currentUser?.name || 'User',
                 email: currentUser?.email || '',
               });
+              if (res.data?.user?._id) {
+                dbId = res.data.user._id;
+              }
             } catch (createErr) {
               console.error("Error creating user profile in backend:", createErr);
             }
             setUser({
-              uid: firebaseUser.uid,
+              uid: dbId,
               phone: firebaseUser.phoneNumber,
               name: currentUser?.name || 'User',
               email: currentUser?.email || '',
