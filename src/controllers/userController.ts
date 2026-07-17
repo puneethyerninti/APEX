@@ -15,6 +15,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
     }
 
     res.json({
+      _id: user._id,
       name: user.name,
       email: user.email,
       phone: user.phone,
@@ -59,6 +60,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
     res.json({ 
       message: 'Profile updated successfully', 
       user: { 
+        _id: user._id,
         name: user.name, 
         email: user.email, 
         phone: user.phone 
