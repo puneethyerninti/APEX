@@ -23,7 +23,7 @@ const server = http.createServer(app);
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Socket.io setup
 const io = new Server(server, {
