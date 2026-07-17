@@ -56,6 +56,10 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'apex-storage', // Saves to cookies now
+      partialize: (state) => ({ 
+        ...state, 
+        user: state.user ? { ...state.user, profilePicture: undefined } : null 
+      }),
       storage: createJSONStorage(() => cookieStorage),
     }
   )

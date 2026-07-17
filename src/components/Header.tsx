@@ -129,10 +129,16 @@ export default function Header() {
           {/* Profile Button */}
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'account' }))}
-            className="w-7 h-7 rounded-full bg-white text-violet-700 flex items-center justify-center text-[10px] font-bold shadow-sm"
+            className="w-7 h-7 rounded-full bg-white text-violet-700 flex items-center justify-center text-[10px] font-bold shadow-sm overflow-hidden border border-violet-200"
             aria-label="Profile"
           >
-            {user?.name ? user.name.substring(0, 2).toUpperCase() : <i className="fa-solid fa-user"></i>}
+            {user?.profilePicture ? (
+              <img src={user.profilePicture} alt="Profile" className="w-full h-full object-cover" />
+            ) : user?.name ? (
+              user.name.substring(0, 2).toUpperCase()
+            ) : (
+              <i className="fa-solid fa-user"></i>
+            )}
           </button>
         </div>
       </div>
