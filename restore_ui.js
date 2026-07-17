@@ -1,26 +1,15 @@
-"use client";
-import React, { useState, useEffect, useRef, useContext } from 'react';
-import Link from 'next/link';
-import { useAppStore } from '@/store/useAppStore';
-import { SocketContext } from '@/context/SocketContext';
-import { api } from '@/services/api';
+const fs = require('fs');
+const path = require('path');
 
-export default function Page() {
+const pagePath = path.join(__dirname, 'src/app/matrimony/page.tsx');
+let content = fs.readFileSync(pagePath, 'utf8');
+
+// Insert states
+const stateCode = `
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isPaymentStep, setIsPaymentStep] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [activeChatProfile, setActiveChatProfile] = useState<any>(null);
-  const [messages, setMessages] = useState<{senderId: string, text: string, timestamp: string}[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [matches, setMatches] = useState<any[]>([]);
-  const [inboxOpen, setInboxOpen] = useState(false);
-  const [inboxChats, setInboxChats] = useState<any[]>([]);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const { user } = useAppStore();
-  const socketContext = useContext(SocketContext);
-  const socket = socketContext?.socket;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -28,11 +17,11 @@ export default function Page() {
     age: '',
     contactNumber: '',
     profession: '',
-    photo: null as File | null,
-    idDocument: null as File | null,
+    photo: null,
+    idDocument: null,
   });
 
-  const handlePlanClick = (plan: string) => {
+  const handlePlanClick = (plan) => {
     setSelectedPlan(plan);
     setIsSuccess(false);
   };
@@ -43,13 +32,13 @@ export default function Page() {
     setIsPaymentStep(false);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'photo' | 'idDocument') => {
+  const handleFileChange = (e, field) => {
     if (e.target.files && e.target.files[0]) {
       setFormData({ ...formData, [field]: e.target.files[0] });
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setIsPaymentStep(true);
   };
@@ -64,120 +53,20 @@ export default function Page() {
     return () => window.removeEventListener('paymentSuccess', handleSuccess);
   }, []);
 
-  useEffect(() => {
-    // Fetch live matches, excluding the current user
-    if (user?.uid) {
-      api.get(`/matrimony/profiles?userId=${user.uid}`)
-        .then(res => setMatches(res.data))
-        .catch(err => console.error("Failed to fetch matches:", err));
-    } else {
-      api.get('/matrimony/profiles')
-        .then(res => setMatches(res.data))
-        .catch(err => console.error("Failed to fetch matches:", err));
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (inboxOpen && user?.uid) {
-      api.get(`/matrimony/inbox/${user.uid}`)
-        .then(res => setInboxChats(res.data))
-        .catch(err => console.error("Failed to fetch inbox:", err));
-    }
-  }, [inboxOpen, user]);
-
-  useEffect(() => {
-    if (chatOpen && socket && activeChatProfile) {
-      const participants = [user?.uid || 'guest', activeChatProfile.user?._id || activeChatProfile._id].sort();
-      const roomId = `match_${participants[0]}_${participants[1]}`;
-      // Fetch existing messages
-      api.get(`/matrimony/messages/${roomId}`).then(res => {
-        setMessages(res.data);
-      }).catch(err => console.error(err));
-
-      socket.emit('join_room', roomId);
-      
-      const handleNewMessage = (data: any) => {
-        setMessages((prev) => [...prev, data]);
-      };
-      
-      socket.on('receive_message', handleNewMessage);
-      
-      return () => {
-        socket.off('receive_message', handleNewMessage);
-      };
-    }
-  }, [chatOpen, socket, activeChatProfile, user]);
-
-  useEffect(() => {
-    if (chatEndRef.current) {
-        chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, chatOpen]);
-
-  const handleSendMessage = () => {
-      if (!chatInput.trim() || !socket || !activeChatProfile) return;
-      
-      const participants = [user?.uid || 'guest', activeChatProfile.user?._id || activeChatProfile._id].sort();
-      const roomId = `match_${participants[0]}_${participants[1]}`;
-      const msgData = {
-          roomId,
-          senderId: user?.uid || 'guest',
-          receiverId: activeChatProfile.user?._id || activeChatProfile._id,
-          text: chatInput,
-          timestamp: new Date().toISOString()
-      };
-      
-      socket.emit('send_message', msgData);
-      setChatInput('');
-  };
-
   const triggerCheckout = () => {
     let amount = selectedPlan === 'Premium' ? '₹20,000' : selectedPlan === 'Gold' ? '₹10,000' : '₹5,000';
     window.dispatchEvent(new CustomEvent('openModal', { 
-        detail: { type: 'checkout', data: { amount, plan: `Matrimony ${selectedPlan} Plan` } }
+        detail: { type: 'checkout', data: { amount, plan: 'Matrimony ' + selectedPlan + ' Plan' } }
     }));
   };
+`;
 
-  return (
-    <>
-        {/* HEADER */}
-        <div className="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <Link href="/" className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
-                    <i className="fa-solid fa-arrow-left"></i>
-                </Link>
-                <h1 className="font-black text-lg text-gray-900">Anand Matrimony</h1>
-            </div>
-            <button onClick={() => setInboxOpen(true)} className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center relative">
-                <i className="fa-solid fa-message"></i>
-                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-            </button>
-        </div>
+if (!content.includes('const [selectedPlan, setSelectedPlan]')) {
+    content = content.replace('const socket = socketContext?.socket;', 'const socket = socketContext?.socket;\n' + stateCode);
+}
 
-        {/* HERO DASHBOARD */}
-        <div className="p-4">
-            <div className="bg-gradient-to-br from-rose-600 to-pink-700 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden flex flex-col items-center text-center">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10">
-                </div>
-                <div className="relative z-10">
-                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-md text-rose-600 text-xl">
-                        <i className="fa-solid fa-shield-heart"></i>
-                    </div>
-                    <h2 className="text-xl font-black mb-1">100% Verified Profiles</h2>
-                    <p className="text-rose-100 text-[10px] mb-4">India&apos;s most trusted premium matchmaking service. Find
-                        your perfect partner today.</p>
-                    <div className="flex gap-2 justify-center">
-                        <button className="bg-white text-rose-600 text-[10px] font-black px-4 py-1.5 rounded-full shadow-sm">Complete
-                            Profile</button>
-                        <button className="bg-rose-800/50 backdrop-blur text-white border border-rose-400/50 text-[10px] font-bold px-4 py-1.5 rounded-full">Upgrade</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-
-        
+// Add the UI blocks before {/* HORIZONTAL TRACK */}
+const uiCode = `
         {/* CATEGORY GRID */}
         <div className="px-4 mb-5">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Browse Profiles</h3>
@@ -246,41 +135,14 @@ export default function Page() {
             </div>
         </div>
 
-{/* HORIZONTAL TRACK */}
-        <div className="mb-5">
-            <div className="px-4 flex justify-between items-end mb-3">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">New Matches</h3>
-                <button onClick={() => {}} className="text-[9px] font-bold text-rose-600">View All</button>
-            </div>
-            <div className="flex gap-3 overflow-x-auto px-4 scrollbar-none flex-nowrap pb-2">
-                {matches.length === 0 ? (
-                    <div className="text-xs text-gray-500 w-full text-center py-4 bg-white rounded-xl border border-gray-100">
-                        No matches available right now.
-                    </div>
-                ) : (
-                    matches.map((match) => (
-                        <div key={match._id} className="bg-white rounded-xl shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0 overflow-hidden cursor-pointer relative">
-                            <div className="h-32 bg-gray-200 relative">
-                                {/* Use uploaded images or fallback */}
-                                <img src={match.images?.[0] || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80"} alt={match.user?.name} className="w-full h-full object-cover" />
-                                <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-black/80 to-transparent"></div>
-                                <span className="absolute bottom-2 left-2 text-white font-black text-[10px] truncate max-w-[120px]">{match.user?.name} <i className="fa-solid fa-circle-check text-blue-400 ml-0.5"></i></span>
-                            </div>
-                            <div className="p-3">
-                                <p className="text-[9px] text-gray-500 mb-1">{match.age} Yrs, {match.height || 'N/A'}</p>
-                                <p className="text-[9px] font-bold text-gray-700 truncate">{match.profession}</p>
-                                <p className="text-[9px] text-gray-500 mb-2 truncate">{match.location}</p>
-                                <button onClick={() => {
-                                    setActiveChatProfile(match);
-                                    setChatOpen(true);
-                                }} className="w-full bg-rose-50 text-rose-600 font-bold text-[9px] py-1.5 rounded border border-rose-100 hover:bg-rose-100"><i className="fa-solid fa-comment-dots mr-1"></i> Chat Now</button>
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
-        </div>
+`;
 
+if (!content.includes('CATEGORY GRID')) {
+    content = content.replace('{/* HORIZONTAL TRACK */}', uiCode + '{/* HORIZONTAL TRACK */}');
+}
+
+// Add the modal overlay before the chat modal
+const modalCode = `
         {/* MODAL / FORM UI OVERLAY */}
         {selectedPlan && (
             <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-0 sm:pb-4 transition-all">
@@ -389,111 +251,11 @@ export default function Page() {
                 </div>
             </div>
         )}
+`;
 
-        {/* CHAT MODAL (Floating) */}
-        {chatOpen && (
-            <div className="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 z-[70] w-[95%] max-w-md">
-                <div className="bg-white w-full h-[60vh] sm:h-[500px] rounded-3xl shadow-[0_15px_50px_rgba(0,0,0,0.2)] border border-gray-100 flex flex-col animate-[slideUp_0.3s_ease-out] overflow-hidden">
-                    {/* Chat Header */}
-                    <div className="p-4 border-b border-gray-100 flex items-center gap-3 bg-rose-600 text-white rounded-t-3xl sm:rounded-t-3xl">
-                        <button onClick={() => setChatOpen(false)} className="w-8 h-8 flex items-center justify-center hover:bg-rose-700 rounded-full transition-colors">
-                            <i className="fa-solid fa-arrow-left"></i>
-                        </button>
-                        <div className="flex-1 flex items-center gap-2">
-                            <img src={activeChatProfile?.images?.[0] || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80"} alt="Profile" className="w-8 h-8 rounded-full border border-white object-cover" />
-                            <div>
-                                <h3 className="font-bold text-sm leading-tight">{activeChatProfile?.user?.name}</h3>
-                                <p className="text-[10px] text-rose-200">Online</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Chat Body */}
-                    <div className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3">
-                        <div className="flex justify-center">
-                            <span className="text-[9px] bg-gray-200 text-gray-500 px-2 py-1 rounded-full">Today</span>
-                        </div>
-                        {messages.map((msg, i) => {
-                            const isMe = msg.senderId === (user?.uid || 'guest');
-                            return (
-                                <div key={i} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                                    {!isMe && <img src={activeChatProfile?.images?.[0] || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80"} alt="Profile" className="w-6 h-6 rounded-full self-end object-cover" />}
-                                    <div className={`p-3 rounded-2xl shadow-sm text-sm max-w-[75%] ${isMe ? 'bg-rose-600 text-white rounded-br-none' : 'bg-white text-gray-700 rounded-bl-none'}`}>
-                                        {msg.text}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        <div ref={chatEndRef} />
-                    </div>
-
-                    {/* Chat Input */}
-                    <div className="p-3 bg-white border-t border-gray-100 flex gap-2 items-center">
-                        <input 
-                            type="text" 
-                            placeholder="Type a message..." 
-                            value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                            className="flex-1 bg-gray-100 border-none rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20" 
-                        />
-                        <button onClick={handleSendMessage} className="w-10 h-10 bg-rose-600 text-white rounded-full flex items-center justify-center hover:bg-rose-700 shadow-sm flex-shrink-0">
-                            <i className="fa-solid fa-paper-plane text-sm"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        {/* INBOX MODAL (Floating) */}
-        {inboxOpen && (
-            <div className="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 z-[70] w-[95%] max-w-md">
-                <div className="bg-white w-full h-[60vh] sm:h-[500px] rounded-3xl shadow-[0_15px_50px_rgba(0,0,0,0.2)] border border-gray-100 flex flex-col animate-[slideUp_0.3s_ease-out] overflow-hidden">
-                    <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10 sm:rounded-t-3xl rounded-t-3xl">
-                        <div>
-                            <h2 className="text-lg font-black text-gray-900">Messages</h2>
-                            <p className="text-[10px] text-gray-500">Your recent conversations</p>
-                        </div>
-                        <button onClick={() => setInboxOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200">
-                            <i className="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                    
-                    <div className="flex-1 p-2 overflow-y-auto bg-gray-50 custom-scrollbar">
-                        {inboxChats.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                                <i className="fa-regular fa-comments text-4xl mb-3 text-gray-300"></i>
-                                <p className="text-xs font-bold">No messages yet</p>
-                                <p className="text-[10px]">Start a conversation from new matches</p>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col gap-1">
-                                {inboxChats.map((chat, idx) => (
-                                    <div 
-                                        key={idx} 
-                                        onClick={() => {
-                                            setActiveChatProfile(chat.profile);
-                                            setChatOpen(true);
-                                            setInboxOpen(false);
-                                        }}
-                                        className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm hover:shadow-md cursor-pointer border border-transparent hover:border-rose-100 transition-all"
-                                    >
-                                        <img src={chat.profile.images?.[0] || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80"} alt="Profile" className="w-12 h-12 rounded-full object-cover border border-gray-100" />
-                                        <div className="flex-1 overflow-hidden">
-                                            <div className="flex justify-between items-center mb-0.5">
-                                                <h3 className="font-bold text-sm text-gray-900 truncate">{chat.profile.user?.name || 'User'}</h3>
-                                                <span className="text-[9px] text-gray-400">{new Date(chat.latestMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                            </div>
-                                            <p className="text-xs text-gray-500 truncate">{chat.latestMessage.text}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        )}
-    </>
-  );
+if (!content.includes('MODAL / FORM UI OVERLAY')) {
+    content = content.replace('{/* CHAT MODAL (Floating) */}', modalCode + '\n{/* CHAT MODAL (Floating) */}');
 }
+
+fs.writeFileSync(pagePath, content);
+console.log('UI restored successfully.');

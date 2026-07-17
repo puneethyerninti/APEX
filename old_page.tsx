@@ -15,8 +15,6 @@ export default function Page() {
   const [messages, setMessages] = useState<{senderId: string, text: string, timestamp: string}[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [matches, setMatches] = useState<any[]>([]);
-  const [inboxOpen, setInboxOpen] = useState(false);
-  const [inboxChats, setInboxChats] = useState<any[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAppStore();
   const socketContext = useContext(SocketContext);
@@ -65,25 +63,11 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    // Fetch live matches, excluding the current user
-    if (user?.uid) {
-      api.get(`/matrimony/profiles?userId=${user.uid}`)
-        .then(res => setMatches(res.data))
-        .catch(err => console.error("Failed to fetch matches:", err));
-    } else {
-      api.get('/matrimony/profiles')
-        .then(res => setMatches(res.data))
-        .catch(err => console.error("Failed to fetch matches:", err));
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (inboxOpen && user?.uid) {
-      api.get(`/matrimony/inbox/${user.uid}`)
-        .then(res => setInboxChats(res.data))
-        .catch(err => console.error("Failed to fetch inbox:", err));
-    }
-  }, [inboxOpen, user]);
+    // Fetch live matches
+    api.get('/matrimony/profiles')
+      .then(res => setMatches(res.data))
+      .catch(err => console.error("Failed to fetch matches:", err));
+  }, []);
 
   useEffect(() => {
     if (chatOpen && socket && activeChatProfile) {
@@ -148,9 +132,8 @@ export default function Page() {
                 </Link>
                 <h1 className="font-black text-lg text-gray-900">Anand Matrimony</h1>
             </div>
-            <button onClick={() => setInboxOpen(true)} className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center relative">
-                <i className="fa-solid fa-message"></i>
-                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+            <button className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+                <i className="fa-solid fa-heart"></i>
             </button>
         </div>
 
@@ -177,76 +160,7 @@ export default function Page() {
 
 
 
-        
-        {/* CATEGORY GRID */}
-        <div className="px-4 mb-5">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Browse Profiles</h3>
-            <div className="grid grid-cols-4 gap-3">
-                <button className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
-                    <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-rose-600 text-lg">
-                        <i className="fa-solid fa-users"></i></div>
-                    <span className="text-[9px] font-bold text-gray-600">Community</span>
-                </button>
-                <button className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
-                    <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-pink-600 text-lg">
-                        <i className="fa-solid fa-hands-praying"></i></div>
-                    <span className="text-[9px] font-bold text-gray-600">Religion</span>
-                </button>
-                <button className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
-                    <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-purple-600 text-lg">
-                        <i className="fa-solid fa-location-dot"></i></div>
-                    <span className="text-[9px] font-bold text-gray-600">City</span>
-                </button>
-                <button className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
-                    <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-orange-600 text-lg">
-                        <i className="fa-solid fa-crown"></i></div>
-                    <span className="text-[9px] font-bold text-gray-600">Premium</span>
-                </button>
-            </div>
-        </div>
-
-        {/* PRIME PLANS SCROLLABLE */}
-        <div className="mb-5">
-            <div className="px-4 flex justify-between items-end mb-3">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Prime Plans</h3>
-            </div>
-            <div className="flex gap-3 overflow-x-auto px-4 scrollbar-none flex-nowrap pb-2">
-                
-                {/* Silver */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 min-w-[160px] flex-shrink-0 p-4 text-center cursor-pointer hover:shadow-md transition-all" onClick={() => handlePlanClick('Silver')}>
-                    <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center text-gray-500 text-2xl mb-2">
-                        <i className="fa-solid fa-medal"></i>
-                    </div>
-                    <h4 className="font-black text-gray-900">Silver</h4>
-                    <p className="text-[10px] text-gray-500 mb-2">3 Months Access</p>
-                    <div className="text-rose-600 font-black text-sm">₹5,000</div>
-                </div>
-
-                {/* Gold */}
-                <div className="bg-gradient-to-b from-yellow-50 to-yellow-100 rounded-2xl shadow-md border border-yellow-200 min-w-[160px] flex-shrink-0 p-4 text-center cursor-pointer hover:shadow-lg transition-all relative transform scale-105" onClick={() => handlePlanClick('Gold')}>
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-rose-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">Popular</div>
-                    <div className="w-12 h-12 mx-auto bg-yellow-200 rounded-full flex items-center justify-center text-yellow-600 text-2xl mb-2">
-                        <i className="fa-solid fa-crown"></i>
-                    </div>
-                    <h4 className="font-black text-gray-900">Gold</h4>
-                    <p className="text-[10px] text-gray-600 mb-2">6 Months Access</p>
-                    <div className="text-rose-600 font-black text-sm">₹10,000</div>
-                </div>
-
-                {/* Diamond */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-sm border border-blue-200 min-w-[160px] flex-shrink-0 p-4 text-center cursor-pointer hover:shadow-md transition-all" onClick={() => handlePlanClick('Diamond')}>
-                    <div className="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center text-blue-500 text-2xl mb-2">
-                        <i className="fa-regular fa-gem"></i>
-                    </div>
-                    <h4 className="font-black text-gray-900">Diamond</h4>
-                    <p className="text-[10px] text-gray-500 mb-2">12 Months Access</p>
-                    <div className="text-rose-600 font-black text-sm">₹25,000</div>
-                </div>
-
-            </div>
-        </div>
-
-{/* HORIZONTAL TRACK */}
+        {/* HORIZONTAL TRACK */}
         <div className="mb-5">
             <div className="px-4 flex justify-between items-end mb-3">
                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">New Matches</h3>
@@ -390,10 +304,10 @@ export default function Page() {
             </div>
         )}
 
-        {/* CHAT MODAL (Floating) */}
+        {/* CHAT MODAL */}
         {chatOpen && (
-            <div className="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 z-[70] w-[95%] max-w-md">
-                <div className="bg-white w-full h-[60vh] sm:h-[500px] rounded-3xl shadow-[0_15px_50px_rgba(0,0,0,0.2)] border border-gray-100 flex flex-col animate-[slideUp_0.3s_ease-out] overflow-hidden">
+            <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center">
+                <div className="bg-white w-full max-w-md h-[70vh] sm:h-[600px] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col animate-[slideUp_0.3s_ease-out]">
                     {/* Chat Header */}
                     <div className="p-4 border-b border-gray-100 flex items-center gap-3 bg-rose-600 text-white rounded-t-3xl sm:rounded-t-3xl">
                         <button onClick={() => setChatOpen(false)} className="w-8 h-8 flex items-center justify-center hover:bg-rose-700 rounded-full transition-colors">
@@ -440,56 +354,6 @@ export default function Page() {
                         <button onClick={handleSendMessage} className="w-10 h-10 bg-rose-600 text-white rounded-full flex items-center justify-center hover:bg-rose-700 shadow-sm flex-shrink-0">
                             <i className="fa-solid fa-paper-plane text-sm"></i>
                         </button>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        {/* INBOX MODAL (Floating) */}
-        {inboxOpen && (
-            <div className="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 z-[70] w-[95%] max-w-md">
-                <div className="bg-white w-full h-[60vh] sm:h-[500px] rounded-3xl shadow-[0_15px_50px_rgba(0,0,0,0.2)] border border-gray-100 flex flex-col animate-[slideUp_0.3s_ease-out] overflow-hidden">
-                    <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10 sm:rounded-t-3xl rounded-t-3xl">
-                        <div>
-                            <h2 className="text-lg font-black text-gray-900">Messages</h2>
-                            <p className="text-[10px] text-gray-500">Your recent conversations</p>
-                        </div>
-                        <button onClick={() => setInboxOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200">
-                            <i className="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                    
-                    <div className="flex-1 p-2 overflow-y-auto bg-gray-50 custom-scrollbar">
-                        {inboxChats.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                                <i className="fa-regular fa-comments text-4xl mb-3 text-gray-300"></i>
-                                <p className="text-xs font-bold">No messages yet</p>
-                                <p className="text-[10px]">Start a conversation from new matches</p>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col gap-1">
-                                {inboxChats.map((chat, idx) => (
-                                    <div 
-                                        key={idx} 
-                                        onClick={() => {
-                                            setActiveChatProfile(chat.profile);
-                                            setChatOpen(true);
-                                            setInboxOpen(false);
-                                        }}
-                                        className="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm hover:shadow-md cursor-pointer border border-transparent hover:border-rose-100 transition-all"
-                                    >
-                                        <img src={chat.profile.images?.[0] || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80"} alt="Profile" className="w-12 h-12 rounded-full object-cover border border-gray-100" />
-                                        <div className="flex-1 overflow-hidden">
-                                            <div className="flex justify-between items-center mb-0.5">
-                                                <h3 className="font-bold text-sm text-gray-900 truncate">{chat.profile.user?.name || 'User'}</h3>
-                                                <span className="text-[9px] text-gray-400">{new Date(chat.latestMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                            </div>
-                                            <p className="text-xs text-gray-500 truncate">{chat.latestMessage.text}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
