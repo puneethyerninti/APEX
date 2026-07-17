@@ -66,6 +66,23 @@ export const getMessages = async (req: Request, res: Response) => {
   }
 };
 
+// Mark messages as read
+export const markMessagesAsRead = async (req: Request, res: Response) => {
+  const { roomId } = req.params;
+  const { userId } = req.body; // The user who is reading the messages
+  
+  try {
+    // Update all messages in this room sent TO this user as read
+    await Message.updateMany(
+      { roomId, receiverId: userId, isRead: false },
+      { $set: { isRead: true } }
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error marking messages as read' });
+  }
+};
+
 // Get inbox for a user
 export const getInbox = async (req: Request, res: Response) => {
   const { userId } = req.params;
@@ -87,7 +104,7 @@ export const getInbox = async (req: Request, res: Response) => {
             if (fallbackUser) {
               otherProfile = {
                 user: fallbackUser,
-                images: []
+                images: fallbackUser.profilePicture ? [fallbackUser.profilePicture] : []
               } as any;
             }
           }

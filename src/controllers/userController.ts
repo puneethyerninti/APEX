@@ -19,6 +19,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      profilePicture: user.profilePicture,
     });
   } catch (error) {
     console.error(error);
@@ -27,7 +28,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
 };
 
 export const updateUserProfile = async (req: Request, res: Response) => {
-  const { phone, name, email } = req.body;
+  const { phone, name, email, profilePicture } = req.body;
 
   if (!phone) {
     return res.status(400).json({ error: 'Phone number is required' });
@@ -40,6 +41,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
       // Update existing user
       if (name !== undefined) user.name = name;
       if (email !== undefined) user.email = email;
+      if (profilePicture !== undefined) user.profilePicture = profilePicture;
       await user.save();
     } else {
       // Create user if not found (fallback)
@@ -63,7 +65,8 @@ export const updateUserProfile = async (req: Request, res: Response) => {
         _id: user._id,
         name: user.name, 
         email: user.email, 
-        phone: user.phone 
+        phone: user.phone,
+        profilePicture: user.profilePicture
       } 
     });
   } catch (error) {

@@ -7,6 +7,7 @@ export interface IUser extends Document {
   phone?: string;
   role: 'user' | 'admin';
   walletBalance: number;
+  profilePicture?: string;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -17,6 +18,7 @@ const UserSchema = new Schema<IUser>(
     phone: { type: String },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     walletBalance: { type: Number, default: 0 },
+    profilePicture: { type: String },
   },
   { timestamps: true }
 );
