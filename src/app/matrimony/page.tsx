@@ -225,8 +225,8 @@ export default function Page() {
         </div>
 
         {/* HERO DASHBOARD */}
-        <div className="p-4">
-            <div className="bg-gradient-to-br from-rose-600 to-pink-700 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden flex flex-col items-center text-center">
+        <div className="p-4 max-w-7xl mx-auto">
+            <div className="bg-gradient-to-br from-rose-600 to-pink-700 rounded-2xl p-5 md:p-8 text-white shadow-lg relative overflow-hidden flex flex-col items-center text-center">
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10">
                 </div>
                 <div className="relative z-10">
@@ -249,9 +249,9 @@ export default function Page() {
 
         
         {/* CATEGORY GRID */}
-        <div className="px-4 mb-5">
+        <div className="px-4 mb-5 max-w-7xl mx-auto">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Browse Profiles</h3>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-3 md:gap-6">
                 <button className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
                     <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-rose-600 text-lg">
                         <i className="fa-solid fa-users"></i></div>
@@ -276,11 +276,11 @@ export default function Page() {
         </div>
 
         {/* PRIME PLANS SCROLLABLE */}
-        <div className="mb-5">
+        <div className="mb-5 max-w-7xl mx-auto w-full">
             <div className="px-4 flex justify-between items-end mb-3">
                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Prime Plans</h3>
             </div>
-            <div className="flex gap-3 overflow-x-auto px-4 scrollbar-none flex-nowrap pb-2">
+            <div className="flex gap-3 md:gap-6 overflow-x-auto px-4 scrollbar-none flex-nowrap md:flex-wrap pb-2">
                 
                 {/* Silver */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 min-w-[160px] flex-shrink-0 p-4 text-center cursor-pointer hover:shadow-md transition-all" onClick={() => handlePlanClick('Silver')}>
@@ -317,12 +317,12 @@ export default function Page() {
         </div>
 
 {/* HORIZONTAL TRACK */}
-        <div className="mb-5">
+        <div className="mb-5 max-w-7xl mx-auto w-full">
             <div className="px-4 flex justify-between items-end mb-3">
                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">New Matches</h3>
-                <button onClick={() => {}} className="text-[9px] font-bold text-rose-600">View All</button>
+                <button onClick={() => {}} className="text-[9px] font-bold text-rose-600 md:text-sm">View All</button>
             </div>
-            <div className="flex gap-3 overflow-x-auto px-4 scrollbar-none flex-nowrap pb-2">
+            <div className="flex md:grid md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4 overflow-x-auto md:overflow-visible px-4 scrollbar-none flex-nowrap pb-2">
                 {matches.length === 0 ? (
                     <div className="text-xs text-gray-500 w-full text-center py-4 bg-white rounded-xl border border-gray-100">
                         No matches available right now.

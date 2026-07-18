@@ -46,22 +46,22 @@ export default function Page() {
     </div>
 
     {/* HERO DASHBOARD */}
-    <div className="p-4">
-        <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden text-center">
+    <div className="p-4 max-w-7xl mx-auto w-full">
+        <div className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden text-center md:py-12">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
             <div className="relative z-10">
-                <p className="text-orange-100 text-[10px] font-bold uppercase tracking-widest mb-2">APEX Community Impact</p>
-                <h2 className="text-4xl font-black mb-1">2.4M+</h2>
-                <p className="text-[11px] font-bold text-white mb-4">Lives touched this year.</p>
-                <p className="text-[9px] text-orange-100 px-4">100% of your donations go directly to the causes you care about. We cover all platform fees.</p>
+                <p className="text-orange-100 text-[10px] font-bold uppercase tracking-widest mb-2 md:text-sm">APEX Community Impact</p>
+                <h2 className="text-4xl md:text-6xl font-black mb-1">2.4M+</h2>
+                <p className="text-[11px] md:text-sm font-bold text-white mb-4">Lives touched this year.</p>
+                <p className="text-[9px] md:text-xs text-orange-100 px-4 max-w-2xl mx-auto">100% of your donations go directly to the causes you care about. We cover all platform fees.</p>
             </div>
         </div>
     </div>
 
     {/* CATEGORY GRID */}
-    <div className="px-4 mb-5">
+    <div className="px-4 mb-5 max-w-7xl mx-auto w-full">
         <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Support a Cause</h3>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 md:grid-cols-8 gap-3 md:gap-6">
             <button className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
                 <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-blue-500 text-lg"><i className="fa-solid fa-book-open"></i></div>
                 <span className="text-[9px] font-bold text-gray-600">Education</span>
@@ -82,7 +82,7 @@ export default function Page() {
     </div>
 
     {/* DONATE NOW SECTION */}
-    <div className="px-4 mb-8">
+    <div className="px-4 mb-8 max-w-7xl mx-auto w-full">
         <div className="bg-white rounded-3xl p-6 shadow-md border border-gray-100 text-center relative overflow-hidden">
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange-50 rounded-full blur-2xl"></div>
             <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-red-50 rounded-full blur-2xl"></div>
@@ -107,7 +107,7 @@ export default function Page() {
     </div>
 
     {/* HORIZONTAL TRACK */}
-    <div className="mb-5">
+    <div className="mb-5 max-w-7xl mx-auto w-full">
         <div className="px-4 flex justify-between items-end mb-3">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Urgent Campaigns</h3>
             <Link href="#" className="text-[9px] font-bold text-orange-600">View All</Link>

@@ -45,7 +45,7 @@ export default function Page() {
     </div>
 
     {/* HERO DASHBOARD */}
-    <div className="p-4">
+    <div className="p-4 max-w-7xl mx-auto w-full">
         <h2 className="text-sm font-black text-gray-800 mb-2">Continue Learning</h2>
         <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex gap-3 items-center">
             <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 text-xl flex-shrink-0">
@@ -63,58 +63,58 @@ export default function Page() {
     </div>
 
     {/* COURSES SECTION */}
-    <div className="mb-6">
+    <div className="mb-6 max-w-7xl mx-auto w-full">
         <div className="px-4 flex justify-between items-end mb-3">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Courses</h3>
             <Link href="#" className="text-[9px] font-bold text-purple-600">View All</Link>
         </div>
-        <div className="flex gap-3 overflow-x-auto px-4 scrollbar-none flex-nowrap pb-2 snap-x snap-mandatory">
+        <div className="flex gap-3 md:gap-6 overflow-x-auto px-4 scrollbar-none flex-nowrap md:flex-wrap pb-2 snap-x snap-mandatory">
             
             {/* Spoken English */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
-                <div className="h-24 bg-purple-50 relative flex items-center justify-center text-purple-500 text-3xl">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
+                <div className="h-24 md:h-32 bg-purple-50 relative flex items-center justify-center text-purple-500 text-3xl">
                     <i className="fa-solid fa-comments"></i>
                 </div>
-                <div className="p-3">
-                    <h4 className="font-black text-[10px] text-gray-900 truncate mb-1">Spoken English</h4>
-                    <p className="text-[9px] text-gray-500 mb-2 truncate">Fluency &amp; Grammar</p>
-                    <span className="text-purple-600 font-black text-xs">₹4,999</span>
+                <div className="p-3 md:p-4">
+                    <h4 className="font-black text-[10px] md:text-xs text-gray-900 truncate mb-1">Spoken English</h4>
+                    <p className="text-[9px] md:text-[10px] text-gray-500 mb-2 truncate">Fluency &amp; Grammar</p>
+                    <span className="text-purple-600 font-black text-xs md:text-sm">₹4,999</span>
                 </div>
             </div>
 
             {/* Spoken Hindi */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
-                <div className="h-24 bg-orange-50 relative flex items-center justify-center text-orange-500 text-3xl">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
+                <div className="h-24 md:h-32 bg-orange-50 relative flex items-center justify-center text-orange-500 text-3xl">
                     <i className="fa-solid fa-language"></i>
                 </div>
-                <div className="p-3">
-                    <h4 className="font-black text-[10px] text-gray-900 truncate mb-1">Spoken Hindi</h4>
-                    <p className="text-[9px] text-gray-500 mb-2 truncate">Conversational Skills</p>
-                    <span className="text-purple-600 font-black text-xs">₹3,999</span>
+                <div className="p-3 md:p-4">
+                    <h4 className="font-black text-[10px] md:text-xs text-gray-900 truncate mb-1">Spoken Hindi</h4>
+                    <p className="text-[9px] md:text-[10px] text-gray-500 mb-2 truncate">Conversational Skills</p>
+                    <span className="text-purple-600 font-black text-xs md:text-sm">₹3,999</span>
                 </div>
             </div>
 
             {/* Computer Courses */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
-                <div className="h-24 bg-blue-50 relative flex items-center justify-center text-blue-500 text-3xl">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
+                <div className="h-24 md:h-32 bg-blue-50 relative flex items-center justify-center text-blue-500 text-3xl">
                     <i className="fa-solid fa-desktop"></i>
                 </div>
-                <div className="p-3">
-                    <h4 className="font-black text-[10px] text-gray-900 truncate mb-1">Computer Courses</h4>
-                    <p className="text-[9px] text-gray-500 mb-2 truncate">MS Office, Tally, Basics</p>
-                    <span className="text-purple-600 font-black text-xs">₹1200</span>
+                <div className="p-3 md:p-4">
+                    <h4 className="font-black text-[10px] md:text-xs text-gray-900 truncate mb-1">Computer Courses</h4>
+                    <p className="text-[9px] md:text-[10px] text-gray-500 mb-2 truncate">MS Office, Tally, Basics</p>
+                    <span className="text-purple-600 font-black text-xs md:text-sm">₹1200</span>
                 </div>
             </div>
             
             {/* Competitive Exam Courses */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
-                <div className="h-24 bg-green-50 relative flex items-center justify-center text-green-500 text-3xl">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
+                <div className="h-24 md:h-32 bg-green-50 relative flex items-center justify-center text-green-500 text-3xl">
                     <i className="fa-solid fa-book-open-reader"></i>
                 </div>
-                <div className="p-3">
-                    <h4 className="font-black text-[10px] text-gray-900 truncate mb-1">Competitive Exams</h4>
-                    <p className="text-[9px] text-gray-500 mb-2 truncate">SSC, Bank, Railways</p>
-                    <span className="text-purple-600 font-black text-xs">₹1500</span>
+                <div className="p-3 md:p-4">
+                    <h4 className="font-black text-[10px] md:text-xs text-gray-900 truncate mb-1">Competitive Exams</h4>
+                    <p className="text-[9px] md:text-[10px] text-gray-500 mb-2 truncate">SSC, Bank, Railways</p>
+                    <span className="text-purple-600 font-black text-xs md:text-sm">₹1500</span>
                 </div>
             </div>
 
@@ -122,12 +122,12 @@ export default function Page() {
     </div>
 
     {/* JOB ORIENTED COURSES */}
-    <div className="mb-8">
+    <div className="mb-8 max-w-7xl mx-auto w-full">
         <div className="px-4 flex justify-between items-end mb-3">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Job Oriented Courses</h3>
             <Link href="#" className="text-[9px] font-bold text-purple-600">View All</Link>
         </div>
-        <div className="px-4 mb-2">
+        <div className="px-4 mb-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 flex flex-col gap-4">
             <AutoCarousel interval={3500}>
                 {/* Full Stack */}
                 <div className="bg-white border border-gray-100 w-full overflow-hidden cursor-pointer hover:shadow-md transition-shadow">

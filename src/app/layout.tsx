@@ -14,6 +14,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "APEX | Your Life. Simplified.",
   description: "One App, Unlimited Possibilities.",
+  manifest: "/manifest.json",
+  themeColor: "#4c1d95",
+  viewport: "minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover",
 };
 
 export default function RootLayout({
@@ -29,8 +32,8 @@ export default function RootLayout({
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
       </head>
-      <body className="min-h-full flex flex-col pb-14 bg-slate-900 text-gray-800">
-        <div className="max-w-md w-full mx-auto bg-[#F4F6FB] min-h-screen relative shadow-[0_0_40px_rgba(0,0,0,0.1)] overflow-hidden border-x border-gray-200 pb-20">
+      <body className="min-h-full flex flex-col bg-slate-50 md:bg-gray-100 text-gray-800">
+        <div className="w-full max-w-[2000px] mx-auto bg-[#F4F6FB] min-h-screen relative shadow-[0_0_40px_rgba(0,0,0,0.05)] overflow-x-hidden md:border-x border-gray-200 pb-20 md:pb-0">
           <Providers>
             <NavigationWrapper>
               {children}

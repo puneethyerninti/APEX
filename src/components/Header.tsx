@@ -97,6 +97,22 @@ export default function Header() {
           </div>
         </Link>
 
+        {/* Desktop Navigation Links */}
+        <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+          <Link href="/matrimony" className="text-violet-100 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
+            <i className="fa-solid fa-heart text-pink-400"></i> Matrimony
+          </Link>
+          <Link href="/academy" className="text-violet-100 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
+            <i className="fa-solid fa-graduation-cap text-yellow-400"></i> Academy
+          </Link>
+          <Link href="/charity" className="text-violet-100 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
+            <i className="fa-solid fa-hand-holding-heart text-green-400"></i> Charity
+          </Link>
+          <Link href="/store" className="text-violet-100 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
+            <i className="fa-solid fa-store text-blue-400"></i> Store
+          </Link>
+        </div>
+
         <div className="flex items-center gap-3.5">
           <a
             href="https://wa.me/919494273763"

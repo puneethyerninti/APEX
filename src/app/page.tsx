@@ -117,7 +117,7 @@ export default function Home() {
 
 
 {/* Flipkart-style Categories Compact Grid */}
-<div className="grid grid-cols-4 gap-y-3 gap-x-2 px-4 py-3 bg-white shadow-xs border-b border-gray-100">
+<div className="grid grid-cols-4 md:grid-cols-8 gap-y-3 gap-x-2 md:gap-x-4 px-4 py-3 md:py-5 bg-white shadow-xs border-b border-gray-100 max-w-7xl mx-auto">
     {/* Priority 1: Financial Services */}
     <Link href="/finance" className="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
@@ -177,7 +177,7 @@ export default function Home() {
 </div>
 
 {/* ═══ 1. HERO — Welcome + Wallet + Promo Carousel ═══ */}
-<section id="home" className="hero-gradient pt-5 pb-5 px-4">
+<section id="home" className="hero-gradient pt-5 pb-5 px-4 md:px-8 max-w-7xl mx-auto rounded-b-3xl shadow-md">
     {/* Welcome Row */}
     <div className="flex items-center justify-between mb-4 reveal-up">
         <div>

@@ -77,99 +77,15 @@ export default function GlobalModals() {
     };
 
     const handleCheckout = async () => {
-        setCheckoutStep('processing');
-        
-        try {
-            if (modalData?.amount) {
-                const num = parseFloat(modalData.amount.replace(/[^0-9.]/g, ''));
-                if (!isNaN(num)) {
-                    await api.post('/finance/wallet/deduct', {
-                        amount: num,
-                        category: modalData?.plan || 'payment'
-                    });
-                    deductMoney(num); // Update local store visually
-                }
-            }
-            
-            setCheckoutStep('methods');
-            setModal(null);
-            window.dispatchEvent(new CustomEvent('paymentSuccess'));
-        } catch (error) {
-            console.error("Payment failed", error);
-            alert("Payment failed. Please check your wallet balance.");
-            setCheckoutStep('methods');
-        }
+        // Temporary Redirect to razorpay.me until API keys are verified
+        alert("Redirecting to Razorpay. Please complete your payment securely.");
+        window.location.href = "https://razorpay.me/@apextradingcompany";
     };
 
     const handleAddMoney = async () => {
-        const amountStr = prompt("Enter amount to add to wallet (INR):");
-        if (!amountStr) return;
-        const amount = parseInt(amountStr);
-        if (amount <= 0 || isNaN(amount)) return;
-        
-        try {
-            const orderRes = await api.post('/finance/razorpay/order', { amount });
-            
-            // HYBRID MOCK BYPASS (If no keys in backend .env)
-            if (orderRes.data.mockMode) {
-                const verifyRes = await api.post('/finance/razorpay/verify', { amount, userId: user?.uid });
-                if (verifyRes.data.success) {
-                    addMoney(amount);
-                    alert("Mock Mode: ₹" + amount + " added successfully!");
-                }
-                return;
-            }
-
-            // REAL RAZORPAY INTEGRATION
-            const loadScript = () => new Promise((resolve) => {
-                const script = document.createElement('script');
-                script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-                script.onload = () => resolve(true);
-                script.onerror = () => resolve(false);
-                document.body.appendChild(script);
-            });
-
-            const loaded = await loadScript();
-            if (!loaded) return alert("Failed to load Razorpay SDK");
-
-            const options = {
-                key: orderRes.data.keyId,
-                amount: orderRes.data.order.amount,
-                currency: "INR",
-                name: "APEX Corporation",
-                description: "Wallet Recharge",
-                order_id: orderRes.data.order.id,
-                handler: async (response: any) => {
-                    try {
-                        const verifyRes = await api.post('/finance/razorpay/verify', {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                            amount: amount,
-                            userId: user?.uid
-                        });
-                        if (verifyRes.data.success) {
-                            addMoney(amount);
-                            alert("Payment successful! Wallet updated.");
-                        }
-                    } catch (e) {
-                        alert("Payment verification failed.");
-                    }
-                },
-                prefill: {
-                    name: user?.name || "",
-                    contact: user?.phone || ""
-                },
-                theme: { color: "#7c3aed" } // violet-600
-            };
-            
-            const rzp = new (window as any).Razorpay(options);
-            rzp.open();
-
-        } catch (error) {
-            console.error(error);
-            alert("Error initiating payment");
-        }
+        // Temporary Redirect to razorpay.me until API keys are verified
+        alert("Redirecting to Razorpay. Please complete your payment securely.");
+        window.location.href = "https://razorpay.me/@apextradingcompany";
     };
 
     const handleUPISelection = () => {
