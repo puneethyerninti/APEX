@@ -10,6 +10,7 @@ import jobsRoutes from './routes/jobsRoutes';
 import matrimonyRoutes from './routes/matrimonyRoutes';
 import userRoutes from './routes/userRoutes';
 import adminRoutes from './routes/adminRoutes';
+import wealthRoutes from './routes/wealthRoutes';
 import Message from './models/Message';
 import User from './models/User';
 
@@ -125,6 +126,7 @@ app.use('/api/jobs', jobsRoutes);
 app.use('/api/matrimony', matrimonyRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/wealth', wealthRoutes);
 
 // Routes Placeholder
 app.get('/', (req, res) => {
