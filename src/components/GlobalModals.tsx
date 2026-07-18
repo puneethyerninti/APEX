@@ -98,7 +98,7 @@ export default function GlobalModals() {
                 {/* Header */}
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10 sm:rounded-t-3xl rounded-t-3xl">
                     <h2 className="text-lg font-black text-gray-900">
-                        {modal === 'payment' ? 'APEX Wallet' : modal === 'checkout' ? 'Secure Checkout' : 'My Account'}
+                        {modal === 'checkout' ? 'Secure Checkout' : 'My Account'}
                     </h2>
                     <button onClick={() => setModal(null)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors">
                         <i className="fa-solid fa-xmark"></i>
@@ -191,53 +191,7 @@ export default function GlobalModals() {
                         </div>
                     )}
 
-                    {/* APEX WALLET MODAL */}
-                    {modal === 'payment' && (
-                        <div className="flex flex-col gap-4">
-                            <div className="bg-gradient-to-br from-violet-600 to-purple-800 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-4 opacity-20">
-                                    <i className="fa-solid fa-wallet text-6xl"></i>
-                                </div>
-                                <p className="text-[10px] text-violet-200 uppercase tracking-wider mb-1">Available Balance</p>
-                                <h3 className="text-3xl font-black mb-4">₹ {walletBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h3>
-                                <div className="flex gap-2">
-                                    <button onClick={handleAddMoney} className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-[10px] font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
-                                        <i className="fa-solid fa-plus"></i> Add Money
-                                    </button>
-                                    <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-[10px] font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
-                                        <i className="fa-solid fa-paper-plane"></i> Send
-                                    </button>
-                                </div>
-                            </div>
-                            <h3 className="text-sm font-bold text-gray-800 mt-2">Recent Transactions</h3>
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center">
-                                            <i className="fa-solid fa-bolt"></i>
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-xs">Electricity Bill</p>
-                                            <p className="text-[9px] text-gray-500">Today, 10:45 AM</p>
-                                        </div>
-                                    </div>
-                                    <span className="font-black text-xs text-gray-900">-₹ 1,240</span>
-                                </div>
-                                <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-green-100 text-green-500 flex items-center justify-center">
-                                            <i className="fa-solid fa-arrow-down"></i>
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-xs">Money Added</p>
-                                            <p className="text-[9px] text-gray-500">Yesterday</p>
-                                        </div>
-                                    </div>
-                                    <span className="font-black text-xs text-green-600">+₹ 5,000</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {/* WALLET REMOVED FOR COMPLIANCE */}
                     
                     {/* ACCOUNT MODAL */}
                     {modal === 'account' && (

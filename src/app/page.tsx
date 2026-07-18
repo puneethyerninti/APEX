@@ -432,33 +432,33 @@ export default function Home() {
     <div className="px-4">
         <h2 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-4.5 reveal-up">Quick Payments</h2>
         <div className="grid grid-cols-5 gap-1.5 reveal-up delay-100">
-            <Link href="/utility" className="quick-action group">
+            <div onClick={() => window.dispatchEvent(new CustomEvent('showToast', { detail: 'Pay Bills is Coming Soon' }))} className="quick-action group cursor-pointer">
                 <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style={{ background: "linear-gradient(135deg,#e0edff,#c7d9ff)", color: "#2563eb" }}>
                     <i className="fa-solid fa-receipt"></i></div>
                 <span>Pay Bills</span>
-            </Link>
-            <Link href="/utility" className="quick-action group">
+            </div>
+            <div onClick={() => window.dispatchEvent(new CustomEvent('showToast', { detail: 'Recharge is Coming Soon' }))} className="quick-action group cursor-pointer">
                 <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style={{ background: "linear-gradient(135deg,#d1fae5,#a7f3d0)", color: "#059669" }}>
                     <i className="fa-solid fa-mobile-screen-button"></i></div>
                 <span>Recharge</span>
-            </Link>
-            <Link href="/utility" className="quick-action group">
+            </div>
+            <div onClick={() => window.dispatchEvent(new CustomEvent('showToast', { detail: 'Send Money is Coming Soon' }))} className="quick-action group cursor-pointer">
                 <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style={{ background: "linear-gradient(135deg,#fef3c7,#fde68a)", color: "#d97706" }}>
                     <i className="fa-solid fa-paper-plane"></i></div>
                 <span>Send</span>
-            </Link>
-            <div onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: { type: 'checkout', data: { amount: '₹ 0.00', plan: 'Scan & Pay' } } }))} className="quick-action group cursor-pointer">
+            </div>
+            <div onClick={() => window.dispatchEvent(new CustomEvent('showToast', { detail: 'Scan QR is Coming Soon' }))} className="quick-action group cursor-pointer">
                 <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style={{ background: "linear-gradient(135deg,#ede9ff,#ddd6fe)", color: "#7c3aed" }}>
                     <i className="fa-solid fa-qrcode"></i>
                 </div>
                 <span>Scan QR</span>
             </div>
-            <Link href="/utility" className="quick-action group">
+            <div onClick={() => window.dispatchEvent(new CustomEvent('showToast', { detail: 'More features Coming Soon' }))} className="quick-action group cursor-pointer">
                 <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style={{ background: "linear-gradient(135deg,#fce7f3,#fbcfe8)", color: "#db2777" }}>
                     <i className="fa-solid fa-ellipsis"></i>
                 </div>
                 <span>More</span>
-            </Link>
+            </div>
         </div>
     </div>
 </section>

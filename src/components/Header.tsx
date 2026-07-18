@@ -122,15 +122,6 @@ export default function Header() {
             <i className="fa-brands fa-whatsapp"></i>
           </a>
 
-          {/* Wallet Button */}
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'payment' }))}
-            className="text-violet-100 hover:text-white transition-colors text-lg relative"
-            aria-label="Wallet"
-          >
-            <i className="fa-solid fa-wallet"></i>
-          </button>
-
           <Link
             href="/store"
             className="text-violet-100 hover:text-white transition-colors text-lg relative"
