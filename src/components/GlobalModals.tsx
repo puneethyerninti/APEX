@@ -20,6 +20,7 @@ export default function GlobalModals() {
     // Global state
     const walletBalance = useAppStore((state) => state.walletBalance);
     const deductMoney = useAppStore((state) => state.deductMoney);
+    const addMoney = useAppStore((state) => state.addMoney);
     const user = useAppStore((state) => state.user);
     const updateUserProfile = useAppStore((state) => state.updateUserProfile);
     const { logout } = useAuth();
@@ -97,6 +98,77 @@ export default function GlobalModals() {
             console.error("Payment failed", error);
             alert("Payment failed. Please check your wallet balance.");
             setCheckoutStep('methods');
+        }
+    };
+
+    const handleAddMoney = async () => {
+        const amountStr = prompt("Enter amount to add to wallet (INR):");
+        if (!amountStr) return;
+        const amount = parseInt(amountStr);
+        if (amount <= 0 || isNaN(amount)) return;
+        
+        try {
+            const orderRes = await api.post('/finance/razorpay/order', { amount });
+            
+            // HYBRID MOCK BYPASS (If no keys in backend .env)
+            if (orderRes.data.mockMode) {
+                const verifyRes = await api.post('/finance/razorpay/verify', { amount, userId: user?.uid });
+                if (verifyRes.data.success) {
+                    addMoney(amount);
+                    alert("Mock Mode: ₹" + amount + " added successfully!");
+                }
+                return;
+            }
+
+            // REAL RAZORPAY INTEGRATION
+            const loadScript = () => new Promise((resolve) => {
+                const script = document.createElement('script');
+                script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                script.onload = () => resolve(true);
+                script.onerror = () => resolve(false);
+                document.body.appendChild(script);
+            });
+
+            const loaded = await loadScript();
+            if (!loaded) return alert("Failed to load Razorpay SDK");
+
+            const options = {
+                key: orderRes.data.keyId,
+                amount: orderRes.data.order.amount,
+                currency: "INR",
+                name: "APEX Corporation",
+                description: "Wallet Recharge",
+                order_id: orderRes.data.order.id,
+                handler: async (response: any) => {
+                    try {
+                        const verifyRes = await api.post('/finance/razorpay/verify', {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            amount: amount,
+                            userId: user?.uid
+                        });
+                        if (verifyRes.data.success) {
+                            addMoney(amount);
+                            alert("Payment successful! Wallet updated.");
+                        }
+                    } catch (e) {
+                        alert("Payment verification failed.");
+                    }
+                },
+                prefill: {
+                    name: user?.name || "",
+                    contact: user?.phone || ""
+                },
+                theme: { color: "#7c3aed" } // violet-600
+            };
+            
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
+
+        } catch (error) {
+            console.error(error);
+            alert("Error initiating payment");
         }
     };
 
@@ -213,7 +285,7 @@ export default function GlobalModals() {
                                 <p className="text-[10px] text-violet-200 uppercase tracking-wider mb-1">Available Balance</p>
                                 <h3 className="text-3xl font-black mb-4">₹ {walletBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h3>
                                 <div className="flex gap-2">
-                                    <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-[10px] font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
+                                    <button onClick={handleAddMoney} className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-[10px] font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
                                         <i className="fa-solid fa-plus"></i> Add Money
                                     </button>
                                     <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-[10px] font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
