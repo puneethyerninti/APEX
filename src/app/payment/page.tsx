@@ -15,76 +15,12 @@ export default function PaymentPage() {
         }
 
         setLoading(true);
-        try {
-            // 1. Create order on our backend
-            const orderRes = await api.post('/payment/create-order', { amount: Number(amount) });
-            
-            if (!orderRes.data.success) {
-                throw new Error("Failed to create order");
-            }
-
-            const { order } = orderRes.data;
-
-            // 2. Open Razorpay Checkout Widget
-            const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, 
-                amount: order.amount, // Amount is in currency subunits.
-                currency: order.currency,
-                name: "APEX Trading Company",
-                description: "Secure Online Payment",
-                image: "/logo.png",
-                order_id: order.id, 
-                handler: async function (response: any) {
-                    // 3. Verify signature on our backend
-                    try {
-                        const verifyRes = await api.post('/payment/verify', {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature
-                        });
-                        
-                        if (verifyRes.data.success) {
-                            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Payment Successful!', type: 'success' } }));
-                            setAmount('');
-                        } else {
-                            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Payment verification failed', type: 'warning' } }));
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Error verifying payment', type: 'warning' } }));
-                    }
-                },
-                prefill: {
-                    name: "Customer",
-                    email: "customer@apextc.shop",
-                    contact: "9999999999" // Can be pre-filled dynamically if user is logged in
-                },
-                notes: {
-                    address: "APEX Trading Company"
-                },
-                theme: {
-                    color: "#6C3FC5"
-                }
-            };
-
-            const rzp1 = new (window as any).Razorpay(options);
-            rzp1.on('payment.failed', function (response: any) {
-                console.error(response.error);
-                window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Payment failed', type: 'warning' } }));
-            });
-            rzp1.open();
-        } catch (error) {
-            console.error('Payment Error', error);
-            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Payment initialization failed', type: 'warning' } }));
-        } finally {
-            setLoading(false);
-        }
+        // Fallback to Razorpay Payment Link as requested by client
+        window.location.href = `https://razorpay.me/@apextradingcompany?amount=${amount}`;
     };
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col pb-20">
-            <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-            
             <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
                 <Link href="/" className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
                     <i className="fa-solid fa-arrow-left"></i>
