@@ -15,8 +15,8 @@ export default function PaymentPage() {
         }
 
         setLoading(true);
-        // Fallback to Razorpay Payment Link as requested by client
-        window.location.href = `https://razorpay.me/@apextradingcompany?amount=${amount}`;
+        // Fallback to Razorpay Payment Link without amount parameter as it breaks the page
+        window.location.href = `https://razorpay.me/@apextradingcompany`;
     };
 
     return (
@@ -38,9 +38,9 @@ export default function PaymentPage() {
                         <p className="text-xs text-gray-500 mt-1">Scan this QR code using any UPI app (GPay, PhonePe, Paytm, etc.) to make a direct payment.</p>
                     </div>
                     
-                    <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-4 flex justify-center items-center mb-4">
+                    <a href="https://razorpay.me/@apextradingcompany" className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-4 flex justify-center items-center mb-4 cursor-pointer hover:bg-gray-100 transition-colors">
                         <img src="/apex_payment_qr.png" alt="APEX Trading Company QR Code" className="w-48 h-48 object-contain rounded-xl shadow-sm" />
-                    </div>
+                    </a>
                     
                     <div className="flex items-center justify-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
                         <span className="w-8 h-[1px] bg-gray-200"></span> OR <span className="w-8 h-[1px] bg-gray-200"></span>
