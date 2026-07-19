@@ -31,7 +31,7 @@ export const sendEmailNotification = async (req: Request, res: Response) => {
 
     res.json({
       message: "Email sent successfully",
-      id: data.id
+      id: data.data?.id || (data as any).id
     });
   } catch (error: any) {
     console.error("Resend API Error:", error.message);
