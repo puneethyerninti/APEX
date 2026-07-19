@@ -217,7 +217,7 @@ export default function Home() {
                         <div className="mt-auto">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
-                                    <h2 className="text-white text-sm font-bold leading-tight mb-0.5">Build Wealth &amp; Secures SIP</h2>
+                                    <h2 className="text-white text-sm font-bold leading-tight mb-0.5">Build Wealth &amp; Secure Feature</h2>
                                     <p className="text-purple-200 text-[10px]">Make smart Investments today!</p>
                                 </div>
                                 <Link href="/finance" className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-black text-[10px] px-4 py-2 rounded-full hover:scale-[1.02] active:scale-95 transition-all shadow-lg whitespace-nowrap">
