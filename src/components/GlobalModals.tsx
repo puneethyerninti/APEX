@@ -237,6 +237,10 @@ export default function GlobalModals() {
                                     <i className="fa-solid fa-gear text-gray-500 text-xl"></i>
                                     <span className="text-[10px] font-bold text-gray-700">Settings</span>
                                 </button>
+                                <button onClick={() => window.location.href = '/kyc'} className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
+                                    <i className="fa-solid fa-id-card text-green-500 text-xl"></i>
+                                    <span className="text-[10px] font-bold text-gray-700">KYC Verify</span>
+                                </button>
                             </div>
                             
                             <button onClick={() => { logout(); setModal(null); }} className="w-full mt-2 py-3 bg-red-50 text-red-600 font-bold text-sm rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
