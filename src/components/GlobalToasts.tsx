@@ -26,6 +26,20 @@ export default function GlobalToasts() {
   };
 
   useEffect(() => {
+    const handleCustomToast = (e: any) => {
+      const detail = e.detail;
+      if (typeof detail === 'string') {
+        addToast(detail, 'info');
+      } else if (detail && typeof detail === 'object' && detail.message) {
+        addToast(detail.message, detail.type || 'info');
+      }
+    };
+
+    window.addEventListener('showToast', handleCustomToast);
+    return () => window.removeEventListener('showToast', handleCustomToast);
+  }, []);
+
+  useEffect(() => {
     if (socket && user) {
       // Connect to personal user room for targeted notifications
       socket.emit('join_room', `user_${user.phone}`);
