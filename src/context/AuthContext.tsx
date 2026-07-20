@@ -19,6 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const setUser = useAppStore((state) => state.setUser);
+  const setWalletBalance = useAppStore((state) => state.setWalletBalance);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -42,8 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               isPremium: userData.isPremium || currentUser?.isPremium,
               profilePicture: userData.profilePicture || currentUser?.profilePicture,
               role: userData.role || currentUser?.role,
-              walletBalance: userData.walletBalance || currentUser?.walletBalance,
             });
+            if (userData.walletBalance !== undefined) {
+              setWalletBalance(userData.walletBalance);
+            }
           }
         } catch (error: any) {
           if (error.response?.status === 404) {
@@ -71,8 +74,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               isPremium: currentUser?.isPremium,
               profilePicture: currentUser?.profilePicture,
               role: currentUser?.role,
-              walletBalance: currentUser?.walletBalance,
             });
+            if (currentUser?.walletBalance !== undefined) {
+              setWalletBalance(currentUser.walletBalance);
+            }
           } else {
             console.error("Error fetching user profile:", error);
           // Fallback if firestore fails
@@ -85,9 +90,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: currentUser.email,
               isPremium: currentUser.isPremium,
               role: currentUser.role,
-              walletBalance: currentUser.walletBalance,
             } : {})
           });
+          if (currentUser?.walletBalance !== undefined) {
+            setWalletBalance(currentUser.walletBalance);
+          }
         } // End of else
         } // End of catch block
         
