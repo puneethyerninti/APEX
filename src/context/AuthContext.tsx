@@ -41,6 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: userData.email || currentUser?.email,
               isPremium: userData.isPremium || currentUser?.isPremium,
               profilePicture: userData.profilePicture || currentUser?.profilePicture,
+              role: userData.role || currentUser?.role,
+              walletBalance: userData.walletBalance || currentUser?.walletBalance,
             });
           }
         } catch (error: any) {
@@ -65,8 +67,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               phone: firebaseUser.phoneNumber,
               name: currentUser?.name || 'User',
               email: currentUser?.email || '',
+              email: currentUser?.email || '',
               isPremium: currentUser?.isPremium,
               profilePicture: currentUser?.profilePicture,
+              role: currentUser?.role,
+              walletBalance: currentUser?.walletBalance,
             });
           } else {
             console.error("Error fetching user profile:", error);
@@ -78,7 +83,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             ...(currentUser?.uid === firebaseUser.uid ? {
               name: currentUser.name,
               email: currentUser.email,
-              isPremium: currentUser.isPremium
+              isPremium: currentUser.isPremium,
+              role: currentUser.role,
+              walletBalance: currentUser.walletBalance,
             } : {})
           });
         } // End of else
@@ -87,6 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsAuthenticated(true);
         if (pathname === '/login') {
           router.push('/');
+        } else if (pathname === '/admin-login') {
+          router.push('/admin-dashboard');
         }
       } else {
         // User is logged out

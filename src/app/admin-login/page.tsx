@@ -1,108 +1,245 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { auth } from '@/firebase.config';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 
 export default function AdminLoginPage() {
     const router = useRouter();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [step, setStep] = useState<'phone' | 'otp'>('phone');
+    const [phone, setPhone] = useState('');
+    const [otp, setOtp] = useState(['', '', '', '', '', '']); // Firebase OTP is 6 digits
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [errorMsg, setErrorMsg] = useState('');
+    const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+    const [resendTimer, setResendTimer] = useState(0);
 
-    const handleLogin = (e: React.FormEvent) => {
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (resendTimer > 0) {
+            interval = setInterval(() => {
+                setResendTimer((prev) => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [resendTimer]);
+
+    useEffect(() => {
+        // Initialize RecaptchaVerifier
+        if (!(window as any).recaptchaVerifier) {
+            const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                size: 'invisible',
+            });
+            (window as any).recaptchaVerifier = verifier;
+            verifier.render(); // Pre-warm recaptcha
+        }
+    }, []);
+
+    const handlePhoneSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
-        setError('');
-
-        // Simulate admin authentication
-        setTimeout(() => {
-            if (email === 'admin@apex.com' && password === 'admin') {
-                router.push('/admin-dashboard');
-            } else {
+        setErrorMsg('');
+        if (phone.length === 10) {
+            setIsLoading(true);
+            try {
+                const phoneNumber = `+91${phone}`;
+                const appVerifier = (window as any).recaptchaVerifier;
+                const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+                setConfirmationResult(confirmation);
+                setStep('otp');
+                setResendTimer(30);
+            } catch (err: any) {
+                console.error("SMS Error:", err);
+                setErrorMsg(err.message || 'Failed to send OTP. Try again.');
+                // Reset recaptcha if error
+                if ((window as any).recaptchaVerifier) {
+                    (window as any).recaptchaVerifier.render().then((widgetId: any) => {
+                        (window as any).grecaptcha.reset(widgetId);
+                    });
+                }
+            } finally {
                 setIsLoading(false);
-                setError('Invalid credentials. Use admin@apex.com / admin');
             }
-        }, 1500);
+        }
+    };
+
+    const handleOtpChange = (index: number, value: string) => {
+        if (value.length <= 1 && /^[0-9]*$/.test(value)) {
+            const newOtp = [...otp];
+            newOtp[index] = value;
+            setOtp(newOtp);
+            
+            // Auto-focus next input
+            if (value !== '' && index < 5) {
+                const nextInput = document.getElementById(`otp-${index + 1}`);
+                nextInput?.focus();
+            }
+        }
+    };
+
+    const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Backspace' && otp[index] === '' && index > 0) {
+            const prevInput = document.getElementById(`otp-${index - 1}`);
+            prevInput?.focus();
+        } else if (e.key === 'ArrowLeft' && index > 0) {
+            const prevInput = document.getElementById(`otp-${index - 1}`);
+            prevInput?.focus();
+            setTimeout(() => (prevInput as HTMLInputElement)?.setSelectionRange(1, 1), 0);
+        } else if (e.key === 'ArrowRight' && index < 5) {
+            const nextInput = document.getElementById(`otp-${index + 1}`);
+            nextInput?.focus();
+            setTimeout(() => (nextInput as HTMLInputElement)?.setSelectionRange(1, 1), 0);
+        }
+    };
+
+    const handleResendOtp = async () => {
+        if (resendTimer > 0 || phone.length !== 10) return;
+        setIsLoading(true);
+        setErrorMsg('');
+        try {
+            const phoneNumber = `+91${phone}`;
+            const appVerifier = (window as any).recaptchaVerifier;
+            const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+            setConfirmationResult(confirmation);
+            setResendTimer(30);
+        } catch (err: any) {
+            console.error("Resend SMS Error:", err);
+            setErrorMsg(err.message || 'Failed to resend OTP.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleOtpSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setErrorMsg('');
+        const fullOtp = otp.join('');
+        if (fullOtp.length === 6 && confirmationResult) {
+            setIsLoading(true);
+            try {
+                await confirmationResult.confirm(fullOtp);
+                // AuthContext will automatically catch this and redirect to '/'
+            } catch (err: any) {
+                console.error("OTP Error:", err);
+                setErrorMsg(err.message || 'Invalid OTP. Please try again.');
+            } finally {
+                setIsLoading(false);
+            }
+        }
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 relative">
+            <div id="recaptcha-container"></div>
             {/* Background elements */}
-            <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-violet-600/20 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-teal-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute top-0 w-full h-64 hero-gradient rounded-b-[40px] shadow-sm pointer-events-none"></div>
 
-            <div className="w-full max-w-sm z-10 animate-[fadeIn_0.5s_ease-out]">
+            <div className="w-full max-w-sm z-10 bg-white rounded-3xl shadow-xl p-6 sm:p-8 animate-[slideUp_0.4s_ease-out]">
                 {/* Logo & Brand */}
                 <div className="text-center mb-8">
-                    <div className="flex justify-center items-center gap-2 mb-2">
-                        <i className="fa-solid fa-shield-halved text-[#6C3FC5] text-3xl"></i>
+                    <div className="w-16 h-16 bg-[#F4F6FB] rounded-2xl mx-auto flex items-center justify-center text-[#6C3FC5] text-3xl font-black mb-4 shadow-sm border border-gray-100 overflow-hidden">
+                        <img src="/icon.jpeg" alt="APEX Logo" className="w-full h-full object-cover" />
                     </div>
-                    <h1 className="text-2xl font-black text-white tracking-tight">APEX Admin Portal</h1>
-                    <p className="text-sm text-gray-400 mt-2">Secure access for authorized personnel</p>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">APEX Admin Portal</h1>
+                    <p className="text-xs text-gray-500 mt-2 font-medium">Secure Access Only.</p>
                 </div>
 
-                <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-2xl">
-                    <form onSubmit={handleLogin} className="flex flex-col gap-4">
-                        {error && (
-                            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold p-3 rounded-lg text-center">
-                                {error}
-                            </div>
-                        )}
-
+                {step === 'phone' ? (
+                    <form onSubmit={handlePhoneSubmit} className="flex flex-col gap-5 animate-[slideUp_0.3s_ease-out]">
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Email Address</label>
-                            <div className="relative">
-                                <i className="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+                            <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wider">Mobile Number</label>
+                            <div className="relative flex items-center">
+                                <span className="absolute left-4 text-gray-500 font-bold text-sm">+91</span>
                                 <input 
-                                    type="email" 
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="admin@apex.com"
-                                    className="w-full bg-gray-900/50 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-white focus:outline-none focus:border-[#6C3FC5] focus:ring-1 focus:ring-[#6C3FC5] transition-all placeholder:font-normal placeholder:text-gray-600"
+                                    type="tel" 
+                                    maxLength={10}
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                                    placeholder="Enter 10-digit number"
+                                    className="w-full bg-[#F4F6FB] border-0 rounded-xl py-3.5 pl-14 pr-4 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#6C3FC5]/30 transition-all"
                                     required
                                 />
                             </div>
                         </div>
 
-                        <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Password</label>
-                                <Link href="#" className="text-[10px] font-bold text-[#6C3FC5] hover:text-[#5a34a8] transition-colors">Forgot?</Link>
-                            </div>
-                            <div className="relative">
-                                <i className="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
-                                <input 
-                                    type="password" 
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className="w-full bg-gray-900/50 border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-white focus:outline-none focus:border-[#6C3FC5] focus:ring-1 focus:ring-[#6C3FC5] transition-all placeholder:text-gray-600"
-                                    required
-                                />
-                            </div>
-                        </div>
+                        {errorMsg && <p className="text-red-500 text-[10px] font-bold text-center">{errorMsg}</p>}
 
                         <button 
                             type="submit" 
-                            disabled={isLoading || !email || !password}
+                            disabled={phone.length !== 10 || isLoading}
                             className="w-full bg-[#6C3FC5] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-purple-500/20 hover:bg-[#5a34a8] disabled:opacity-50 disabled:shadow-none transition-all flex justify-center items-center gap-2 mt-2"
                         >
                             {isLoading ? (
-                                <><i className="fa-solid fa-circle-notch fa-spin"></i> Authenticating...</>
+                                <><i className="fa-solid fa-circle-notch fa-spin"></i> Sending OTP...</>
                             ) : (
-                                'Sign In to Dashboard'
+                                'Get OTP'
                             )}
                         </button>
                     </form>
-                </div>
+                ) : (
+                    <form onSubmit={handleOtpSubmit} className="flex flex-col gap-6 animate-[slideUp_0.3s_ease-out]">
+                        <div className="text-center">
+                            <h2 className="text-lg font-black text-gray-900 mb-1">Verify Mobile</h2>
+                            <p className="text-xs text-gray-500">OTP sent to +91 {phone}</p>
+                        </div>
+                        
+                        <div className="flex justify-center gap-1.5 sm:gap-2">
+                            {otp.map((digit, idx) => (
+                                <input
+                                    key={idx}
+                                    id={`otp-${idx}`}
+                                    type="tel"
+                                    maxLength={1}
+                                    value={digit}
+                                    onChange={(e) => handleOtpChange(idx, e.target.value)}
+                                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                                    className="w-[2.3rem] h-11 sm:w-10 sm:h-12 shrink-0 bg-gray-50 border border-gray-300 rounded-xl text-center text-lg font-black text-gray-900 focus:outline-none focus:border-[#6C3FC5] focus:ring-1 focus:ring-[#6C3FC5] transition-all px-0"
+                                    required
+                                />
+                            ))}
+                        </div>
 
-                <div className="mt-6 text-center">
-                    <Link href="/login" className="text-xs font-bold text-gray-500 hover:text-gray-300 flex items-center justify-center gap-1.5 transition-colors">
-                        <i className="fa-solid fa-arrow-left text-[10px]"></i> Back to User App
-                    </Link>
+                        {errorMsg && <p className="text-red-500 text-[10px] font-bold text-center mt-2">{errorMsg}</p>}
+
+                        <div className="flex flex-col gap-3 mt-4">
+                            <button 
+                                type="submit" 
+                                disabled={otp.join('').length !== 6 || isLoading}
+                                className="w-full bg-[#6C3FC5] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-purple-500/20 hover:bg-[#5a34a8] disabled:opacity-50 disabled:shadow-none transition-all flex justify-center items-center gap-2"
+                            >
+                                {isLoading ? (
+                                    <><i className="fa-solid fa-circle-notch fa-spin"></i> Verifying...</>
+                                ) : (
+                                    'Verify & Login'
+                                )}
+                            </button>
+                            
+                            <div className="flex items-center justify-between mt-1 px-1">
+                                <button type="button" onClick={() => setStep('phone')} className="text-xs font-bold text-gray-500 hover:text-[#6C3FC5]">
+                                    Change Number
+                                </button>
+                                {resendTimer > 0 ? (
+                                    <span className="text-xs font-medium text-gray-400">Resend in {resendTimer}s</span>
+                                ) : (
+                                    <button type="button" onClick={handleResendOtp} disabled={isLoading} className="text-xs font-bold text-[#6C3FC5] hover:underline disabled:opacity-50">
+                                        Resend OTP
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </form>
+                )}
+
+                <div className="mt-8 text-center">
+                    <p className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Secure Firebase Login</p>
                 </div>
+            </div>
+
+            <div className="mt-8 text-center z-10">
+                <Link href="/" className="text-xs font-bold text-gray-500 bg-white/50 px-4 py-2 rounded-full hover:bg-white transition-colors flex items-center justify-center gap-2 border border-gray-200 shadow-sm">
+                    <i className="fa-solid fa-arrow-left text-[#6C3FC5]"></i> Back to User App
+                </Link>
             </div>
         </div>
     );
