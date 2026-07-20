@@ -9,6 +9,7 @@ interface UserProfile {
   email?: string;
   isPremium?: boolean;
   profilePicture?: string;
+  role?: string;
 }
 
 interface AppState {
