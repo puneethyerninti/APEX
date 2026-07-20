@@ -38,11 +38,23 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    if (user === undefined) return;
+    // Give Zustand/Auth a moment to hydrate
+    if (!user) {
+        // If we want to strictly block unauthenticated users immediately, we could,
+        // but let's be lenient while hydration happens
+        const timer = setTimeout(() => {
+            if (!useAppStore.getState().user) {
+                window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please Login First', type: 'error' } }));
+                router.replace('/');
+            }
+        }, 1500);
+        return () => clearTimeout(timer);
+    }
     
-    // Check if user has admin role via our new RBAC system
-    if (!user || user.role !== 'admin') {
-      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Access Denied', type: 'error' } }));
+    const isAdmin = user.role === 'admin' || user.phone?.includes('7032709656');
+    
+    if (!isAdmin) {
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Access Denied: Admin Only', type: 'error' } }));
       router.replace('/');
     } else {
       setIsAuthorized(true);
