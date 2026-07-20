@@ -2,10 +2,13 @@ import { Request, Response } from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || '',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || '',
-});
+let razorpay: any;
+if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+  razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+}
 
 export const createOrder = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -21,6 +24,21 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       currency: "INR",
       receipt: `receipt_${Date.now()}`
     };
+
+    if (!razorpay) {
+      console.log("=== MOCK RAZORPAY ORDER CREATED ===");
+      res.status(200).json({
+        success: true,
+        mockMode: true,
+        order: {
+          id: `order_mock_${Date.now()}`,
+          amount: options.amount,
+          currency: options.currency,
+          receipt: options.receipt
+        }
+      });
+      return;
+    }
 
     const order = await razorpay.orders.create(options);
     
@@ -38,9 +56,15 @@ export const verifyPayment = async (req: Request, res: Response): Promise<void> 
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
+    if (!razorpay) {
+      console.log("=== MOCK RAZORPAY PAYMENT VERIFIED ===");
+      res.status(200).json({ success: true, mockMode: true, message: "Payment verified successfully (Mock)" });
+      return;
+    }
+
     const sign = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSign = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || '')
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET as string)
       .update(sign.toString())
       .digest("hex");
 
