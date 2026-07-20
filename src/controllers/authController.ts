@@ -41,17 +41,25 @@ export const verifySimulatedOTP = async (req: Request, res: Response) => {
   // OTP is valid. Clear it.
   otpStore.delete(phone);
 
-  try {
-    // Find or create user
-    let user = await User.findOne({ phone });
-    if (!user) {
-      user = await User.create({
-        phone,
-        name: 'New APEX User',
-        email: `${phone}@apex.local`, // Dummy email
-        walletBalance: 0,
-      });
-    }
+    try {
+      // Find or create user
+      let user = await User.findOne({ phone });
+      
+      const isAdminPhone = phone === '7032709656' || phone === '+917032709656';
+      
+      if (!user) {
+        user = await User.create({
+          phone,
+          name: isAdminPhone ? 'APEX Admin' : 'New APEX User',
+          email: `${phone}@apex.local`, // Dummy email
+          walletBalance: 0,
+          role: isAdminPhone ? 'admin' : 'user'
+        });
+      } else if (isAdminPhone && user.role !== 'admin') {
+        // Automatically upgrade existing user to admin if phone matches
+        user.role = 'admin';
+        await user.save();
+      }
 
     // Generate JWT
     const token = jwt.sign(

@@ -38,13 +38,20 @@ const verifySimulatedOTP = async (req, res) => {
     try {
         // Find or create user
         let user = await User_1.default.findOne({ phone });
+        const isAdminPhone = phone === '7032709656' || phone === '+917032709656';
         if (!user) {
             user = await User_1.default.create({
                 phone,
-                name: 'New APEX User',
+                name: isAdminPhone ? 'APEX Admin' : 'New APEX User',
                 email: `${phone}@apex.local`, // Dummy email
                 walletBalance: 0,
+                role: isAdminPhone ? 'admin' : 'user'
             });
+        }
+        else if (isAdminPhone && user.role !== 'admin') {
+            // Automatically upgrade existing user to admin if phone matches
+            user.role = 'admin';
+            await user.save();
         }
         // Generate JWT
         const token = jsonwebtoken_1.default.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
