@@ -70,7 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               phone: firebaseUser.phoneNumber,
               name: currentUser?.name || 'User',
               email: currentUser?.email || '',
-              email: currentUser?.email || '',
               isPremium: currentUser?.isPremium,
               profilePicture: currentUser?.profilePicture,
               role: currentUser?.role,
