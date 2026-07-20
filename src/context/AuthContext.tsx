@@ -74,9 +74,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               profilePicture: currentUser?.profilePicture,
               role: currentUser?.role,
             });
-            if (currentUser?.walletBalance !== undefined) {
-              setWalletBalance(currentUser.walletBalance);
-            }
           } else {
             console.error("Error fetching user profile:", error);
           // Fallback if firestore fails
@@ -91,9 +88,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               role: currentUser.role,
             } : {})
           });
-          if (currentUser?.walletBalance !== undefined) {
-            setWalletBalance(currentUser.walletBalance);
-          }
         } // End of else
         } // End of catch block
         
