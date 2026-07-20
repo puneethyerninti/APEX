@@ -9,16 +9,8 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('apex_token')?.value;
   const isAuthPage = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/admin-login');
   
-  // List of paths that require authentication
-  const protectedPaths = ['/admin-dashboard', '/account'];
-  const isProtectedRoute = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path));
-
-  if (isProtectedRoute && !token) {
-    // Redirect to login if trying to access a protected route without a token
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
-  }
+  // We let AuthContext handle redirections client-side
+  // to avoid aggressive Next.js edge middleware conflicts with Firebase Auth.
 
   if (isAuthPage && token) {
     // Redirect to home if already logged in and trying to access login page
