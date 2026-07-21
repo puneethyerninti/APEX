@@ -62,9 +62,9 @@ export default function FinancePage() {
                       <span className="text-sm font-bold text-gray-800">Insurance</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 w-full">
-                      <div className="bg-gray-800 rounded-xl p-3 flex flex-col justify-between aspect-square">
+                      <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col justify-between aspect-square cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all">
                           <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center mb-2 overflow-hidden p-1">
-                              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Bandhan_Bank_Logo.svg/512px-Bandhan_Bank_Logo.svg.png" alt="Bandhan" className="object-contain" />
+                              <img src="/bandhan-small-cap-fund-logo.webp" alt="Bandhan" className="object-contain w-full h-full" />
                           </div>
                           <div>
                               <p className="text-white text-[10px] font-bold leading-tight mb-1">Bandhan Small Cap Fund</p>
@@ -73,11 +73,11 @@ export default function FinancePage() {
                                   <span className="text-gray-400 text-[9px]">3Y</span>
                               </div>
                           </div>
-                      </div>
+                      </Link>
                       
-                      <div className="bg-gray-800 rounded-xl p-3 flex flex-col justify-between aspect-square">
+                      <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col justify-between aspect-square cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all">
                           <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center mb-2 overflow-hidden p-1">
-                              <img src="https://www.hdfcfund.com/themes/custom/hdfc/logo.svg" alt="HDFC" className="object-contain" />
+                              <img src="/hdfc-mid-cap-fund-logo.png" alt="HDFC" className="object-contain w-full h-full" />
                           </div>
                           <div>
                               <p className="text-white text-[10px] font-bold leading-tight mb-1">HDFC Mid Cap Fund</p>
@@ -86,11 +86,11 @@ export default function FinancePage() {
                                   <span className="text-gray-400 text-[9px]">3Y</span>
                               </div>
                           </div>
-                      </div>
+                      </Link>
                       
-                      <div className="bg-gray-800 rounded-xl p-3 flex flex-col justify-between aspect-square">
+                      <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col justify-between aspect-square cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all">
                           <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center mb-2 overflow-hidden p-1">
-                              <i className="fa-solid fa-turtle text-emerald-600 text-lg"></i>
+                              <img src="/parag-parikh-mutual-fund-logo.png" alt="Parag Parikh" className="object-contain w-full h-full" />
                           </div>
                           <div>
                               <p className="text-white text-[10px] font-bold leading-tight mb-1">Parag Parikh Flexi Cap Fund</p>
@@ -99,11 +99,11 @@ export default function FinancePage() {
                                   <span className="text-gray-400 text-[9px]">3Y</span>
                               </div>
                           </div>
-                      </div>
+                      </Link>
                       
-                      <div className="bg-gray-800 rounded-xl p-3 flex flex-col justify-between aspect-square">
+                      <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col justify-between aspect-square cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all">
                           <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center mb-2 overflow-hidden p-1">
-                              <img src="https://mf.nipponindiaim.com/Themes/Theme1/Images/NIMF_Logo.svg" alt="Nippon" className="object-contain" />
+                              <img src="/nippon-india-large-cap-fund-logo.webp" alt="Nippon" className="object-contain w-full h-full" />
                           </div>
                           <div>
                               <p className="text-white text-[10px] font-bold leading-tight mb-1">Nippon India Large Cap Fund</p>
@@ -112,7 +112,7 @@ export default function FinancePage() {
                                   <span className="text-gray-400 text-[9px]">3Y</span>
                               </div>
                           </div>
-                      </div>
+                      </Link>
                   </div>
               </div>
               
