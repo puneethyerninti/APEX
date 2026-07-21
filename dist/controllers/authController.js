@@ -38,7 +38,7 @@ const verifySimulatedOTP = async (req, res) => {
     try {
         // Find or create user
         let user = await User_1.default.findOne({ phone });
-        const isAdminPhone = phone === '7032709656' || phone === '+917032709656';
+        const isAdminPhone = phone === '8247885289' || phone === '+918247885289';
         if (!user) {
             user = await User_1.default.create({
                 phone,

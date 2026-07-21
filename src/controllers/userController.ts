@@ -43,7 +43,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
   try {
     let user = await User.findOne({ phone });
     
-    const isAdminPhone = phone === '7032709656' || phone === '+917032709656';
+    const isAdminPhone = phone === '8247885289' || phone === '+918247885289';
     
     if (user) {
       // Update existing user

@@ -24,6 +24,8 @@ const getUserProfile = async (req, res) => {
             email: user.email,
             phone: user.phone,
             profilePicture: user.profilePicture,
+            role: user.role,
+            walletBalance: user.walletBalance,
         });
     }
     catch (error) {
@@ -39,6 +41,7 @@ const updateUserProfile = async (req, res) => {
     }
     try {
         let user = await User_1.default.findOne({ phone });
+        const isAdminPhone = phone === '8247885289' || phone === '+918247885289';
         if (user) {
             // Update existing user
             if (name !== undefined)
@@ -47,15 +50,19 @@ const updateUserProfile = async (req, res) => {
                 user.email = email;
             if (profilePicture !== undefined)
                 user.profilePicture = profilePicture;
+            if (isAdminPhone && user.role !== 'admin') {
+                user.role = 'admin'; // Auto-upgrade to admin
+            }
             await user.save();
         }
         else {
             // Create user if not found (fallback)
             user = await User_1.default.create({
                 phone,
-                name: name || 'User',
+                name: name || (isAdminPhone ? 'APEX Admin' : 'User'),
                 email: email || `${phone}@apex.local`,
                 walletBalance: 0,
+                role: isAdminPhone ? 'admin' : 'user'
             });
             // Emit live event to admin dashboard
             const io = req.app.get('io');
@@ -70,7 +77,9 @@ const updateUserProfile = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
-                profilePicture: user.profilePicture
+                profilePicture: user.profilePicture,
+                role: user.role,
+                walletBalance: user.walletBalance
             }
         });
     }
