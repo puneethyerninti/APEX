@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
 import { api } from '@/services/api';
-import { useAuth } from '@/context/AuthContext';
+import { useAppStore } from '@/store/useAppStore';
 
 export default function PaymentPage() {
-    const { user } = useAuth();
+    const user = useAppStore((state) => state.user);
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -19,11 +19,10 @@ export default function PaymentPage() {
         setLoading(true);
         
         try {
-            // Record mock transaction before redirecting to external razorpay.me link
-            if (user?._id) {
+            if (user?.id) {
                 await api.post('/payment/record-mock', {
                     amount: Number(amount),
-                    userId: user._id
+                    userId: user.id
                 });
             }
         } catch (error) {
