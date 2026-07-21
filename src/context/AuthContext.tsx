@@ -95,13 +95,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (pathname === '/login') {
           router.push('/');
         } else if (pathname === '/admin-login') {
-          router.push('/admin-dashboard');
+          const isAdmin = userData?.role === 'admin' || currentUser?.role === 'admin' || firebaseUser.phoneNumber?.includes('7032709656');
+          if (isAdmin) {
+            router.push('/admin-dashboard');
+          } else {
+            // Sign out the normal user so they can log in with admin credentials
+            await signOut(auth);
+          }
         }
       } else {
         // User is logged out
         setUser(null);
         setIsAuthenticated(false);
-        if (pathname !== '/login') {
+        if (pathname !== '/login' && pathname !== '/admin-login') {
           router.push('/login');
         }
       }
