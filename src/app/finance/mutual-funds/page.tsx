@@ -24,31 +24,34 @@ export default function MutualFundsPage() {
         { 
             id: 2, 
             name: "ICICI Prudential Mutual Fund", 
-            description: "Popular for balanced and equity funds with a strong long-term track record."
+            description: "Popular for balanced and equity funds with a strong long-term track record.",
+            logo: "/icici-mutual-fund.webp"
         },
         { 
             id: 3, 
             name: "HDFC Mutual Fund", 
             description: "One of the most trusted AMCs with consistent performance.",
             link: "https://investor-web.hdfcfund.com/RT/21072026044319",
-            logo: "https://www.hdfcfund.com/themes/custom/hdfc/logo.svg"
+            logo: "/hdfc-mutual-fund-logo.png"
         },
         { 
             id: 4, 
             name: "Nippon India Mutual Fund", 
             description: "Well known for small-cap, index, and ETF offerings.",
             link: "https://s.ni-mf.in/nimfnd/81360c0da3",
-            logo: "https://mf.nipponindiaim.com/Themes/Theme1/Images/NIMF_Logo.svg"
+            logo: "/nippon-india-mutual-fund-logo.png"
         },
         { 
             id: 5, 
             name: "Kotak Mahindra Mutual Fund", 
-            description: "Strong across debt and equity categories."
+            description: "Strong across debt and equity categories.",
+            logo: "/kotak-mutual-fund-logo.png"
         },
         { 
             id: 6, 
             name: "Aditya Birla Sun Life Mutual Fund", 
-            description: "Popular for diversified equity."
+            description: "Popular for diversified equity.",
+            logo: "/aditya_birla_sun_life_mutual_fund_logo.jpg"
         },
     ];
 
@@ -114,8 +117,12 @@ export default function MutualFundsPage() {
                             className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start justify-between cursor-pointer hover:border-emerald-200 transition-all active:scale-95"
                         >
                             <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-full bg-emerald-50 flex-shrink-0 flex items-center justify-center text-emerald-600">
-                                    <i className="fa-solid fa-building-columns"></i>
+                                <div className="w-10 h-10 rounded-full bg-white border border-gray-100 shadow-sm flex-shrink-0 flex items-center justify-center p-1 overflow-hidden">
+                                    {amc.logo ? (
+                                        <img src={amc.logo} alt={amc.name} className="object-contain w-full h-full" />
+                                    ) : (
+                                        <i className="fa-solid fa-building-columns text-emerald-600"></i>
+                                    )}
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-gray-800 text-sm mb-1">{amc.name}</h3>
