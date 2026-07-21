@@ -19,10 +19,10 @@ export default function PaymentPage() {
         setLoading(true);
         
         try {
-            if (user?.id) {
+            if (user?.uid) {
                 await api.post('/payment/record-mock', {
                     amount: Number(amount),
-                    userId: user.id
+                    userId: user.uid
                 });
             }
         } catch (error) {
