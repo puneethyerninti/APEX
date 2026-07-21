@@ -104,7 +104,7 @@ export default function MutualFundsPage() {
                             onClick={() => setSelectedFund(null)}
                         >
                             <img 
-                                src="https://upload.wikimedia.org/wikipedia/en/thumb/5/58/State_Bank_of_India_logo.svg/1200px-State_Bank_of_India_logo.svg.png" 
+                                src="/SBI-Mutual-Fund-Logo.webp" 
                                 alt="SBI Mutual Fund" 
                                 className="h-16 mx-auto object-contain group-hover:scale-110 transition-transform" 
                             />
