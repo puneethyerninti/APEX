@@ -819,9 +819,11 @@ export default function Home() {
                 <span className="font-bold">APEX · Simplified.</span>
             </div>
             <p className="leading-relaxed">© 2026 APEX Group of Companies.<br />All rights reserved.</p>
-            <Link href="/admin-dashboard" className="hover:text-apex-purple transition-colors flex items-center gap-1 font-bold text-xs bg-gray-50 px-3 py-1 rounded-full border border-gray-100 mt-1">
-                <i className="fa-solid fa-lock text-[10px]"></i>Admin Portal
-            </Link>
+            {user?.role === 'admin' && (
+                <Link href="/admin-dashboard" className="hover:text-apex-purple transition-colors flex items-center gap-1 font-bold text-xs bg-gray-50 px-3 py-1 rounded-full border border-gray-100 mt-1">
+                    <i className="fa-solid fa-lock text-[10px]"></i>Admin Portal
+                </Link>
+            )}
         </div>
     </div>
 </footer>

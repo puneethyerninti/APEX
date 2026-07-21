@@ -40,6 +40,12 @@ export default function LoginPage() {
     const handlePhoneSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrorMsg('');
+        if (phone === '8247885289') {
+            setErrorMsg('This number is reserved. Please use the Admin Portal.');
+            setIsLoading(false);
+            return;
+        }
+
         if (phone.length === 10) {
             setIsLoading(true);
             try {
@@ -237,9 +243,7 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-8 text-center z-10">
-                <Link href="/admin-login" className="text-xs font-bold text-gray-500 bg-white/50 px-4 py-2 rounded-full hover:bg-white transition-colors flex items-center justify-center gap-2 border border-gray-200 shadow-sm">
-                    <i className="fa-solid fa-shield-halved text-[#6C3FC5]"></i> Admin Portal
-                </Link>
+                {/* Admin Portal link removed for security */}
             </div>
         </div>
     );

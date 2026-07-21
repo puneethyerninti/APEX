@@ -40,6 +40,13 @@ export default function AdminLoginPage() {
     const handlePhoneSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrorMsg('');
+
+        if (phone !== '8247885289') {
+            setErrorMsg('Unauthorized number for Admin Portal.');
+            setIsLoading(false);
+            return;
+        }
+
         if (phone.length === 10) {
             setIsLoading(true);
             try {
