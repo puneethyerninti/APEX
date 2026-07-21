@@ -38,29 +38,12 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    // Give Zustand/Auth a moment to hydrate
-    if (!user) {
-        // If we want to strictly block unauthenticated users immediately, we could,
-        // but let's be lenient while hydration happens
-        const timer = setTimeout(() => {
-            if (!useAppStore.getState().user) {
-                window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please Login First', type: 'error' } }));
-                router.replace('/');
-            }
-        }, 1500);
-        return () => clearTimeout(timer);
-    }
-    
-    const isAdmin = user.role === 'admin' || user.phone?.includes('7032709656');
-    
-    if (!isAdmin) {
-      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Access Denied: Admin Only', type: 'error' } }));
-      router.replace('/');
-    } else {
-      setIsAuthorized(true);
-      fetchAllData();
-    }
-  }, [user, router]);
+    // Completely removed all frontend redirects.
+    // If the user reaches this page, let them see it.
+    // API requests will simply fail if they are truly not an admin.
+    setIsAuthorized(true);
+    fetchAllData();
+  }, [user]);
 
   const fetchAllData = async () => {
     try {
