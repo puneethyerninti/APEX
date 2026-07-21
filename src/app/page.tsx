@@ -217,7 +217,7 @@ export default function Home() {
                         <div className="mt-auto">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
-                                    <h2 className="text-white text-sm font-bold leading-tight mb-0.5">Build Wealth &amp; Secure Feature</h2>
+                                    <h2 className="text-white text-sm font-bold leading-tight mb-0.5">Build Wealth &amp; Secure Future</h2>
                                     <p className="text-purple-200 text-[10px]">Make smart Investments today!</p>
                                 </div>
                                 <Link href="/finance" className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-black text-[10px] px-4 py-2 rounded-full hover:scale-[1.02] active:scale-95 transition-all shadow-lg whitespace-nowrap">
@@ -229,30 +229,30 @@ export default function Home() {
                             <div className="mb-3">
                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Mutual Funds</h3>
                                 <div className="grid grid-cols-4 gap-2">
-                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-rose-400 shadow-inner">
                                             <i className="fa-solid fa-calendar-day text-lg"></i>
                                         </div>
                                         <span className="text-white text-[8px] font-medium leading-tight">Daily SIP<br/>₹100</span>
-                                    </div>
-                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                    </Link>
+                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-blue-400 shadow-inner">
                                             <i className="fa-solid fa-calendar-days text-lg"></i>
                                         </div>
                                         <span className="text-white text-[8px] font-medium leading-tight">Monthly SIP<br/>₹2,000</span>
-                                    </div>
-                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                    </Link>
+                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-orange-400 shadow-inner">
                                             <i className="fa-solid fa-piggy-bank text-lg"></i>
                                         </div>
                                         <span className="text-white text-[8px] font-medium leading-tight">Small SIP<br/>₹50</span>
-                                    </div>
-                                    <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                    </Link>
+                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-emerald-400 shadow-inner">
                                             <i className="fa-solid fa-arrow-trend-up text-lg"></i>
                                         </div>
-                                        <span className="text-white text-[8px] font-medium leading-tight">Top<br/>SIPs</span>
-                                    </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Popular<br/>Funds</span>
+                                    </Link>
                                 </div>
                             </div>
 
