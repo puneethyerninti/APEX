@@ -54,10 +54,13 @@ export default function AdminLoginPage() {
                 setErrorMsg(err.message || 'Failed to send OTP. Try again.');
                 // Reset recaptcha if error
                 if ((window as any).recaptchaVerifier) {
-                    (window as any).recaptchaVerifier.render().then((widgetId: any) => {
-                        (window as any).grecaptcha.reset(widgetId);
-                    });
+                    try {
+                        (window as any).recaptchaVerifier.clear();
+                    } catch (e) {}
                 }
+                const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
+                (window as any).recaptchaVerifier = verifier;
+                verifier.render();
             } finally {
                 setIsLoading(false);
             }
@@ -106,6 +109,14 @@ export default function AdminLoginPage() {
         } catch (err: any) {
             console.error("Resend SMS Error:", err);
             setErrorMsg(err.message || 'Failed to resend OTP.');
+            if ((window as any).recaptchaVerifier) {
+                try {
+                    (window as any).recaptchaVerifier.clear();
+                } catch (e) {}
+            }
+            const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
+            (window as any).recaptchaVerifier = verifier;
+            verifier.render();
         } finally {
             setIsLoading(false);
         }

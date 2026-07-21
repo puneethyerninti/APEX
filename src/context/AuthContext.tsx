@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           router.push('/');
         } else if (pathname === '/admin-login') {
           const storeUser = useAppStore.getState().user;
-          const isAdmin = storeUser?.role === 'admin' || firebaseUser.phoneNumber?.includes('7032709656');
+          const isAdmin = storeUser?.role === 'admin' || firebaseUser.phoneNumber?.includes('8247885289');
           if (isAdmin) {
             router.push('/admin-dashboard');
           } else {
