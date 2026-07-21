@@ -247,11 +247,11 @@ export default function Home() {
                                         </div>
                                         <span className="text-white text-[8px] font-medium leading-tight">Small SIP<br/>₹50</span>
                                     </Link>
-                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                    <Link href="/finance/mutual-funds" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-emerald-400 shadow-inner">
                                             <i className="fa-solid fa-arrow-trend-up text-lg"></i>
                                         </div>
-                                        <span className="text-white text-[8px] font-medium leading-tight">Popular<br/>Funds</span>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Popular<br/>AMC</span>
                                     </Link>
                                 </div>
                             </div>

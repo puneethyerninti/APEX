@@ -2,15 +2,54 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 
-export default function MutualFundsPage() {
-    const [selectedFund, setSelectedFund] = useState<number | null>(null);
+type AMC = {
+    id: number;
+    name: string;
+    description: string;
+    link?: string;
+    logo?: string;
+};
 
-    const dummyFunds = [
-        { id: 1, name: "SBI Small Cap Fund", return: "24.5%", risk: "High Risk" },
-        { id: 2, name: "SBI Bluechip Fund", return: "18.2%", risk: "Low Risk" },
-        { id: 3, name: "SBI Flexi Cap Fund", return: "21.1%", risk: "Moderate Risk" },
-        { id: 4, name: "SBI Magnum Midcap", return: "26.8%", risk: "High Risk" },
-        { id: 5, name: "SBI Focused Equity", return: "19.5%", risk: "High Risk" },
+export default function MutualFundsPage() {
+    const [selectedAmc, setSelectedAmc] = useState<AMC | null>(null);
+
+    const popularAMCs: AMC[] = [
+        { 
+            id: 1, 
+            name: "SBI Mutual Fund", 
+            description: "India's largest AMC with a wide range of equity, debt, and hybrid funds.",
+            link: "https://sbimf.app/2DC34DWG4h7P",
+            logo: "/SBI-Mutual-Fund-Logo.webp"
+        },
+        { 
+            id: 2, 
+            name: "ICICI Prudential Mutual Fund", 
+            description: "Popular for balanced and equity funds with a strong long-term track record."
+        },
+        { 
+            id: 3, 
+            name: "HDFC Mutual Fund", 
+            description: "One of the most trusted AMCs with consistent performance.",
+            link: "https://investor-web.hdfcfund.com/RT/21072026044319",
+            logo: "https://www.hdfcfund.com/themes/custom/hdfc/logo.svg"
+        },
+        { 
+            id: 4, 
+            name: "Nippon India Mutual Fund", 
+            description: "Well known for small-cap, index, and ETF offerings.",
+            link: "https://s.ni-mf.in/nimfnd/81360c0da3",
+            logo: "https://mf.nipponindiaim.com/Themes/Theme1/Images/NIMF_Logo.svg"
+        },
+        { 
+            id: 5, 
+            name: "Kotak Mahindra Mutual Fund", 
+            description: "Strong across debt and equity categories."
+        },
+        { 
+            id: 6, 
+            name: "Aditya Birla Sun Life Mutual Fund", 
+            description: "Popular for diversified equity."
+        },
     ];
 
     return (
@@ -52,66 +91,74 @@ export default function MutualFundsPage() {
                             <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-emerald-400 shadow-inner">
                                 <i className="fa-solid fa-arrow-trend-up text-lg"></i>
                             </div>
-                            <span className="text-white text-[8px] font-medium leading-tight">Popular<br/>Funds</span>
+                            <span className="text-white text-[8px] font-medium leading-tight">Popular<br/>AMC</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* POPULAR FUNDS LIST */}
+            {/* POPULAR AMCs LIST */}
             <div className="p-4 mt-2">
-                <h2 className="font-black text-gray-900 mb-3 uppercase tracking-wide text-sm border-l-4 border-emerald-500 pl-2">Top 5 Popular Funds</h2>
+                <h2 className="font-black text-gray-900 mb-3 uppercase tracking-wide text-sm border-l-4 border-emerald-500 pl-2">Popular AMCs</h2>
                 <div className="flex flex-col gap-3">
-                    {dummyFunds.map((fund) => (
+                    {popularAMCs.map((amc) => (
                         <div 
-                            key={fund.id} 
-                            onClick={() => setSelectedFund(fund.id)}
-                            className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer hover:border-emerald-200 transition-all active:scale-95"
+                            key={amc.id} 
+                            onClick={() => {
+                                if (amc.link) {
+                                    setSelectedAmc(amc);
+                                } else {
+                                    window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Link coming soon for this AMC', type: 'info' } }));
+                                }
+                            }}
+                            className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start justify-between cursor-pointer hover:border-emerald-200 transition-all active:scale-95"
                         >
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
-                                    <i className="fa-solid fa-chart-line"></i>
+                            <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-full bg-emerald-50 flex-shrink-0 flex items-center justify-center text-emerald-600">
+                                    <i className="fa-solid fa-building-columns"></i>
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-gray-800 text-sm">{fund.name}</h3>
-                                    <span className="text-xs text-gray-400">{fund.risk}</span>
+                                    <h3 className="font-bold text-gray-800 text-sm mb-1">{amc.name}</h3>
+                                    <p className="text-[10px] text-gray-500 leading-snug">{amc.description}</p>
                                 </div>
-                            </div>
-                            <div className="text-right">
-                                <p className="font-black text-emerald-600 text-sm">{fund.return}</p>
-                                <p className="text-[9px] text-gray-400 uppercase">3Y Return</p>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* SBI MODAL */}
-            {selectedFund !== null && (
-                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity" onClick={() => setSelectedFund(null)}>
+            {/* REDIRECT MODAL */}
+            {selectedAmc !== null && (
+                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity" onClick={() => setSelectedAmc(null)}>
                     <div 
                         className="bg-white w-full max-w-sm rounded-2xl p-6 flex flex-col items-center text-center shadow-2xl transform scale-100 transition-transform"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h2 className="text-xl font-black text-gray-900 mb-2">Proceed to Partner</h2>
-                        <p className="text-sm text-gray-500 mb-6">You will be securely redirected to our partner platform to complete your investment.</p>
+                        <p className="text-sm text-gray-500 mb-6">You will be securely redirected to {selectedAmc.name} to complete your investment.</p>
                         
                         <a 
-                            href="https://sbimf.app/2DC34DWG4h7P" 
+                            href={selectedAmc.link} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="block p-4 rounded-xl border-2 border-blue-100 hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer group w-full mb-4"
-                            onClick={() => setSelectedFund(null)}
+                            onClick={() => setSelectedAmc(null)}
                         >
-                            <img 
-                                src="/SBI-Mutual-Fund-Logo.webp" 
-                                alt="SBI Mutual Fund" 
-                                className="h-16 mx-auto object-contain group-hover:scale-110 transition-transform" 
-                            />
+                            {selectedAmc.logo ? (
+                                <img 
+                                    src={selectedAmc.logo} 
+                                    alt={selectedAmc.name} 
+                                    className="h-16 mx-auto object-contain group-hover:scale-110 transition-transform" 
+                                />
+                            ) : (
+                                <div className="h-16 flex items-center justify-center text-xl font-black text-blue-600 group-hover:scale-110 transition-transform">
+                                    {selectedAmc.name}
+                                </div>
+                            )}
                         </a>
                         
                         <button 
-                            onClick={() => setSelectedFund(null)}
+                            onClick={() => setSelectedAmc(null)}
                             className="text-gray-400 text-sm font-bold hover:text-gray-600 uppercase tracking-wider"
                         >
                             Cancel
