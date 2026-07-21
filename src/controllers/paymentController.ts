@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import Transaction from '../models/Transaction';
 
 let razorpay: any;
 if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
@@ -78,6 +79,37 @@ export const verifyPayment = async (req: Request, res: Response): Promise<void> 
     }
   } catch (error) {
     console.error('Error verifying payment:', error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+};
+
+export const recordMockTransaction = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { amount, userId } = req.body;
+
+    if (!amount || !userId) {
+      res.status(400).json({ success: false, message: 'Amount and userId are required' });
+      return;
+    }
+
+    const transaction = new Transaction({
+      user: userId,
+      amount: Number(amount),
+      type: 'credit',
+      category: 'add_money',
+      status: 'completed',
+      referenceId: `mock_pay_${Date.now()}`
+    });
+
+    await transaction.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Mock transaction recorded successfully',
+      transaction
+    });
+  } catch (error) {
+    console.error('Error recording mock transaction:', error);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
