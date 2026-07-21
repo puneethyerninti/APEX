@@ -31,87 +31,95 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Check if user exists in Node.js backend
           const response = await api.get(`/user/profile?phone=${encodeURIComponent(firebaseUser.phoneNumber || '')}`);
           
-          if (response.data) {
-            const userData = response.data;
-            const currentUser = useAppStore.getState().user;
-            
-            setUser({
-              uid: userData._id || firebaseUser.uid,
-              phone: firebaseUser.phoneNumber,
-              name: userData.name || currentUser?.name,
-              email: userData.email || currentUser?.email,
-              isPremium: userData.isPremium || currentUser?.isPremium,
-              profilePicture: userData.profilePicture || currentUser?.profilePicture,
-              role: userData.role || currentUser?.role,
-            });
-            if (userData.walletBalance !== undefined) {
-              setWalletBalance(userData.walletBalance);
+            if (response.data) {
+              const userData = response.data;
+              const currentUser = useAppStore.getState().user;
+              
+              if (userData.token) {
+                localStorage.setItem('apex_token', userData.token);
+              }
+              
+              setUser({
+                uid: userData._id || firebaseUser.uid,
+                phone: firebaseUser.phoneNumber,
+                name: userData.name || currentUser?.name,
+                email: userData.email || currentUser?.email,
+                isPremium: userData.isPremium || currentUser?.isPremium,
+                profilePicture: userData.profilePicture || currentUser?.profilePicture,
+                role: userData.role || currentUser?.role,
+              });
+              if (userData.walletBalance !== undefined) {
+                setWalletBalance(userData.walletBalance);
+              }
             }
-          }
-        } catch (error: any) {
-          if (error.response?.status === 404) {
-            // First time login, create user doc in backend but KEEP local state if it exists
-            const currentUser = useAppStore.getState().user;
-            let dbId = firebaseUser.uid;
-            try {
-              const res = await api.post('/user/profile', {
+          } catch (error: any) {
+            if (error.response?.status === 404) {
+              // First time login, create user doc in backend but KEEP local state if it exists
+              const currentUser = useAppStore.getState().user;
+              let dbId = firebaseUser.uid;
+              try {
+                const res = await api.post('/user/profile', {
+                  phone: firebaseUser.phoneNumber,
+                  name: currentUser?.name || 'User',
+                  email: currentUser?.email || '',
+                });
+                if (res.data?.user?._id) {
+                  dbId = res.data.user._id;
+                }
+                if (res.data?.token) {
+                  localStorage.setItem('apex_token', res.data.token);
+                }
+              } catch (createErr) {
+                console.error("Error creating user profile in backend:", createErr);
+              }
+              setUser({
+                uid: dbId,
                 phone: firebaseUser.phoneNumber,
                 name: currentUser?.name || 'User',
                 email: currentUser?.email || '',
+                isPremium: currentUser?.isPremium,
+                profilePicture: currentUser?.profilePicture,
+                role: currentUser?.role,
               });
-              if (res.data?.user?._id) {
-                dbId = res.data.user._id;
-              }
-            } catch (createErr) {
-              console.error("Error creating user profile in backend:", createErr);
-            }
+            } else {
+              console.error("Error fetching user profile:", error);
+            // Fallback if firestore fails
+            const currentUser = useAppStore.getState().user;
             setUser({
-              uid: dbId,
+              uid: firebaseUser.uid,
               phone: firebaseUser.phoneNumber,
-              name: currentUser?.name || 'User',
-              email: currentUser?.email || '',
-              isPremium: currentUser?.isPremium,
-              profilePicture: currentUser?.profilePicture,
-              role: currentUser?.role,
+              ...(currentUser?.uid === firebaseUser.uid ? {
+                name: currentUser.name,
+                email: currentUser.email,
+                isPremium: currentUser.isPremium,
+                role: currentUser.role,
+              } : {})
             });
-          } else {
-            console.error("Error fetching user profile:", error);
-          // Fallback if firestore fails
-          const currentUser = useAppStore.getState().user;
-          setUser({
-            uid: firebaseUser.uid,
-            phone: firebaseUser.phoneNumber,
-            ...(currentUser?.uid === firebaseUser.uid ? {
-              name: currentUser.name,
-              email: currentUser.email,
-              isPremium: currentUser.isPremium,
-              role: currentUser.role,
-            } : {})
-          });
-        } // End of else
-        } // End of catch block
-        
-        setIsAuthenticated(true);
-        if (pathname === '/login') {
-          router.push('/');
-        } else if (pathname === '/admin-login') {
-          const storeUser = useAppStore.getState().user;
-          const isAdmin = storeUser?.role === 'admin' || firebaseUser.phoneNumber?.includes('8247885289');
-          if (isAdmin) {
-            router.push('/admin-dashboard');
-          } else {
-            // Sign out the normal user so they can log in with admin credentials
-            await signOut(auth);
+          } // End of else
+          } // End of catch block
+          
+          setIsAuthenticated(true);
+          if (pathname === '/login') {
+            router.push('/');
+          } else if (pathname === '/admin-login') {
+            const storeUser = useAppStore.getState().user;
+            const isAdmin = storeUser?.role === 'admin' || firebaseUser.phoneNumber?.includes('8247885289');
+            if (isAdmin) {
+              router.push('/admin-dashboard');
+            } else {
+              // Sign out the normal user so they can log in with admin credentials
+              await signOut(auth);
+            }
+          }
+        } else {
+          // User is logged out
+          setUser(null);
+          localStorage.removeItem('apex_token');
+          setIsAuthenticated(false);
+          if (pathname !== '/login' && pathname !== '/admin-login') {
+            router.push('/login');
           }
         }
-      } else {
-        // User is logged out
-        setUser(null);
-        setIsAuthenticated(false);
-        if (pathname !== '/login' && pathname !== '/admin-login') {
-          router.push('/login');
-        }
-      }
       setIsLoading(false);
     });
 
