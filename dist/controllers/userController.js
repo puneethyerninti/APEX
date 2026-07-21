@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendEmailNotification = exports.verifyPan = exports.updateUserProfile = exports.getUserProfile = void 0;
 const User_1 = __importDefault(require("../models/User"));
 const axios_1 = __importDefault(require("axios"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const resend_1 = require("resend");
 const resend = new resend_1.Resend(process.env.RESEND_API_KEY || 'mock_key');
 const getUserProfile = async (req, res) => {
@@ -18,6 +19,7 @@ const getUserProfile = async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
+        const token = jsonwebtoken_1.default.sign({ id: user._id, phone: user.phone, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.json({
             _id: user._id,
             name: user.name,
@@ -26,6 +28,7 @@ const getUserProfile = async (req, res) => {
             profilePicture: user.profilePicture,
             role: user.role,
             walletBalance: user.walletBalance,
+            token,
         });
     }
     catch (error) {
@@ -70,6 +73,7 @@ const updateUserProfile = async (req, res) => {
                 io.to('admin_room').emit('admin_data_refresh');
             }
         }
+        const token = jsonwebtoken_1.default.sign({ id: user._id, phone: user.phone, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.json({
             message: 'Profile updated successfully',
             user: {
@@ -80,7 +84,8 @@ const updateUserProfile = async (req, res) => {
                 profilePicture: user.profilePicture,
                 role: user.role,
                 walletBalance: user.walletBalance
-            }
+            },
+            token
         });
     }
     catch (error) {

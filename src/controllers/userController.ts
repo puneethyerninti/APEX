@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
 import axios from 'axios';
+import jwt from 'jsonwebtoken';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 'mock_key');
@@ -18,6 +19,12 @@ export const getUserProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    const token = jwt.sign(
+      { id: user._id, phone: user.phone, role: user.role },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '7d' }
+    );
+
     res.json({
       _id: user._id,
       name: user.name,
@@ -26,6 +33,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
       profilePicture: user.profilePicture,
       role: user.role,
       walletBalance: user.walletBalance,
+      token,
     });
   } catch (error) {
     console.error(error);
@@ -71,6 +79,12 @@ export const updateUserProfile = async (req: Request, res: Response) => {
       }
     }
 
+    const token = jwt.sign(
+      { id: user._id, phone: user.phone, role: user.role },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '7d' }
+    );
+
     res.json({ 
       message: 'Profile updated successfully', 
       user: { 
@@ -81,7 +95,8 @@ export const updateUserProfile = async (req: Request, res: Response) => {
         profilePicture: user.profilePicture,
         role: user.role,
         walletBalance: user.walletBalance
-      } 
+      },
+      token
     });
   } catch (error) {
     console.error(error);
