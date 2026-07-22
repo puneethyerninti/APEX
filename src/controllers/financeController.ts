@@ -163,7 +163,7 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
 
 // Record Mock Transaction for razorpay.me redirects
 export const recordMockTransaction = async (req: Request, res: Response) => {
-  const { amount, userId } = req.body;
+  const { amount, userId, category, serviceName } = req.body;
   
   if (!userId || !amount) {
     return res.status(400).json({ error: 'Missing userId or amount' });
@@ -173,20 +173,17 @@ export const recordMockTransaction = async (req: Request, res: Response) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
     
-    // Create completed transaction for admin tracking
+    // Create pending transaction for admin tracking
     await Transaction.create({
       user: userId,
       amount,
-      type: 'credit',
-      category: 'add_money',
-      status: 'completed',
+      type: 'debit',
+      category: category || 'service_payment',
+      status: 'pending',
       referenceId: `mock_${Date.now()}`
     });
     
-    // We don't automatically add to walletBalance here since they are just redirecting
-    // Admin will have to manually update wallet after verifying razorpay dashboard
-    
-    res.json({ success: true, message: 'Transaction recorded' });
+    res.json({ success: true, message: 'Pending transaction recorded for verification' });
   } catch (error) {
     console.error('Error recording mock transaction:', error);
     res.status(500).json({ error: 'Server error' });

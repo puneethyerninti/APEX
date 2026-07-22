@@ -6,7 +6,8 @@ import {
   getUsersList,
   getAllTransactions,
   deleteEntity,
-  updateUserWallet
+  updateUserWallet,
+  completeTransaction
 } from '../controllers/adminController';
 import { requireAdmin } from '../middleware/authMiddleware';
 
@@ -21,5 +22,6 @@ router.get('/users', getUsersList);
 router.get('/transactions', getAllTransactions);
 router.delete('/:type/:id', deleteEntity);
 router.post('/users/:id/wallet', updateUserWallet);
+router.put('/transactions/:id/complete', completeTransaction);
 
 export default router;

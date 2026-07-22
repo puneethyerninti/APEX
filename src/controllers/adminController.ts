@@ -124,3 +124,25 @@ export const updateUserWallet = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Server error updating wallet' });
   }
 };
+
+// Manually complete a pending transaction (for razorpay.me verification)
+export const completeTransaction = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  
+  try {
+    const transaction = await Transaction.findById(id);
+    if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
+    
+    if (transaction.status === 'completed') {
+      return res.status(400).json({ error: 'Transaction is already completed' });
+    }
+    
+    transaction.status = 'completed';
+    await transaction.save();
+    
+    res.json({ success: true, message: 'Transaction manually marked as completed' });
+  } catch (error) {
+    console.error('Error completing transaction manually:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
