@@ -61,7 +61,6 @@ export default function FinancePage() {
                       <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-chart-line"></i></div>
                       <span className="text-sm font-bold text-gray-800">Investment</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 w-full">
                   <div className="grid grid-cols-4 gap-2 w-full">
                       <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col items-center justify-center gap-2 cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all text-center">
                           <div className="w-10 h-10 rounded-lg bg-gray-700/80 border border-gray-600/50 flex items-center justify-center text-rose-400 shadow-inner">
