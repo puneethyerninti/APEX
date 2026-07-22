@@ -526,12 +526,16 @@ export default function AdminDashboardPage() {
                                     <tr key={t._id} className="hover:bg-[#FDFAF8] transition-colors">
                                         <td className="px-5 sm:px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-xs flex-shrink-0">
-                                                    {t.userId?.name ? t.userId.name.substring(0, 2).toUpperCase() : 'U'}
+                                                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-xs flex-shrink-0 overflow-hidden">
+                                                    {t.user?.profilePicture ? (
+                                                        <img src={t.user.profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        t.user?.name ? t.user.name.substring(0, 2).toUpperCase() : 'U'
+                                                    )}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="font-semibold text-gray-900 text-sm truncate">{t.userId?.name || 'Unknown'}</p>
-                                                    <p className="text-[11px] text-gray-400 truncate">{t.userId?.phone}</p>
+                                                    <p className="font-semibold text-gray-900 text-sm truncate">{t.user?.name || 'Unknown'}</p>
+                                                    <p className="text-[11px] text-gray-400 truncate">{t.user?.phone}</p>
                                                 </div>
                                             </div>
                                         </td>
