@@ -70,31 +70,31 @@ export default function MutualFundsPage() {
             {/* HERO / OVERVIEW */}
             <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-5 text-white">
                 <div className="mb-4">
-                    <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Investment Categories</h3>
+                    <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Top Funds</h3>
                     <div className="grid grid-cols-4 gap-2">
-                        <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                            <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-rose-400 shadow-inner">
-                                <i className="fa-solid fa-calendar-day text-lg"></i>
+                        <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform" onClick={() => window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Link coming soon', type: 'info' } }))}>
+                            <div className="w-10 h-10 rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-inner p-1">
+                                <img src="/bandhan-small-cap-fund-logo.webp" alt="Bandhan" className="object-contain w-full h-full" />
                             </div>
-                            <span className="text-white text-[8px] font-medium leading-tight">Daily SIP<br/>₹100</span>
+                            <span className="text-white text-[8px] font-medium leading-tight">Bandhan<br/>Small Cap</span>
                         </div>
-                        <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                            <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-blue-400 shadow-inner">
-                                <i className="fa-solid fa-calendar-days text-lg"></i>
+                        <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform" onClick={() => window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Link coming soon', type: 'info' } }))}>
+                            <div className="w-10 h-10 rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-inner p-1">
+                                <img src="/hdfc-mid-cap-fund-logo.png" alt="HDFC" className="object-contain w-full h-full" />
                             </div>
-                            <span className="text-white text-[8px] font-medium leading-tight">Monthly SIP<br/>₹2,000</span>
+                            <span className="text-white text-[8px] font-medium leading-tight">HDFC<br/>Mid Cap</span>
                         </div>
-                        <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                            <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-orange-400 shadow-inner">
-                                <i className="fa-solid fa-piggy-bank text-lg"></i>
+                        <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform" onClick={() => window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Link coming soon', type: 'info' } }))}>
+                            <div className="w-10 h-10 rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-inner p-1">
+                                <img src="/parag-parikh-mutual-fund-logo.png" alt="Parag Parikh" className="object-contain w-full h-full" />
                             </div>
-                            <span className="text-white text-[8px] font-medium leading-tight">Small SIP<br/>₹50</span>
+                            <span className="text-white text-[8px] font-medium leading-tight">Parag Parikh<br/>Flexi Cap</span>
                         </div>
-                        <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                            <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-emerald-400 shadow-inner">
-                                <i className="fa-solid fa-arrow-trend-up text-lg"></i>
+                        <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform" onClick={() => window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Link coming soon', type: 'info' } }))}>
+                            <div className="w-10 h-10 rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-inner p-1">
+                                <img src="/nippon-india-large-cap-fund-logo.webp" alt="Nippon" className="object-contain w-full h-full" />
                             </div>
-                            <span className="text-white text-[8px] font-medium leading-tight">Popular<br/>AMC</span>
+                            <span className="text-white text-[8px] font-medium leading-tight">Nippon India<br/>Large Cap</span>
                         </div>
                     </div>
                 </div>
@@ -107,28 +107,32 @@ export default function MutualFundsPage() {
                     {popularAMCs.map((amc) => (
                         <div 
                             key={amc.id} 
-                            onClick={() => {
-                                if (amc.link) {
-                                    setSelectedAmc(amc);
-                                } else {
-                                    window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Link coming soon for this AMC', type: 'info' } }));
-                                }
-                            }}
-                            className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start justify-between cursor-pointer hover:border-emerald-200 transition-all active:scale-95"
+                            className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-4 hover:border-emerald-200 transition-all"
                         >
-                            <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-full bg-white border border-gray-100 shadow-sm flex-shrink-0 flex items-center justify-center p-1 overflow-hidden">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-white border border-gray-100 shadow-sm flex-shrink-0 flex items-center justify-center p-1 overflow-hidden">
                                     {amc.logo ? (
                                         <img src={amc.logo} alt={amc.name} className="object-contain w-full h-full" />
                                     ) : (
                                         <i className="fa-solid fa-building-columns text-emerald-600"></i>
                                     )}
                                 </div>
-                                <div>
-                                    <h3 className="font-bold text-gray-800 text-sm mb-1">{amc.name}</h3>
-                                    <p className="text-[10px] text-gray-500 leading-snug">{amc.description}</p>
-                                </div>
+                                <h3 className="font-bold text-gray-800 text-sm flex-1">{amc.name}</h3>
                             </div>
+                            
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (amc.link) {
+                                        window.open(amc.link, '_blank');
+                                    } else {
+                                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Link coming soon for this AMC', type: 'info' } }));
+                                    }
+                                }}
+                                className="w-full py-2.5 rounded-lg font-bold text-xs uppercase tracking-wide bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                            >
+                                Invest Now <i className="fa-solid fa-arrow-right-long opacity-80"></i>
+                            </button>
                         </div>
                     ))}
                 </div>

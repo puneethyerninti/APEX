@@ -58,60 +58,34 @@ export default function FinancePage() {
               
               <div className="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all col-span-2">
                   <div className="flex items-center gap-2 mb-1">
-                      <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-umbrella"></i></div>
-                      <span className="text-sm font-bold text-gray-800">Insurance</span>
+                      <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-chart-line"></i></div>
+                      <span className="text-sm font-bold text-gray-800">Investment</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 w-full">
-                      <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col justify-between min-h-[120px] cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all">
-                          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center mb-2 overflow-hidden p-1">
-                              <img src="/bandhan-small-cap-fund-logo.webp" alt="Bandhan" className="object-contain w-full h-full" />
+                  <div className="grid grid-cols-4 gap-2 w-full">
+                      <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col items-center justify-center gap-2 cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all text-center">
+                          <div className="w-10 h-10 rounded-lg bg-gray-700/80 border border-gray-600/50 flex items-center justify-center text-rose-400 shadow-inner">
+                              <i className="fa-solid fa-calendar-day text-lg"></i>
                           </div>
-                          <div>
-                              <p className="text-white text-[10px] font-bold leading-tight mb-1">Bandhan Small Cap Fund</p>
-                              <div className="flex justify-between items-end">
-                                  <span className="text-emerald-400 font-bold text-xs">+27.99%</span>
-                                  <span className="text-gray-400 text-[9px]">3Y</span>
-                              </div>
-                          </div>
+                          <span className="text-white text-[8px] font-medium leading-tight">Daily SIP<br/>₹100</span>
                       </Link>
-                      
-                      <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col justify-between min-h-[120px] cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all">
-                          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center mb-2 overflow-hidden p-1">
-                              <img src="/hdfc-mid-cap-fund-logo.png" alt="HDFC" className="object-contain w-full h-full" />
+                      <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col items-center justify-center gap-2 cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all text-center">
+                          <div className="w-10 h-10 rounded-lg bg-gray-700/80 border border-gray-600/50 flex items-center justify-center text-blue-400 shadow-inner">
+                              <i className="fa-solid fa-calendar-days text-lg"></i>
                           </div>
-                          <div>
-                              <p className="text-white text-[10px] font-bold leading-tight mb-1">HDFC Mid Cap Fund</p>
-                              <div className="flex justify-between items-end">
-                                  <span className="text-emerald-400 font-bold text-xs">+19.87%</span>
-                                  <span className="text-gray-400 text-[9px]">3Y</span>
-                              </div>
-                          </div>
+                          <span className="text-white text-[8px] font-medium leading-tight">Monthly SIP<br/>₹2,000</span>
                       </Link>
-                      
-                      <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col justify-between min-h-[120px] cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all">
-                          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center mb-2 overflow-hidden p-1">
-                              <img src="/parag-parikh-mutual-fund-logo.png" alt="Parag Parikh" className="object-contain w-full h-full" />
+                      <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col items-center justify-center gap-2 cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all text-center">
+                          <div className="w-10 h-10 rounded-lg bg-gray-700/80 border border-gray-600/50 flex items-center justify-center text-orange-400 shadow-inner">
+                              <i className="fa-solid fa-piggy-bank text-lg"></i>
                           </div>
-                          <div>
-                              <p className="text-white text-[10px] font-bold leading-tight mb-1">Parag Parikh Flexi Cap Fund</p>
-                              <div className="flex justify-between items-end">
-                                  <span className="text-emerald-400 font-bold text-xs">+14.30%</span>
-                                  <span className="text-gray-400 text-[9px]">3Y</span>
-                              </div>
-                          </div>
+                          <span className="text-white text-[8px] font-medium leading-tight">Small SIP<br/>₹50</span>
                       </Link>
-                      
-                      <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col justify-between min-h-[120px] cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all">
-                          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center mb-2 overflow-hidden p-1">
-                              <img src="/nippon-india-large-cap-fund-logo.webp" alt="Nippon" className="object-contain w-full h-full" />
+                      <Link href="/finance/mutual-funds" className="bg-gray-800 rounded-xl p-3 flex flex-col items-center justify-center gap-2 cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all text-center">
+                          <div className="w-10 h-10 rounded-lg bg-gray-700/80 border border-gray-600/50 flex items-center justify-center text-emerald-400 shadow-inner">
+                              <i className="fa-solid fa-arrow-trend-up text-lg"></i>
                           </div>
-                          <div>
-                              <p className="text-white text-[10px] font-bold leading-tight mb-1">Nippon India Large Cap Fund</p>
-                              <div className="flex justify-between items-end">
-                                  <span className="text-emerald-400 font-bold text-xs">+12.82%</span>
-                                  <span className="text-gray-400 text-[9px]">3Y</span>
-                              </div>
-                          </div>
+                          <span className="text-white text-[8px] font-medium leading-tight">Popular<br/>AMC</span>
                       </Link>
                   </div>
               </div>
