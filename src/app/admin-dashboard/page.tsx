@@ -357,9 +357,10 @@ export default function AdminDashboardPage() {
                                 <thead>
                                     <tr className="bg-gray-50/80 text-gray-500 text-[11px] uppercase tracking-wider">
                                         <th className="px-5 sm:px-6 py-3.5 font-semibold">User</th>
-                                        <th className="px-5 sm:px-6 py-3.5 font-semibold">Service</th>
+                                          <th className="px-5 sm:px-6 py-3.5 font-semibold">Service</th>
                                         <th className="px-5 sm:px-6 py-3.5 font-semibold">Amount</th>
                                         <th className="px-5 sm:px-6 py-3.5 font-semibold">Status</th>
+                                        <th className="px-5 sm:px-6 py-3.5 font-semibold">Razorpay Link</th>
                                         <th className="px-5 sm:px-6 py-3.5 font-semibold">Date</th>
                                     </tr>
                                 </thead>
@@ -383,6 +384,15 @@ export default function AdminDashboardPage() {
                                               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${t.status==='completed'?'bg-green-50 text-green-700 border-green-100':t.status==='failed'?'bg-red-50 text-red-700 border-red-100':'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
                                                   {t.status}
                                               </span>
+                                          </td>
+                                          <td className="px-5 sm:px-6 py-4">
+                                              {t.razorpayPaymentId ? (
+                                                  <a href={`https://dashboard.razorpay.com/app/payments/${t.razorpayPaymentId}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs font-semibold flex items-center gap-1">
+                                                      View <i className="fa-solid fa-external-link-alt text-[10px]"></i>
+                                                  </a>
+                                              ) : (
+                                                  <span className="text-gray-400 text-xs italic">N/A</span>
+                                              )}
                                           </td>
                                           <td className="px-5 sm:px-6 py-4 text-gray-500 text-xs">{new Date(t.createdAt).toLocaleDateString()}</td>
                                       </tr>
@@ -497,6 +507,7 @@ export default function AdminDashboardPage() {
                                       <th className="px-5 sm:px-6 py-3.5 font-semibold">Service</th>
                                       <th className="px-5 sm:px-6 py-3.5 font-semibold">Amount</th>
                                       <th className="px-5 sm:px-6 py-3.5 font-semibold">Status</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Razorpay Link</th>
                                       <th className="px-5 sm:px-6 py-3.5 font-semibold">Date</th>
                                   </tr>
                               </thead>
@@ -520,6 +531,15 @@ export default function AdminDashboardPage() {
                                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${t.status==='completed'?'bg-green-50 text-green-700 border-green-100':t.status==='failed'?'bg-red-50 text-red-700 border-red-100':'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
                                                 {t.status}
                                             </span>
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4">
+                                            {t.razorpayPaymentId ? (
+                                                <a href={`https://dashboard.razorpay.com/app/payments/${t.razorpayPaymentId}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs font-semibold flex items-center gap-1">
+                                                    View <i className="fa-solid fa-external-link-alt text-[10px]"></i>
+                                                </a>
+                                            ) : (
+                                                <span className="text-gray-400 text-xs italic">N/A</span>
+                                            )}
                                         </td>
                                         <td className="px-5 sm:px-6 py-4 text-gray-500 text-xs">{new Date(t.createdAt).toLocaleDateString()}</td>
                                     </tr>

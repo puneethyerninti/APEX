@@ -16,25 +16,80 @@ export default function PaymentPage() {
             return;
         }
 
+        if (!user?.uid) {
+            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please login to continue', type: 'error' } }));
+            return;
+        }
+
         setLoading(true);
         
         try {
-            if (user?.uid) {
-                await api.post('/payment/record-mock', {
-                    amount: Number(amount),
-                    userId: user.uid
-                });
-            }
-        } catch (error) {
-            console.error("Failed to record mock transaction:", error);
-        }
+            // 1. Create Order
+            const orderRes = await api.post('/finance/razorpay/order', {
+                amount: Number(amount),
+                userId: user.uid
+            });
 
-        // Fallback to Razorpay Payment Link without amount parameter as it breaks the page
-        window.location.href = `https://razorpay.me/@apextradingcompany`;
+            if (!orderRes.data || !orderRes.data.order) {
+                throw new Error("Failed to create order");
+            }
+
+            const { order, keyId } = orderRes.data;
+
+            // 2. Initialize Razorpay Checkout
+            const options = {
+                key: keyId,
+                amount: order.amount,
+                currency: order.currency,
+                name: "APEX Trading Company",
+                description: "Wallet Recharge",
+                order_id: order.id,
+                handler: async function (response: any) {
+                    try {
+                        const verifyRes = await api.post('/finance/razorpay/verify', {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            amount: Number(amount),
+                            userId: user.uid
+                        });
+                        
+                        if (verifyRes.data.success) {
+                            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Payment Successful! Wallet Updated.', type: 'success' } }));
+                            setAmount('');
+                        } else {
+                            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Payment verification failed', type: 'error' } }));
+                        }
+                    } catch (err) {
+                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Error verifying payment', type: 'error' } }));
+                    }
+                },
+                prefill: {
+                    name: user?.name || "User",
+                    contact: user?.phone || ""
+                },
+                theme: {
+                    color: "#7c3aed" // violet-600
+                }
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+                window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Payment Failed: ' + response.error.description, type: 'error' } }));
+            });
+            rzp.open();
+            
+        } catch (error: any) {
+            console.error("Payment error:", error);
+            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: error.response?.data?.error || 'Failed to initiate payment', type: 'error' } }));
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col pb-20">
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" />
             <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
                 <Link href="/" className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
                     <i className="fa-solid fa-arrow-left"></i>
