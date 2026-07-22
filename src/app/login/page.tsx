@@ -243,7 +243,9 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-8 text-center z-10">
-                {/* Admin Portal link removed for security */}
+                <Link href="/admin-login" className="text-[10px] text-gray-500 hover:text-white transition-colors font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+                    <i className="fa-solid fa-shield-halved"></i> Admin Portal
+                </Link>
             </div>
         </div>
     );
