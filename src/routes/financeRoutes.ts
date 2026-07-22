@@ -1,5 +1,5 @@
 import express from 'express';
-import { getWalletBalance, deductMoney, addMoney, createRazorpayOrder, verifyRazorpayPayment } from '../controllers/financeController';
+import { getWalletBalance, deductMoney, addMoney, createRazorpayOrder, verifyRazorpayPayment, recordMockTransaction } from '../controllers/financeController';
 
 import { handleRazorpayWebhook } from '../controllers/webhookController';
 
@@ -13,5 +13,6 @@ router.post('/wallet/add', addMoney);
 router.post('/razorpay/order', createRazorpayOrder);
 router.post('/razorpay/verify', verifyRazorpayPayment);
 router.post('/razorpay/webhook', handleRazorpayWebhook);
+router.post('/razorpay/record-mock', recordMockTransaction);
 
 export default router;
