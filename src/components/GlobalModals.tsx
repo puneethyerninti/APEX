@@ -86,7 +86,9 @@ export default function GlobalModals() {
                 // Record transaction for admin tracking
                 await api.post('/finance/razorpay/record-mock', {
                     amount: numericAmt,
-                    userId: user.uid
+                    userId: user.uid,
+                    category: 'matrimony_subscription',
+                    serviceName: modalData?.plan || 'Matrimony Plan'
                 });
             }
         } catch (e) {

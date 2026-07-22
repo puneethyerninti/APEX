@@ -134,6 +134,18 @@ export default function AdminDashboardPage() {
     fetchAllData();
   };
 
+  const markTransactionPaid = async (id: string) => {
+    if(!confirm("Are you sure you verified this payment in Razorpay Dashboard?")) return;
+    try {
+      await api.put(`/admin/transactions/${id}/complete`);
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Transaction verified and marked as paid', type: 'success' } }));
+      fetchAllData();
+    } catch (err: any) {
+      console.error(err);
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: err.response?.data?.error || 'Failed to verify transaction', type: 'error' } }));
+    }
+  };
+
   if (!isAuthorized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -354,7 +366,7 @@ export default function AdminDashboardPage() {
                                           <th className="px-5 sm:px-6 py-3.5 font-semibold">Service</th>
                                         <th className="px-5 sm:px-6 py-3.5 font-semibold">Amount</th>
                                         <th className="px-5 sm:px-6 py-3.5 font-semibold">Status</th>
-                                        <th className="px-5 sm:px-6 py-3.5 font-semibold">Razorpay Link</th>
+                                        <th className="px-5 sm:px-6 py-3.5 font-semibold">Actions / Link</th>
                                         <th className="px-5 sm:px-6 py-3.5 font-semibold">Date</th>
                                     </tr>
                                 </thead>
@@ -372,7 +384,7 @@ export default function AdminDashboardPage() {
                                                   </div>
                                               </div>
                                           </td>
-                                          <td className="px-5 sm:px-6 py-4 capitalize font-medium text-gray-700">{t.type}</td>
+                                          <td className="px-5 sm:px-6 py-4 capitalize font-medium text-gray-700">{t.category ? t.category.replace('_', ' ') : t.type}</td>
                                           <td className="px-5 sm:px-6 py-4 font-bold text-gray-900">₹{t.amount}</td>
                                           <td className="px-5 sm:px-6 py-4">
                                               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${t.status==='completed'?'bg-green-50 text-green-700 border-green-100':t.status==='failed'?'bg-red-50 text-red-700 border-red-100':'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
@@ -380,12 +392,16 @@ export default function AdminDashboardPage() {
                                               </span>
                                           </td>
                                           <td className="px-5 sm:px-6 py-4">
-                                              {t.razorpayPaymentId ? (
+                                              {t.status === 'pending' ? (
+                                                  <button onClick={() => markTransactionPaid(t._id)} className="bg-[#A0684A] text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#87563c] transition-colors shadow-sm">
+                                                      Verify & Mark Paid
+                                                  </button>
+                                              ) : t.razorpayPaymentId ? (
                                                   <a href={`https://dashboard.razorpay.com/app/payments/${t.razorpayPaymentId}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs font-semibold flex items-center gap-1">
                                                       View <i className="fa-solid fa-external-link-alt text-[10px]"></i>
                                                   </a>
                                               ) : (
-                                                  <span className="text-gray-400 text-xs italic">N/A</span>
+                                                  <span className="text-green-600 text-xs font-bold"><i className="fa-solid fa-check-circle mr-1"></i>Verified</span>
                                               )}
                                           </td>
                                           <td className="px-5 sm:px-6 py-4 text-gray-500 text-xs">{new Date(t.createdAt).toLocaleDateString()}</td>
@@ -501,7 +517,7 @@ export default function AdminDashboardPage() {
                                       <th className="px-5 sm:px-6 py-3.5 font-semibold">Service</th>
                                       <th className="px-5 sm:px-6 py-3.5 font-semibold">Amount</th>
                                       <th className="px-5 sm:px-6 py-3.5 font-semibold">Status</th>
-                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Razorpay Link</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Actions / Link</th>
                                       <th className="px-5 sm:px-6 py-3.5 font-semibold">Date</th>
                                   </tr>
                               </thead>
@@ -519,7 +535,7 @@ export default function AdminDashboardPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-5 sm:px-6 py-4 capitalize font-medium text-gray-700">{t.type}</td>
+                                        <td className="px-5 sm:px-6 py-4 capitalize font-medium text-gray-700">{t.category ? t.category.replace('_', ' ') : t.type}</td>
                                         <td className="px-5 sm:px-6 py-4 font-bold text-gray-900">₹{t.amount}</td>
                                         <td className="px-5 sm:px-6 py-4">
                                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${t.status==='completed'?'bg-green-50 text-green-700 border-green-100':t.status==='failed'?'bg-red-50 text-red-700 border-red-100':'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
@@ -527,12 +543,16 @@ export default function AdminDashboardPage() {
                                             </span>
                                         </td>
                                         <td className="px-5 sm:px-6 py-4">
-                                            {t.razorpayPaymentId ? (
+                                            {t.status === 'pending' ? (
+                                                <button onClick={() => markTransactionPaid(t._id)} className="bg-[#A0684A] text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#87563c] transition-colors shadow-sm">
+                                                    Verify & Mark Paid
+                                                </button>
+                                            ) : t.razorpayPaymentId ? (
                                                 <a href={`https://dashboard.razorpay.com/app/payments/${t.razorpayPaymentId}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline text-xs font-semibold flex items-center gap-1">
                                                     View <i className="fa-solid fa-external-link-alt text-[10px]"></i>
                                                 </a>
                                             ) : (
-                                                <span className="text-gray-400 text-xs italic">N/A</span>
+                                                <span className="text-green-600 text-xs font-bold"><i className="fa-solid fa-check-circle mr-1"></i>Verified</span>
                                             )}
                                         </td>
                                         <td className="px-5 sm:px-6 py-4 text-gray-500 text-xs">{new Date(t.createdAt).toLocaleDateString()}</td>

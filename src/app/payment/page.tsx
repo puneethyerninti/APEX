@@ -27,7 +27,9 @@ export default function PaymentPage() {
             // Record transaction for admin visibility before redirect
             await api.post('/finance/razorpay/record-mock', {
                 amount: Number(amount),
-                userId: user.uid
+                userId: user.uid,
+                category: 'wallet_recharge',
+                serviceName: 'Wallet Top-up'
             });
             
             // Redirect to Razorpay generic payment link
