@@ -125,6 +125,11 @@ export default function LoginPage() {
         } catch (err: any) {
             console.error("Resend SMS Error:", err);
             setErrorMsg(err.message || 'Failed to resend OTP.');
+            if ((window as any).recaptchaVerifier) {
+                (window as any).recaptchaVerifier.render().then((widgetId: any) => {
+                    (window as any).grecaptcha.reset(widgetId);
+                }).catch((err: any) => console.error("Recaptcha reset error", err));
+            }
         } finally {
             setIsLoading(false);
         }
