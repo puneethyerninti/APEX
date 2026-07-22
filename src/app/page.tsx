@@ -227,11 +227,11 @@ export default function Home() {
 
                             {/* Mutual Funds Categories */}
                             <div className="mb-3">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <h3 className="text-white/80 text-[10px] font-bold uppercase tracking-wider">Mutual Funds</h3>
-                                    <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-lg shadow-white/5 animate-[pulse_3s_ease-in-out_infinite]">
-                                        <img src="/amfi-logo.jpg" alt="AMFI" className="h-3 w-auto object-contain mix-blend-multiply" />
-                                        <span className="text-[7px] font-black text-slate-800 uppercase tracking-widest border-l border-slate-300 pl-1.5">Registered</span>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <h3 className="text-white/80 text-[12px] font-bold uppercase tracking-wider">Mutual Funds</h3>
+                                    <div className="flex items-center gap-2 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full shadow-lg shadow-white/5 animate-[pulse_3s_ease-in-out_infinite]">
+                                        <img src="/amfi-logo.jpg" alt="AMFI" className="h-5 w-auto object-contain mix-blend-multiply" />
+                                        <span className="text-[9px] font-black text-slate-800 uppercase tracking-widest border-l border-slate-300 pl-2">Registered</span>
                                     </div>
                                 </div>
                                 <div className="flex items-start justify-center gap-12 w-full py-1">
