@@ -117,7 +117,7 @@ export default function MutualFundsPage() {
             </div>
 
             {/* POPULAR AMCs LIST */}
-            <div className="p-4 mt-2">
+            <div id="popular-amcs" className="p-4 mt-2">
                 <h2 className="font-black text-gray-900 mb-3 uppercase tracking-wide text-sm border-l-4 border-emerald-500 pl-2">Popular AMCs</h2>
                 <div className="flex flex-col gap-3">
                     {popularAMCs.map((amc) => (
