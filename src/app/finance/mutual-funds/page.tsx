@@ -25,6 +25,7 @@ export default function MutualFundsPage() {
             id: 2, 
             name: "ICICI Prudential Mutual Fund", 
             description: "Popular for balanced and equity funds with a strong long-term track record.",
+            link: "https://p.icici-pru.com/IPRUMF/S3vwYSHWJ",
             logo: "/icici-mutual-fund.webp"
         },
         { 
@@ -51,6 +52,7 @@ export default function MutualFundsPage() {
             id: 6, 
             name: "Aditya Birla Sun Life Mutual Fund", 
             description: "Popular for diversified equity.",
+            link: "https://1abc.in/ABCAMC/56e7b63",
             logo: "/aditya_birla_sun_life_mutual_fund_logo.jpg"
         },
     ];
