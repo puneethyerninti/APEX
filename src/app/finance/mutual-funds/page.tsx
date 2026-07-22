@@ -55,6 +55,20 @@ export default function MutualFundsPage() {
             link: "https://1abc.in/ABCAMC/56e7b63",
             logo: "/aditya_birla_sun_life_mutual_fund_logo.jpg"
         },
+        { 
+            id: 7, 
+            name: "Bandhan Mutual Fund", 
+            description: "Strong offerings in small-cap and mid-cap categories.",
+            link: "https://bandhanmutual.com/",
+            logo: "/bandhan-small-cap-fund-logo.webp"
+        },
+        { 
+            id: 8, 
+            name: "Parag Parikh Mutual Fund", 
+            description: "Renowned for its Flexi Cap Fund and value-oriented approach.",
+            link: "https://amc.ppfas.com/",
+            logo: "/parag-parikh-mutual-fund-logo.png"
+        },
     ];
 
     return (
