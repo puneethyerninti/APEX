@@ -72,7 +72,7 @@ export default function MutualFundsPage() {
             {/* HERO / OVERVIEW */}
             <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-5 text-white">
                 <div className="mb-4">
-                    <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Top Funds</h3>
+                    <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Popular funds</h3>
                     <div className="grid grid-cols-4 gap-2">
                         <div className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform" onClick={() => window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Link coming soon', type: 'info' } }))}>
                             <div className="w-10 h-10 rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-inner p-1">
