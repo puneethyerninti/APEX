@@ -225,7 +225,38 @@ export default function Home() {
                                 </Link>
                             </div>
 
-                            {/* Mutual Funds Grid */}
+                            {/* Mutual Funds Categories */}
+                            <div className="mb-3">
+                                <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Mutual Funds</h3>
+                                <div className="grid grid-cols-4 gap-2">
+                                    <Link href="/finance/mutual-funds" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-rose-400 shadow-inner">
+                                            <i className="fa-solid fa-calendar-day text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Daily SIP<br/>₹100</span>
+                                    </Link>
+                                    <Link href="/finance/mutual-funds" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-blue-400 shadow-inner">
+                                            <i className="fa-solid fa-calendar-days text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Monthly SIP<br/>₹2,000</span>
+                                    </Link>
+                                    <Link href="/finance/mutual-funds" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-orange-400 shadow-inner">
+                                            <i className="fa-solid fa-piggy-bank text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Small SIP<br/>₹50</span>
+                                    </Link>
+                                    <Link href="/finance/mutual-funds" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-emerald-400 shadow-inner">
+                                            <i className="fa-solid fa-arrow-trend-up text-lg"></i>
+                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Popular<br/>AMC</span>
+                                    </Link>
+                                </div>
+                            </div>
+
+                            {/* Top Mutual Funds Grid */}
                             <div className="mb-3">
                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Top Mutual Funds</h3>
                                 <div className="grid grid-cols-4 gap-2">
