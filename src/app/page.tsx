@@ -228,24 +228,18 @@ export default function Home() {
                             {/* Mutual Funds Categories */}
                             <div className="mb-3">
                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Mutual Funds</h3>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Link href="/finance/mutual-funds#popular-amcs" className="bg-gradient-to-r from-rose-500 to-rose-600 rounded-xl p-3 flex items-center justify-center gap-3 cursor-pointer hover:scale-105 transition-transform shadow-lg">
-                                        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
-                                            <i className="fa-solid fa-calendar-check"></i>
+                                <div className="grid grid-cols-4 gap-2">
+                                    <Link href="/finance/mutual-funds#popular-amcs" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-rose-400 shadow-inner">
+                                            <i className="fa-solid fa-calendar-check text-lg"></i>
                                         </div>
-                                        <div className="text-left">
-                                            <span className="text-white text-xs font-black block leading-tight">Start SIP</span>
-                                            <span className="text-white/80 text-[9px] font-medium leading-tight">Invest Monthly</span>
-                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Start SIP<br/>Monthly</span>
                                     </Link>
-                                    <Link href="/finance/mutual-funds#popular-amcs" className="bg-gray-800/80 border border-gray-700/50 rounded-xl p-3 flex items-center justify-center gap-3 cursor-pointer hover:scale-105 transition-transform">
-                                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
-                                            <i className="fa-solid fa-sack-dollar"></i>
+                                    <Link href="/finance/mutual-funds#popular-amcs" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-blue-400 shadow-inner">
+                                            <i className="fa-solid fa-sack-dollar text-lg"></i>
                                         </div>
-                                        <div className="text-left">
-                                            <span className="text-white text-xs font-black block leading-tight">Lumpsum</span>
-                                            <span className="text-gray-400 text-[9px] font-medium leading-tight">One-time</span>
-                                        </div>
+                                        <span className="text-white text-[8px] font-medium leading-tight">Lumpsum<br/>One-time</span>
                                     </Link>
                                 </div>
                             </div>
