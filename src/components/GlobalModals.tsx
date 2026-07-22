@@ -77,8 +77,23 @@ export default function GlobalModals() {
     };
 
     const handleCheckout = async () => {
-        // Temporary Redirect to razorpay.me until API keys are verified
-        alert("Redirecting to Razorpay. Please complete your payment securely.");
+        try {
+            if (user?.uid) {
+                // Determine amount (strip non-numeric chars for mock endpoint)
+                const amtStr = modalData?.amount || '0';
+                const numericAmt = parseInt(amtStr.replace(/[^0-9]/g, ''), 10) || 0;
+                
+                // Record transaction for admin tracking
+                await api.post('/finance/razorpay/record-mock', {
+                    amount: numericAmt,
+                    userId: user.uid
+                });
+            }
+        } catch (e) {
+            console.error("Failed to record transaction", e);
+        }
+        
+        // Redirect to Razorpay generic payment link
         window.location.href = "https://razorpay.me/@apextradingcompany";
     };
 
