@@ -29,12 +29,25 @@ export default function LoginPage() {
     useEffect(() => {
         // Initialize RecaptchaVerifier
         if (!(window as any).recaptchaVerifier) {
-            const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                size: 'invisible',
-            });
-            (window as any).recaptchaVerifier = verifier;
-            verifier.render(); // Pre-warm recaptcha
+            try {
+                const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                    size: 'invisible',
+                });
+                (window as any).recaptchaVerifier = verifier;
+                verifier.render(); // Pre-warm recaptcha
+            } catch (error) {
+                console.error("Recaptcha init error", error);
+            }
         }
+        
+        return () => {
+            if ((window as any).recaptchaVerifier) {
+                try {
+                    (window as any).recaptchaVerifier.clear();
+                } catch (e) {}
+                delete (window as any).recaptchaVerifier;
+            }
+        };
     }, []);
 
     const handlePhoneSubmit = async (e: React.FormEvent) => {
