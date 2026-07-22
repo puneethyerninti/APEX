@@ -107,18 +107,16 @@ export default function MutualFundsPage() {
                     {popularAMCs.map((amc) => (
                         <div 
                             key={amc.id} 
-                            className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-4 hover:border-emerald-200 transition-all"
+                            className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3 hover:border-emerald-200 transition-all"
                         >
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-white border border-gray-100 shadow-sm flex-shrink-0 flex items-center justify-center p-1 overflow-hidden">
-                                    {amc.logo ? (
-                                        <img src={amc.logo} alt={amc.name} className="object-contain w-full h-full" />
-                                    ) : (
-                                        <i className="fa-solid fa-building-columns text-emerald-600"></i>
-                                    )}
-                                </div>
-                                <h3 className="font-bold text-gray-800 text-sm flex-1">{amc.name}</h3>
+                            <div className="w-10 h-10 rounded-full bg-white border border-gray-100 shadow-sm flex-shrink-0 flex items-center justify-center p-1 overflow-hidden">
+                                {amc.logo ? (
+                                    <img src={amc.logo} alt={amc.name} className="object-contain w-full h-full" />
+                                ) : (
+                                    <i className="fa-solid fa-building-columns text-emerald-600"></i>
+                                )}
                             </div>
+                            <h3 className="font-bold text-gray-800 text-sm flex-1">{amc.name}</h3>
                             
                             <button 
                                 onClick={(e) => {
@@ -129,9 +127,9 @@ export default function MutualFundsPage() {
                                         window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Link coming soon for this AMC', type: 'info' } }));
                                     }
                                 }}
-                                className="w-full py-2.5 rounded-lg font-bold text-xs uppercase tracking-wide bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                className="px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-wider bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-sm hover:shadow active:scale-[0.98] transition-all flex items-center justify-center whitespace-nowrap"
                             >
-                                Invest Now <i className="fa-solid fa-arrow-right-long opacity-80"></i>
+                                Invest
                             </button>
                         </div>
                     ))}
