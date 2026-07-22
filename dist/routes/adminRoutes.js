@@ -15,4 +15,5 @@ router.get('/users', adminController_1.getUsersList);
 router.get('/transactions', adminController_1.getAllTransactions);
 router.delete('/:type/:id', adminController_1.deleteEntity);
 router.post('/users/:id/wallet', adminController_1.updateUserWallet);
+router.put('/transactions/:id/complete', adminController_1.completeTransaction);
 exports.default = router;

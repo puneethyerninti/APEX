@@ -85,7 +85,7 @@ export const getUsersList = async (req: Request, res: Response) => {
 
 export const getAllTransactions = async (req: Request, res: Response) => {
   try {
-    const transactions = await Transaction.find().populate('user', 'name phone').sort({ createdAt: -1 }).limit(100);
+    const transactions = await Transaction.find().populate('user', 'name phone profilePicture').sort({ createdAt: -1 }).limit(100);
     res.json({ transactions });
   } catch (error) {
     console.error(error);

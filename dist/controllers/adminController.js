@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateUserWallet = exports.deleteEntity = exports.getAllTransactions = exports.getUsersList = exports.updateApprovalStatus = exports.getPendingApprovals = exports.getDashboardStats = void 0;
+exports.completeTransaction = exports.updateUserWallet = exports.deleteEntity = exports.getAllTransactions = exports.getUsersList = exports.updateApprovalStatus = exports.getPendingApprovals = exports.getDashboardStats = void 0;
 const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const Job_1 = __importDefault(require("../models/Job"));
@@ -88,7 +88,7 @@ const getUsersList = async (req, res) => {
 exports.getUsersList = getUsersList;
 const getAllTransactions = async (req, res) => {
     try {
-        const transactions = await Transaction_1.default.find().populate('userId', 'name phone').sort({ createdAt: -1 }).limit(100);
+        const transactions = await Transaction_1.default.find().populate('user', 'name phone').sort({ createdAt: -1 }).limit(100);
         res.json({ transactions });
     }
     catch (error) {
@@ -133,3 +133,23 @@ const updateUserWallet = async (req, res) => {
     }
 };
 exports.updateUserWallet = updateUserWallet;
+// Manually complete a pending transaction (for razorpay.me verification)
+const completeTransaction = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const transaction = await Transaction_1.default.findById(id);
+        if (!transaction)
+            return res.status(404).json({ error: 'Transaction not found' });
+        if (transaction.status === 'completed') {
+            return res.status(400).json({ error: 'Transaction is already completed' });
+        }
+        transaction.status = 'completed';
+        await transaction.save();
+        res.json({ success: true, message: 'Transaction manually marked as completed' });
+    }
+    catch (error) {
+        console.error('Error completing transaction manually:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+exports.completeTransaction = completeTransaction;

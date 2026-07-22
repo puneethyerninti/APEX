@@ -16,7 +16,6 @@ const matrimonyRoutes_1 = __importDefault(require("./routes/matrimonyRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const adminRoutes_1 = __importDefault(require("./routes/adminRoutes"));
 const wealthRoutes_1 = __importDefault(require("./routes/wealthRoutes"));
-const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
 const Message_1 = __importDefault(require("./models/Message"));
 const User_1 = __importDefault(require("./models/User"));
 dotenv_1.default.config();
@@ -114,7 +113,6 @@ app.use('/api/matrimony', matrimonyRoutes_1.default);
 app.use('/api/user', userRoutes_1.default);
 app.use('/api/admin', adminRoutes_1.default);
 app.use('/api/wealth', wealthRoutes_1.default);
-app.use('/api/payment', paymentRoutes_1.default);
 // Routes Placeholder
 app.get('/', (req, res) => {
     res.send('APEX Backend is running');
