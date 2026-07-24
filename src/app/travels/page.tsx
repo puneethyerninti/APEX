@@ -334,15 +334,27 @@ export default function Page() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 mb-1">Starting Location</label>
                         <div className="relative">
-                            <i className="fa-solid fa-location-dot absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            <input required type="text" placeholder="From City" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
+                            <i className="fa-solid fa-location-dot absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
+                            {isLoaded ? (
+                                <Autocomplete>
+                                    <input required type="text" placeholder="From City" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
+                                </Autocomplete>
+                            ) : (
+                                <input required disabled type="text" placeholder="Loading..." className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
+                            )}
                         </div>
                     </div>
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 mb-1">Destination</label>
                         <div className="relative">
-                            <i className="fa-solid fa-location-crosshairs absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            <input required type="text" placeholder="To City" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
+                            <i className="fa-solid fa-location-crosshairs absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
+                            {isLoaded ? (
+                                <Autocomplete>
+                                    <input required type="text" placeholder="To City" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
+                                </Autocomplete>
+                            ) : (
+                                <input required disabled type="text" placeholder="Loading..." className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
+                            )}
                         </div>
                     </div>
                     <div className="flex gap-3">
@@ -370,15 +382,27 @@ export default function Page() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 mb-1">Starting Station</label>
                         <div className="relative">
-                            <i className="fa-solid fa-train-subway absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            <input required type="text" placeholder="From Station" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                            <i className="fa-solid fa-train-subway absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
+                            {isLoaded ? (
+                                <Autocomplete>
+                                    <input required type="text" placeholder="From Station" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                                </Autocomplete>
+                            ) : (
+                                <input required disabled type="text" placeholder="Loading..." className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                            )}
                         </div>
                     </div>
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 mb-1">Destination Station</label>
                         <div className="relative">
-                            <i className="fa-solid fa-location-crosshairs absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            <input required type="text" placeholder="To Station" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                            <i className="fa-solid fa-location-crosshairs absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
+                            {isLoaded ? (
+                                <Autocomplete>
+                                    <input required type="text" placeholder="To Station" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                                </Autocomplete>
+                            ) : (
+                                <input required disabled type="text" placeholder="Loading..." className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                            )}
                         </div>
                     </div>
                     <div className="flex gap-3">
@@ -416,15 +440,27 @@ export default function Page() {
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 mb-1">From Airport</label>
                         <div className="relative">
-                            <i className="fa-solid fa-plane-departure absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            <input required type="text" placeholder="DEL - New Delhi" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
+                            <i className="fa-solid fa-plane-departure absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
+                            {isLoaded ? (
+                                <Autocomplete>
+                                    <input required type="text" placeholder="DEL - New Delhi" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
+                                </Autocomplete>
+                            ) : (
+                                <input required disabled type="text" placeholder="Loading..." className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
+                            )}
                         </div>
                     </div>
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 mb-1">To Airport</label>
                         <div className="relative">
-                            <i className="fa-solid fa-plane-arrival absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            <input required type="text" placeholder="BOM - Mumbai" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
+                            <i className="fa-solid fa-plane-arrival absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
+                            {isLoaded ? (
+                                <Autocomplete>
+                                    <input required type="text" placeholder="BOM - Mumbai" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
+                                </Autocomplete>
+                            ) : (
+                                <input required disabled type="text" placeholder="Loading..." className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
+                            )}
                         </div>
                     </div>
                     <div className="flex gap-3">
