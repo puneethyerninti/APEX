@@ -3,12 +3,12 @@ import React, { useState, useContext, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { SocketContext } from '@/context/SocketContext';
-import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
+import { useJsApiLoader, Autocomplete, Library } from '@react-google-maps/api';
 
 // Dynamically import the map
 const TravelsMap = dynamic(() => import('@/components/TravelsMap'), { ssr: false });
 
-const libraries: ("places" | "drawing" | "geometry" | "localContext" | "visualization")[] = ['places'];
+const libraries: Library[] = ['places'];
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<'cab' | 'bus' | 'train' | 'flight'>('cab');
