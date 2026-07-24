@@ -1,17 +1,23 @@
 "use client";
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { SocketContext } from '@/context/SocketContext';
+import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
 
-// Dynamically import the map to avoid SSR issues with Leaflet
+// Dynamically import the map
 const TravelsMap = dynamic(() => import('@/components/TravelsMap'), { ssr: false });
+
+const libraries: ("places" | "drawing" | "geometry" | "localContext" | "visualization")[] = ['places'];
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<'cab' | 'bus' | 'train' | 'flight'>('cab');
   const [isBooking, setIsBooking] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState<{type: string, message: string} | null>(null);
+  
   const [pickupLocation, setPickupLocation] = useState('');
+  const [destinationLocation, setDestinationLocation] = useState('');
+  
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   
   // Real-time tracking state
@@ -20,6 +26,19 @@ export default function Page() {
   const [activeRideId, setActiveRideId] = useState<string | null>(null);
   const [cabLocation, setCabLocation] = useState<{lat: number, lng: number} | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  
+  const [routeDirections, setRouteDirections] = useState<google.maps.DirectionsResult | null>(null);
+  const [distanceText, setDistanceText] = useState('');
+  const [durationText, setDurationText] = useState('');
+  const [estimatedFare, setEstimatedFare] = useState<{mini: number, xl: number}>({mini: 120, xl: 180});
+
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
+    libraries,
+  });
+
+  const pickupAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const destAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   useEffect(() => {
     if (activeRideId && socket) {
@@ -34,6 +53,35 @@ export default function Page() {
     }
   }, [activeRideId, socket]);
 
+  const calculateRouteAndFare = (origin: string | google.maps.LatLngLiteral, destination: string) => {
+    if (!isLoaded || !window.google) return;
+    const directionsService = new window.google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin: origin,
+        destination: destination,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK && result) {
+          setRouteDirections(result);
+          const leg = result.routes[0].legs[0];
+          setDistanceText(leg.distance?.text || '');
+          setDurationText(leg.duration?.text || '');
+          
+          if (leg.distance?.value) {
+             const distanceKm = leg.distance.value / 1000;
+             // Base fare 50, + 15 per km for mini, + 25 per km for XL
+             setEstimatedFare({
+                 mini: Math.round(50 + (distanceKm * 15)),
+                 xl: Math.round(80 + (distanceKm * 25))
+             });
+          }
+        }
+      }
+    );
+  };
+
   const handleLocationFetch = () => {
     setIsFetchingLocation(true);
     
@@ -47,23 +95,24 @@ export default function Page() {
         async (position) => {
             const { latitude, longitude } = position.coords;
             setUserLocation({ lat: latitude, lng: longitude });
-            try {
-                // Reverse geocoding using free OpenStreetMap Nominatim API
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`);
-                const data = await res.json();
-                
-                // Format a nice address string from the returned details
-                const address = data.address;
-                const formattedLocation = address.road 
-                    ? `${address.road}, ${address.city || address.town || address.county || ''}`
-                    : data.display_name;
-                
-                setPickupLocation(formattedLocation.replace(/, $/, '')); // clean up trailing commas
-            } catch (err) {
-                console.error("Reverse geocoding failed", err);
+            
+            if (isLoaded && window.google) {
+                const geocoder = new window.google.maps.Geocoder();
+                geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results, status) => {
+                    if (status === 'OK' && results && results[0]) {
+                        setPickupLocation(results[0].formatted_address);
+                        if (destinationLocation) {
+                            calculateRouteAndFare({lat: latitude, lng: longitude}, destinationLocation);
+                        }
+                    } else {
+                        setPickupLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                    }
+                    setIsFetchingLocation(false);
+                });
+            } else {
                 setPickupLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                setIsFetchingLocation(false);
             }
-            setIsFetchingLocation(false);
         },
         (error) => {
             console.error("Error getting location", error);
@@ -71,6 +120,33 @@ export default function Page() {
             setIsFetchingLocation(false);
         }
     );
+  };
+
+  const onPickupPlaceChanged = () => {
+    if (pickupAutocompleteRef.current) {
+      const place = pickupAutocompleteRef.current.getPlace();
+      if (place && place.formatted_address) {
+          setPickupLocation(place.formatted_address);
+          if (place.geometry?.location) {
+              setUserLocation({lat: place.geometry.location.lat(), lng: place.geometry.location.lng()});
+          }
+          if (destinationLocation) {
+              calculateRouteAndFare(place.formatted_address, destinationLocation);
+          }
+      }
+    }
+  };
+
+  const onDestPlaceChanged = () => {
+    if (destAutocompleteRef.current) {
+      const place = destAutocompleteRef.current.getPlace();
+      if (place && place.formatted_address) {
+          setDestinationLocation(place.formatted_address);
+          if (pickupLocation) {
+              calculateRouteAndFare(pickupLocation, place.formatted_address);
+          }
+      }
+    }
   };
 
   const handleBook = (type: string, e: React.FormEvent | React.MouseEvent) => {
@@ -83,7 +159,7 @@ export default function Page() {
         socket.emit('start_ride', {
             rideId,
             origin: pickupLocation || 'Current Location',
-            destination: 'Selected Destination',
+            destination: destinationLocation || 'Selected Destination',
             lat: userLocation?.lat,
             lng: userLocation?.lng
         });
@@ -136,17 +212,19 @@ export default function Page() {
         </div>
     </div>
 
-    {/* TAB CONTENTS */}
-    
     {/* CAB SECTION */}
     {activeTab === 'cab' && (
         <div className="tab-content active h-screen relative">
-            <div className="absolute inset-0 z-0">
-                <TravelsMap cabLocation={cabLocation} userLocation={userLocation} />
+            <div className="absolute inset-0 z-0 bg-gray-100 flex items-center justify-center">
+                {isLoaded ? (
+                    <TravelsMap cabLocation={cabLocation} userLocation={userLocation} routeDirections={routeDirections} />
+                ) : (
+                    <div className="text-gray-400 font-semibold"><i className="fa-solid fa-circle-notch fa-spin mr-2"></i>Loading Map...</div>
+                )}
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent z-0 pointer-events-none"></div>
             
-            {!activeRideId && (
+            {!activeRideId && !routeDirections && (
                 <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center pointer-events-none">
                     <div className="bg-gray-900 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg mb-1">Pickup Location</div>
                     <div className="w-5 h-5 rounded-full bg-green-500 border-2 border-white pulse-dot"></div>
@@ -155,7 +233,7 @@ export default function Page() {
                 </div>
             )}
 
-            <div className="absolute bottom-0 w-full bg-white rounded-t-3xl shadow-[0_-10px_20px_rgba(0,0,0,0.1)] z-20 overflow-hidden flex flex-col" style={{ maxHeight: "50vh" }}>
+            <div className="absolute bottom-0 w-full bg-white rounded-t-3xl shadow-[0_-10px_20px_rgba(0,0,0,0.1)] z-20 overflow-hidden flex flex-col" style={{ maxHeight: "65vh" }}>
                 <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-3"></div>
                 
                 <div className="px-5 pb-6 overflow-y-auto custom-scrollbar">
@@ -167,13 +245,32 @@ export default function Page() {
                         <div className="absolute left-2 top-[52px] w-3 h-3 rounded-sm bg-red-500"></div>
 
                         <div className="relative">
-                            <input type="text" placeholder="Current Location" value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 mb-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple pr-10" />
-                            <button type="button" onClick={handleLocationFetch} disabled={isFetchingLocation} className="absolute right-2 top-1.5 text-apex-purple bg-white shadow-sm p-1.5 rounded-md hover:bg-purple-50 transition-colors">
+                            {isLoaded ? (
+                                <Autocomplete onLoad={(ref) => pickupAutocompleteRef.current = ref} onPlaceChanged={onPickupPlaceChanged}>
+                                    <input type="text" placeholder="Current Location" value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 mb-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple pr-10" />
+                                </Autocomplete>
+                            ) : (
+                                <input type="text" placeholder="Loading..." disabled className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 mb-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple pr-10" />
+                            )}
+                            <button type="button" onClick={handleLocationFetch} disabled={isFetchingLocation} className="absolute right-2 top-1.5 text-apex-purple bg-white shadow-sm p-1.5 rounded-md hover:bg-purple-50 transition-colors z-10">
                                 {isFetchingLocation ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-location-crosshairs"></i>}
                             </button>
                         </div>
-                        <input type="text" placeholder="Where to?" className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple" />
+                        {isLoaded ? (
+                            <Autocomplete onLoad={(ref) => destAutocompleteRef.current = ref} onPlaceChanged={onDestPlaceChanged}>
+                                <input type="text" placeholder="Where to?" value={destinationLocation} onChange={(e) => setDestinationLocation(e.target.value)} className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple" />
+                            </Autocomplete>
+                        ) : (
+                             <input type="text" placeholder="Where to?" disabled className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple" />
+                        )}
                     </div>
+                    
+                    {distanceText && (
+                        <div className="mb-4 text-center">
+                            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold mr-2">{distanceText}</span>
+                            <span className="bg-purple-50 text-apex-purple px-3 py-1 rounded-full text-xs font-bold">{durationText}</span>
+                        </div>
+                    )}
 
                     <div className="flex items-center gap-3 mb-5">
                         <div className="bg-purple-50 text-purple-700 px-3 py-2 rounded-lg flex-1 flex items-center justify-center gap-2 font-bold text-xs cursor-pointer border border-purple-200">
@@ -190,20 +287,20 @@ export default function Page() {
                                 <img src="https://img.icons8.com/color/48/sedan.png" alt="Sedan" className="w-10" />
                                 <div>
                                     <div className="font-bold text-sm text-gray-900">APEX Mini</div>
-                                    <div className="text-[9px] text-gray-500">4 mins away • 4 seats</div>
+                                    <div className="text-[9px] text-gray-500">{durationText ? durationText : '4 mins'} away • 4 seats</div>
                                 </div>
                             </div>
-                            <div className="font-black text-lg text-gray-900">₹120</div>
+                            <div className="font-black text-lg text-gray-900">₹{estimatedFare.mini}</div>
                         </label>
                         <label className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-white cursor-pointer hover:bg-gray-50">
                             <div className="flex items-center gap-3">
                                 <img src="https://img.icons8.com/color/48/suv.png" alt="SUV" className="w-10" />
                                 <div>
                                     <div className="font-bold text-sm text-gray-900">APEX XL</div>
-                                    <div className="text-[9px] text-gray-500">7 mins away • 6 seats</div>
+                                    <div className="text-[9px] text-gray-500">{durationText ? durationText : '7 mins'} away • 6 seats</div>
                                 </div>
                             </div>
-                            <div className="font-black text-lg text-gray-900">₹180</div>
+                            <div className="font-black text-lg text-gray-900">₹{estimatedFare.xl}</div>
                         </label>
                     </div>
 
@@ -218,7 +315,7 @@ export default function Page() {
                             </div>
                         </div>
                     ) : (
-                        <button onClick={(e) => handleBook('APEX Cab Ride', e)} disabled={isBooking} className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-black transition-colors text-sm flex justify-center items-center gap-2">
+                        <button onClick={(e) => handleBook('APEX Cab Ride', e)} disabled={isBooking || !pickupLocation || !destinationLocation} className={`w-full text-white font-bold py-3.5 rounded-xl shadow-lg transition-colors text-sm flex justify-center items-center gap-2 ${!pickupLocation || !destinationLocation ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 hover:bg-black'}`}>
                             {isBooking ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Booking...</> : 'Book APEX Mini'}
                         </button>
                     )}
