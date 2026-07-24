@@ -88,31 +88,67 @@ io.on('connection', (socket) => {
     socket.to(data.roomId).emit('typing', data);
   });
 
-  // --- TRAVELS GPS TRACKING ---
-  socket.on('start_ride', (data) => {
+  // --- TRAVELS GPS TRACKING (VIRTUAL DRIVER) ---
+  socket.on('start_ride', async (data) => {
     const { rideId, origin, destination, lat: startLat, lng: startLng } = data;
     console.log(`Started tracking ride ${rideId} from ${origin} to ${destination}`);
     
-    // Start from user's location, or fallback to Vizag
-    let lat = startLat || 17.6868;
-    let lng = startLng || 83.2185;
-    
-    const intervalId = setInterval(() => {
-      lat += (Math.random() - 0.5) * 0.001;
-      lng += (Math.random() - 0.5) * 0.001;
-      
-      io.emit(`ride_update_${rideId}`, {
-        lat,
-        lng,
-        status: 'en_route',
-        timestamp: new Date().toISOString()
-      });
-    }, 2000);
+    try {
+      const { Client } = require("@googlemaps/google-maps-services-js");
+      const client = new Client({});
+      const polyline = require("@mapbox/polyline");
 
-    // Stop tracking when they disconnect (simple cleanup for demo)
-    socket.on('disconnect', () => {
-      clearInterval(intervalId);
-    });
+      const response = await client.directions({
+        params: {
+          origin: origin,
+          destination: destination,
+          key: process.env.GOOGLE_MAPS_API_KEY as string,
+        }
+      });
+
+      if (response.data.routes && response.data.routes.length > 0) {
+        const route = response.data.routes[0];
+        const encodedPolyline = route.overview_polyline.points;
+        const decodedPoints = polyline.decode(encodedPolyline); // Returns array of [lat, lng]
+
+        let pointIndex = 0;
+        const totalPoints = decodedPoints.length;
+        
+        const intervalId = setInterval(() => {
+          if (pointIndex >= totalPoints) {
+            clearInterval(intervalId);
+            io.emit(`ride_update_${rideId}`, { status: 'arrived' });
+            return;
+          }
+
+          const [lat, lng] = decodedPoints[pointIndex];
+          
+          io.emit(`ride_update_${rideId}`, {
+            lat,
+            lng,
+            status: 'en_route',
+            timestamp: new Date().toISOString()
+          });
+
+          pointIndex++;
+        }, 1000); // move to next point every 1 second for simulation speed
+
+        socket.on('disconnect', () => {
+          clearInterval(intervalId);
+        });
+      }
+    } catch (err) {
+      console.error("Directions API error:", err);
+      // Fallback
+      let lat = startLat || 17.6868;
+      let lng = startLng || 83.2185;
+      const intervalId = setInterval(() => {
+        lat += (Math.random() - 0.5) * 0.001;
+        lng += (Math.random() - 0.5) * 0.001;
+        io.emit(`ride_update_${rideId}`, { lat, lng, status: 'en_route', timestamp: new Date().toISOString() });
+      }, 2000);
+      socket.on('disconnect', () => clearInterval(intervalId));
+    }
   });
 
   socket.on('disconnect', () => {
