@@ -211,7 +211,6 @@ export default function Home() {
                             <h1 className="text-white text-xl sm:text-2xl font-black uppercase tracking-[0.15em] drop-shadow-xl leading-tight">
                                 APEX <span className="text-yellow-400">Trading Company</span>
                             </h1>
-                            <p className="text-white/90 text-[9px] font-bold tracking-[0.2em] mt-1.5 bg-black/30 px-2.5 py-1 rounded shadow-inner backdrop-blur-sm">AMFI - ARN NO - 327302</p>
                         </div>
                         
                         <div className="mt-auto">
@@ -229,14 +228,15 @@ export default function Home() {
                             <div className="mb-3">
                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Mutual Funds</h3>
                                 <div className="grid grid-cols-4 gap-2">
-                                    <div className="col-span-2 flex flex-col items-center justify-center">
-                                        <div className="flex items-center justify-center gap-2 bg-white/95 backdrop-blur-sm px-2 py-2 rounded-xl shadow-lg shadow-white/5 animate-[pulse_3s_ease-in-out_infinite] w-full h-full border border-white/20">
+                                    <div className="col-span-2 flex flex-col items-center justify-center gap-1">
+                                        <div className="flex items-center justify-center gap-2 bg-white/95 backdrop-blur-sm px-2 py-2 rounded-xl shadow-lg shadow-white/5 animate-[pulse_3s_ease-in-out_infinite] w-full border border-white/20">
                                             <img src="/amfi-logo.jpg" alt="AMFI" className="h-7 w-auto object-contain mix-blend-multiply" />
                                             <div className="flex flex-col items-start border-l border-slate-300 pl-2">
                                                 <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest leading-tight">AMFI</span>
                                                 <span className="text-[8px] font-bold text-slate-600 uppercase tracking-widest leading-tight">Registered</span>
                                             </div>
                                         </div>
+                                        <p className="text-white/90 text-[8px] font-bold tracking-[0.1em] bg-black/30 px-2 py-0.5 rounded shadow-inner backdrop-blur-sm">AMFI-ARN NO - 327302</p>
                                     </div>
                                     <Link href="/finance/mutual-funds#popular-amcs" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-green-400 shadow-inner">

@@ -28,7 +28,9 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState(SEARCH_CATALOG);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const cartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -47,6 +49,9 @@ export default function Header() {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setIsSearchOpen(false);
+      }
+      if (cartRef.current && !cartRef.current.contains(e.target as Node)) {
+        setIsCartOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -109,7 +114,7 @@ export default function Header() {
             <i className="fa-solid fa-hand-holding-heart text-green-400"></i> Charity
           </Link>
           <Link href="/store" className="text-violet-100 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
-            <i className="fa-solid fa-store text-blue-400"></i> Store
+            <i className="fa-solid fa-cart-shopping text-blue-400"></i> Cart
           </Link>
         </div>
 
@@ -122,16 +127,38 @@ export default function Header() {
             <i className="fa-brands fa-whatsapp"></i>
           </a>
 
-          <Link
-            href="/store"
-            className="text-violet-100 hover:text-white transition-colors text-lg relative"
-            aria-label="Cart"
-          >
-            <i className="fa-solid fa-shopping-bag"></i>
-            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-              3
-            </span>
-          </Link>
+          <div className="relative" ref={cartRef}>
+            <button
+              onClick={() => setIsCartOpen(!isCartOpen)}
+              className="text-violet-100 hover:text-white transition-colors text-lg relative flex items-center justify-center outline-none"
+              aria-label="Cart"
+            >
+              <i className="fa-solid fa-cart-shopping"></i>
+              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                3
+              </span>
+            </button>
+            {isCartOpen && (
+              <div className="absolute top-[120%] right-0 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[70] animate-[fadeIn_0.2s_ease-out]">
+                <div className="p-3 border-b border-gray-50 flex items-center justify-between">
+                  <h4 className="font-black text-gray-900 text-sm">Your Cart</h4>
+                  <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">3 Items</span>
+                </div>
+                <div className="p-5 flex flex-col items-center justify-center gap-2 text-center text-gray-500 bg-gray-50/50">
+                    <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center text-violet-400 text-xl mb-1 shadow-inner">
+                        <i className="fa-solid fa-cart-arrow-down"></i>
+                    </div>
+                    <p className="text-xs font-bold text-gray-700">Internal Cart Features</p>
+                    <p className="text-[10px] leading-relaxed">Advanced cart features and secure checkout will be integrated here.</p>
+                </div>
+                <div className="p-3 bg-white border-t border-gray-100">
+                  <Link href="/store" onClick={() => setIsCartOpen(false)} className="w-full block text-center py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold rounded-lg shadow hover:shadow-md hover:from-violet-700 hover:to-indigo-700 transition-all">
+                    Continue to Store
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Profile Button */}
           <button

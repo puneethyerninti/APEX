@@ -66,7 +66,7 @@ export default function MutualFundsPage() {
             id: 8, 
             name: "Parag Parikh Mutual Fund", 
             description: "Renowned for its Flexi Cap Fund and value-oriented approach.",
-            link: "https://amc.ppfas.com/",
+            link: "https://selfinvest.ppfas.com/investor/regular/ARN-327302/E621022",
             logo: "/parag-parikh-mutual-fund-logo.png"
         },
     ];
