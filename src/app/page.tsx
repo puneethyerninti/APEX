@@ -229,16 +229,16 @@ export default function Home() {
                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Mutual Funds</h3>
                                 <div className="grid grid-cols-4 gap-2">
                                     <div className="col-span-2 flex flex-col items-center justify-center">
-                                        <div className="flex flex-col items-center justify-center gap-2 bg-white/95 backdrop-blur-sm px-3 py-3 rounded-xl shadow-lg shadow-white/5 animate-[pulse_3s_ease-in-out_infinite] w-full h-full border border-white/20">
-                                            <div className="flex items-center justify-center gap-3">
-                                                <img src="/amfi-logo.jpg" alt="AMFI" className="h-10 w-auto object-contain mix-blend-multiply" />
-                                                <div className="flex flex-col items-start border-l border-slate-300 pl-2">
-                                                    <span className="text-sm font-black text-slate-800 uppercase tracking-widest leading-tight">AMFI</span>
-                                                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest leading-tight">Registered</span>
+                                        <div className="flex flex-col items-center justify-center gap-1.5 bg-white/95 backdrop-blur-sm px-1.5 py-2 rounded-xl shadow-lg shadow-white/5 animate-[pulse_3s_ease-in-out_infinite] w-full h-full border border-white/20">
+                                            <div className="flex items-center justify-center gap-1.5">
+                                                <img src="/amfi-logo.jpg" alt="AMFI" className="h-8 w-auto object-contain mix-blend-multiply" />
+                                                <div className="flex flex-col items-start border-l border-slate-300 pl-1.5">
+                                                    <span className="text-sm font-black text-slate-800 uppercase tracking-widest leading-tight whitespace-nowrap">AMFI</span>
+                                                    <span className="text-[8px] font-bold text-slate-600 uppercase tracking-widest leading-tight whitespace-nowrap">Registered</span>
                                                 </div>
                                             </div>
                                             <div className="w-full bg-slate-100 rounded text-center py-1 border border-slate-200">
-                                                <span className="text-[10px] font-black text-slate-800 tracking-widest uppercase">ARN NO - 327302</span>
+                                                <span className="text-[9px] font-black text-slate-800 tracking-widest uppercase whitespace-nowrap">ARN NO - 327302</span>
                                             </div>
                                         </div>
                                     </div>
