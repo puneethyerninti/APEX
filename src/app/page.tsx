@@ -229,16 +229,16 @@ export default function Home() {
                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Mutual Funds</h3>
                                 <div className="grid grid-cols-4 gap-2">
                                     <div className="col-span-2 flex flex-col items-center justify-center">
-                                        <div className="flex flex-col items-center justify-center gap-1.5 bg-white/95 backdrop-blur-sm px-2 py-2 rounded-xl shadow-lg shadow-white/5 animate-[pulse_3s_ease-in-out_infinite] w-full h-full border border-white/20">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <img src="/amfi-logo.jpg" alt="AMFI" className="h-7 w-auto object-contain mix-blend-multiply" />
+                                        <div className="flex flex-col items-center justify-center gap-2 bg-white/95 backdrop-blur-sm px-3 py-3 rounded-xl shadow-lg shadow-white/5 animate-[pulse_3s_ease-in-out_infinite] w-full h-full border border-white/20">
+                                            <div className="flex items-center justify-center gap-3">
+                                                <img src="/amfi-logo.jpg" alt="AMFI" className="h-10 w-auto object-contain mix-blend-multiply" />
                                                 <div className="flex flex-col items-start border-l border-slate-300 pl-2">
-                                                    <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest leading-tight">AMFI</span>
-                                                    <span className="text-[8px] font-bold text-slate-600 uppercase tracking-widest leading-tight">Registered</span>
+                                                    <span className="text-sm font-black text-slate-800 uppercase tracking-widest leading-tight">AMFI</span>
+                                                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest leading-tight">Registered</span>
                                                 </div>
                                             </div>
-                                            <div className="w-full bg-slate-100 rounded text-center py-0.5 border border-slate-200">
-                                                <span className="text-[7.5px] font-black text-slate-700 tracking-widest uppercase">ARN NO - 327302</span>
+                                            <div className="w-full bg-slate-100 rounded text-center py-1 border border-slate-200">
+                                                <span className="text-[10px] font-black text-slate-800 tracking-widest uppercase">ARN NO - 327302</span>
                                             </div>
                                         </div>
                                     </div>
