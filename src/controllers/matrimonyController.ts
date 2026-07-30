@@ -8,7 +8,7 @@ import User from '../models/User';
 export const getMyProfile = async (req: Request, res: Response) => {
   try {
     const { userId } = req.query;
-    const profile = await MatrimonyProfile.findOne({ user: userId });
+    const profile = await MatrimonyProfile.findOne({ user: userId } as any);
     res.json(profile);
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -143,7 +143,7 @@ export const upgradeProfile = async (req: Request, res: Response) => {
     const { userId, plan, amount } = req.body;
     
     // Find the user's profile
-    const profile = await MatrimonyProfile.findOne({ user: userId });
+    const profile = await MatrimonyProfile.findOne({ user: userId } as any);
     
     if (!profile) {
       return res.status(404).json({ error: 'Matrimony profile not found' });
@@ -163,10 +163,9 @@ export const upgradeProfile = async (req: Request, res: Response) => {
       user: userId,
       type: 'debit',
       amount: numericAmount,
-      description: `Purchased Matrimony ${plan} Plan`,
-      status: 'completed',
-      date: new Date()
-    });
+      category: `Purchased Matrimony ${plan} Plan`,
+      status: 'completed'
+    } as any);
 
     // Notify Admin Dashboard in real-time
     const io = req.app.get('io');
