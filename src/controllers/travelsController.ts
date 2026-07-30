@@ -20,24 +20,8 @@ export const createBooking = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    if (user.walletBalance < amount) {
-      // For demo purposes, if they don't have enough balance, auto-fund them so they can test the real-time feature
-      user.walletBalance += 5000;
-      console.log(`Auto-funded wallet for user ${user.name} to test Travels feature.`);
-    }
+    // Wallet deduction and transaction creation removed as per request
 
-    // Deduct from wallet
-    user.walletBalance -= amount;
-    await user.save();
-
-    // Create a transaction record
-    await Transaction.create({
-      user: user._id,
-      amount: -amount,
-      type: 'debit',
-      description: `Travel booking: ${type} from ${origin} to ${destination}`,
-      status: 'completed'
-    });
 
     // Determine initial status based on type
     const initialStatus = type.toLowerCase() === 'cab' ? 'searching' : 'completed';
