@@ -2,7 +2,18 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import MatrimonyProfile from '../models/MatrimonyProfile';
 import Message from '../models/Message';
+import Transaction from '../models/Transaction';
 import User from '../models/User';
+
+export const getMyProfile = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.query;
+    const profile = await MatrimonyProfile.findOne({ user: userId });
+    res.json(profile);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
 
 // Get all approved profiles
 export const getProfiles = async (req: Request, res: Response) => {
@@ -123,5 +134,49 @@ export const getInbox = async (req: Request, res: Response) => {
     res.json(inbox);
   } catch (error) {
     res.status(500).json({ error: 'Server error fetching inbox' });
+  }
+};
+
+// Upgrade Profile / Purchase Subscription
+export const upgradeProfile = async (req: Request, res: Response) => {
+  try {
+    const { userId, plan, amount } = req.body;
+    
+    // Find the user's profile
+    const profile = await MatrimonyProfile.findOne({ user: userId });
+    
+    if (!profile) {
+      return res.status(404).json({ error: 'Matrimony profile not found' });
+    }
+
+    // Update profile
+    profile.subscription = {
+      plan,
+      isActive: true
+    };
+    await profile.save();
+
+    // Create a transaction record for Admin Dashboard
+    const numericAmount = parseInt(amount.replace(/[^0-9]/g, ''), 10) || 5000;
+    
+    await Transaction.create({
+      user: userId,
+      type: 'debit',
+      amount: numericAmount,
+      description: `Purchased Matrimony ${plan} Plan`,
+      status: 'completed',
+      date: new Date()
+    });
+
+    // Notify Admin Dashboard in real-time
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin_room').emit('admin_data_refresh');
+    }
+
+    res.json({ success: true, message: 'Subscription upgraded successfully!', profile });
+  } catch (error) {
+    console.error('Upgrade error:', error);
+    res.status(500).json({ error: 'Server error during upgrade' });
   }
 };

@@ -40,22 +40,36 @@ export const createJob = async (req: Request, res: Response) => {
 // Apply for a job (Mock File Upload)
 export const applyJob = async (req: Request, res: Response) => {
   try {
-    const { jobId, fullName, email } = req.body;
+    const { fullName, email, jobRole } = req.body;
     
     // In a real app, you would process req.file (from multer)
     // and save it to S3/Cloudinary, then store the URL in the database
     const file = req.file;
 
+    // The user wants these applications to appear in the Admin Dashboard under "Pending Jobs".
+    // We will create a Job document for this application.
+    const newJobApp = await Job.create({
+      title: `Application for ${jobRole}`,
+      company: fullName, // Store name in company field for admin visibility
+      location: email, // Store email in location
+      type: 'Application',
+      salary: 'N/A',
+      description: `Resume attached: ${file ? file.originalname : 'No file'}`,
+      status: 'pending'
+    });
+
+    // Notify Admin Dashboard in real-time
+    const io = req.app.get('io');
+    if (io) {
+      io.to('admin_room').emit('admin_data_refresh');
+    }
+
     res.status(200).json({ 
       message: 'Application submitted successfully',
-      application: {
-        jobId,
-        fullName,
-        email,
-        resumeName: file ? file.originalname : 'No file uploaded'
-      }
+      application: newJobApp
     });
   } catch (error) {
+    console.error('Job application error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 };
