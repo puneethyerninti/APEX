@@ -3,12 +3,10 @@ import React, { useState, useContext, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { SocketContext } from '@/context/SocketContext';
-import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
+import MapboxSearch from '@/components/MapboxSearch';
 
 // Dynamically import the map
 const TravelsMap = dynamic(() => import('@/components/TravelsMap'), { ssr: false });
-
-const libraries: any = ['places'];
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<'cab' | 'bus' | 'train' | 'flight'>('cab');
@@ -27,18 +25,12 @@ export default function Page() {
   const [cabLocation, setCabLocation] = useState<{lat: number, lng: number} | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   
-  const [routeDirections, setRouteDirections] = useState<google.maps.DirectionsResult | null>(null);
+  const [routeGeometry, setRouteGeometry] = useState<any | null>(null);
   const [distanceText, setDistanceText] = useState('');
   const [durationText, setDurationText] = useState('');
   const [estimatedFare, setEstimatedFare] = useState<{mini: number, xl: number}>({mini: 120, xl: 180});
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
-    libraries,
-  });
-
-  const pickupAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const destAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
 
   useEffect(() => {
     if (activeRideId && socket) {
@@ -53,33 +45,31 @@ export default function Page() {
     }
   }, [activeRideId, socket]);
 
-  const calculateRouteAndFare = (origin: string | google.maps.LatLngLiteral, destination: string) => {
-    if (!isLoaded || !window.google) return;
-    const directionsService = new window.google.maps.DirectionsService();
-    directionsService.route(
-      {
-        origin: origin,
-        destination: destination,
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === window.google.maps.DirectionsStatus.OK && result) {
-          setRouteDirections(result);
-          const leg = result.routes[0].legs[0];
-          setDistanceText(leg.distance?.text || '');
-          setDurationText(leg.duration?.text || '');
-          
-          if (leg.distance?.value) {
-             const distanceKm = leg.distance.value / 1000;
-             // Base fare 50, + 15 per km for mini, + 25 per km for XL
-             setEstimatedFare({
-                 mini: Math.round(50 + (distanceKm * 15)),
-                 xl: Math.round(80 + (distanceKm * 25))
-             });
-          }
-        }
+  const calculateRouteAndFare = async (origin: {lat: number, lng: number}, destination: {lat: number, lng: number}) => {
+    if (!mapboxToken) return;
+    try {
+      const res = await fetch(
+        `https://api.mapbox.com/directions/v5/mapbox/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?geometries=geojson&access_token=${mapboxToken}`
+      );
+      const data = await res.json();
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        setRouteGeometry(route.geometry);
+        
+        const distanceKm = route.distance / 1000;
+        const durationMin = Math.round(route.duration / 60);
+        
+        setDistanceText(`${distanceKm.toFixed(1)} km`);
+        setDurationText(`${durationMin} mins`);
+        
+        setEstimatedFare({
+            mini: Math.round(50 + (distanceKm * 15)),
+            xl: Math.round(80 + (distanceKm * 25))
+        });
       }
-    );
+    } catch (err) {
+      console.error("Error fetching directions", err);
+    }
   };
 
   const handleLocationFetch = () => {
@@ -96,23 +86,20 @@ export default function Page() {
             const { latitude, longitude } = position.coords;
             setUserLocation({ lat: latitude, lng: longitude });
             
-            if (isLoaded && window.google) {
-                const geocoder = new window.google.maps.Geocoder();
-                geocoder.geocode({ location: { lat: latitude, lng: longitude } }, (results, status) => {
-                    if (status === 'OK' && results && results[0]) {
-                        setPickupLocation(results[0].formatted_address);
-                        if (destinationLocation) {
-                            calculateRouteAndFare({lat: latitude, lng: longitude}, destinationLocation);
-                        }
-                    } else {
-                        setPickupLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-                    }
-                    setIsFetchingLocation(false);
-                });
-            } else {
+            if (mapboxToken) {
+              try {
+                const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${mapboxToken}`);
+                const data = await res.json();
+                if (data.features && data.features.length > 0) {
+                    setPickupLocation(data.features[0].place_name);
+                } else {
+                    setPickupLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                }
+              } catch (e) {
                 setPickupLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-                setIsFetchingLocation(false);
+              }
             }
+            setIsFetchingLocation(false);
         },
         (error) => {
             console.error("Error getting location", error);
@@ -122,30 +109,15 @@ export default function Page() {
     );
   };
 
-  const onPickupPlaceChanged = () => {
-    if (pickupAutocompleteRef.current) {
-      const place = pickupAutocompleteRef.current.getPlace();
-      if (place && place.formatted_address) {
-          setPickupLocation(place.formatted_address);
-          if (place.geometry?.location) {
-              setUserLocation({lat: place.geometry.location.lat(), lng: place.geometry.location.lng()});
-          }
-          if (destinationLocation) {
-              calculateRouteAndFare(place.formatted_address, destinationLocation);
-          }
-      }
-    }
+  const onPickupSelect = (location: { address: string; lat: number; lng: number }) => {
+    setPickupLocation(location.address);
+    setUserLocation({ lat: location.lat, lng: location.lng });
   };
 
-  const onDestPlaceChanged = () => {
-    if (destAutocompleteRef.current) {
-      const place = destAutocompleteRef.current.getPlace();
-      if (place && place.formatted_address) {
-          setDestinationLocation(place.formatted_address);
-          if (pickupLocation) {
-              calculateRouteAndFare(pickupLocation, place.formatted_address);
-          }
-      }
+  const onDestSelect = (location: { address: string; lat: number; lng: number }) => {
+    setDestinationLocation(location.address);
+    if (userLocation) {
+        calculateRouteAndFare(userLocation, { lat: location.lat, lng: location.lng });
     }
   };
 
@@ -216,15 +188,15 @@ export default function Page() {
     {activeTab === 'cab' && (
         <div className="tab-content active h-screen relative">
             <div className="absolute inset-0 z-0 bg-gray-100 flex items-center justify-center">
-                {isLoaded ? (
-                    <TravelsMap cabLocation={cabLocation} userLocation={userLocation} routeDirections={routeDirections} />
+                {mapboxToken ? (
+                    <TravelsMap cabLocation={cabLocation} userLocation={userLocation} routeGeometry={routeGeometry} />
                 ) : (
                     <div className="text-gray-400 font-semibold"><i className="fa-solid fa-circle-notch fa-spin mr-2"></i>Loading Map...</div>
                 )}
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent z-0 pointer-events-none"></div>
             
-            {!activeRideId && !routeDirections && (
+            {!activeRideId && !routeGeometry && (
                 <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center pointer-events-none">
                     <div className="bg-gray-900 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg mb-1">Pickup Location</div>
                     <div className="w-5 h-5 rounded-full bg-green-500 border-2 border-white pulse-dot"></div>
@@ -245,24 +217,24 @@ export default function Page() {
                         <div className="absolute left-2 top-[52px] w-3 h-3 rounded-sm bg-red-500"></div>
 
                         <div className="relative">
-                            {isLoaded ? (
-                                <Autocomplete onLoad={(ref) => pickupAutocompleteRef.current = ref} onPlaceChanged={onPickupPlaceChanged}>
-                                    <input type="text" placeholder="Current Location" value={pickupLocation} onChange={(e) => setPickupLocation(e.target.value)} className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 mb-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple pr-10" />
-                                </Autocomplete>
-                            ) : (
-                                <input type="text" placeholder="Loading..." disabled className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 mb-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple pr-10" />
-                            )}
+                            <MapboxSearch 
+                                placeholder="Current Location" 
+                                value={pickupLocation} 
+                                onChange={setPickupLocation} 
+                                onSelect={onPickupSelect} 
+                                className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 mb-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple pr-10" 
+                            />
                             <button type="button" onClick={handleLocationFetch} disabled={isFetchingLocation} className="absolute right-2 top-1.5 text-apex-purple bg-white shadow-sm p-1.5 rounded-md hover:bg-purple-50 transition-colors z-10">
                                 {isFetchingLocation ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <i className="fa-solid fa-location-crosshairs"></i>}
                             </button>
                         </div>
-                        {isLoaded ? (
-                            <Autocomplete onLoad={(ref) => destAutocompleteRef.current = ref} onPlaceChanged={onDestPlaceChanged}>
-                                <input type="text" placeholder="Where to?" value={destinationLocation} onChange={(e) => setDestinationLocation(e.target.value)} className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple" />
-                            </Autocomplete>
-                        ) : (
-                             <input type="text" placeholder="Where to?" disabled className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple" />
-                        )}
+                        <MapboxSearch 
+                            placeholder="Where to?" 
+                            value={destinationLocation} 
+                            onChange={setDestinationLocation} 
+                            onSelect={onDestSelect} 
+                            className="w-full bg-gray-100 border-none rounded-lg py-2.5 px-4 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-apex-purple" 
+                        />
                     </div>
                     
                     {distanceText && (
@@ -335,26 +307,14 @@ export default function Page() {
                         <label className="block text-[10px] font-bold text-gray-500 mb-1">Starting Location</label>
                         <div className="relative">
                             <i className="fa-solid fa-location-dot absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
-                            {isLoaded ? (
-                                <Autocomplete>
-                                    <input required type="text" placeholder="From City" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
-                                </Autocomplete>
-                            ) : (
-                                <input required disabled type="text" placeholder="Loading..." className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
-                            )}
+                            <input required type="text" placeholder="From City" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
                         </div>
                     </div>
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 mb-1">Destination</label>
                         <div className="relative">
                             <i className="fa-solid fa-location-crosshairs absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
-                            {isLoaded ? (
-                                <Autocomplete>
-                                    <input required type="text" placeholder="To City" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
-                                </Autocomplete>
-                            ) : (
-                                <input required disabled type="text" placeholder="Loading..." className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
-                            )}
+                            <input required type="text" placeholder="To City" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
                         </div>
                     </div>
                     <div className="flex gap-3">
@@ -383,26 +343,14 @@ export default function Page() {
                         <label className="block text-[10px] font-bold text-gray-500 mb-1">Starting Station</label>
                         <div className="relative">
                             <i className="fa-solid fa-train-subway absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
-                            {isLoaded ? (
-                                <Autocomplete>
-                                    <input required type="text" placeholder="From Station" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-                                </Autocomplete>
-                            ) : (
-                                <input required disabled type="text" placeholder="Loading..." className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-                            )}
+                            <input required type="text" placeholder="From Station" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
                         </div>
                     </div>
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 mb-1">Destination Station</label>
                         <div className="relative">
                             <i className="fa-solid fa-location-crosshairs absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
-                            {isLoaded ? (
-                                <Autocomplete>
-                                    <input required type="text" placeholder="To Station" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-                                </Autocomplete>
-                            ) : (
-                                <input required disabled type="text" placeholder="Loading..." className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-                            )}
+                            <input required type="text" placeholder="To Station" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
                         </div>
                     </div>
                     <div className="flex gap-3">
@@ -441,26 +389,14 @@ export default function Page() {
                         <label className="block text-[10px] font-bold text-gray-500 mb-1">From Airport</label>
                         <div className="relative">
                             <i className="fa-solid fa-plane-departure absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
-                            {isLoaded ? (
-                                <Autocomplete>
-                                    <input required type="text" placeholder="DEL - New Delhi" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
-                                </Autocomplete>
-                            ) : (
-                                <input required disabled type="text" placeholder="Loading..." className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
-                            )}
+                            <input required type="text" placeholder="DEL - New Delhi" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
                         </div>
                     </div>
                     <div>
                         <label className="block text-[10px] font-bold text-gray-500 mb-1">To Airport</label>
                         <div className="relative">
                             <i className="fa-solid fa-plane-arrival absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
-                            {isLoaded ? (
-                                <Autocomplete>
-                                    <input required type="text" placeholder="BOM - Mumbai" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
-                                </Autocomplete>
-                            ) : (
-                                <input required disabled type="text" placeholder="Loading..." className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
-                            )}
+                            <input required type="text" placeholder="BOM - Mumbai" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" />
                         </div>
                     </div>
                     <div className="flex gap-3">
