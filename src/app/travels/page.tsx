@@ -130,7 +130,7 @@ export default function Page() {
     setIsBooking(true);
     
     // If it's a cab, we trigger real-time tracking
-    if (type === 'APEX Cab Ride' && socket) {
+    if (type.includes('Ride') && socket) {
         const rideId = `ride_${Date.now()}`;
         socket.emit('start_ride', {
             rideId,
