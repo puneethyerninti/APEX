@@ -77,26 +77,42 @@ export default function GlobalModals() {
     };
 
     const handleCheckout = async () => {
-        try {
-            if (user?.uid) {
-                // Determine amount (strip non-numeric chars for mock endpoint)
-                const amtStr = modalData?.amount || '0';
-                const numericAmt = parseInt(amtStr.replace(/[^0-9]/g, ''), 10) || 0;
-                
-                // Record transaction for admin tracking
-                await api.post('/finance/razorpay/record-mock', {
-                    amount: numericAmt,
-                    userId: user.uid,
-                    category: 'matrimony_subscription',
-                    serviceName: modalData?.plan || 'Matrimony Plan'
-                });
-            }
-        } catch (e) {
-            console.error("Failed to record transaction", e);
-        }
+        setCheckoutStep('processing');
         
-        // Redirect to Razorpay generic payment link
-        window.location.href = "https://razorpay.me/@apextradingcompany";
+        // Simulate a real-time payment gateway processing delay
+        setTimeout(async () => {
+            try {
+                if (user?.uid) {
+                    const amtStr = modalData?.amount || '0';
+                    const numericAmt = parseInt(amtStr.replace(/[^0-9]/g, ''), 10) || 0;
+                    
+                    if (modalData?.plan?.includes('Matrimony')) {
+                        // Call the upgrade API directly for matrimony plans
+                        const planName = modalData.plan.replace('Matrimony ', '').replace(' Plan', '');
+                        await api.post('/matrimony/upgrade', {
+                            userId: user.uid,
+                            plan: planName,
+                            amount: amtStr
+                        });
+                        
+                        window.dispatchEvent(new CustomEvent('paymentSuccess', { detail: { type: 'matrimony', plan: planName } }));
+                    } else {
+                        // Regular record transaction for admin tracking
+                        await api.post('/finance/razorpay/record-mock', {
+                            amount: numericAmt,
+                            userId: user.uid,
+                            category: 'subscription',
+                            serviceName: modalData?.plan || 'Service Payment'
+                        });
+                        window.dispatchEvent(new CustomEvent('paymentSuccess'));
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to process payment", e);
+            }
+            
+            setModal(null);
+        }, 2000);
     };
 
     const handleAddMoney = async () => {

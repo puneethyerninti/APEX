@@ -35,6 +35,8 @@ export default function Page() {
   const { user } = useAppStore();
   const socketContext = useContext(SocketContext);
   const socket = socketContext?.socket;
+  
+  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -69,18 +71,25 @@ export default function Page() {
   };
 
   useEffect(() => {
-    const handleSuccess = () => {
+    const handleSuccess = (e: any) => {
       setIsSubmitting(false);
       setIsSuccess(true);
       setIsPaymentStep(false);
+      
+      if (e.detail?.type === 'matrimony' && user?.uid) {
+         api.get(`/matrimony/profiles/me?userId=${user.uid}`).then(res => setCurrentUserProfile(res.data)).catch(()=>{});
+         alert('Payment successful! Your subscription is now active.');
+      }
     };
     window.addEventListener('paymentSuccess', handleSuccess);
     return () => window.removeEventListener('paymentSuccess', handleSuccess);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     // Fetch live matches, excluding the current user
     if (user?.uid) {
+      api.get(`/matrimony/profiles/me?userId=${user.uid}`).then(res => setCurrentUserProfile(res.data)).catch(()=>{});
+      
       api.get(`/matrimony/profiles?userId=${user.uid}`)
         .then(res => setMatches(res.data))
         .catch(err => console.error("Failed to fetch matches:", err));
@@ -183,6 +192,11 @@ export default function Page() {
   };
 
   const openChat = async (chat: any) => {
+      if (!currentUserProfile?.subscription?.isActive) {
+          alert('You need an active Premium plan to read or send messages.');
+          return;
+      }
+      
       setActiveChatProfile(chat.profile);
       setChatOpen(true);
       setInboxOpen(false);

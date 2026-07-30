@@ -2,8 +2,11 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import AutoCarousel from '@/components/AutoCarousel';
+import { api } from '@/services/api';
+import { useAppStore } from '@/store/useAppStore';
 
 export default function Page() {
+  const { user } = useAppStore();
   const [selectedProperty, setSelectedProperty] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -23,14 +26,22 @@ export default function Page() {
     setIsSuccess(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate network request
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await api.post('/realty/inquire', {
+        propertyTitle: selectedProperty,
+        userId: user?.uid || 'guest',
+        contactData: formData
+      });
       setIsSuccess(true);
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to submit inquiry');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
