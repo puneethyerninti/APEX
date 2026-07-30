@@ -4,6 +4,7 @@ import Cookies from 'js-cookie';
 
 interface UserProfile {
   uid: string;
+  _id?: string;
   phone: string | null;
   name?: string;
   email?: string;

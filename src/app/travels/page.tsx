@@ -153,7 +153,7 @@ export default function Page() {
         
         // Call backend to create booking
         const res = await api.post('/travels/book', {
-            userId: user._id,
+            userId: user._id || user.uid,
             type: type.includes('Ride') ? 'Cab' : type.includes('Bus') ? 'Bus' : type.includes('Train') ? 'Train' : 'Flight',
             vehicleType: type,
             origin: pickupLocation || 'Current Location',
