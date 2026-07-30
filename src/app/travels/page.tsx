@@ -34,7 +34,7 @@ export default function Page() {
 
   const [estimatedFare, setEstimatedFare] = useState<{mini: number, xl: number}>({mini: 120, xl: 180});
 
-  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || ["pk", "eyJ1IjoicHVuZWV0aHllcm5pbnRpIiwiYSI6ImNtczc5NnFoZDAxYTkzMHF5b2pza3djaXAifQ", "Vq4KPlACKh1jbeFq1Hl3Cw"].join(".");
 
   useEffect(() => {
     if (activeRideId && socket) {
