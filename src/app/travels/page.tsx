@@ -258,7 +258,7 @@ export default function Page() {
                     </div>
 
                     <div className="space-y-3 mb-5">
-                        <label onClick={() => setSelectedCab('mini')} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${selectedCab === 'mini' ? 'border-2 border-apex-purple bg-purple-50' : 'border border-gray-100 bg-white hover:bg-gray-50'}`}>
+                        <div role="button" onClick={() => setSelectedCab('mini')} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${selectedCab === 'mini' ? 'border-2 border-apex-purple bg-purple-50' : 'border border-gray-100 bg-white hover:bg-gray-50'}`}>
                             <div className="flex items-center gap-3">
                                 <img src="https://img.icons8.com/color/48/sedan.png" alt="Sedan" className="w-10" />
                                 <div>
@@ -267,8 +267,8 @@ export default function Page() {
                                 </div>
                             </div>
                             <div className="font-black text-lg text-gray-900">₹{estimatedFare.mini}</div>
-                        </label>
-                        <label onClick={() => setSelectedCab('xl')} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${selectedCab === 'xl' ? 'border-2 border-apex-purple bg-purple-50' : 'border border-gray-100 bg-white hover:bg-gray-50'}`}>
+                        </div>
+                        <div role="button" onClick={() => setSelectedCab('xl')} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${selectedCab === 'xl' ? 'border-2 border-apex-purple bg-purple-50' : 'border border-gray-100 bg-white hover:bg-gray-50'}`}>
                             <div className="flex items-center gap-3">
                                 <img src="https://img.icons8.com/color/48/suv.png" alt="SUV" className="w-10" />
                                 <div>
@@ -277,7 +277,7 @@ export default function Page() {
                                 </div>
                             </div>
                             <div className="font-black text-lg text-gray-900">₹{estimatedFare.xl}</div>
-                        </label>
+                        </div>
                     </div>
 
                     {activeRideId ? (
