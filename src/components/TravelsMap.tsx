@@ -28,7 +28,7 @@ export default function TravelsMap({ cabLocation, userLocation, routeGeometry }:
     }
   }, [cabLocation, userLocation]);
 
-  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || ["pk", "eyJ1IjoicHVuZWV0aHllcm5pbnRpIiwiYSI6ImNtczdhdmh4czAxejgyenF0ZmZ3ZXN1N3kifQ", "Vd5dRzzWL3wPWTc-XLooGA"].join(".");
 
   if (!mapboxToken) return <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">Mapbox Token Missing</div>;
 

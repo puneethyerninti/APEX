@@ -26,8 +26,12 @@ export default function Page() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   
   const [routeGeometry, setRouteGeometry] = useState<any | null>(null);
-  const [distanceText, setDistanceText] = useState('');
-  const [durationText, setDurationText] = useState('');
+  const [distanceText, setDistanceText] = useState<string | null>(null);
+  const [durationText, setDurationText] = useState<string | null>(null);
+
+  // Cab Selection State
+  const [selectedCab, setSelectedCab] = useState<'mini' | 'xl'>('mini');
+
   const [estimatedFare, setEstimatedFare] = useState<{mini: number, xl: number}>({mini: 120, xl: 180});
 
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY;
@@ -254,7 +258,7 @@ export default function Page() {
                     </div>
 
                     <div className="space-y-3 mb-5">
-                        <label className="flex items-center justify-between p-3 rounded-xl border-2 border-apex-purple bg-purple-50 cursor-pointer">
+                        <label onClick={() => setSelectedCab('mini')} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${selectedCab === 'mini' ? 'border-2 border-apex-purple bg-purple-50' : 'border border-gray-100 bg-white hover:bg-gray-50'}`}>
                             <div className="flex items-center gap-3">
                                 <img src="https://img.icons8.com/color/48/sedan.png" alt="Sedan" className="w-10" />
                                 <div>
@@ -264,7 +268,7 @@ export default function Page() {
                             </div>
                             <div className="font-black text-lg text-gray-900">₹{estimatedFare.mini}</div>
                         </label>
-                        <label className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-white cursor-pointer hover:bg-gray-50">
+                        <label onClick={() => setSelectedCab('xl')} className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${selectedCab === 'xl' ? 'border-2 border-apex-purple bg-purple-50' : 'border border-gray-100 bg-white hover:bg-gray-50'}`}>
                             <div className="flex items-center gap-3">
                                 <img src="https://img.icons8.com/color/48/suv.png" alt="SUV" className="w-10" />
                                 <div>
@@ -287,8 +291,8 @@ export default function Page() {
                             </div>
                         </div>
                     ) : (
-                        <button onClick={(e) => handleBook('APEX Cab Ride', e)} disabled={isBooking || !pickupLocation || !destinationLocation} className={`w-full text-white font-bold py-3.5 rounded-xl shadow-lg transition-colors text-sm flex justify-center items-center gap-2 ${!pickupLocation || !destinationLocation ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 hover:bg-black'}`}>
-                            {isBooking ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Booking...</> : 'Book APEX Mini'}
+                        <button onClick={(e) => handleBook(`APEX ${selectedCab === 'mini' ? 'Mini' : 'XL'} Ride`, e)} disabled={isBooking || !pickupLocation || !destinationLocation} className={`w-full text-white font-bold py-3.5 rounded-xl shadow-lg transition-colors text-sm flex justify-center items-center gap-2 ${!pickupLocation || !destinationLocation ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 hover:bg-black'}`}>
+                            {isBooking ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Booking...</> : `Book APEX ${selectedCab === 'mini' ? 'Mini' : 'XL'}`}
                         </button>
                     )}
                 </div>
