@@ -95,22 +95,27 @@ io.on('connection', (socket) => {
     console.log(`Started tracking ride ${rideId} from ${origin} to ${destination}`);
     
     try {
-      const { Client } = require("@googlemaps/google-maps-services-js");
-      const client = new Client({});
-      const polyline = require("@mapbox/polyline");
+      const mapboxToken = process.env.MAPBOX_API_KEY;
+      if (!mapboxToken) throw new Error("No Mapbox API Key");
 
-      const response = await client.directions({
-        params: {
-          origin: origin,
-          destination: destination,
-          key: process.env.GOOGLE_MAPS_API_KEY as string,
-        }
-      });
+      // 1. Geocode origin and destination
+      const geoOriginRes = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(origin)}.json?access_token=${mapboxToken}`);
+      const geoOriginData = await geoOriginRes.json();
+      const originCoords = geoOriginData.features?.[0]?.center;
 
-      if (response.data.routes && response.data.routes.length > 0) {
-        const route = response.data.routes[0];
-        const encodedPolyline = route.overview_polyline.points;
-        const decodedPoints = polyline.decode(encodedPolyline); // Returns array of [lat, lng]
+      const geoDestRes = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destination)}.json?access_token=${mapboxToken}`);
+      const geoDestData = await geoDestRes.json();
+      const destCoords = geoDestData.features?.[0]?.center;
+
+      if (!originCoords || !destCoords) throw new Error("Geocoding failed");
+
+      // 2. Get route
+      const dirRes = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${originCoords[0]},${originCoords[1]};${destCoords[0]},${destCoords[1]}?geometries=geojson&access_token=${mapboxToken}`);
+      const dirData = await dirRes.json();
+
+      if (dirData.routes && dirData.routes.length > 0) {
+        const route = dirData.routes[0];
+        const decodedPoints = route.geometry.coordinates; // Array of [lng, lat]
 
         let pointIndex = 0;
         const totalPoints = decodedPoints.length;
@@ -122,7 +127,7 @@ io.on('connection', (socket) => {
             return;
           }
 
-          const [lat, lng] = decodedPoints[pointIndex];
+          const [lng, lat] = decodedPoints[pointIndex]; // Note: Mapbox returns [lng, lat]
           
           io.emit(`ride_update_${rideId}`, {
             lat,
@@ -139,7 +144,7 @@ io.on('connection', (socket) => {
         });
       }
     } catch (err) {
-      console.error("Directions API error:", err);
+      console.error("Directions/Geocoding API error:", err);
       // Fallback
       let lat = startLat || 17.6868;
       let lng = startLng || 83.2185;

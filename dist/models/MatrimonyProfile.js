@@ -44,5 +44,9 @@ const MatrimonyProfileSchema = new mongoose_1.Schema({
     bio: { type: String },
     images: [{ type: String }],
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+    subscription: {
+        plan: { type: String, enum: ['Free', 'Silver', 'Gold', 'Premium'], default: 'Free' },
+        isActive: { type: Boolean, default: false }
+    }
 }, { timestamps: true });
 exports.default = mongoose_1.default.model('MatrimonyProfile', MatrimonyProfileSchema);

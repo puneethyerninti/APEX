@@ -16,6 +16,7 @@ const matrimonyRoutes_1 = __importDefault(require("./routes/matrimonyRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const adminRoutes_1 = __importDefault(require("./routes/adminRoutes"));
 const wealthRoutes_1 = __importDefault(require("./routes/wealthRoutes"));
+const realtyRoutes_1 = __importDefault(require("./routes/realtyRoutes"));
 const Message_1 = __importDefault(require("./models/Message"));
 const User_1 = __importDefault(require("./models/User"));
 dotenv_1.default.config();
@@ -79,27 +80,63 @@ io.on('connection', (socket) => {
     socket.on('typing', (data) => {
         socket.to(data.roomId).emit('typing', data);
     });
-    // --- TRAVELS GPS TRACKING ---
-    socket.on('start_ride', (data) => {
+    // --- TRAVELS GPS TRACKING (VIRTUAL DRIVER) ---
+    socket.on('start_ride', async (data) => {
         const { rideId, origin, destination, lat: startLat, lng: startLng } = data;
         console.log(`Started tracking ride ${rideId} from ${origin} to ${destination}`);
-        // Start from user's location, or fallback to Vizag
-        let lat = startLat || 17.6868;
-        let lng = startLng || 83.2185;
-        const intervalId = setInterval(() => {
-            lat += (Math.random() - 0.5) * 0.001;
-            lng += (Math.random() - 0.5) * 0.001;
-            io.emit(`ride_update_${rideId}`, {
-                lat,
-                lng,
-                status: 'en_route',
-                timestamp: new Date().toISOString()
-            });
-        }, 2000);
-        // Stop tracking when they disconnect (simple cleanup for demo)
-        socket.on('disconnect', () => {
-            clearInterval(intervalId);
-        });
+        try {
+            const mapboxToken = process.env.MAPBOX_API_KEY;
+            if (!mapboxToken)
+                throw new Error("No Mapbox API Key");
+            // 1. Geocode origin and destination
+            const geoOriginRes = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(origin)}.json?access_token=${mapboxToken}`);
+            const geoOriginData = await geoOriginRes.json();
+            const originCoords = geoOriginData.features?.[0]?.center;
+            const geoDestRes = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destination)}.json?access_token=${mapboxToken}`);
+            const geoDestData = await geoDestRes.json();
+            const destCoords = geoDestData.features?.[0]?.center;
+            if (!originCoords || !destCoords)
+                throw new Error("Geocoding failed");
+            // 2. Get route
+            const dirRes = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${originCoords[0]},${originCoords[1]};${destCoords[0]},${destCoords[1]}?geometries=geojson&access_token=${mapboxToken}`);
+            const dirData = await dirRes.json();
+            if (dirData.routes && dirData.routes.length > 0) {
+                const route = dirData.routes[0];
+                const decodedPoints = route.geometry.coordinates; // Array of [lng, lat]
+                let pointIndex = 0;
+                const totalPoints = decodedPoints.length;
+                const intervalId = setInterval(() => {
+                    if (pointIndex >= totalPoints) {
+                        clearInterval(intervalId);
+                        io.emit(`ride_update_${rideId}`, { status: 'arrived' });
+                        return;
+                    }
+                    const [lng, lat] = decodedPoints[pointIndex]; // Note: Mapbox returns [lng, lat]
+                    io.emit(`ride_update_${rideId}`, {
+                        lat,
+                        lng,
+                        status: 'en_route',
+                        timestamp: new Date().toISOString()
+                    });
+                    pointIndex++;
+                }, 1000); // move to next point every 1 second for simulation speed
+                socket.on('disconnect', () => {
+                    clearInterval(intervalId);
+                });
+            }
+        }
+        catch (err) {
+            console.error("Directions/Geocoding API error:", err);
+            // Fallback
+            let lat = startLat || 17.6868;
+            let lng = startLng || 83.2185;
+            const intervalId = setInterval(() => {
+                lat += (Math.random() - 0.5) * 0.001;
+                lng += (Math.random() - 0.5) * 0.001;
+                io.emit(`ride_update_${rideId}`, { lat, lng, status: 'en_route', timestamp: new Date().toISOString() });
+            }, 2000);
+            socket.on('disconnect', () => clearInterval(intervalId));
+        }
     });
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
@@ -113,6 +150,7 @@ app.use('/api/matrimony', matrimonyRoutes_1.default);
 app.use('/api/user', userRoutes_1.default);
 app.use('/api/admin', adminRoutes_1.default);
 app.use('/api/wealth', wealthRoutes_1.default);
+app.use('/api/realty', realtyRoutes_1.default);
 // Routes Placeholder
 app.get('/', (req, res) => {
     res.send('APEX Backend is running');
