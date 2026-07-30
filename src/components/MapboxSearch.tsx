@@ -22,7 +22,7 @@ export default function MapboxSearch({ placeholder, value, onChange, onSelect, c
         return;
       }
       
-      const token = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || ["pk", "eyJ1IjoicHVuZWV0aHllcm5pbnRpIiwiYSI6ImNtczdhdmh4czAxejgyenF0ZmZ3ZXN1N3kifQ", "Vd5dRzzWL3wPWTc-XLooGA"].join(".");
+      const token = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || ["pk", "eyJ1IjoicHVuZWV0aHllcm5pbnRpIiwiYSI6ImNtczc5NnFoZDAxYTkzMHF5b2pza3djaXAifQ", "Vq4KPlACKh1jbeFq1Hl3Cw"].join(".");
       if (!token) return;
 
       try {
