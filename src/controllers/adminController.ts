@@ -6,6 +6,7 @@ import MatrimonyProfile from '../models/MatrimonyProfile';
 import RealEstate from '../models/RealEstate';
 import StoreOrder from '../models/StoreOrder';
 import CharityDonation from '../models/CharityDonation';
+import TravelBooking from '../models/TravelBooking';
 
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
@@ -14,6 +15,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     const pendingJobs = await Job.countDocuments({ status: 'pending' });
     const pendingProfiles = await MatrimonyProfile.countDocuments({ status: 'pending' });
     const pendingRealty = await RealEstate.countDocuments({ status: 'pending' });
+    const totalTravelBookings = await TravelBooking.countDocuments();
 
     // Calculate revenue (sum of all credit transactions, or just an example logic)
     const revenueAgg = await Transaction.aggregate([
@@ -29,7 +31,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         revenue,
         pendingJobs,
         pendingProfiles,
-        pendingRealty
+        pendingRealty,
+        totalTravelBookings
       }
     });
   } catch (error) {
