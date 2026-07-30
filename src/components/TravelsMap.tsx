@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef } from 'react';
-import Map, { Marker, Source, Layer, MapRef } from 'react-map-gl';
+import Map, { Marker, Source, Layer } from 'react-map-gl/mapbox';
+import type { MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface TravelsMapProps {
