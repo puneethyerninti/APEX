@@ -3,15 +3,21 @@ import React, { useState, useContext, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { SocketContext } from '@/context/SocketContext';
+import { useAppStore } from '@/store/useAppStore';
+import { api } from '@/services/api';
 import MapboxSearch from '@/components/MapboxSearch';
 
 // Dynamically import the map
 const TravelsMap = dynamic(() => import('@/components/TravelsMap'), { ssr: false });
 
 export default function Page() {
+  const user = useAppStore((state) => state.user);
   const [activeTab, setActiveTab] = useState<'cab' | 'bus' | 'train' | 'flight'>('cab');
   const [isBooking, setIsBooking] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState<{type: string, message: string} | null>(null);
+  
+  const [rideStatus, setRideStatus] = useState<'searching' | 'driver_found' | 'en_route' | 'completed' | null>(null);
+  const [driverInfo, setDriverInfo] = useState<string | null>(null);
   
   const [pickupLocation, setPickupLocation] = useState('');
   const [destinationLocation, setDestinationLocation] = useState('');
@@ -39,7 +45,15 @@ export default function Page() {
   useEffect(() => {
     if (activeRideId && socket) {
       const handleRideUpdate = (data: any) => {
-        setCabLocation({ lat: data.lat, lng: data.lng });
+        if (data.status === 'driver_found') {
+          setRideStatus('driver_found');
+          setDriverInfo(data.driverName);
+        } else if (data.status === 'en_route') {
+          setRideStatus('en_route');
+          setCabLocation({ lat: data.lat, lng: data.lng });
+        } else if (data.status === 'completed' || data.status === 'arrived') {
+          setRideStatus('completed');
+        }
       };
       
       socket.on(`ride_update_${activeRideId}`, handleRideUpdate);
@@ -125,30 +139,54 @@ export default function Page() {
     }
   };
 
-  const handleBook = (type: string, e: React.FormEvent | React.MouseEvent) => {
+  const handleBook = async (type: string, e: React.FormEvent | React.MouseEvent) => {
     if ('preventDefault' in e) e.preventDefault();
+    if (!user) {
+        alert("Please login first to book a ride.");
+        return;
+    }
+    
     setIsBooking(true);
     
-    // If it's a cab, we trigger real-time tracking
-    if (type.includes('Ride') && socket) {
-        const rideId = `ride_${Date.now()}`;
-        socket.emit('start_ride', {
-            rideId,
+    try {
+        const fare = type.includes('Mini') ? estimatedFare.mini : estimatedFare.xl;
+        
+        // Call backend to create booking
+        const res = await api.post('/travels/book', {
+            userId: user._id,
+            type: type.includes('Ride') ? 'Cab' : type.includes('Bus') ? 'Bus' : type.includes('Train') ? 'Train' : 'Flight',
+            vehicleType: type,
             origin: pickupLocation || 'Current Location',
             destination: destinationLocation || 'Selected Destination',
-            lat: userLocation?.lat,
-            lng: userLocation?.lng
+            amount: fare
         });
-        setActiveRideId(rideId);
-    }
+        
+        const bookingId = res.data.booking._id;
 
-    setTimeout(() => {
+        if (type.includes('Ride') && socket) {
+            setRideStatus('searching');
+            const rideId = `ride_${Date.now()}`;
+            socket.emit('start_ride', {
+                rideId,
+                bookingId,
+                origin: pickupLocation || 'Current Location',
+                destination: destinationLocation || 'Selected Destination',
+                lat: userLocation?.lat,
+                lng: userLocation?.lng
+            });
+            setActiveRideId(rideId);
+        } else {
+            // Static success for non-cab
+            setBookingSuccess({
+                type,
+                message: `Your ${type} has been successfully booked!`
+            });
+        }
+    } catch (err: any) {
+        alert(err.response?.data?.error || "Error booking ride. Please try again.");
+    } finally {
         setIsBooking(false);
-        setBookingSuccess({
-            type,
-            message: `Your ${type} has been successfully booked!`
-        });
-    }, 1500);
+    }
   };
 
   const closeSuccess = () => {
@@ -280,17 +318,41 @@ export default function Page() {
                         </div>
                     </div>
 
-                    {activeRideId ? (
-                        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center justify-between">
+                    {rideStatus === 'searching' && (
+                        <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-xl flex items-center justify-between">
                             <div>
-                                <h3 className="font-black text-green-700 text-lg">Driver is on the way!</h3>
-                                <p className="text-xs text-green-600">APEX Mini • AP 31 X 9999</p>
+                                <h3 className="font-black text-apex-purple text-lg flex items-center gap-2">
+                                    <i className="fa-solid fa-circle-notch fa-spin"></i> Finding Driver...
+                                </h3>
+                                <p className="text-xs text-purple-600">Locating the nearest APEX driver for you</p>
                             </div>
-                            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-green-500 shadow-sm border border-green-100 text-xl">
+                        </div>
+                    )}
+                    {(rideStatus === 'driver_found' || rideStatus === 'en_route') && (
+                        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
+                            <div>
+                                <h3 className="font-black text-blue-700 text-lg">Driver is on the way!</h3>
+                                <p className="text-xs text-blue-600">{driverInfo} • AP 31 X 9999</p>
+                            </div>
+                            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-blue-500 shadow-sm border border-blue-100 text-xl pulse-dot">
                                 <i className="fa-solid fa-car-side"></i>
                             </div>
                         </div>
-                    ) : (
+                    )}
+                    {rideStatus === 'completed' && (
+                        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl text-center">
+                            <div className="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl mx-auto mb-2 shadow-md">
+                                <i className="fa-solid fa-check"></i>
+                            </div>
+                            <h3 className="font-black text-green-700 text-xl">Ride Completed</h3>
+                            <p className="text-xs text-green-600 font-bold mb-3">Amount paid: ₹{selectedCab === 'mini' ? estimatedFare.mini : estimatedFare.xl}</p>
+                            <button onClick={() => { setActiveRideId(null); setRideStatus(null); setPickupLocation(''); setDestinationLocation(''); setRouteGeometry(null); }} className="px-5 py-2 bg-green-600 text-white font-bold rounded-lg shadow-sm hover:bg-green-700">
+                                Done
+                            </button>
+                        </div>
+                    )}
+                    
+                    {!rideStatus && (
                         <button onClick={(e) => handleBook(`APEX ${selectedCab === 'mini' ? 'Mini' : 'XL'} Ride`, e)} disabled={isBooking || !pickupLocation || !destinationLocation} className={`w-full text-white font-bold py-3.5 rounded-xl shadow-lg transition-colors text-sm flex justify-center items-center gap-2 ${!pickupLocation || !destinationLocation ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 hover:bg-black'}`}>
                             {isBooking ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Booking...</> : `Book APEX ${selectedCab === 'mini' ? 'Mini' : 'XL'}`}
                         </button>

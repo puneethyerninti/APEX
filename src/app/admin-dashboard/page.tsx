@@ -39,7 +39,8 @@ export default function AdminDashboardPage() {
   const [pendingApprovals, setPendingApprovals] = useState<{jobs: any[], profiles: any[], realty: any[]}>({jobs: [], profiles: [], realty: []});
   const [users, setUsers] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'approvals' | 'users' | 'transactions'>('overview');
+  const [travels, setTravels] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'approvals' | 'users' | 'transactions' | 'travels'>('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,16 +71,18 @@ export default function AdminDashboardPage() {
 
   const fetchAllData = async () => {
     try {
-      const [statsRes, approvalsRes, usersRes, transRes] = await Promise.all([
+      const [statsRes, approvalsRes, usersRes, transRes, travelsRes] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/admin/approvals'),
         api.get('/admin/users'),
-        api.get('/admin/transactions')
+        api.get('/admin/transactions'),
+        api.get('/travels/admin/all')
       ]);
       setDbStats(statsRes.data.stats);
       setPendingApprovals(approvalsRes.data);
       setUsers(usersRes.data.users);
       setTransactions(transRes.data.transactions);
+      setTravels(travelsRes.data.bookings);
     } catch (error) {
       console.error("Failed to fetch admin data", error);
     }
@@ -217,6 +220,9 @@ export default function AdminDashboardPage() {
             <button onClick={() => { setActiveTab('transactions'); setIsSidebarOpen(false); }} className={`w-full flex items-center px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'transactions' ? 'bg-[#A0684A]/10 text-[#A0684A]' : 'text-gray-500 hover:bg-gray-50 hover:text-[#A0684A]'}`}>
                 <i className="fa-solid fa-indian-rupee-sign w-5 text-center mr-3 text-base"></i> Transactions
             </button>
+            <button onClick={() => { setActiveTab('travels'); setIsSidebarOpen(false); }} className={`w-full flex items-center px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'travels' ? 'bg-[#A0684A]/10 text-[#A0684A]' : 'text-gray-500 hover:bg-gray-50 hover:text-[#A0684A]'}`}>
+                <i className="fa-solid fa-car w-5 text-center mr-3 text-base"></i> Travel Bookings
+            </button>
 
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-2 px-3 mt-6">System</p>
             <Link href="/" className="flex items-center px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:text-[#A0684A] rounded-xl font-medium text-sm transition-all">
@@ -308,6 +314,18 @@ export default function AdminDashboardPage() {
                                 </div>
                                 <div className="w-11 h-11 rounded-2xl bg-teal-50 flex items-center justify-center">
                                     <i className="fa-solid fa-building text-teal-500 text-lg"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-[13px] font-medium text-gray-500">Travel Bookings</p>
+                                    <h3 className="text-[1.7rem] font-extrabold text-gray-900 mt-1 leading-none">{dbStats?.totalTravelBookings || 0}</h3>
+                                </div>
+                                <div className="w-11 h-11 rounded-2xl bg-purple-50 flex items-center justify-center">
+                                    <i className="fa-solid fa-car text-purple-500 text-lg"></i>
                                 </div>
                             </div>
                         </div>
@@ -554,6 +572,67 @@ export default function AdminDashboardPage() {
                                             ) : (
                                                 <span className="text-green-600 text-xs font-bold"><i className="fa-solid fa-check-circle mr-1"></i>Verified</span>
                                             )}
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4 text-gray-500 text-xs">{new Date(t.createdAt).toLocaleDateString()}</td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+                )}
+
+                {activeTab === 'travels' && (
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                      <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse min-w-[700px]">
+                              <thead>
+                                  <tr className="bg-gray-50/80 text-gray-500 text-[11px] uppercase tracking-wider">
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">User</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Booking Type</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Route</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Amount</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Status</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Date</th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-50 text-sm">
+                                  {travels.map(t => (
+                                    <tr key={t._id} className="hover:bg-[#FDFAF8] transition-colors">
+                                        <td className="px-5 sm:px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-xs flex-shrink-0">
+                                                    {t.user?.name ? t.user.name.substring(0, 2).toUpperCase() : 'U'}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-semibold text-gray-900 text-sm truncate">{t.user?.name || 'Unknown'}</p>
+                                                    <p className="text-[11px] text-gray-400 truncate">{t.user?.phone}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4 font-medium text-gray-700">
+                                            <div className="flex items-center gap-2">
+                                                {t.type === 'Cab' && <i className="fa-solid fa-taxi text-purple-500"></i>}
+                                                {t.type === 'Bus' && <i className="fa-solid fa-bus text-orange-500"></i>}
+                                                {t.type === 'Train' && <i className="fa-solid fa-train text-blue-500"></i>}
+                                                {t.type === 'Flight' && <i className="fa-solid fa-plane text-purple-600"></i>}
+                                                <span>{t.vehicleType || t.type}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4">
+                                            <p className="text-xs text-gray-900 font-semibold truncate max-w-[200px]">{t.origin}</p>
+                                            <i className="fa-solid fa-arrow-down text-[8px] text-gray-400 my-1 block"></i>
+                                            <p className="text-xs text-gray-900 font-semibold truncate max-w-[200px]">{t.destination}</p>
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4 font-bold text-gray-900">₹{t.amount}</td>
+                                        <td className="px-5 sm:px-6 py-4">
+                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${t.status==='completed'?'bg-green-50 text-green-700 border-green-100':t.status==='en_route'?'bg-blue-50 text-blue-700 border-blue-100':'bg-purple-50 text-purple-700 border-purple-100'}`}>
+                                                {t.status === 'searching' && <><i className="fa-solid fa-circle-notch fa-spin mr-1"></i> Searching</>}
+                                                {t.status === 'en_route' && <><i className="fa-solid fa-car-side mr-1"></i> En Route</>}
+                                                {t.status === 'completed' && <><i className="fa-solid fa-check mr-1"></i> Completed</>}
+                                                {t.status === 'cancelled' && <><i className="fa-solid fa-xmark mr-1"></i> Cancelled</>}
+                                                {!['searching', 'en_route', 'completed', 'cancelled'].includes(t.status) && t.status}
+                                            </span>
                                         </td>
                                         <td className="px-5 sm:px-6 py-4 text-gray-500 text-xs">{new Date(t.createdAt).toLocaleDateString()}</td>
                                     </tr>
