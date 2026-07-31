@@ -37,7 +37,24 @@ export default function PaymentPage() {
                 serviceName: scanResult ? 'Scan & Pay' : 'Wallet Top-up'
             });
             
-            window.location.href = `https://razorpay.me/@apextradingcompany`;
+            if (scanResult) {
+                if (scanResult.toLowerCase().startsWith('upi://')) {
+                    // It's a UPI QR code! We need to inject the amount.
+                    let upiUrl = new URL(scanResult);
+                    upiUrl.searchParams.set('am', finalAmount.toString());
+                    // By setting href to a upi:// scheme, Android will automatically open UPI apps (PhonePe, GPay, etc.)
+                    window.location.href = upiUrl.toString();
+                } else if (scanResult.toLowerCase().startsWith('http://') || scanResult.toLowerCase().startsWith('https://')) {
+                    // It's a regular URL
+                    window.location.href = scanResult;
+                } else {
+                    // Fallback for unknown QR text types
+                    window.location.href = `https://razorpay.me/@apextradingcompany`;
+                }
+            } else {
+                // Not a QR scan, default online payment
+                window.location.href = `https://razorpay.me/@apextradingcompany`;
+            }
             
         } catch (error: any) {
             console.error("Payment error:", error);
