@@ -4,6 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
+import { useSocket } from "@/context/SocketContext";
+import { api } from "@/services/api";
 
 const SEARCH_CATALOG = [
   { title: "Full-Stack Web Development", category: "Academy", icon: "fa-code", href: "/academy" },
@@ -25,12 +27,69 @@ const SEARCH_CATALOG = [
 export default function Header() {
   const router = useRouter();
   const user = useAppStore((state) => state.user);
+  const { socket } = useSocket();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState(SEARCH_CATALOG);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-  const cartRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (user?._id) {
+      fetchNotifications();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (socket && user?._id) {
+      socket.emit('join_user', user._id);
+      
+      const handleNewNotification = (notification: any) => {
+        setNotifications(prev => [notification, ...prev]);
+        showToast(notification.title || 'New Notification');
+      };
+
+      socket.on('new_notification', handleNewNotification);
+
+      return () => {
+        socket.off('new_notification', handleNewNotification);
+      };
+    }
+  }, [socket, user]);
+
+  const fetchNotifications = async () => {
+    if (!user?._id) return;
+    try {
+      const res = await api.get(`/api/notifications/user/${user._id}`);
+      setNotifications(res.data.notifications || []);
+    } catch (err) {
+      console.error('Failed to fetch notifications', err);
+    }
+  };
+
+  const markAsRead = async (id: string) => {
+    try {
+      await api.put(`/api/notifications/${id}/read`);
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+    } catch (err) {
+      console.error('Failed to mark read', err);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (!user?._id) return;
+    try {
+      await api.put(`/api/notifications/mark-all-read`, { userId: user._id });
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error('Failed to mark all read', err);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -50,8 +109,8 @@ export default function Header() {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setIsSearchOpen(false);
       }
-      if (cartRef.current && !cartRef.current.contains(e.target as Node)) {
-        setIsCartOpen(false);
+      if (notificationsRef.current && !notificationsRef.current.contains(e.target as Node)) {
+        setIsNotificationsOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -113,9 +172,6 @@ export default function Header() {
           <Link href="/charity" className="text-violet-100 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
             <i className="fa-solid fa-hand-holding-heart text-green-400"></i> Charity
           </Link>
-          <Link href="/store" className="text-violet-100 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
-            <i className="fa-solid fa-cart-shopping text-blue-400"></i> Cart
-          </Link>
         </div>
 
         <div className="flex items-center gap-3.5">
@@ -127,34 +183,58 @@ export default function Header() {
             <i className="fa-brands fa-whatsapp"></i>
           </a>
 
-          <div className="relative" ref={cartRef}>
+          <div className="relative" ref={notificationsRef}>
             <button
-              onClick={() => setIsCartOpen(!isCartOpen)}
+              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
               className="text-violet-100 hover:text-white transition-colors text-lg relative flex items-center justify-center outline-none"
-              aria-label="Cart"
+              aria-label="Notifications"
             >
-              <i className="fa-solid fa-cart-shopping"></i>
-              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                3
-              </span>
+              <i className="fa-solid fa-bell"></i>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </button>
-            {isCartOpen && (
-              <div className="absolute top-[120%] right-0 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[70] animate-[fadeIn_0.2s_ease-out]">
+            {isNotificationsOpen && (
+              <div className="absolute top-[120%] right-0 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[70] animate-[fadeIn_0.2s_ease-out]">
                 <div className="p-3 border-b border-gray-50 flex items-center justify-between">
-                  <h4 className="font-black text-gray-900 text-sm">Your Cart</h4>
-                  <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">3 Items</span>
+                  <h4 className="font-black text-gray-900 text-sm">Notifications</h4>
+                  {unreadCount > 0 && (
+                    <button onClick={markAllAsRead} className="text-xs font-bold text-violet-600 hover:underline">Mark all read</button>
+                  )}
                 </div>
-                <div className="p-5 flex flex-col items-center justify-center gap-2 text-center text-gray-500 bg-gray-50/50">
-                    <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center text-violet-400 text-xl mb-1 shadow-inner">
-                        <i className="fa-solid fa-cart-arrow-down"></i>
+                <div className="max-h-72 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="p-5 flex flex-col items-center justify-center gap-2 text-center text-gray-500">
+                        <div className="w-12 h-12 rounded-full bg-violet-50 flex items-center justify-center text-violet-300 text-xl mb-1 shadow-inner">
+                            <i className="fa-regular fa-bell"></i>
+                        </div>
+                        <p className="text-xs font-bold text-gray-700">No Notifications</p>
+                        <p className="text-[10px] leading-relaxed">You're all caught up!</p>
                     </div>
-                    <p className="text-xs font-bold text-gray-700">Internal Cart Features</p>
-                    <p className="text-[10px] leading-relaxed">Advanced cart features and secure checkout will be integrated here.</p>
-                </div>
-                <div className="p-3 bg-white border-t border-gray-100">
-                  <Link href="/store" onClick={() => setIsCartOpen(false)} className="w-full block text-center py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold rounded-lg shadow hover:shadow-md hover:from-violet-700 hover:to-indigo-700 transition-all">
-                    Continue to Store
-                  </Link>
+                  ) : (
+                    <div className="divide-y divide-gray-50">
+                      {notifications.map(notif => (
+                        <div 
+                          key={notif._id} 
+                          className={`p-3 text-left transition-colors ${notif.isRead ? 'bg-white' : 'bg-violet-50/50'} hover:bg-gray-50 cursor-pointer`}
+                          onClick={() => { if(!notif.isRead) markAsRead(notif._id); }}
+                        >
+                          <div className="flex gap-3">
+                            <div className={`mt-0.5 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white ${notif.type === 'success' ? 'bg-green-500' : notif.type === 'warning' ? 'bg-orange-500' : notif.type === 'error' ? 'bg-red-500' : 'bg-blue-500'}`}>
+                              <i className={`fa-solid ${notif.type === 'success' ? 'fa-check' : notif.type === 'warning' ? 'fa-exclamation-triangle' : notif.type === 'error' ? 'fa-times' : 'fa-info'}`}></i>
+                            </div>
+                            <div>
+                              <h5 className={`text-xs font-bold ${notif.isRead ? 'text-gray-700' : 'text-gray-900'}`}>{notif.title}</h5>
+                              <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">{notif.message}</p>
+                              <p className="text-[9px] text-gray-400 mt-1">{new Date(notif.createdAt).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

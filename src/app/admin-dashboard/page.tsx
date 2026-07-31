@@ -433,7 +433,7 @@ export default function AdminDashboardPage() {
                 )}
 
                 {activeTab === 'approvals' && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Jobs */}
                     <div>
                       <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2"><i className="fa-solid fa-briefcase text-[#A0684A]"></i> Jobs Pending</h3>
@@ -466,10 +466,44 @@ export default function AdminDashboardPage() {
                                 <h4 className="font-bold text-gray-900">{p.user?.name || 'Unknown'}</h4>
                                 <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-bold">Pending</span>
                             </div>
-                            <p className="text-xs text-gray-500 mb-4">Phone: {p.user?.phone}</p>
+                            <div className="text-[11px] text-gray-500 mb-4 space-y-1 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                <p><span className="font-semibold text-gray-700">Phone:</span> {p.user?.phone}</p>
+                                <p><span className="font-semibold text-gray-700">Age:</span> {p.age}</p>
+                                <p><span className="font-semibold text-gray-700">Profession:</span> {p.profession || 'N/A'}</p>
+                                <p><span className="font-semibold text-gray-700">Religion:</span> {p.religion || 'N/A'}</p>
+                                <p><span className="font-semibold text-gray-700">Location:</span> {p.location || 'N/A'}</p>
+                                {p.bio && <p className="mt-1 line-clamp-2 text-gray-400 italic">"{p.bio}"</p>}
+                            </div>
                             <div className="flex gap-2">
                               <button onClick={() => handleApproval('profile', p._id, 'approved')} className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-2.5 rounded-xl font-bold transition-colors">Approve</button>
                               <button onClick={() => handleApproval('profile', p._id, 'rejected')} className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs py-2.5 rounded-xl font-bold transition-colors">Reject</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Realty */}
+                    <div>
+                      <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2"><i className="fa-solid fa-building text-[#A0684A]"></i> Realty Pending</h3>
+                      <div className="space-y-4">
+                        {pendingApprovals.realty.length === 0 && <p className="text-gray-400 text-sm italic">No pending realty properties.</p>}
+                        {pendingApprovals.realty.map(r => (
+                          <div key={r._id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-bold text-gray-900">{r.title}</h4>
+                                <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-bold">Pending</span>
+                            </div>
+                            <div className="text-[11px] text-gray-500 mb-4 space-y-1 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                <p><span className="font-semibold text-gray-700">Owner:</span> {r.ownerId?.name || 'Unknown'}</p>
+                                <p><span className="font-semibold text-gray-700">Phone:</span> {r.ownerId?.phone || 'N/A'}</p>
+                                <p><span className="font-semibold text-gray-700">Price:</span> ₹{r.price}</p>
+                                <p><span className="font-semibold text-gray-700">Location:</span> {r.location}</p>
+                                {r.description && <p className="mt-1 line-clamp-2 text-gray-400 italic">"{r.description}"</p>}
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => handleApproval('realty', r._id, 'approved')} className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-2.5 rounded-xl font-bold transition-colors">Approve</button>
+                              <button onClick={() => handleApproval('realty', r._id, 'rejected')} className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs py-2.5 rounded-xl font-bold transition-colors">Reject</button>
                             </div>
                           </div>
                         ))}
