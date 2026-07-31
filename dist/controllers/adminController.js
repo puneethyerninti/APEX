@@ -9,6 +9,7 @@ const Transaction_1 = __importDefault(require("../models/Transaction"));
 const Job_1 = __importDefault(require("../models/Job"));
 const MatrimonyProfile_1 = __importDefault(require("../models/MatrimonyProfile"));
 const RealEstate_1 = __importDefault(require("../models/RealEstate"));
+const TravelBooking_1 = __importDefault(require("../models/TravelBooking"));
 const getDashboardStats = async (req, res) => {
     try {
         const totalUsers = await User_1.default.countDocuments();
@@ -16,6 +17,7 @@ const getDashboardStats = async (req, res) => {
         const pendingJobs = await Job_1.default.countDocuments({ status: 'pending' });
         const pendingProfiles = await MatrimonyProfile_1.default.countDocuments({ status: 'pending' });
         const pendingRealty = await RealEstate_1.default.countDocuments({ status: 'pending' });
+        const totalTravelBookings = await TravelBooking_1.default.countDocuments();
         // Calculate revenue (sum of all credit transactions, or just an example logic)
         const revenueAgg = await Transaction_1.default.aggregate([
             { $match: { status: 'completed' } },
@@ -29,7 +31,8 @@ const getDashboardStats = async (req, res) => {
                 revenue,
                 pendingJobs,
                 pendingProfiles,
-                pendingRealty
+                pendingRealty,
+                totalTravelBookings
             }
         });
     }

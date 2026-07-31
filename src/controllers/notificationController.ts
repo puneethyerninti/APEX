@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Resend } from 'resend';
 import User from '../models/User';
+import Notification from '../models/Notification';
 
 // Initialize Resend
 // Note: Fallback if API key is not provided yet
@@ -36,5 +37,49 @@ export const sendEmailNotification = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Resend API Error:", error.message);
     res.status(500).json({ error: "Failed to send email" });
+  }
+};
+
+export const getUserNotifications = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  try {
+    const notifications = await Notification.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .limit(50);
+    res.json({ notifications });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const markAsRead = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const notification = await Notification.findByIdAndUpdate(
+      id,
+      { isRead: true },
+      { new: true }
+    );
+    res.json({ success: true, notification });
+  } catch (error) {
+    console.error('Error marking notification read:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const markAllAsRead = async (req: Request, res: Response) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+  try {
+    await Notification.updateMany(
+      { user: userId, isRead: false },
+      { $set: { isRead: true } }
+    );
+    res.json({ success: true, message: 'All marked as read' });
+  } catch (error) {
+    console.error('Error marking all notifications read:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 };

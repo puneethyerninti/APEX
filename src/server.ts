@@ -13,6 +13,7 @@ import adminRoutes from './routes/adminRoutes';
 import wealthRoutes from './routes/wealthRoutes';
 import realtyRoutes from './routes/realtyRoutes';
 import travelsRoutes from './routes/travelsRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 
 import Message from './models/Message';
 import User from './models/User';
@@ -41,6 +42,12 @@ app.set('io', io); // Bind io to express app
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
+
+  // --- USER ROOM ---
+  socket.on('join_user', (userId) => {
+    socket.join(`user_${userId}`);
+    console.log(`User ${userId} joined their personal room`);
+  });
 
   // --- MATRIMONY CHAT ---
   socket.on('join_room', (roomId) => {
@@ -209,6 +216,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/wealth', wealthRoutes);
 app.use('/api/realty', realtyRoutes);
 app.use('/api/travels', travelsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 
 // Routes Placeholder

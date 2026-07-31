@@ -7,6 +7,7 @@ import RealEstate from '../models/RealEstate';
 import StoreOrder from '../models/StoreOrder';
 import CharityDonation from '../models/CharityDonation';
 import TravelBooking from '../models/TravelBooking';
+import Notification from '../models/Notification';
 
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
@@ -62,13 +63,37 @@ export const updateApprovalStatus = async (req: Request, res: Response) => {
   }
 
   try {
+    let userIdToNotify;
+    let title = '';
+
     if (type === 'job') {
-      await Job.findByIdAndUpdate(id, { status });
+      const doc = await Job.findByIdAndUpdate(id, { status });
+      if (doc) userIdToNotify = doc.postedBy;
+      title = `Job ${status === 'approved' ? 'Approved' : 'Rejected'}`;
     } else if (type === 'profile') {
-      await MatrimonyProfile.findByIdAndUpdate(id, { status });
+      const doc = await MatrimonyProfile.findByIdAndUpdate(id, { status });
+      if (doc) userIdToNotify = doc.user;
+      title = `Matrimony Profile ${status === 'approved' ? 'Approved' : 'Rejected'}`;
     } else if (type === 'realty') {
-      await RealEstate.findByIdAndUpdate(id, { status });
+      const doc = await RealEstate.findByIdAndUpdate(id, { status });
+      if (doc) userIdToNotify = doc.ownerId;
+      title = `Realty Listing ${status === 'approved' ? 'Approved' : 'Rejected'}`;
     }
+
+    if (userIdToNotify) {
+      const notification = await Notification.create({
+        user: userIdToNotify,
+        title,
+        message: `Your ${type} submission has been ${status} by the admin.`,
+        type: status === 'approved' ? 'success' : 'error'
+      });
+
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`user_${userIdToNotify}`).emit('new_notification', notification);
+      }
+    }
+
     res.json({ message: `${type} successfully ${status}` });
   } catch (error) {
     console.error(error);
