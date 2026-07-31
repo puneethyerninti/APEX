@@ -53,9 +53,11 @@ export default function Header() {
       };
 
       socket.on('new_notification', handleNewNotification);
+      socket.on('global_notification', handleNewNotification);
 
       return () => {
         socket.off('new_notification', handleNewNotification);
+        socket.off('global_notification', handleNewNotification);
       };
     }
   }, [socket, user]);

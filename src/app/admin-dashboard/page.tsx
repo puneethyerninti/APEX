@@ -40,7 +40,13 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [travels, setTravels] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'approvals' | 'users' | 'transactions' | 'travels'>('overview');
+  const [storeOrders, setStoreOrders] = useState<any[]>([]);
+  const [charityDonations, setCharityDonations] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'approvals' | 'users' | 'transactions' | 'travels' | 'store' | 'charity'>('overview');
+  
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcastType, setBroadcastType] = useState('info');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -71,18 +77,22 @@ export default function AdminDashboardPage() {
 
   const fetchAllData = async () => {
     try {
-      const [statsRes, approvalsRes, usersRes, transRes, travelsRes] = await Promise.all([
+      const [statsRes, approvalsRes, usersRes, transRes, travelsRes, storeRes, charityRes] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/admin/approvals'),
         api.get('/admin/users'),
         api.get('/admin/transactions'),
-        api.get('/travels/admin/all')
+        api.get('/travels/admin/all'),
+        api.get('/admin/store-orders').catch(() => ({ data: { orders: [] } })),
+        api.get('/admin/charity-donations').catch(() => ({ data: { donations: [] } }))
       ]);
       setDbStats(statsRes.data.stats);
       setPendingApprovals(approvalsRes.data);
       setUsers(usersRes.data.users);
       setTransactions(transRes.data.transactions);
       setTravels(travelsRes.data.bookings);
+      setStoreOrders(storeRes.data.orders || []);
+      setCharityDonations(charityRes.data.donations || []);
     } catch (error) {
       console.error("Failed to fetch admin data", error);
     }
@@ -108,11 +118,39 @@ export default function AdminDashboardPage() {
   const handleApproval = async (type: string, id: string, status: string) => {
     try {
       await api.post('/admin/approvals/status', { type, id, status });
-      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `${type} ${status}`, type: 'success' } }));
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `${type} marked as ${status}`, type: 'success' } }));
       fetchAllData();
     } catch (error) {
-      console.error("Failed to update status", error);
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Failed to update ${type}`, type: 'error' } }));
     }
+  };
+
+  const handleUpdateStoreOrder = async (id: string, status: string) => {
+    try {
+      await api.put(`/admin/store-orders/${id}/status`, { status });
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Order marked as ${status}`, type: 'success' } }));
+      fetchAllData();
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Failed to update order`, type: 'error' } }));
+    }
+  };
+
+  const handleSendBroadcast = async () => {
+    if (!broadcastTitle || !broadcastMessage) {
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Title and Message required', type: 'error' } }));
+      return;
+    }
+    try {
+      await api.post('/admin/broadcast', { title: broadcastTitle, message: broadcastMessage, type: broadcastType });
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Broadcast sent globally!', type: 'success' } }));
+      setBroadcastTitle('');
+      setBroadcastMessage('');
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Failed to send broadcast', type: 'error' } }));
+    }
+  };
+
+  const handleWalletUpdate = async (e: React.FormEvent) => {
   };
 
   const handleDelete = async (type: string, id: string) => {
@@ -222,6 +260,12 @@ export default function AdminDashboardPage() {
             </button>
             <button onClick={() => { setActiveTab('travels'); setIsSidebarOpen(false); }} className={`w-full flex items-center px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'travels' ? 'bg-[#A0684A]/10 text-[#A0684A]' : 'text-gray-500 hover:bg-gray-50 hover:text-[#A0684A]'}`}>
                 <i className="fa-solid fa-car w-5 text-center mr-3 text-base"></i> Travel Bookings
+            </button>
+            <button onClick={() => { setActiveTab('store'); setIsSidebarOpen(false); }} className={`w-full flex items-center px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'store' ? 'bg-[#A0684A]/10 text-[#A0684A]' : 'text-gray-500 hover:bg-gray-50 hover:text-[#A0684A]'}`}>
+                <i className="fa-solid fa-store w-5 text-center mr-3 text-base"></i> Store Orders
+            </button>
+            <button onClick={() => { setActiveTab('charity'); setIsSidebarOpen(false); }} className={`w-full flex items-center px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'charity' ? 'bg-[#A0684A]/10 text-[#A0684A]' : 'text-gray-500 hover:bg-gray-50 hover:text-[#A0684A]'}`}>
+                <i className="fa-solid fa-hand-holding-heart w-5 text-center mr-3 text-base"></i> Charity
             </button>
 
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-2 px-3 mt-6">System</p>
@@ -366,6 +410,57 @@ export default function AdminDashboardPage() {
                                     <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]"></span><span className="font-medium text-gray-700">Matrimony</span></span>
                                     <span className="font-bold text-gray-700">10%</span>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* GLOBAL BROADCAST WIDGET */}
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-8 p-5 sm:p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-lg">
+                                <i className="fa-solid fa-bullhorn"></i>
+                            </div>
+                            <div>
+                                <h2 className="text-base sm:text-lg font-bold text-gray-900">Global Broadcast</h2>
+                                <p className="text-xs text-gray-500">Send a real-time push notification to all active users.</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                            <div className="md:col-span-4">
+                                <input 
+                                    type="text" 
+                                    placeholder="Notification Title" 
+                                    value={broadcastTitle} 
+                                    onChange={e => setBroadcastTitle(e.target.value)}
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                />
+                            </div>
+                            <div className="md:col-span-6">
+                                <input 
+                                    type="text" 
+                                    placeholder="Message body..." 
+                                    value={broadcastMessage} 
+                                    onChange={e => setBroadcastMessage(e.target.value)}
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                />
+                            </div>
+                            <div className="md:col-span-2 flex gap-2">
+                                <select 
+                                    value={broadcastType} 
+                                    onChange={e => setBroadcastType(e.target.value)}
+                                    className="w-1/2 px-2 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 transition-colors appearance-none"
+                                >
+                                    <option value="info">Info</option>
+                                    <option value="success">Success</option>
+                                    <option value="warning">Warning</option>
+                                    <option value="error">Error</option>
+                                </select>
+                                <button 
+                                    onClick={handleSendBroadcast}
+                                    className="w-1/2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center justify-center"
+                                >
+                                    <i className="fa-solid fa-paper-plane"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -669,6 +764,113 @@ export default function AdminDashboardPage() {
                                             </span>
                                         </td>
                                         <td className="px-5 sm:px-6 py-4 text-gray-500 text-xs">{new Date(t.createdAt).toLocaleDateString()}</td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+                )}
+
+                {/* STORE ORDERS TAB */}
+                {activeTab === 'store' && (
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-[fadeIn_0.3s_ease-out]">
+                      <div className="p-5 sm:p-6 border-b border-gray-100">
+                          <h2 className="text-base sm:text-lg font-bold text-gray-900">Store Orders</h2>
+                          <p className="text-xs text-gray-500">Manage pending and completed e-commerce orders.</p>
+                      </div>
+                      <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse min-w-[800px]">
+                              <thead>
+                                  <tr className="bg-gray-50/80 text-gray-500 text-[11px] uppercase tracking-wider">
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Customer</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Items</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Total Amount</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Status</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Date</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Update Status</th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-50 text-sm">
+                                  {storeOrders.length === 0 && (
+                                    <tr><td colSpan={6} className="px-5 py-8 text-center text-gray-400">No store orders found.</td></tr>
+                                  )}
+                                  {storeOrders.map(order => (
+                                    <tr key={order._id} className="hover:bg-[#FDFAF8] transition-colors">
+                                        <td className="px-5 sm:px-6 py-4">
+                                            <p className="font-semibold text-gray-900 text-sm">{order.userId?.name || 'Unknown'}</p>
+                                            <p className="text-[11px] text-gray-400">{order.userId?.phone}</p>
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4">
+                                            <div className="text-xs text-gray-700 max-h-16 overflow-y-auto custom-scrollbar">
+                                                {order.items?.map((item: any, idx: number) => (
+                                                    <div key={idx} className="truncate max-w-[200px]">{item.quantity}x {item.name}</div>
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4 font-bold text-gray-900">₹{order.totalAmount}</td>
+                                        <td className="px-5 sm:px-6 py-4">
+                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${order.status==='delivered'?'bg-green-50 text-green-700 border-green-100':order.status==='shipped'?'bg-blue-50 text-blue-700 border-blue-100':order.status==='cancelled'?'bg-red-50 text-red-700 border-red-100':'bg-orange-50 text-orange-700 border-orange-100'}`}>
+                                                {order.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4 text-gray-500 text-xs">{new Date(order.createdAt).toLocaleDateString()}</td>
+                                        <td className="px-5 sm:px-6 py-4">
+                                            <select 
+                                                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#A0684A] bg-white cursor-pointer"
+                                                value={order.status}
+                                                onChange={(e) => handleUpdateStoreOrder(order._id, e.target.value)}
+                                            >
+                                                <option value="pending">Pending</option>
+                                                <option value="shipped">Shipped</option>
+                                                <option value="delivered">Delivered</option>
+                                                <option value="cancelled">Cancelled</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+                )}
+
+                {/* CHARITY TAB */}
+                {activeTab === 'charity' && (
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-[fadeIn_0.3s_ease-out]">
+                      <div className="p-5 sm:p-6 border-b border-gray-100">
+                          <h2 className="text-base sm:text-lg font-bold text-gray-900">Charity Donations</h2>
+                          <p className="text-xs text-gray-500">Live feed of all global donations to the foundation.</p>
+                      </div>
+                      <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse min-w-[700px]">
+                              <thead>
+                                  <tr className="bg-gray-50/80 text-gray-500 text-[11px] uppercase tracking-wider">
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Donor</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Cause</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Amount</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Status</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Date</th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-50 text-sm">
+                                  {charityDonations.length === 0 && (
+                                    <tr><td colSpan={5} className="px-5 py-8 text-center text-gray-400">No donations found.</td></tr>
+                                  )}
+                                  {charityDonations.map(donation => (
+                                    <tr key={donation._id} className="hover:bg-[#FDFAF8] transition-colors">
+                                        <td className="px-5 sm:px-6 py-4">
+                                            <p className="font-semibold text-gray-900 text-sm">{donation.userId?.name || 'Anonymous'}</p>
+                                            <p className="text-[11px] text-gray-400">{donation.userId?.phone}</p>
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4 font-medium text-gray-700">{donation.cause}</td>
+                                        <td className="px-5 sm:px-6 py-4 font-bold text-green-600">₹{donation.amount}</td>
+                                        <td className="px-5 sm:px-6 py-4">
+                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${donation.status==='completed'?'bg-green-50 text-green-700 border-green-100':donation.status==='failed'?'bg-red-50 text-red-700 border-red-100':'bg-orange-50 text-orange-700 border-orange-100'}`}>
+                                                {donation.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4 text-gray-500 text-xs">{new Date(donation.createdAt).toLocaleDateString()}</td>
                                     </tr>
                                   ))}
                               </tbody>
