@@ -16,4 +16,9 @@ router.get('/transactions', adminController_1.getAllTransactions);
 router.delete('/:type/:id', adminController_1.deleteEntity);
 router.post('/users/:id/wallet', adminController_1.updateUserWallet);
 router.put('/transactions/:id/complete', adminController_1.completeTransaction);
+// New Routes
+router.get('/store-orders', adminController_1.getAllStoreOrders);
+router.put('/store-orders/:id/status', adminController_1.updateStoreOrderStatus);
+router.get('/charity-donations', adminController_1.getAllCharityDonations);
+router.post('/broadcast', adminController_1.broadcastMessage);
 exports.default = router;

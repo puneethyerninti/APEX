@@ -7,7 +7,11 @@ import {
   getAllTransactions,
   deleteEntity,
   updateUserWallet,
-  completeTransaction
+  completeTransaction,
+  getAllStoreOrders,
+  updateStoreOrderStatus,
+  getAllCharityDonations,
+  broadcastMessage
 } from '../controllers/adminController';
 import { requireAdmin } from '../middleware/authMiddleware';
 
@@ -23,5 +27,11 @@ router.get('/transactions', getAllTransactions);
 router.delete('/:type/:id', deleteEntity);
 router.post('/users/:id/wallet', updateUserWallet);
 router.put('/transactions/:id/complete', completeTransaction);
+
+// New Routes
+router.get('/store-orders', getAllStoreOrders);
+router.put('/store-orders/:id/status', updateStoreOrderStatus);
+router.get('/charity-donations', getAllCharityDonations);
+router.post('/broadcast', broadcastMessage);
 
 export default router;

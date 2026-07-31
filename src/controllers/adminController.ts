@@ -174,3 +174,87 @@ export const completeTransaction = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+// Get all store orders
+export const getAllStoreOrders = async (req: Request, res: Response) => {
+  try {
+    const orders = await StoreOrder.find().populate('userId', 'name phone').sort({ createdAt: -1 });
+    res.json({ orders });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error fetching store orders' });
+  }
+};
+
+// Update store order status
+export const updateStoreOrderStatus = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  
+  if (!['pending', 'shipped', 'delivered', 'cancelled'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+
+  try {
+    const order = await StoreOrder.findByIdAndUpdate(id, { status }, { new: true });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    // Send real-time notification
+    const notification = await Notification.create({
+      user: order.userId,
+      title: `Order ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+      message: `Your store order has been marked as ${status}.`,
+      type: 'info'
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${order.userId}`).emit('new_notification', notification);
+    }
+
+    res.json({ success: true, order });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error updating order status' });
+  }
+};
+
+// Get all charity donations
+export const getAllCharityDonations = async (req: Request, res: Response) => {
+  try {
+    const donations = await CharityDonation.find().populate('userId', 'name phone').sort({ createdAt: -1 });
+    res.json({ donations });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error fetching charity donations' });
+  }
+};
+
+// Global Broadcast Message
+export const broadcastMessage = async (req: Request, res: Response) => {
+  const { title, message, type } = req.body;
+
+  if (!title || !message) {
+    return res.status(400).json({ error: 'Title and message are required' });
+  }
+
+  try {
+    const io = req.app.get('io');
+    if (io) {
+      // Emit to a global channel, or let frontend listen to 'global_notification'
+      io.emit('global_notification', {
+        _id: new Date().getTime().toString(),
+        title,
+        message,
+        type: type || 'info',
+        createdAt: new Date().toISOString()
+      });
+      res.json({ success: true, message: 'Broadcast sent to all active users' });
+    } else {
+      res.status(500).json({ error: 'Socket IO not initialized' });
+    }
+  } catch (error) {
+    console.error('Error broadcasting message:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};

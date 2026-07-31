@@ -3,13 +3,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.completeTransaction = exports.updateUserWallet = exports.deleteEntity = exports.getAllTransactions = exports.getUsersList = exports.updateApprovalStatus = exports.getPendingApprovals = exports.getDashboardStats = void 0;
+exports.broadcastMessage = exports.getAllCharityDonations = exports.updateStoreOrderStatus = exports.getAllStoreOrders = exports.completeTransaction = exports.updateUserWallet = exports.deleteEntity = exports.getAllTransactions = exports.getUsersList = exports.updateApprovalStatus = exports.getPendingApprovals = exports.getDashboardStats = void 0;
 const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const Job_1 = __importDefault(require("../models/Job"));
 const MatrimonyProfile_1 = __importDefault(require("../models/MatrimonyProfile"));
 const RealEstate_1 = __importDefault(require("../models/RealEstate"));
+const StoreOrder_1 = __importDefault(require("../models/StoreOrder"));
+const CharityDonation_1 = __importDefault(require("../models/CharityDonation"));
 const TravelBooking_1 = __importDefault(require("../models/TravelBooking"));
+const Notification_1 = __importDefault(require("../models/Notification"));
 const getDashboardStats = async (req, res) => {
     try {
         const totalUsers = await User_1.default.countDocuments();
@@ -61,14 +64,37 @@ const updateApprovalStatus = async (req, res) => {
         return res.status(400).json({ error: 'Invalid parameters' });
     }
     try {
+        let userIdToNotify;
+        let title = '';
         if (type === 'job') {
-            await Job_1.default.findByIdAndUpdate(id, { status });
+            const doc = await Job_1.default.findByIdAndUpdate(id, { status });
+            if (doc)
+                userIdToNotify = doc.postedBy;
+            title = `Job ${status === 'approved' ? 'Approved' : 'Rejected'}`;
         }
         else if (type === 'profile') {
-            await MatrimonyProfile_1.default.findByIdAndUpdate(id, { status });
+            const doc = await MatrimonyProfile_1.default.findByIdAndUpdate(id, { status });
+            if (doc)
+                userIdToNotify = doc.user;
+            title = `Matrimony Profile ${status === 'approved' ? 'Approved' : 'Rejected'}`;
         }
         else if (type === 'realty') {
-            await RealEstate_1.default.findByIdAndUpdate(id, { status });
+            const doc = await RealEstate_1.default.findByIdAndUpdate(id, { status });
+            if (doc)
+                userIdToNotify = doc.ownerId;
+            title = `Realty Listing ${status === 'approved' ? 'Approved' : 'Rejected'}`;
+        }
+        if (userIdToNotify) {
+            const notification = await Notification_1.default.create({
+                user: userIdToNotify,
+                title,
+                message: `Your ${type} submission has been ${status} by the admin.`,
+                type: status === 'approved' ? 'success' : 'error'
+            });
+            const io = req.app.get('io');
+            if (io) {
+                io.to(`user_${userIdToNotify}`).emit('new_notification', notification);
+            }
         }
         res.json({ message: `${type} successfully ${status}` });
     }
@@ -156,3 +182,86 @@ const completeTransaction = async (req, res) => {
     }
 };
 exports.completeTransaction = completeTransaction;
+// Get all store orders
+const getAllStoreOrders = async (req, res) => {
+    try {
+        const orders = await StoreOrder_1.default.find().populate('userId', 'name phone').sort({ createdAt: -1 });
+        res.json({ orders });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error fetching store orders' });
+    }
+};
+exports.getAllStoreOrders = getAllStoreOrders;
+// Update store order status
+const updateStoreOrderStatus = async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!['pending', 'shipped', 'delivered', 'cancelled'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' });
+    }
+    try {
+        const order = await StoreOrder_1.default.findByIdAndUpdate(id, { status }, { new: true });
+        if (!order)
+            return res.status(404).json({ error: 'Order not found' });
+        // Send real-time notification
+        const notification = await Notification_1.default.create({
+            user: order.userId,
+            title: `Order ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+            message: `Your store order has been marked as ${status}.`,
+            type: 'info'
+        });
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`user_${order.userId}`).emit('new_notification', notification);
+        }
+        res.json({ success: true, order });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error updating order status' });
+    }
+};
+exports.updateStoreOrderStatus = updateStoreOrderStatus;
+// Get all charity donations
+const getAllCharityDonations = async (req, res) => {
+    try {
+        const donations = await CharityDonation_1.default.find().populate('userId', 'name phone').sort({ createdAt: -1 });
+        res.json({ donations });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error fetching charity donations' });
+    }
+};
+exports.getAllCharityDonations = getAllCharityDonations;
+// Global Broadcast Message
+const broadcastMessage = async (req, res) => {
+    const { title, message, type } = req.body;
+    if (!title || !message) {
+        return res.status(400).json({ error: 'Title and message are required' });
+    }
+    try {
+        const io = req.app.get('io');
+        if (io) {
+            // Emit to a global channel, or let frontend listen to 'global_notification'
+            io.emit('global_notification', {
+                _id: new Date().getTime().toString(),
+                title,
+                message,
+                type: type || 'info',
+                createdAt: new Date().toISOString()
+            });
+            res.json({ success: true, message: 'Broadcast sent to all active users' });
+        }
+        else {
+            res.status(500).json({ error: 'Socket IO not initialized' });
+        }
+    }
+    catch (error) {
+        console.error('Error broadcasting message:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+exports.broadcastMessage = broadcastMessage;
