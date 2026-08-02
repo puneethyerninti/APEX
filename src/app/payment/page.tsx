@@ -1,12 +1,12 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { api } from '@/services/api';
 import { useAppStore } from '@/store/useAppStore';
 
-export default function PaymentPage() {
+function PaymentContent() {
     const user = useAppStore((state) => state.user);
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(false);
@@ -263,5 +263,13 @@ export default function PaymentPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function PaymentPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-apex-purple border-t-transparent rounded-full animate-spin"></div></div>}>
+            <PaymentContent />
+        </Suspense>
     );
 }
