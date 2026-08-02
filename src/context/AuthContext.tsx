@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               try {
                 const res = await api.post('/user/profile', {
                   phone: firebaseUser.phoneNumber,
-                  name: currentUser?.name || 'User',
+                  name: currentUser?.name || '',
                   email: currentUser?.email || '',
                 });
                 if (res.data?.user?._id) {
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setUser({
                 uid: dbId,
                 phone: firebaseUser.phoneNumber,
-                name: currentUser?.name || 'User',
+                name: currentUser?.name || '',
                 email: currentUser?.email || '',
                 isPremium: currentUser?.isPremium,
                 profilePicture: currentUser?.profilePicture,

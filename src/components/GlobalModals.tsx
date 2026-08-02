@@ -231,14 +231,14 @@ export default function GlobalModals() {
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
                                 {user?.profilePicture ? (
-                                    <img src={user.profilePicture} alt={user?.name || 'User'} className="w-16 h-16 rounded-full object-cover shadow-sm border-2 border-white" />
+                                    <img src={user.profilePicture} alt={user?.name || (user?.phone || 'Guest')} className="w-16 h-16 rounded-full object-cover shadow-sm border-2 border-white" />
                                 ) : (
                                     <div className="w-16 h-16 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-xl font-black">
                                         {user?.name ? user.name.substring(0, 2).toUpperCase() : <i className="fa-solid fa-user"></i>}
                                     </div>
                                 )}
                                 <div>
-                                    <h3 className="font-black text-lg text-gray-900">{user?.name || 'User'}</h3>
+                                    <h3 className="font-black text-lg text-gray-900">{user?.name || (user?.phone || 'Guest')}</h3>
                                     <p className="text-[10px] text-gray-500">{user?.phone || 'No phone number'}</p>
                                     {user?.isPremium && <span className="mt-1 inline-block bg-green-100 text-green-700 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider">Premium Member</span>}
                                 </div>
