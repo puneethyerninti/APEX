@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { api } from '@/services/api';
 import { useAppStore } from '@/store/useAppStore';
@@ -62,6 +63,17 @@ export default function PaymentPage() {
             setLoading(false);
         }
     };
+    const searchParams = useSearchParams();
+    const autoScan = searchParams.get('scan');
+
+    useEffect(() => {
+        if (autoScan === 'true') {
+            // Add a small delay to ensure DOM is fully ready
+            setTimeout(() => {
+                startScanner();
+            }, 500);
+        }
+    }, [autoScan]);
 
     const startScanner = async () => {
         setIsScannerOpen(true);
@@ -74,8 +86,13 @@ export default function PaymentPage() {
             await html5QrCode.start(
                 { facingMode: "environment" },
                 {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 }
+                    fps: 20, // Increased for faster detection
+                    qrbox: (viewfinderWidth, viewfinderHeight) => {
+                        const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                        const qrboxSize = Math.floor(minEdgeSize * 0.7); // 70% of the screen width
+                        return { width: qrboxSize, height: qrboxSize };
+                    },
+                    aspectRatio: 1.0, // Prevent zoomed-in camera issues
                 },
                 (decodedText) => {
                     // Success callback
