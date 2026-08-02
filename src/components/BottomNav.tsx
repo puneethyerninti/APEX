@@ -26,15 +26,14 @@ export default function BottomNav() {
         <i className="fa-solid fa-chart-line text-base"></i>
         <span>Invest</span>
       </Link>
-      {/* Center Scan FAB */}
-      <div className="relative -top-4">
-        <Link
-          href="/payment?scan=true"
-          className="flex items-center justify-center w-14 h-14 bg-apex-purple text-white rounded-full shadow-lg shadow-apex-purple/30 transform transition-transform active:scale-95"
-        >
-          <i className="fa-solid fa-qrcode text-2xl"></i>
-        </Link>
-      </div>
+      {/* Center Scan Link */}
+      <Link
+        href="/payment?scan=true"
+        className="flex flex-col items-center gap-0.5 font-bold text-[9px] transition-colors text-gray-400 hover:text-apex-purple"
+      >
+        <i className="fa-solid fa-qrcode text-base"></i>
+        <span>Scan</span>
+      </Link>
 
       <Link
         href="/payment"
