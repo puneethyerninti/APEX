@@ -29,10 +29,12 @@ export default function BottomNav() {
       {/* Center Scan Link */}
       <Link
         href="/payment?scan=true"
-        className="flex flex-col items-center gap-0.5 font-bold text-[9px] transition-colors text-gray-400 hover:text-apex-purple"
+        className="flex flex-col items-center justify-center gap-1"
       >
-        <i className="fa-solid fa-qrcode text-base"></i>
-        <span>Scan</span>
+        <div className="flex items-center justify-center w-9 h-9 bg-apex-purple text-white rounded-full shadow-md shadow-apex-purple/30 transform transition-transform active:scale-95">
+          <i className="fa-solid fa-qrcode text-base"></i>
+        </div>
+        <span className="font-bold text-[9px] text-gray-400">Scan</span>
       </Link>
 
       <Link
