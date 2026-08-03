@@ -170,16 +170,9 @@ function PaymentContent() {
                             {loading ? (
                                 <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Processing...</>
                             ) : (
-                                <><i className="fa-solid fa-lock"></i> Secure Pay via Razorpay</>
+                                <>Pay Now</>
                             )}
                         </button>
-                    </div>
-                    
-                    <div className="mt-4 flex justify-center items-center gap-2">
-                        <i className="fa-brands fa-cc-visa text-gray-400 text-xl"></i>
-                        <i className="fa-brands fa-cc-mastercard text-gray-400 text-xl"></i>
-                        <i className="fa-solid fa-building-columns text-gray-400 text-lg"></i>
-                        <img src="https://cdn.razorpay.com/logo.svg" alt="Razorpay" className="h-4 opacity-50 ml-2" />
                     </div>
                 </div>
 

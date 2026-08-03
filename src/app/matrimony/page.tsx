@@ -100,6 +100,24 @@ export default function Page() {
     }
   }, [user]);
 
+  useEffect(() => {
+    const primeTrack = document.getElementById('prime-carousel-track-matrimony');
+    let primeDir = 1;
+    const primeTimer = setInterval(() => {
+        if (!primeTrack) return;
+        const maxScroll = primeTrack.scrollWidth - primeTrack.clientWidth;
+        if (primeTrack.scrollLeft >= maxScroll - 5) primeDir = -1;
+        else if (primeTrack.scrollLeft <= 5) primeDir = 1;
+        
+        const card = primeTrack.firstElementChild;
+        if (card) {
+            const cardWidth = card.getBoundingClientRect().width + 12;
+            primeTrack.scrollBy({ left: cardWidth * primeDir, behavior: 'smooth' });
+        }
+    }, 3000);
+    return () => clearInterval(primeTimer);
+  }, []);
+
   const fetchInbox = useCallback(() => {
     if (user?.uid) {
       api.get(`/matrimony/inbox/${user.uid}`)
@@ -294,7 +312,7 @@ export default function Page() {
             <div className="px-4 flex justify-between items-end mb-3">
                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Prime Plans</h3>
             </div>
-            <div className="flex gap-3 md:gap-6 overflow-x-auto px-4 scrollbar-none flex-nowrap md:flex-wrap pb-2">
+            <div id="prime-carousel-track-matrimony" className="flex gap-3 md:gap-6 overflow-x-auto px-4 scrollbar-none flex-nowrap md:flex-wrap pb-2">
                 
                 {/* Silver */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 min-w-[160px] flex-shrink-0 p-4 text-center cursor-pointer hover:shadow-md transition-all" onClick={() => handlePlanClick('Silver')}>

@@ -81,6 +81,21 @@ export default function Home() {
         }
     }, 3000);
 
+    const primeTrack = document.getElementById('prime-carousel-track');
+    let primeDir = 1;
+    const primeTimer = setInterval(() => {
+        if (!primeTrack) return;
+        const maxScroll = primeTrack.scrollWidth - primeTrack.clientWidth;
+        if (primeTrack.scrollLeft >= maxScroll - 5) primeDir = -1;
+        else if (primeTrack.scrollLeft <= 5) primeDir = 1;
+        
+        const card = primeTrack.firstElementChild;
+        if (card) {
+            const cardWidth = card.getBoundingClientRect().width + 12; // gap-3 is 12px
+            primeTrack.scrollBy({ left: cardWidth * primeDir, behavior: 'smooth' });
+        }
+    }, 3000);
+
     // 4. Scroll Reveal
     const revealEls = document.querySelectorAll('.reveal-up, .reveal-left, .reveal-right, .reveal-zoom');
     const observer = new IntersectionObserver((entries, obs) => {
@@ -98,6 +113,7 @@ export default function Home() {
         if (countdownInterval) clearInterval(countdownInterval);
         if (realtyTimer) clearInterval(realtyTimer);
         if (academyTimer) clearInterval(academyTimer);
+        if (primeTimer) clearInterval(primeTimer);
         if (realtyPrev) realtyPrev.removeEventListener('click', handlePrev);
         if (realtyNext) realtyNext.removeEventListener('click', handleNext);
         observer.disconnect();
@@ -506,7 +522,7 @@ export default function Home() {
         </div>
         
         {/* Swipeable Cards */}
-        <div className="flex gap-3 overflow-x-auto scrollbar-none pb-1">
+        <div className="flex gap-3 overflow-x-auto scrollbar-none pb-1" id="prime-carousel-track">
             {/* FREE */}
             <div className="plan-card bg-white p-4 w-48 flex-shrink-0 flex flex-col shadow-xs reveal-zoom delay-100">
                 <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Free</span>
