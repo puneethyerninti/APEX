@@ -147,33 +147,8 @@ function PaymentContent() {
             <div className="flex-1 p-4 max-w-md mx-auto w-full">
                 
                 {/* NEW: Camera Scan & Pay Button */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5 animate-[fadeIn_0.3s_ease-out]">
-                    <div className="text-center mb-4">
-                        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-3">
-                            <i className="fa-solid fa-qrcode"></i>
-                        </div>
-                        <h2 className="text-xl font-black text-gray-900">Scan any QR Code</h2>
-                        <p className="text-xs text-gray-500 mt-1">Pay merchants directly by scanning their UPI QR codes using your device camera.</p>
-                    </div>
-                    
-                    <button 
-                        onClick={startScanner}
-                        className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2"
-                    >
-                        <i className="fa-solid fa-camera"></i> Open Scanner
-                    </button>
-                </div>
-
-                <div className="flex items-center justify-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest mb-5">
-                    <span className="w-8 h-[1px] bg-gray-200"></span> OR <span className="w-8 h-[1px] bg-gray-200"></span>
-                </div>
-
                 {/* Online Payment Section */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-[fadeIn_0.3s_ease-out] delay-100">
-                    <div className="text-center mb-5">
-                        <h2 className="text-xl font-black text-gray-900">Pay Online</h2>
-                        <p className="text-xs text-gray-500 mt-1">Use our secure Razorpay gateway to pay via Credit Card, Debit Card, Netbanking, or UPI.</p>
-                    </div>
 
                     <div className="flex flex-col gap-4">
                         <div className="relative">
