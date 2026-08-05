@@ -368,40 +368,34 @@ export default function Home() {
                             </div>
 
                             {/* Payments (BBPS) Section */}
-                            <div className="mt-4 border border-dashed border-white/40 rounded-xl p-3 relative bg-white/5 shadow-inner">
+                            <div className="mt-4 border border-dashed border-white/20 rounded-xl p-3 relative">
                                 <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-white text-[10px] font-bold uppercase tracking-wider">Payments (BBPS)</h3>
-                                    <Link href="/utility" className="text-white text-[9px] font-medium flex items-center gap-1 hover:text-yellow-400 transition-colors">
+                                    <h3 className="text-white/80 text-[10px] font-bold uppercase tracking-wider">Payments (BBPS)</h3>
+                                    <Link href="/utility" className="text-white/90 text-[9px] font-medium flex items-center gap-1 hover:text-white transition-colors">
                                         View All <i className="fa-solid fa-arrow-right text-[8px]"></i>
                                     </Link>
                                 </div>
-                                <div className="grid grid-cols-5 gap-1.5">
+                                <div className="grid grid-cols-4 gap-2">
                                     <Link href="/utility" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                                        <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white shadow-sm">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-orange-400 shadow-inner">
                                             <i className="fa-solid fa-bolt text-lg"></i>
                                         </div>
                                         <span className="text-white text-[8px] font-medium leading-tight">Electricity</span>
                                     </Link>
                                     <Link href="/utility" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                                        <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-sm">
-                                            <i className="fa-solid fa-droplet text-lg"></i>
-                                        </div>
-                                        <span className="text-white text-[8px] font-medium leading-tight">Water</span>
-                                    </Link>
-                                    <Link href="/utility" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                                        <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white shadow-sm">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-red-400 shadow-inner">
                                             <i className="fa-solid fa-fire-flame-simple text-lg"></i>
                                         </div>
                                         <span className="text-white text-[8px] font-medium leading-tight">Gas</span>
                                     </Link>
                                     <Link href="/utility" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                                        <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white shadow-sm">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-green-400 shadow-inner">
                                             <i className="fa-solid fa-mobile-screen text-lg"></i>
                                         </div>
                                         <span className="text-white text-[8px] font-medium leading-tight">Mobile<br/>Recharge</span>
                                     </Link>
                                     <Link href="/utility" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                                        <div className="w-10 h-10 rounded-full bg-pink-500 flex items-center justify-center text-white shadow-sm">
+                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-pink-400 shadow-inner">
                                             <i className="fa-solid fa-satellite-dish text-lg"></i>
                                         </div>
                                         <span className="text-white text-[8px] font-medium leading-tight">DTH<br/>Recharge</span>
