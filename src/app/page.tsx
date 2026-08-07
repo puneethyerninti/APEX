@@ -236,7 +236,11 @@ export default function Home() {
                                     <p className="text-purple-200 text-[10px]">Make smart Investments today!</p>
                                 </div>
                                 <Link href="/finance" className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-black text-[10px] px-4 py-2 rounded-full hover:scale-[1.02] active:scale-95 transition-all shadow-lg whitespace-nowrap">
-                                                     {/* Flash Sale Banner */}
+                                    Invest Now <i className="fa-solid fa-arrow-right"></i>
+                                </Link>
+                            </div>
+
+                            {/* Flash Sale Banner */}
                             <div className="relative mb-5 p-[2px] rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] w-full min-w-0 flex-shrink-0">
                                 {/* Ribbon */}
                                 <div className="absolute -top-2 right-1 sm:right-4 bg-red-600 text-white text-[7px] sm:text-[9px] font-black tracking-wider uppercase px-1 py-1.5 leading-tight text-center z-20 rounded shadow-lg before:content-[''] before:absolute before:bottom-[-4px] before:left-0 before:border-l-[14px] sm:before:border-l-[21px] before:border-l-red-600 before:border-r-[14px] sm:before:border-r-[21px] before:border-r-red-600 before:border-b-[4px] before:border-b-transparent w-[28px] sm:w-[42px] h-[32px] sm:h-[45px] flex items-start justify-center">
