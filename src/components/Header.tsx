@@ -46,7 +46,7 @@ export default function Header() {
   useEffect(() => {
     if (socket && user?._id) {
       socket.emit('join_user', user._id);
-      
+
       const handleNewNotification = (notification: any) => {
         setNotifications(prev => [notification, ...prev]);
         showToast(notification.title || 'New Notification');
@@ -209,19 +209,19 @@ export default function Header() {
                 <div className="max-h-72 overflow-y-auto">
                   {notifications.length === 0 ? (
                     <div className="p-5 flex flex-col items-center justify-center gap-2 text-center text-gray-500">
-                        <div className="w-12 h-12 rounded-full bg-violet-50 flex items-center justify-center text-violet-300 text-xl mb-1 shadow-inner">
-                            <i className="fa-regular fa-bell"></i>
-                        </div>
-                        <p className="text-xs font-bold text-gray-700">No Notifications</p>
-                        <p className="text-[10px] leading-relaxed">You're all caught up!</p>
+                      <div className="w-12 h-12 rounded-full bg-violet-50 flex items-center justify-center text-violet-300 text-xl mb-1 shadow-inner">
+                        <i className="fa-regular fa-bell"></i>
+                      </div>
+                      <p className="text-xs font-bold text-gray-700">No Notifications</p>
+                      <p className="text-[10px] leading-relaxed">You're all caught up!</p>
                     </div>
                   ) : (
                     <div className="divide-y divide-gray-50">
                       {notifications.map(notif => (
-                        <div 
-                          key={notif._id} 
+                        <div
+                          key={notif._id}
                           className={`p-3 text-left transition-colors ${notif.isRead ? 'bg-white' : 'bg-violet-50/50'} hover:bg-gray-50 cursor-pointer`}
-                          onClick={() => { if(!notif.isRead) markAsRead(notif._id); }}
+                          onClick={() => { if (!notif.isRead) markAsRead(notif._id); }}
                         >
                           <div className="flex gap-3">
                             <div className={`mt-0.5 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white ${notif.type === 'success' ? 'bg-green-500' : notif.type === 'warning' ? 'bg-orange-500' : notif.type === 'error' ? 'bg-red-500' : 'bg-blue-500'}`}>
