@@ -63,7 +63,7 @@ export default function FinancePage() {
                   </div>
                   <ul className="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-emerald-100">
                       <li><Link href="/finance/mutual-funds" className="hover:text-emerald-600 font-medium block">Mutual Funds</Link></li>
-                      <li><a href="#" className="hover:text-emerald-600 font-medium block">Fixed Deposit</a></li>
+                      <li><a href="https://stablemoney.onelink.me/rkWL/reg7ibv8" target="_blank" className="hover:text-emerald-600 font-medium block">Fixed Deposit</a></li>
                       <li><a href="#" className="hover:text-emerald-600 font-medium block">NPS</a></li>
                       <li><a href="#" className="hover:text-emerald-600 font-medium block">NFO</a></li>
                       <li><a href="#" className="hover:text-emerald-600 font-medium block">Bonds</a></li>
