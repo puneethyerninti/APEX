@@ -236,115 +236,111 @@ export default function Home() {
                                     <p className="text-purple-200 text-[10px]">Make smart Investments today!</p>
                                 </div>
                                 <Link href="/finance" className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-black text-[10px] px-4 py-2 rounded-full hover:scale-[1.02] active:scale-95 transition-all shadow-lg whitespace-nowrap">
-                                    Invest Now <i className="fa-solid fa-arrow-right"></i>
-                                </Link>
-                            </div>
-
-                            {/* Flash Sale Banner */}
-                            <div className="relative mb-5 p-[2px] rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] w-full max-w-full">
+                                                     {/* Flash Sale Banner */}
+                            <div className="relative mb-5 p-[2px] rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] w-full min-w-0 flex-shrink-0">
                                 {/* Ribbon */}
-                                <div className="absolute -top-2 right-2 sm:right-4 bg-red-600 text-white text-[8px] sm:text-[9px] font-black tracking-wider uppercase px-1 py-2 leading-tight text-center z-20 rounded shadow-lg before:content-[''] before:absolute before:bottom-[-6px] before:left-0 before:border-l-[18px] sm:before:border-l-[21px] before:border-l-red-600 before:border-r-[18px] sm:before:border-r-[21px] before:border-r-red-600 before:border-b-[6px] before:border-b-transparent w-[36px] sm:w-[42px] h-[40px] sm:h-[45px] flex items-start justify-center">
-                                    <span className="relative z-10">New<br/>Flash<br/>Offers</span>
+                                <div className="absolute -top-2 right-1 sm:right-4 bg-red-600 text-white text-[7px] sm:text-[9px] font-black tracking-wider uppercase px-1 py-1.5 leading-tight text-center z-20 rounded shadow-lg before:content-[''] before:absolute before:bottom-[-4px] before:left-0 before:border-l-[14px] sm:before:border-l-[21px] before:border-l-red-600 before:border-r-[14px] sm:before:border-r-[21px] before:border-r-red-600 before:border-b-[4px] before:border-b-transparent w-[28px] sm:w-[42px] h-[32px] sm:h-[45px] flex items-start justify-center">
+                                    <span className="relative z-10 mt-0.5">New<br/>Offers</span>
                                 </div>
                                 
-                                <div className="bg-[#0b0429] rounded-xl p-2.5 sm:p-3 h-full w-full relative overflow-hidden">
+                                <div className="bg-[#0b0429] rounded-xl p-2 sm:p-3 w-full relative overflow-hidden min-w-0 flex flex-col">
                                     {/* Lighting bolts background */}
                                     <i className="fa-solid fa-bolt absolute top-4 right-12 text-yellow-500/80 text-4xl transform -rotate-12 blur-[1px]"></i>
                                     <i className="fa-solid fa-bolt absolute bottom-6 -right-2 text-yellow-500/60 text-5xl transform rotate-12 blur-[2px]"></i>
                                     
-                                    <div className="relative z-10">
-                                        <h3 className="text-white text-[9px] sm:text-[10px] font-black uppercase flex items-center gap-1.5 mb-0.5"><i className="fa-solid fa-bolt text-yellow-400"></i> Loans up to</h3>
-                                        <h2 className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 text-2xl sm:text-[28px] font-black italic tracking-tight leading-none mb-1 drop-shadow-md">₹5 CRORE</h2>
-                                        <h4 className="text-white text-[9px] sm:text-[10px] font-black uppercase italic tracking-widest mb-3 drop-shadow-sm">Instant Approval</h4>
+                                    <div className="relative z-10 w-full min-w-0">
+                                        <h3 className="text-white text-[8px] sm:text-[10px] font-black uppercase flex items-center gap-1 mb-0.5"><i className="fa-solid fa-bolt text-yellow-400"></i> Loans up to</h3>
+                                        <h2 className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 text-2xl sm:text-[28px] font-black italic tracking-tight leading-none mb-1 drop-shadow-md truncate">₹5 CRORE</h2>
+                                        <h4 className="text-white text-[8px] sm:text-[10px] font-black uppercase italic tracking-widest mb-3 drop-shadow-sm truncate">Instant Approval</h4>
                                     </div>
                                     
                                     {/* Features */}
-                                    <div className="flex justify-between items-center mb-3 border-b border-white/10 pb-2 relative z-10 gap-1">
-                                        <div className="flex items-center gap-1 flex-1">
-                                            <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-br from-yellow-600 to-yellow-800 flex items-center justify-center text-[7px] sm:text-[9px] text-yellow-200 shrink-0"><i className="fa-solid fa-percent"></i></div>
-                                            <span className="text-white text-[6px] sm:text-[7px] font-bold uppercase leading-[1.1]">Lowest<br/>Interest Rates</span>
+                                    <div className="flex justify-between items-center mb-3 border-b border-white/10 pb-2 relative z-10 w-full">
+                                        <div className="flex items-center gap-1 min-w-0">
+                                            <div className="w-4 h-4 rounded-full bg-gradient-to-br from-yellow-600 to-yellow-800 flex items-center justify-center text-[7px] text-yellow-200 shrink-0"><i className="fa-solid fa-percent"></i></div>
+                                            <span className="text-white text-[5px] sm:text-[7px] font-bold uppercase leading-[1.1] truncate">Lowest<br/>Rates</span>
                                         </div>
-                                        <div className="flex items-center gap-1 flex-1">
-                                            <div className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center text-[10px] sm:text-sm text-yellow-400 shrink-0"><i className="fa-solid fa-bolt"></i></div>
-                                            <span className="text-white text-[6px] sm:text-[7px] font-bold uppercase leading-[1.1]">Fast<br/>Approval</span>
+                                        <div className="flex items-center gap-1 min-w-0">
+                                            <div className="w-4 h-4 rounded flex items-center justify-center text-[10px] text-yellow-400 shrink-0"><i className="fa-solid fa-bolt"></i></div>
+                                            <span className="text-white text-[5px] sm:text-[7px] font-bold uppercase leading-[1.1] truncate">Fast<br/>Approval</span>
                                         </div>
-                                        <div className="flex items-center gap-1 flex-1">
-                                            <div className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center text-[10px] sm:text-sm text-yellow-400 shrink-0"><i className="fa-regular fa-file-lines"></i></div>
-                                            <span className="text-white text-[6px] sm:text-[7px] font-bold uppercase leading-[1.1]">Minimal<br/>Documents</span>
+                                        <div className="flex items-center gap-1 min-w-0">
+                                            <div className="w-4 h-4 rounded flex items-center justify-center text-[10px] text-yellow-400 shrink-0"><i className="fa-regular fa-file-lines"></i></div>
+                                            <span className="text-white text-[5px] sm:text-[7px] font-bold uppercase leading-[1.1] truncate">Minimal<br/>Docs</span>
                                         </div>
                                     </div>
                                     
                                     {/* Loan Cards */}
-                                    <div className="grid grid-cols-4 gap-1 sm:gap-1.5 mb-3 relative z-10 w-full">
+                                    <div className="grid grid-cols-4 gap-1 mb-3 relative z-10 w-full">
                                         {/* Home Loan */}
-                                        <div className="bg-gradient-to-b from-blue-600 to-blue-900 rounded-lg p-1 flex flex-col items-center justify-between text-center min-h-[90px] border border-blue-400/30 shadow-inner overflow-hidden relative">
-                                            <img src="https://cdn-icons-png.flaticon.com/512/619/619032.png" alt="Home" className="h-6 sm:h-8 w-auto object-contain drop-shadow-md mb-0.5 relative z-10" />
-                                            <div className="flex-1 flex flex-col items-center justify-center w-full relative z-10">
-                                                <h5 className="text-white text-[7px] sm:text-[8px] font-black leading-tight mb-0.5 w-full">Home Loan</h5>
-                                                <p className="text-blue-100 text-[5px] font-medium leading-tight px-0.5 mb-1.5 line-clamp-2">Buy your Dream Home</p>
+                                        <div className="bg-gradient-to-b from-blue-600 to-blue-900 rounded-lg p-1 flex flex-col items-center justify-between text-center min-h-[85px] border border-blue-400/30 shadow-inner overflow-hidden relative w-full min-w-0">
+                                            <img src="https://cdn-icons-png.flaticon.com/512/619/619032.png" alt="Home" className="h-6 w-auto object-contain drop-shadow-md mb-0.5 relative z-10 shrink-0" />
+                                            <div className="flex-1 flex flex-col items-center justify-center w-full relative z-10 min-w-0">
+                                                <h5 className="text-white text-[6px] sm:text-[8px] font-black leading-tight mb-0.5 w-full truncate">Home Loan</h5>
+                                                <p className="text-blue-100 text-[4px] sm:text-[5px] font-medium leading-tight px-0.5 mb-1 w-full line-clamp-2">Buy your Dream Home</p>
                                             </div>
-                                            <a href="https://wa.me/919494273763" target="_blank" className="w-full bg-white text-blue-900 text-[5px] sm:text-[6px] font-black py-1 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10">Apply Now <i className="fa-solid fa-arrow-right"></i></a>
+                                            <a href="https://wa.me/919494273763" target="_blank" className="w-full bg-white text-blue-900 text-[5px] font-black py-1 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10 shrink-0">Apply <i className="fa-solid fa-arrow-right text-[4px]"></i></a>
                                         </div>
                                         
                                         {/* LAP */}
-                                        <div className="bg-gradient-to-b from-emerald-600 to-emerald-900 rounded-lg p-1 flex flex-col items-center justify-between text-center min-h-[90px] border border-emerald-400/30 shadow-inner overflow-hidden relative">
-                                            <img src="https://cdn-icons-png.flaticon.com/512/2558/2558055.png" alt="LAP" className="h-6 sm:h-8 w-auto object-contain drop-shadow-md mb-0.5 relative z-10" />
-                                            <div className="flex-1 flex flex-col items-center justify-center w-full relative z-10">
-                                                <h5 className="text-white text-[7px] sm:text-[8px] font-black leading-[1.1] mb-0.5 w-full">LAP<br/>(Property)</h5>
-                                                <p className="text-emerald-100 text-[5px] font-medium leading-tight px-0.5 mb-1.5 line-clamp-2">Unlock property value</p>
+                                        <div className="bg-gradient-to-b from-emerald-600 to-emerald-900 rounded-lg p-1 flex flex-col items-center justify-between text-center min-h-[85px] border border-emerald-400/30 shadow-inner overflow-hidden relative w-full min-w-0">
+                                            <img src="https://cdn-icons-png.flaticon.com/512/2558/2558055.png" alt="LAP" className="h-6 w-auto object-contain drop-shadow-md mb-0.5 relative z-10 shrink-0" />
+                                            <div className="flex-1 flex flex-col items-center justify-center w-full relative z-10 min-w-0">
+                                                <h5 className="text-white text-[6px] sm:text-[8px] font-black leading-[1.1] mb-0.5 w-full truncate">LAP (Property)</h5>
+                                                <p className="text-emerald-100 text-[4px] sm:text-[5px] font-medium leading-tight px-0.5 mb-1 w-full line-clamp-2">Unlock property value</p>
                                             </div>
-                                            <a href="https://wa.me/919494273763" target="_blank" className="w-full bg-white text-emerald-900 text-[5px] sm:text-[6px] font-black py-1 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10">Apply Now <i className="fa-solid fa-arrow-right"></i></a>
+                                            <a href="https://wa.me/919494273763" target="_blank" className="w-full bg-white text-emerald-900 text-[5px] font-black py-1 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10 shrink-0">Apply <i className="fa-solid fa-arrow-right text-[4px]"></i></a>
                                         </div>
                                         
                                         {/* Business Loan */}
-                                        <div className="bg-gradient-to-b from-orange-500 to-amber-800 rounded-lg p-1 flex flex-col items-center justify-between text-center min-h-[90px] border border-orange-400/30 shadow-inner overflow-hidden relative">
-                                            <img src="https://cdn-icons-png.flaticon.com/512/2942/2942258.png" alt="Business" className="h-6 sm:h-8 w-auto object-contain drop-shadow-md mb-0.5 relative z-10" />
-                                            <div className="flex-1 flex flex-col items-center justify-center w-full relative z-10">
-                                                <h5 className="text-white text-[7px] sm:text-[8px] font-black leading-tight mb-0.5 w-full">Business Loan</h5>
-                                                <p className="text-orange-100 text-[5px] font-medium leading-tight px-0.5 mb-1.5 line-clamp-2">Grow your Business</p>
+                                        <div className="bg-gradient-to-b from-orange-500 to-amber-800 rounded-lg p-1 flex flex-col items-center justify-between text-center min-h-[85px] border border-orange-400/30 shadow-inner overflow-hidden relative w-full min-w-0">
+                                            <img src="https://cdn-icons-png.flaticon.com/512/2942/2942258.png" alt="Business" className="h-6 w-auto object-contain drop-shadow-md mb-0.5 relative z-10 shrink-0" />
+                                            <div className="flex-1 flex flex-col items-center justify-center w-full relative z-10 min-w-0">
+                                                <h5 className="text-white text-[6px] sm:text-[8px] font-black leading-tight mb-0.5 w-full truncate">Business Loan</h5>
+                                                <p className="text-orange-100 text-[4px] sm:text-[5px] font-medium leading-tight px-0.5 mb-1 w-full line-clamp-2">Grow your Business</p>
                                             </div>
-                                            <a href="https://wa.me/919494273763" target="_blank" className="w-full bg-white text-orange-900 text-[5px] sm:text-[6px] font-black py-1 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10">Apply Now <i className="fa-solid fa-arrow-right"></i></a>
+                                            <a href="https://wa.me/919494273763" target="_blank" className="w-full bg-white text-orange-900 text-[5px] font-black py-1 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10 shrink-0">Apply <i className="fa-solid fa-arrow-right text-[4px]"></i></a>
                                         </div>
                                         
                                         {/* Personal Loan */}
-                                        <div className="bg-gradient-to-b from-pink-500 to-rose-800 rounded-lg p-1 flex flex-col items-center justify-between text-center min-h-[90px] border border-pink-400/30 shadow-inner overflow-hidden relative">
-                                            <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Personal" className="h-6 sm:h-8 w-auto object-contain drop-shadow-md mb-0.5 relative z-10" />
-                                            <div className="flex-1 flex flex-col items-center justify-center w-full relative z-10">
-                                                <h5 className="text-white text-[7px] sm:text-[8px] font-black leading-tight mb-0.5 w-full">Personal Loan</h5>
-                                                <p className="text-pink-100 text-[5px] font-medium leading-tight px-0.5 mb-1.5 line-clamp-2">Fulfill personal needs</p>
+                                        <div className="bg-gradient-to-b from-pink-500 to-rose-800 rounded-lg p-1 flex flex-col items-center justify-between text-center min-h-[85px] border border-pink-400/30 shadow-inner overflow-hidden relative w-full min-w-0">
+                                            <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Personal" className="h-6 w-auto object-contain drop-shadow-md mb-0.5 relative z-10 shrink-0" />
+                                            <div className="flex-1 flex flex-col items-center justify-center w-full relative z-10 min-w-0">
+                                                <h5 className="text-white text-[6px] sm:text-[8px] font-black leading-tight mb-0.5 w-full truncate">Personal Loan</h5>
+                                                <p className="text-pink-100 text-[4px] sm:text-[5px] font-medium leading-tight px-0.5 mb-1 w-full line-clamp-2">Fulfill personal needs</p>
                                             </div>
-                                            <a href="https://wa.me/919494273763" target="_blank" className="w-full bg-white text-pink-900 text-[5px] sm:text-[6px] font-black py-1 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10">Apply Now <i className="fa-solid fa-arrow-right"></i></a>
+                                            <a href="https://wa.me/919494273763" target="_blank" className="w-full bg-white text-pink-900 text-[5px] font-black py-1 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10 shrink-0">Apply <i className="fa-solid fa-arrow-right text-[4px]"></i></a>
                                         </div>
                                     </div>
                                     
                                     {/* Footer Features */}
-                                    <div className="flex justify-between items-center px-1 mb-2 pt-1 border-t border-white/10 relative z-10 gap-1">
-                                        <div className="flex items-center gap-1">
-                                            <i className="fa-solid fa-building-columns text-yellow-400 text-[7px] sm:text-[9px]"></i>
-                                            <span className="text-white text-[5px] sm:text-[6px] font-bold uppercase leading-[1.2]">100+ Banks<br/>&amp; NBFC Partners</span>
+                                    <div className="flex justify-between items-center px-1 mb-2 pt-1 border-t border-white/10 relative z-10 w-full min-w-0">
+                                        <div className="flex items-center gap-1 min-w-0">
+                                            <i className="fa-solid fa-building-columns text-yellow-400 text-[6px] shrink-0"></i>
+                                            <span className="text-white text-[4px] sm:text-[6px] font-bold uppercase leading-[1.2] truncate">100+ Banks<br/>Partners</span>
                                         </div>
-                                        <div className="w-px h-4 sm:h-5 bg-white/20"></div>
-                                        <div className="flex items-center gap-1">
-                                            <i className="fa-solid fa-headset text-yellow-400 text-[7px] sm:text-[9px]"></i>
-                                            <span className="text-white text-[5px] sm:text-[6px] font-bold uppercase leading-[1.2]">Expert<br/>Assistance</span>
+                                        <div className="w-px h-4 bg-white/20 shrink-0"></div>
+                                        <div className="flex items-center gap-1 min-w-0">
+                                            <i className="fa-solid fa-headset text-yellow-400 text-[6px] shrink-0"></i>
+                                            <span className="text-white text-[4px] sm:text-[6px] font-bold uppercase leading-[1.2] truncate">Expert<br/>Help</span>
                                         </div>
-                                        <div className="w-px h-4 sm:h-5 bg-white/20"></div>
-                                        <div className="flex items-center gap-1">
-                                            <i className="fa-solid fa-motorcycle text-yellow-400 text-[7px] sm:text-[9px]"></i>
-                                            <span className="text-white text-[5px] sm:text-[6px] font-bold uppercase leading-[1.2]">Doorstep<br/>Service</span>
+                                        <div className="w-px h-4 bg-white/20 shrink-0"></div>
+                                        <div className="flex items-center gap-1 min-w-0">
+                                            <i className="fa-solid fa-motorcycle text-yellow-400 text-[6px] shrink-0"></i>
+                                            <span className="text-white text-[4px] sm:text-[6px] font-bold uppercase leading-[1.2] truncate">Doorstep<br/>Service</span>
                                         </div>
                                     </div>
                                     
                                     {/* Bottom CTA */}
-                                    <div className="flex items-center justify-between w-full p-2 bg-gradient-to-r from-red-900/40 via-red-800/40 to-transparent border border-red-500/20 rounded-lg relative z-10">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-xs sm:text-sm">🎉</span>
-                                            <p className="text-white text-[6px] sm:text-[7px] font-medium leading-tight">
-                                                <span className="text-yellow-400 font-bold uppercase block">Special Offer:</span> Check loan eligibility in 30 seconds!
+                                    <div className="flex items-center justify-between w-full p-2 bg-gradient-to-r from-red-900/40 via-red-800/40 to-transparent border border-red-500/20 rounded-lg relative z-10 min-w-0">
+                                        <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+                                            <span className="text-xs shrink-0">🎉</span>
+                                            <p className="text-white text-[5px] sm:text-[7px] font-medium leading-tight truncate">
+                                                <span className="text-yellow-400 font-bold uppercase">Offer:</span> Check eligibility!
                                             </p>
                                         </div>
-                                        <a href="https://wa.me/919494273763" target="_blank" className="bg-yellow-400 text-gray-900 text-[7px] sm:text-[8px] font-black px-2.5 sm:px-3 py-1.5 rounded-full uppercase flex items-center gap-1 hover:scale-105 transition-transform flex-shrink-0 shadow-sm">
-                                            Check Now <i className="fa-solid fa-arrow-right text-[6px] sm:text-[7px]"></i>
+                                        <a href="https://wa.me/919494273763" target="_blank" className="bg-yellow-400 text-gray-900 text-[6px] sm:text-[8px] font-black px-2 py-1 rounded-full uppercase flex items-center gap-1 hover:scale-105 transition-transform shrink-0 shadow-sm ml-1">
+                                            Check <i className="fa-solid fa-arrow-right text-[5px]"></i>
                                         </a>
                                     </div>
                                     
