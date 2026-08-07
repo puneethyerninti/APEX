@@ -389,7 +389,7 @@ export default function Home() {
                                             <div className="mb-3">
                                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Investments</h3>
                                                 <div className="grid grid-cols-4 gap-2">
-                                                    <a href="https://stablemoney.onelink.me/rkWL/reg7ibv8" target="_blank" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                    <a href="https://stablemoney.onelink.me/rkWL/reg7ibv8" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-amber-400 shadow-inner">
                                                             <i className="fa-solid fa-vault text-lg"></i>
                                                         </div>
