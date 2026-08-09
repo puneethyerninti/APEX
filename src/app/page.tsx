@@ -416,6 +416,30 @@ export default function Home() {
                                                 </div>
                                             </div>
 
+                                            {/* Religare Banner */}
+                                            <div className="mb-3 px-1">
+                                                <a href="https://religare.ref-r.com/c/i/32347/118510707?r=wa" target="_blank" rel="noopener noreferrer" className="relative block bg-white rounded-xl border border-yellow-400 p-2.5 shadow-md hover:scale-[1.02] transition-transform">
+                                                    <div className="absolute -top-2 left-2 bg-yellow-400 text-black text-[9px] font-black px-1.5 py-0.5 rounded-sm tracking-wide z-10 leading-none">
+                                                        NEW
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center flex-1">
+                                                            <div className="w-10 h-10 flex-shrink-0 bg-[#1e3a8a] rounded-lg flex items-center justify-center text-emerald-400 text-lg shadow-inner">
+                                                                <i className="fa-solid fa-chart-line"></i>
+                                                            </div>
+                                                            <div className="flex flex-col ml-3">
+                                                                <span className="text-gray-900 font-extrabold text-sm leading-tight">Free Demat Account</span>
+                                                                <span className="text-gray-500 text-[9px] leading-tight mt-0.5">Open Demat & Trading A/c<br/>with Religare Broking</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                                                            <span className="bg-green-700 text-white font-black text-[9px] px-1.5 py-0.5 rounded-sm flex items-center justify-center uppercase">FREE</span>
+                                                            <i className="fa-solid fa-chevron-right text-gray-500 text-xs"></i>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </div>
+
                                             {/* Loans Grid */}
                                             <div className="mb-3">
                                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Loans</h3>
