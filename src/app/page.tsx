@@ -394,7 +394,7 @@ export default function Home() {
                                                                 <li className="flex items-center gap-0.5"><i className="fa-solid fa-circle-check text-purple-400 text-[5px]"></i> Starts ₹2,000</li>
                                                                 <li className="flex items-center gap-0.5"><i className="fa-solid fa-circle-check text-purple-400 text-[5px]"></i> Lifetime Free</li>
                                                             </ul>
-                                                            <a href="https://wee.bnking.in/c/ZWQ0MDIIM" target="_blank" rel="noopener noreferrer" className="bg-purple-600 text-white font-bold text-[6px] sm:text-[7px] py-0.5 px-1.5 rounded text-center shadow hover:bg-purple-700 uppercase w-max flex items-center gap-0.5">Apply Now <i className="fa-solid fa-chevron-right text-[4px]"></i></a>
+                                                            <a href="https://wee.bnking.in/c/ZWI1YjlkZ" target="_blank" rel="noopener noreferrer" className="bg-purple-600 text-white font-bold text-[6px] sm:text-[7px] py-0.5 px-1.5 rounded text-center shadow hover:bg-purple-700 uppercase w-max flex items-center gap-0.5">Apply Now <i className="fa-solid fa-chevron-right text-[4px]"></i></a>
                                                         </div>
                                                     </div>
 
@@ -426,12 +426,12 @@ export default function Home() {
                                                             </div>
                                                         </div>
 
-                                                        <a href="https://wee.bnking.in/c/ZWQ0MDIIM" target="_blank" rel="noopener noreferrer" className="bg-purple-700 text-white font-bold text-[6px] sm:text-[7px] py-1 w-full rounded text-center shadow-sm hover:bg-purple-800 uppercase flex items-center justify-center gap-1 mt-0.5">Explore Now <i className="fa-solid fa-chevron-right text-[5px]"></i></a>
+                                                        <a href="https://wee.bnking.in/c/ZWI1YjlkZ" target="_blank" rel="noopener noreferrer" className="bg-purple-700 text-white font-bold text-[6px] sm:text-[7px] py-1 w-full rounded text-center shadow-sm hover:bg-purple-800 uppercase flex items-center justify-center gap-1 mt-0.5">Explore Now <i className="fa-solid fa-chevron-right text-[5px]"></i></a>
                                                     </div>
                                                 </div>
                                                 
                                                 {/* Bottom Ribbon */}
-                                                <a href="https://wee.bnking.in/c/ZWQ0MDIIM" target="_blank" rel="noopener noreferrer" className="bg-purple-50 hover:bg-purple-100 transition-colors border-t border-purple-100 p-1.5 flex items-center justify-between cursor-pointer group">
+                                                <a href="https://wee.bnking.in/c/ZWI1YjlkZ" target="_blank" rel="noopener noreferrer" className="bg-purple-50 hover:bg-purple-100 transition-colors border-t border-purple-100 p-1.5 flex items-center justify-between cursor-pointer group">
                                                     <div className="flex items-center gap-1">
                                                         <div className="w-4 h-4 rounded bg-purple-600 flex items-center justify-center text-white shrink-0 shadow-sm">
                                                             <i className="fa-solid fa-gift text-[6px]"></i>
