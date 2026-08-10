@@ -362,13 +362,16 @@ export default function Home() {
                                                     </div>
                                                     <span className="text-purple-600 font-bold text-[6px] sm:text-[8px]">View All <i className="fa-solid fa-chevron-right text-[5px]"></i></span>
                                                 </div>
-                                                <div className="p-1.5 flex flex-col md:flex-row gap-1.5 bg-[#FCFAFF]">
+                                                
+                                                {/* HORIZONTAL SCROLL CONTAINER */}
+                                                <div className="p-1.5 flex flex-row gap-2 bg-[#FCFAFF] overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2">
+                                                    
                                                     {/* Left Card */}
-                                                    <div className="bg-[#0b0429] rounded-lg p-1.5 relative overflow-hidden flex shadow-sm flex-1">
+                                                    <div className="snap-center min-w-[85%] md:min-w-0 bg-[#0b0429] rounded-lg p-1.5 relative overflow-hidden flex shadow-sm flex-1 shrink-0">
                                                         <div className="absolute top-0 left-0 bg-purple-600 text-white font-black text-[5px] px-1.5 py-0.5 transform -rotate-45 -translate-x-3 translate-y-0.5 shadow-sm tracking-wide">NEW</div>
                                                         
                                                         {/* Card Image Placeholder */}
-                                                        <div className="w-14 sm:w-16 bg-gradient-to-br from-purple-500 to-purple-800 rounded p-1 flex flex-col justify-between shrink-0 shadow-sm border border-purple-400/30 relative min-h-[50px]">
+                                                        <div className="w-16 bg-gradient-to-br from-purple-500 to-purple-800 rounded p-1 flex flex-col justify-between shrink-0 shadow-sm border border-purple-400/30 relative min-h-[50px]">
                                                             <div className="flex justify-between items-start">
                                                                 <span className="text-white font-black text-[6px] tracking-tight">ZET</span>
                                                                 <i className="fa-solid fa-wifi text-white/50 text-[6px] transform rotate-90"></i>
@@ -396,7 +399,7 @@ export default function Home() {
                                                     </div>
 
                                                     {/* Right Card */}
-                                                    <div className="bg-white rounded-lg p-1.5 border border-gray-100 shadow-sm flex flex-col justify-between flex-1">
+                                                    <div className="snap-center min-w-[85%] md:min-w-0 bg-white rounded-lg p-1.5 border border-gray-100 shadow-sm flex flex-col justify-between flex-1 shrink-0">
                                                         <div className="text-center mb-1">
                                                             <h4 className="text-purple-700 font-black text-[10px] sm:text-xs mb-0.5 tracking-tight">ZET</h4>
                                                             <p className="text-gray-900 font-extrabold text-[7px] sm:text-[8px] leading-tight">Explore More Credit Cards</p>
