@@ -18,11 +18,15 @@ import notificationRoutes from './routes/notificationRoutes';
 import Message from './models/Message';
 import User from './models/User';
 import TravelBooking from './models/TravelBooking';
+import { initFirebaseAdmin } from './firebaseAdmin';
 
 dotenv.config();
 
 // Connect to Database
 connectDB();
+
+// Initialize Firebase Admin for Push Notifications
+initFirebaseAdmin();
 
 const app = express();
 const server = http.createServer(app);

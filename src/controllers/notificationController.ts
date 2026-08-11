@@ -83,3 +83,26 @@ export const markAllAsRead = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+import { sendPushNotification } from '../firebaseAdmin';
+
+export const createNotification = async (userId: string, title: string, message: string, type: string = 'info') => {
+  try {
+    const notification = await Notification.create({
+      user: userId,
+      title,
+      message,
+      type
+    });
+
+    const user = await User.findById(userId);
+    if (user && user.fcmTokens && user.fcmTokens.length > 0) {
+      await sendPushNotification(user.fcmTokens, title, message, { notificationId: notification._id.toString() });
+    }
+
+    return notification;
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    return null;
+  }
+};

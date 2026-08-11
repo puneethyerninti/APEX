@@ -7,7 +7,7 @@ import RealEstate from '../models/RealEstate';
 import StoreOrder from '../models/StoreOrder';
 import CharityDonation from '../models/CharityDonation';
 import TravelBooking from '../models/TravelBooking';
-import Notification from '../models/Notification';
+import { createNotification } from './notificationController';
 
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
@@ -81,12 +81,12 @@ export const updateApprovalStatus = async (req: Request, res: Response) => {
     }
 
     if (userIdToNotify) {
-      const notification = await Notification.create({
-        user: userIdToNotify,
+      const notification = await createNotification(
+        userIdToNotify.toString(),
         title,
-        message: `Your ${type} submission has been ${status} by the admin.`,
-        type: status === 'approved' ? 'success' : 'error'
-      });
+        `Your ${type} submission has been ${status} by the admin.`,
+        status === 'approved' ? 'success' : 'error'
+      );
 
       const io = req.app.get('io');
       if (io) {
@@ -200,12 +200,12 @@ export const updateStoreOrderStatus = async (req: Request, res: Response) => {
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
     // Send real-time notification
-    const notification = await Notification.create({
-      user: order.userId,
-      title: `Order ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-      message: `Your store order has been marked as ${status}.`,
-      type: 'info'
-    });
+    const notification = await createNotification(
+      order.userId.toString(),
+      `Order ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+      `Your store order has been marked as ${status}.`,
+      'info'
+    );
 
     const io = req.app.get('io');
     if (io) {

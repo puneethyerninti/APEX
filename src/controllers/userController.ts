@@ -3,6 +3,7 @@ import User from '../models/User';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { Resend } from 'resend';
+import { createNotification } from './notificationController';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 'mock_key');
 
@@ -68,6 +69,14 @@ export const updateUserProfile = async (req: Request, res: Response) => {
           user.role = 'admin'; // Auto-upgrade to admin
       }
       await user.save();
+      
+      // Send real-time push notification for manual testing!
+      await createNotification(
+        user._id.toString(),
+        "Profile Updated ✅",
+        "Your profile details were updated successfully. Push notifications are working!",
+        "success"
+      );
     } else {
       // Create user if not found (fallback)
       user = await User.create({
@@ -197,5 +206,34 @@ export const sendEmailNotification = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Resend API Error:", error);
     res.status(500).json({ error: "Failed to send email" });
+  }
+};
+
+export const saveFCMToken = async (req: Request, res: Response) => {
+  const { phone, token } = req.body;
+
+  if (!phone || !token) {
+    return res.status(400).json({ error: "Phone number and FCM token are required" });
+  }
+
+  try {
+    const user = await User.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (!user.fcmTokens) {
+      user.fcmTokens = [];
+    }
+
+    if (!user.fcmTokens.includes(token)) {
+      user.fcmTokens.push(token);
+      await user.save();
+    }
+
+    res.json({ success: true, message: "FCM token saved successfully" });
+  } catch (error) {
+    console.error("Error saving FCM token:", error);
+    res.status(500).json({ error: "Server error saving FCM token" });
   }
 };
