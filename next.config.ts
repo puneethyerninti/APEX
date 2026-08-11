@@ -8,18 +8,22 @@ const withPWA = require("next-pwa")({
 });
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "export",
+  images: {
+    unoptimized: true,
+  },
   reactCompiler: true,
   turbopack: {},
-  async redirects() {
-    return [
-      {
-        source: '/:path*.html',
-        destination: '/:path*',
-        permanent: true,
-      },
-    ];
-  },
+  // Redirects are not supported when using output: 'export'
+  // async redirects() {
+  //   return [
+  //     {
+  //       source: '/:path*.html',
+  //       destination: '/:path*',
+  //       permanent: true,
+  //     },
+  //   ];
+  // },
 };
 
 export default withPWA(nextConfig);

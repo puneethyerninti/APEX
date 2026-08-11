@@ -15,6 +15,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,6 +24,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setWalletBalance = useAppStore((state) => state.setWalletBalance);
   const router = useRouter();
   const pathname = usePathname();
+
+  // Initialize Push Notifications
+  usePushNotifications(isAuthenticated);
 
   useEffect(() => {
     // Listen for Firebase auth state changes
