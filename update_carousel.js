@@ -1,4 +1,6 @@
-"use client";
+const fs = require('fs');
+
+const carouselCode = `"use client";
 import React, { useEffect, useRef } from 'react';
 
 const creditCards = [
@@ -91,7 +93,7 @@ export default function CreditCardCarousel() {
                     <div key={index} className="snap-center min-w-[85%] md:min-w-[45%] lg:min-w-[30%] bg-[#0b0429] rounded-lg p-1.5 relative overflow-hidden flex shadow-sm shrink-0">
                         <div className="absolute top-0 left-0 bg-purple-600 text-white font-black text-[5px] px-1.5 py-0.5 transform -rotate-45 -translate-x-3 translate-y-0.5 shadow-sm tracking-wide z-10">{card.badge}</div>
                         
-                        <div className={`w-16 bg-gradient-to-br ${card.cardColor} rounded p-1 flex flex-col justify-between shrink-0 shadow-sm border border-white/20 relative min-h-[50px] z-10`}>
+                        <div className={\`w-16 bg-gradient-to-br \${card.cardColor} rounded p-1 flex flex-col justify-between shrink-0 shadow-sm border border-white/20 relative min-h-[50px] z-10\`}>
                             <div className="flex justify-between items-start">
                                 <span className="text-white font-black text-[5px] tracking-tight truncate w-3/4">{card.bank}</span>
                                 <i className="fa-solid fa-wifi text-white/50 text-[6px] transform rotate-90"></i>
@@ -149,3 +151,7 @@ export default function CreditCardCarousel() {
         </div>
     );
 }
+`;
+
+fs.writeFileSync('src/components/CreditCardCarousel.tsx', carouselCode);
+console.log('Successfully updated CreditCardCarousel');
