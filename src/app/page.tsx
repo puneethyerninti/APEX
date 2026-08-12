@@ -224,14 +224,14 @@ export default function Home() {
                                 <div className="promo-slide relative flex items-center overflow-hidden bg-gray-900">
                                     <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&amp;q=80&amp;auto=format&amp;fit=crop" alt="" className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay" />
                                     <div className="absolute inset-0 bg-gradient-to-r from-[#1E0E4B] via-[#6C3FC5]/75 to-transparent"></div>
-                                    <div className="relative p-5 z-10 flex-1 flex flex-col justify-between h-full reveal-up">
+                                    <div className="relative p-5 z-10 flex-1 flex flex-col justify-between h-full reveal-up min-w-0 w-full">
                                         <div className="flex flex-col items-start border-l-4 border-yellow-400 pl-3.5 mb-3 shadow-sm">
                                             <h1 className="text-white text-xl sm:text-2xl font-black uppercase tracking-[0.15em] drop-shadow-xl leading-tight">
                                                 APEX <span className="text-yellow-400">Trading Company</span>
                                             </h1>
                                         </div>
 
-                                        <div className="mt-auto">
+                                        <div className="mt-auto min-w-0 w-full">
                                             <div className="flex items-center justify-between mb-4">
                                                 <div>
                                                     <h2 className="text-white text-sm font-bold leading-tight mb-0.5">Build Wealth &amp; Secure Future</h2>
