@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "91767917263",
+    "project_id": "rivan-123",
+    "storage_bucket": "rivan-123.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:91767917263:android:9d15803de5325bbcc545ba",
+        "android_client_info": {
+          "package_name": "com.apex.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAPiNuM3sTMq4HzbuXF2lWKA-4fwCWAd0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import CreditCardCarousel from '@/components/CreditCardCarousel';
+import PanCardServices from '@/components/PanCardServices';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function Home() {
@@ -504,6 +505,8 @@ export default function Home() {
                                                     </Link>
                                                 </div>
                                             </div>
+
+                                            <PanCardServices />
 
                                             {/* Payments (BBPS) Section */}
                                             <div className="mt-4 border border-dashed border-white/20 rounded-xl p-3 relative">
