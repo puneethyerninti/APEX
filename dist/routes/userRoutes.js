@@ -10,4 +10,5 @@ router.get('/profile', userController_1.getUserProfile);
 router.post('/profile', userController_1.updateUserProfile);
 router.post('/verify-pan', userController_1.verifyPan);
 router.post('/send-email', userController_1.sendEmailNotification);
+router.post('/fcm-token', userController_1.saveFCMToken);
 exports.default = router;

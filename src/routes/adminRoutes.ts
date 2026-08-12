@@ -11,7 +11,8 @@ import {
   getAllStoreOrders,
   updateStoreOrderStatus,
   getAllCharityDonations,
-  broadcastMessage
+  broadcastMessage,
+  getAllLeads
 } from '../controllers/adminController';
 import { requireAdmin } from '../middleware/authMiddleware';
 
@@ -33,5 +34,6 @@ router.get('/store-orders', getAllStoreOrders);
 router.put('/store-orders/:id/status', updateStoreOrderStatus);
 router.get('/charity-donations', getAllCharityDonations);
 router.post('/broadcast', broadcastMessage);
+router.get('/leads', getAllLeads);
 
 export default router;

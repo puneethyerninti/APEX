@@ -7,6 +7,7 @@ import RealEstate from '../models/RealEstate';
 import StoreOrder from '../models/StoreOrder';
 import CharityDonation from '../models/CharityDonation';
 import TravelBooking from '../models/TravelBooking';
+import Lead from '../models/Lead';
 import { createNotification } from './notificationController';
 
 export const getDashboardStats = async (req: Request, res: Response) => {
@@ -227,6 +228,17 @@ export const getAllCharityDonations = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error fetching charity donations' });
+  }
+};
+
+// Get all leads
+export const getAllLeads = async (req: Request, res: Response) => {
+  try {
+    const leads = await Lead.find().sort({ createdAt: -1 });
+    res.json({ leads });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error fetching leads' });
   }
 };
 

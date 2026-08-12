@@ -3,8 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.markAllAsRead = exports.markAsRead = exports.getUserNotifications = exports.sendEmailNotification = void 0;
+exports.createNotification = exports.markAllAsRead = exports.markAsRead = exports.getUserNotifications = exports.sendEmailNotification = void 0;
 const resend_1 = require("resend");
+const User_1 = __importDefault(require("../models/User"));
 const Notification_1 = __importDefault(require("../models/Notification"));
 // Initialize Resend
 // Note: Fallback if API key is not provided yet
@@ -78,3 +79,24 @@ const markAllAsRead = async (req, res) => {
     }
 };
 exports.markAllAsRead = markAllAsRead;
+const firebaseAdmin_1 = require("../firebaseAdmin");
+const createNotification = async (userId, title, message, type = 'info') => {
+    try {
+        const notification = await Notification_1.default.create({
+            user: userId,
+            title,
+            message,
+            type
+        });
+        const user = await User_1.default.findById(userId);
+        if (user && user.fcmTokens && user.fcmTokens.length > 0) {
+            await (0, firebaseAdmin_1.sendPushNotification)(user.fcmTokens, title, message, { notificationId: notification._id.toString() });
+        }
+        return notification;
+    }
+    catch (error) {
+        console.error('Error creating notification:', error);
+        return null;
+    }
+};
+exports.createNotification = createNotification;

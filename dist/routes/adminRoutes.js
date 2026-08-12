@@ -21,4 +21,5 @@ router.get('/store-orders', adminController_1.getAllStoreOrders);
 router.put('/store-orders/:id/status', adminController_1.updateStoreOrderStatus);
 router.get('/charity-donations', adminController_1.getAllCharityDonations);
 router.post('/broadcast', adminController_1.broadcastMessage);
+router.get('/leads', adminController_1.getAllLeads);
 exports.default = router;

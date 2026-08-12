@@ -34,14 +34,15 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const UserSchema = new mongoose_1.Schema({
-    email: { type: String, required: true, unique: true },
-    password: { type: String },
+const LeadSchema = new mongoose_1.Schema({
     name: { type: String, required: true },
-    phone: { type: String },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
-    walletBalance: { type: Number, default: 0 },
-    profilePicture: { type: String },
-    fcmTokens: [{ type: String }]
+    mobile: { type: String, required: true },
+    serviceType: { type: String, required: true },
+    status: {
+        type: String,
+        enum: ['new', 'contacted', 'converted', 'closed'],
+        default: 'new'
+    },
+    notes: { type: String, default: '' },
 }, { timestamps: true });
-exports.default = mongoose_1.default.model('User', UserSchema);
+exports.default = mongoose_1.default.model('Lead', LeadSchema);

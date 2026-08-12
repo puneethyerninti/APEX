@@ -86,7 +86,7 @@ export const markAllAsRead = async (req: Request, res: Response) => {
 
 import { sendPushNotification } from '../firebaseAdmin';
 
-export const createNotification = async (userId: string, title: string, message: string, type: string = 'info') => {
+export const createNotification = async (userId: string, title: string, message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
   try {
     const notification = await Notification.create({
       user: userId,
@@ -97,7 +97,7 @@ export const createNotification = async (userId: string, title: string, message:
 
     const user = await User.findById(userId);
     if (user && user.fcmTokens && user.fcmTokens.length > 0) {
-      await sendPushNotification(user.fcmTokens, title, message, { notificationId: notification._id.toString() });
+      await sendPushNotification(user.fcmTokens, title, message, { notificationId: (notification as any)._id.toString() });
     }
 
     return notification;

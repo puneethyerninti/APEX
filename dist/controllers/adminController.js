@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.broadcastMessage = exports.getAllCharityDonations = exports.updateStoreOrderStatus = exports.getAllStoreOrders = exports.completeTransaction = exports.updateUserWallet = exports.deleteEntity = exports.getAllTransactions = exports.getUsersList = exports.updateApprovalStatus = exports.getPendingApprovals = exports.getDashboardStats = void 0;
+exports.broadcastMessage = exports.getAllLeads = exports.getAllCharityDonations = exports.updateStoreOrderStatus = exports.getAllStoreOrders = exports.completeTransaction = exports.updateUserWallet = exports.deleteEntity = exports.getAllTransactions = exports.getUsersList = exports.updateApprovalStatus = exports.getPendingApprovals = exports.getDashboardStats = void 0;
 const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const Job_1 = __importDefault(require("../models/Job"));
@@ -12,7 +12,8 @@ const RealEstate_1 = __importDefault(require("../models/RealEstate"));
 const StoreOrder_1 = __importDefault(require("../models/StoreOrder"));
 const CharityDonation_1 = __importDefault(require("../models/CharityDonation"));
 const TravelBooking_1 = __importDefault(require("../models/TravelBooking"));
-const Notification_1 = __importDefault(require("../models/Notification"));
+const Lead_1 = __importDefault(require("../models/Lead"));
+const notificationController_1 = require("./notificationController");
 const getDashboardStats = async (req, res) => {
     try {
         const totalUsers = await User_1.default.countDocuments();
@@ -85,12 +86,7 @@ const updateApprovalStatus = async (req, res) => {
             title = `Realty Listing ${status === 'approved' ? 'Approved' : 'Rejected'}`;
         }
         if (userIdToNotify) {
-            const notification = await Notification_1.default.create({
-                user: userIdToNotify,
-                title,
-                message: `Your ${type} submission has been ${status} by the admin.`,
-                type: status === 'approved' ? 'success' : 'error'
-            });
+            const notification = await (0, notificationController_1.createNotification)(userIdToNotify.toString(), title, `Your ${type} submission has been ${status} by the admin.`, status === 'approved' ? 'success' : 'error');
             const io = req.app.get('io');
             if (io) {
                 io.to(`user_${userIdToNotify}`).emit('new_notification', notification);
@@ -206,12 +202,7 @@ const updateStoreOrderStatus = async (req, res) => {
         if (!order)
             return res.status(404).json({ error: 'Order not found' });
         // Send real-time notification
-        const notification = await Notification_1.default.create({
-            user: order.userId,
-            title: `Order ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-            message: `Your store order has been marked as ${status}.`,
-            type: 'info'
-        });
+        const notification = await (0, notificationController_1.createNotification)(order.userId.toString(), `Order ${status.charAt(0).toUpperCase() + status.slice(1)}`, `Your store order has been marked as ${status}.`, 'info');
         const io = req.app.get('io');
         if (io) {
             io.to(`user_${order.userId}`).emit('new_notification', notification);
@@ -236,6 +227,18 @@ const getAllCharityDonations = async (req, res) => {
     }
 };
 exports.getAllCharityDonations = getAllCharityDonations;
+// Get all leads
+const getAllLeads = async (req, res) => {
+    try {
+        const leads = await Lead_1.default.find().sort({ createdAt: -1 });
+        res.json({ leads });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error fetching leads' });
+    }
+};
+exports.getAllLeads = getAllLeads;
 // Global Broadcast Message
 const broadcastMessage = async (req, res) => {
     const { title, message, type } = req.body;

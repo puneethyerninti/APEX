@@ -3,11 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendEmailNotification = exports.verifyPan = exports.updateUserProfile = exports.getUserProfile = void 0;
+exports.saveFCMToken = exports.sendEmailNotification = exports.verifyPan = exports.updateUserProfile = exports.getUserProfile = void 0;
 const User_1 = __importDefault(require("../models/User"));
 const axios_1 = __importDefault(require("axios"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const resend_1 = require("resend");
+const notificationController_1 = require("./notificationController");
 const resend = new resend_1.Resend(process.env.RESEND_API_KEY || 'mock_key');
 const getUserProfile = async (req, res) => {
     const { phone } = req.query;
@@ -62,6 +63,8 @@ const updateUserProfile = async (req, res) => {
                 user.role = 'admin'; // Auto-upgrade to admin
             }
             await user.save();
+            // Send real-time push notification for manual testing!
+            await (0, notificationController_1.createNotification)(user._id.toString(), "Profile Updated ✅", "Your profile details were updated successfully. Push notifications are working!", "success");
         }
         else {
             // Create user if not found (fallback)
@@ -182,3 +185,28 @@ const sendEmailNotification = async (req, res) => {
     }
 };
 exports.sendEmailNotification = sendEmailNotification;
+const saveFCMToken = async (req, res) => {
+    const { phone, token } = req.body;
+    if (!phone || !token) {
+        return res.status(400).json({ error: "Phone number and FCM token are required" });
+    }
+    try {
+        const user = await User_1.default.findOne({ phone });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        if (!user.fcmTokens) {
+            user.fcmTokens = [];
+        }
+        if (!user.fcmTokens.includes(token)) {
+            user.fcmTokens.push(token);
+            await user.save();
+        }
+        res.json({ success: true, message: "FCM token saved successfully" });
+    }
+    catch (error) {
+        console.error("Error saving FCM token:", error);
+        res.status(500).json({ error: "Server error saving FCM token" });
+    }
+};
+exports.saveFCMToken = saveFCMToken;

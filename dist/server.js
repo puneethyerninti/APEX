@@ -19,12 +19,16 @@ const wealthRoutes_1 = __importDefault(require("./routes/wealthRoutes"));
 const realtyRoutes_1 = __importDefault(require("./routes/realtyRoutes"));
 const travelsRoutes_1 = __importDefault(require("./routes/travelsRoutes"));
 const notificationRoutes_1 = __importDefault(require("./routes/notificationRoutes"));
+const leadRoutes_1 = __importDefault(require("./routes/leadRoutes"));
 const Message_1 = __importDefault(require("./models/Message"));
 const User_1 = __importDefault(require("./models/User"));
 const TravelBooking_1 = __importDefault(require("./models/TravelBooking"));
+const firebaseAdmin_1 = require("./firebaseAdmin");
 dotenv_1.default.config();
 // Connect to Database
 (0, db_1.connectDB)();
+// Initialize Firebase Admin for Push Notifications
+(0, firebaseAdmin_1.initFirebaseAdmin)();
 const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
 // Middleware
@@ -193,6 +197,7 @@ app.use('/api/wealth', wealthRoutes_1.default);
 app.use('/api/realty', realtyRoutes_1.default);
 app.use('/api/travels', travelsRoutes_1.default);
 app.use('/api/notifications', notificationRoutes_1.default);
+app.use('/api/leads', leadRoutes_1.default);
 // Routes Placeholder
 app.get('/', (req, res) => {
     res.send('APEX Backend is running');
