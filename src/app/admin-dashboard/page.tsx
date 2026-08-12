@@ -42,7 +42,8 @@ export default function AdminDashboardPage() {
   const [travels, setTravels] = useState<any[]>([]);
   const [storeOrders, setStoreOrders] = useState<any[]>([]);
   const [charityDonations, setCharityDonations] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'approvals' | 'users' | 'transactions' | 'travels' | 'store' | 'charity'>('overview');
+  const [leads, setLeads] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'approvals' | 'users' | 'transactions' | 'travels' | 'store' | 'charity' | 'leads'>('overview');
   
   const [broadcastTitle, setBroadcastTitle] = useState('');
   const [broadcastMessage, setBroadcastMessage] = useState('');
@@ -77,14 +78,15 @@ export default function AdminDashboardPage() {
 
   const fetchAllData = async () => {
     try {
-      const [statsRes, approvalsRes, usersRes, transRes, travelsRes, storeRes, charityRes] = await Promise.all([
+      const [statsRes, approvalsRes, usersRes, transRes, travelsRes, storeRes, charityRes, leadsRes] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/admin/approvals'),
         api.get('/admin/users'),
         api.get('/admin/transactions'),
         api.get('/travels/admin/all'),
         api.get('/admin/store-orders').catch(() => ({ data: { orders: [] } })),
-        api.get('/admin/charity-donations').catch(() => ({ data: { donations: [] } }))
+        api.get('/admin/charity-donations').catch(() => ({ data: { donations: [] } })),
+        api.get('/admin/leads').catch(() => ({ data: { leads: [] } }))
       ]);
       setDbStats(statsRes.data.stats);
       setPendingApprovals(approvalsRes.data);
@@ -93,6 +95,7 @@ export default function AdminDashboardPage() {
       setTravels(travelsRes.data.bookings);
       setStoreOrders(storeRes.data.orders || []);
       setCharityDonations(charityRes.data.donations || []);
+      setLeads(leadsRes.data.leads || []);
     } catch (error) {
       console.error("Failed to fetch admin data", error);
     }
@@ -264,9 +267,15 @@ export default function AdminDashboardPage() {
             <button onClick={() => { setActiveTab('store'); setIsSidebarOpen(false); }} className={`w-full flex items-center px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'store' ? 'bg-[#A0684A]/10 text-[#A0684A]' : 'text-gray-500 hover:bg-gray-50 hover:text-[#A0684A]'}`}>
                 <i className="fa-solid fa-store w-5 text-center mr-3 text-base"></i> Store Orders
             </button>
-            <button onClick={() => { setActiveTab('charity'); setIsSidebarOpen(false); }} className={`w-full flex items-center px-3 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'charity' ? 'bg-[#A0684A]/10 text-[#A0684A]' : 'text-gray-500 hover:bg-gray-50 hover:text-[#A0684A]'}`}>
-                <i className="fa-solid fa-hand-holding-heart w-5 text-center mr-3 text-base"></i> Charity
-            </button>
+            <button onClick={() => { setActiveTab('charity'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'charity' ? 'bg-[#A0684A] text-white shadow-md' : 'text-gray-600 hover:bg-[#FDF9F6] hover:text-[#A0684A]'}`}>
+            <i className="fa-solid fa-hand-holding-heart w-5 text-center"></i>
+            <span className="font-bold text-sm">Charity</span>
+          </button>
+          
+          <button onClick={() => { setActiveTab('leads'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'leads' ? 'bg-[#A0684A] text-white shadow-md' : 'text-gray-600 hover:bg-[#FDF9F6] hover:text-[#A0684A]'}`}>
+            <i className="fa-solid fa-bullhorn w-5 text-center"></i>
+            <span className="font-bold text-sm">Service Leads</span>
+          </button>
 
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-2 px-3 mt-6">System</p>
             <Link href="/" className="flex items-center px-3 py-2.5 text-gray-500 hover:bg-gray-50 hover:text-[#A0684A] rounded-xl font-medium text-sm transition-all">
@@ -879,7 +888,73 @@ export default function AdminDashboardPage() {
                   </div>
                 )}
             </div>
+
+          {/* LEADS TAB */}
+          {activeTab === 'leads' && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-[fadeIn_0.3s_ease-out]">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-teal-50 to-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center text-teal-600">
+                    <i className="fa-solid fa-bullhorn text-xl"></i>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-gray-900">Service Leads</h2>
+                    <p className="text-xs text-gray-500">Form submissions for PAN, Loans, NPS, etc.</p>
+                  </div>
+                </div>
+                <div className="bg-teal-100 text-teal-800 font-bold px-3 py-1 rounded-full text-xs">
+                  {leads.length} Total Leads
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-bold">
+                      <th className="p-4 border-b border-gray-100">Service</th>
+                      <th className="p-4 border-b border-gray-100">Customer Details</th>
+                      <th className="p-4 border-b border-gray-100">Date Submitted</th>
+                      <th className="p-4 border-b border-gray-100">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.map((lead: any) => (
+                      <tr key={lead._id} className="hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
+                        <td className="p-4">
+                          <span className="font-bold text-sm text-teal-700 bg-teal-50 px-2 py-1 rounded">{lead.serviceType}</span>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-bold text-sm text-gray-900">{lead.name}</p>
+                          <a href={`https://wa.me/91${lead.mobile}?text=Hi%20${encodeURIComponent(lead.name)},%20we%20received%20your%20request%20for%20${encodeURIComponent(lead.serviceType)}.`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-green-600 hover:underline flex items-center gap-1">
+                            <i className="fa-brands fa-whatsapp"></i> {lead.mobile}
+                          </a>
+                        </td>
+                        <td className="p-4 text-xs text-gray-500 font-medium">
+                          {new Date(lead.createdAt).toLocaleString()}
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2 py-1 text-[10px] font-black uppercase rounded-full tracking-wider ${
+                            lead.status === 'new' ? 'bg-blue-100 text-blue-700' :
+                            lead.status === 'contacted' ? 'bg-yellow-100 text-yellow-700' :
+                            lead.status === 'converted' ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {lead.status || 'NEW'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {leads.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-gray-500 text-sm">No leads submitted yet.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </main>
+
       </div>
 
       {/* Modals */}

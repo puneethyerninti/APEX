@@ -12,7 +12,7 @@ export default function PanCardServices() {
         setIsFormOpen(true);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim() || !mobile.trim()) {
             alert('Please enter Name and Mobile Number');
@@ -23,6 +23,16 @@ export default function PanCardServices() {
             return;
         }
         
+        try {
+            await fetch('http://localhost:5000/api/leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, mobile, serviceType })
+            });
+        } catch (error) {
+            console.error('Failed to post lead', error);
+        }
+
         const message = `Hi APEX, I am interested in ${serviceType}.\nName: ${name}\nMobile: ${mobile}`;
         const encodedMessage = encodeURIComponent(message);
         const whatsappUrl = `https://wa.me/919494273763?text=${encodedMessage}`;

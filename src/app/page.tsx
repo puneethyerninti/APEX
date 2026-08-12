@@ -9,6 +9,50 @@ import { useAppStore } from '@/store/useAppStore';
 
 export default function Home() {
     const user = useAppStore((state) => state.user);
+
+    const [isLeadFormOpen, setIsLeadFormOpen] = React.useState(false);
+    const [leadServiceType, setLeadServiceType] = React.useState('');
+    const [leadName, setLeadName] = React.useState('');
+    const [leadMobile, setLeadMobile] = React.useState('');
+
+    const handleOpenLeadForm = (e: React.MouseEvent, type: string) => {
+        e.preventDefault();
+        setLeadServiceType(type);
+        setIsLeadFormOpen(true);
+    };
+
+    const handleLeadSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!leadName.trim() || !leadMobile.trim()) {
+            alert('Please enter Name and Mobile Number');
+            return;
+        }
+        if (leadMobile.length < 10) {
+            alert('Please enter a valid Mobile Number');
+            return;
+        }
+        
+        try {
+            await fetch('http://localhost:5000/api/leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: leadName, mobile: leadMobile, serviceType: leadServiceType })
+            });
+        } catch (error) {
+            console.error('Failed to post lead', error);
+        }
+
+        const message = `Hi APEX, I am interested in ${leadServiceType}.\nName: ${leadName}\nMobile: ${leadMobile}`;
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/919494273763?text=${encodedMessage}`;
+        
+        window.open(whatsappUrl, '_blank');
+        
+        setIsLeadFormOpen(false);
+        setLeadName('');
+        setLeadMobile('');
+    };
+
     React.useEffect(() => {
         // 1. Deals of the day countdown
         const countdownEl = document.getElementById('countdown-timer');
@@ -284,7 +328,7 @@ export default function Home() {
                                                                 <h5 className="text-white text-[5px] sm:text-[7px] font-black leading-tight mb-0.5 w-full truncate">Home Loan</h5>
                                                                 <p className="text-blue-100 text-[4px] font-medium leading-tight px-0.5 mb-0.5 w-full line-clamp-2">Buy your Dream Home</p>
                                                             </div>
-                                                            <a href="https://wa.me/919494273763" target="_blank" rel="noopener noreferrer" className="w-full bg-white text-blue-900 text-[5px] font-black py-0.5 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10 shrink-0">Apply <i className="fa-solid fa-arrow-right text-[4px]"></i></a>
+                                                            <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Loan')} className="w-full bg-white text-blue-900 text-[5px] font-black py-0.5 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10 shrink-0">Apply <i className="fa-solid fa-arrow-right text-[4px]"></i></a>
                                                         </div>
 
                                                         {/* LAP */}
@@ -294,7 +338,7 @@ export default function Home() {
                                                                 <h5 className="text-white text-[5px] sm:text-[7px] font-black leading-[1.1] mb-0.5 w-full truncate">LAP (Property)</h5>
                                                                 <p className="text-emerald-100 text-[4px] font-medium leading-tight px-0.5 mb-0.5 w-full line-clamp-2">Unlock property value</p>
                                                             </div>
-                                                            <a href="https://wa.me/919494273763" target="_blank" rel="noopener noreferrer" className="w-full bg-white text-emerald-900 text-[5px] font-black py-0.5 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10 shrink-0">Apply <i className="fa-solid fa-arrow-right text-[4px]"></i></a>
+                                                            <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Loan')} className="w-full bg-white text-emerald-900 text-[5px] font-black py-0.5 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10 shrink-0">Apply <i className="fa-solid fa-arrow-right text-[4px]"></i></a>
                                                         </div>
 
                                                         {/* Business Loan */}
@@ -304,7 +348,7 @@ export default function Home() {
                                                                 <h5 className="text-white text-[5px] sm:text-[7px] font-black leading-tight mb-0.5 w-full truncate">Business Loan</h5>
                                                                 <p className="text-orange-100 text-[4px] font-medium leading-tight px-0.5 mb-0.5 w-full line-clamp-2">Grow your Business</p>
                                                             </div>
-                                                            <a href="https://wa.me/919494273763" target="_blank" rel="noopener noreferrer" className="w-full bg-white text-orange-900 text-[5px] font-black py-0.5 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10 shrink-0">Apply <i className="fa-solid fa-arrow-right text-[4px]"></i></a>
+                                                            <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Loan')} className="w-full bg-white text-orange-900 text-[5px] font-black py-0.5 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10 shrink-0">Apply <i className="fa-solid fa-arrow-right text-[4px]"></i></a>
                                                         </div>
 
                                                         {/* Personal Loan */}
@@ -314,7 +358,7 @@ export default function Home() {
                                                                 <h5 className="text-white text-[5px] sm:text-[7px] font-black leading-tight mb-0.5 w-full truncate">Personal Loan</h5>
                                                                 <p className="text-pink-100 text-[4px] font-medium leading-tight px-0.5 mb-0.5 w-full line-clamp-2">Fulfill personal needs</p>
                                                             </div>
-                                                            <a href="https://wa.me/919494273763" target="_blank" rel="noopener noreferrer" className="w-full bg-white text-pink-900 text-[5px] font-black py-0.5 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10 shrink-0">Apply <i className="fa-solid fa-arrow-right text-[4px]"></i></a>
+                                                            <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Loan')} className="w-full bg-white text-pink-900 text-[5px] font-black py-0.5 rounded flex items-center justify-center gap-0.5 hover:bg-gray-100 uppercase relative z-10 shrink-0">Apply <i className="fa-solid fa-arrow-right text-[4px]"></i></a>
                                                         </div>
                                                     </div>
 
@@ -399,24 +443,24 @@ export default function Home() {
                                                         </div>
                                                         <span className="text-white text-[8px] font-medium leading-tight">Fixed Deposit<br />(FD)</span>
                                                     </a>
-                                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'NPS')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-cyan-400 shadow-inner">
                                                             <i className="fa-solid fa-landmark text-lg"></i>
                                                         </div>
                                                         <span className="text-white text-[8px] font-medium leading-tight">NPS<br />&nbsp;</span>
-                                                    </Link>
-                                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                    </a>
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'NFO')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-indigo-400 shadow-inner">
                                                             <i className="fa-solid fa-chart-pie text-lg"></i>
                                                         </div>
                                                         <span className="text-white text-[8px] font-medium leading-tight">NFO<br />&nbsp;</span>
-                                                    </Link>
-                                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                    </a>
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Bonds')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-fuchsia-400 shadow-inner">
                                                             <i className="fa-solid fa-file-contract text-lg"></i>
                                                         </div>
                                                         <span className="text-white text-[8px] font-medium leading-tight">Bonds<br />&nbsp;</span>
-                                                    </Link>
+                                                    </a>
                                                 </div>
                                             </div>
 
@@ -448,30 +492,30 @@ export default function Home() {
                                             <div className="mb-3">
                                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Loans</h3>
                                                 <div className="grid grid-cols-4 gap-2">
-                                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Personal Loan')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-sky-400 shadow-inner">
                                                             <i className="fa-solid fa-user-tag text-lg"></i>
                                                         </div>
                                                         <span className="text-white text-[8px] font-medium leading-tight">Personal<br />Loan</span>
-                                                    </Link>
-                                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                    </a>
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Business Loan')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-lime-400 shadow-inner">
                                                             <i className="fa-solid fa-briefcase text-lg"></i>
                                                         </div>
                                                         <span className="text-white text-[8px] font-medium leading-tight">Business<br />Loan</span>
-                                                    </Link>
-                                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                    </a>
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Home Loan')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-pink-400 shadow-inner">
                                                             <i className="fa-solid fa-house-chimney text-lg"></i>
                                                         </div>
                                                         <span className="text-white text-[8px] font-medium leading-tight">Home<br />Loan</span>
-                                                    </Link>
-                                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                    </a>
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'LAP (Property)')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-yellow-400 shadow-inner">
                                                             <i className="fa-solid fa-building-columns text-lg"></i>
                                                         </div>
                                                         <span className="text-white text-[8px] font-medium leading-tight">LAP<br />(Property)</span>
-                                                    </Link>
+                                                    </a>
                                                 </div>
                                             </div>
 
@@ -479,30 +523,30 @@ export default function Home() {
                                             <div>
                                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Insurance</h3>
                                                 <div className="grid grid-cols-4 gap-2">
-                                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Health Insurance')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-red-400 shadow-inner">
                                                             <i className="fa-solid fa-heart-pulse text-lg"></i>
                                                         </div>
                                                         <span className="text-white text-[8px] font-medium leading-tight">Health<br />Insurance</span>
-                                                    </Link>
-                                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                    </a>
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Life Insurance')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-teal-400 shadow-inner">
                                                             <i className="fa-solid fa-umbrella text-lg"></i>
                                                         </div>
                                                         <span className="text-white text-[8px] font-medium leading-tight">Life<br />Insurance</span>
-                                                    </Link>
-                                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                    </a>
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Motor Insurance')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-purple-400 shadow-inner">
                                                             <i className="fa-solid fa-car-burst text-lg"></i>
                                                         </div>
                                                         <span className="text-white text-[8px] font-medium leading-tight">Motor<br />Insurance</span>
-                                                    </Link>
-                                                    <Link href="/finance" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                    </a>
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Travel Insurance')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-blue-400 shadow-inner">
                                                             <i className="fa-solid fa-plane-departure text-lg"></i>
                                                         </div>
                                                         <span className="text-white text-[8px] font-medium leading-tight">Travel<br />Insurance</span>
-                                                    </Link>
+                                                    </a>
                                                 </div>
                                             </div>
 
@@ -996,7 +1040,74 @@ export default function Home() {
 
 
 
-            </main>
+            
+            {/* Lead Form Modal */}
+            {isLeadFormOpen && (
+                <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+                        <button 
+                            onClick={() => setIsLeadFormOpen(false)}
+                            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                        >
+                            <i className="fa-solid fa-xmark"></i>
+                        </button>
+                        
+                        <div className="text-center mb-6">
+                            <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-3 border border-blue-500/30">
+                                <i className="fa-solid fa-headset text-xl"></i>
+                            </div>
+                            <h3 className="text-white font-black text-xl mb-1">Apply for {leadServiceType}</h3>
+                            <p className="text-white/60 text-xs">Fill in your details and we will connect you to our expert on WhatsApp.</p>
+                        </div>
+                        
+                        <form onSubmit={handleLeadSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-white/70 text-xs font-bold mb-1.5 ml-1">Full Name</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i className="fa-regular fa-user text-white/40"></i>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        value={leadName}
+                                        onChange={(e) => setLeadName(e.target.value)}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm"
+                                        placeholder="Enter your name"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-white/70 text-xs font-bold mb-1.5 ml-1">Mobile Number</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i className="fa-solid fa-mobile-screen text-white/40"></i>
+                                    </div>
+                                    <input 
+                                        type="tel" 
+                                        value={leadMobile}
+                                        onChange={(e) => setLeadMobile(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm"
+                                        placeholder="Enter 10-digit number"
+                                        pattern="[0-9]{10}"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            
+                            <button 
+                                type="submit"
+                                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all active:scale-95"
+                            >
+                                Continue on WhatsApp <i className="fa-brands fa-whatsapp text-lg"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+        </main>
         </>
     );
 }
