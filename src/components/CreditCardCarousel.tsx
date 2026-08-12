@@ -74,7 +74,7 @@ export default function CreditCardCarousel() {
     }, []);
 
     return (
-        <div className="mb-4 bg-white rounded-lg shadow-sm border border-purple-100 overflow-hidden relative w-full flex-shrink-0">
+        <div className="mb-4 bg-white rounded-lg shadow-sm border border-purple-100 overflow-hidden relative w-full min-w-0 max-w-full">
             <div className="p-1.5 sm:p-2 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white">
                 <div className="flex items-center gap-1.5">
                     <div className="w-5 h-5 sm:w-6 sm:h-6 rounded bg-purple-600 flex items-center justify-center text-white shadow-sm">

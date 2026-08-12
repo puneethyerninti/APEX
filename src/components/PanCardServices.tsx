@@ -39,7 +39,7 @@ export default function PanCardServices() {
     };
 
     return (
-        <div className="mt-4 mb-2">
+        <div className="mt-4 mb-2 w-full min-w-0 max-w-full">
             <div className="border border-dashed border-yellow-500/50 rounded-xl p-3 relative bg-gray-900/30">
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5">
