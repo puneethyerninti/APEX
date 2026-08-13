@@ -48,7 +48,10 @@ export default function Header() {
       socket.emit('join_user', user._id);
 
       const handleNewNotification = (notification: any) => {
-        setNotifications(prev => [notification, ...prev]);
+        setNotifications(prev => {
+          if (prev.some(n => n._id === notification._id)) return prev;
+          return [notification, ...prev];
+        });
         showToast(notification.title || 'New Notification');
       };
 
