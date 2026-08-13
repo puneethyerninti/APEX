@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 
 export default function PanCardServices() {
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [serviceType, setServiceType] = useState('New PAN');
+    const [serviceType, setServiceType] = useState('Apply PAN');
     const [name, setName] = useState('');
     const [mobile, setMobile] = useState('');
 
@@ -62,13 +62,13 @@ export default function PanCardServices() {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2">
-                    {/* New PAN */}
-                    <div onClick={() => handleOpenForm('New PAN')} className="flex items-center gap-2 p-2 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
+                    {/* Apply PAN */}
+                    <div onClick={() => handleOpenForm('Apply PAN')} className="flex items-center gap-2 p-2 rounded-lg border border-white/5 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
                         <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
                             <i className="fa-solid fa-id-card text-sm"></i>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <h4 className="text-white text-[9px] font-bold truncate">New PAN</h4>
+                            <h4 className="text-white text-[9px] font-bold truncate">Apply PAN</h4>
                             <p className="text-white/50 text-[6px] truncate">Apply for a new PAN card</p>
                         </div>
                     </div>
