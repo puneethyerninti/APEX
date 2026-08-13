@@ -119,56 +119,6 @@ export const updateUserProfile = async (req: Request, res: Response) => {
   }
 };
 
-// Cashfree Identity Verification (Hybrid Mock)
-export const verifyPan = async (req: Request, res: Response) => {
-  const { pan_number, name } = req.body;
-
-  if (!pan_number) {
-    return res.status(400).json({ error: "PAN number is required" });
-  }
-
-  // MOCK BYPASS
-  if (!process.env.CASHFREE_CLIENT_ID) {
-    return res.json({
-      success: true,
-      mockMode: true,
-      message: "PAN successfully verified (Mock Mode)",
-      data: {
-        pan: pan_number,
-        name_provided: name,
-        registered_name: "Mocked User Identity",
-        valid: true
-      }
-    });
-  }
-
-  // REAL CASHFREE VERIFICATION
-  try {
-    const environment = process.env.CASHFREE_ENVIRONMENT === 'PRODUCTION' 
-      ? 'https://api.cashfree.com/verification' 
-      : 'https://sandbox.cashfree.com/verification';
-
-    const response = await axios.post(`${environment}/pan`, {
-      pan: pan_number,
-      name: name || ""
-    }, {
-      headers: {
-        'x-client-id': process.env.CASHFREE_CLIENT_ID,
-        'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (response.data.valid === true) {
-      res.json({ success: true, mockMode: false, data: response.data });
-    } else {
-      res.status(400).json({ success: false, error: "Invalid PAN", data: response.data });
-    }
-  } catch (error: any) {
-    console.error("Cashfree API Error:", error?.response?.data || error);
-    res.status(500).json({ error: "Failed to verify identity with provider" });
-  }
-};
 
 // Resend Email Notification (Hybrid Mock)
 export const sendEmailNotification = async (req: Request, res: Response) => {
@@ -179,7 +129,7 @@ export const sendEmailNotification = async (req: Request, res: Response) => {
   }
 
   // MOCK BYPASS
-  if (!process.env.RESEND_API_KEY) {
+  if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'mock_key') {
     console.log("=== MOCK EMAIL DISPATCHED ===");
     console.log(`To: ${to}`);
     console.log(`Subject: ${subject}`);

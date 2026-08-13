@@ -3,11 +3,28 @@ import { createNotification } from './notificationController';
 import User from '../models/User';
 
 
-export const getMarketData = async (req: Request, res: Response) => {
-  // In a fully live production system with an ARN, this would call BSE StAR MF API or Finbox API
-  // For now, this returns a highly realistic mock payload so the UI can be built
+import MutualFund from '../models/MutualFund';
 
-  const mockMutualFunds = [
+export const getMarketData = async (req: Request, res: Response) => {
+  try {
+    const mutualFunds = await MutualFund.find({}).lean();
+    
+    res.json({
+      success: true,
+      message: "Market data fetched successfully",
+      timestamp: new Date().toISOString(),
+      data: {
+        mutualFunds
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching market data:', error);
+    res.status(500).json({ error: 'Server error fetching market data' });
+  }
+};
+
+export const seedMutualFunds = async (req: Request, res: Response) => {
+  const initialFunds = [
     {
       id: "MF_001",
       name: "HDFC Small Cap Fund",
@@ -54,14 +71,19 @@ export const getMarketData = async (req: Request, res: Response) => {
     }
   ];
 
-  res.json({
-    success: true,
-    message: "Market data fetched successfully",
-    timestamp: new Date().toISOString(),
-    data: {
-      mutualFunds: mockMutualFunds
+  try {
+    // Prevent double seeding
+    const count = await MutualFund.countDocuments();
+    if (count > 0) {
+      return res.status(400).json({ message: 'Mutual funds already seeded', count });
     }
-  });
+
+    await MutualFund.insertMany(initialFunds);
+    res.json({ success: true, message: 'Seeded successfully' });
+  } catch (error) {
+    console.error('Seed error:', error);
+    res.status(500).json({ error: 'Failed to seed mutual funds' });
+  }
 };
 
 export const logInvestIntent = async (req: Request, res: Response) => {
