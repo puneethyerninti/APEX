@@ -4,28 +4,26 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendPushNotification = exports.initFirebaseAdmin = void 0;
-const admin = require('firebase-admin');
+const app_1 = require("firebase-admin/app");
+const messaging_1 = require("firebase-admin/messaging");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const serviceAccountPath = path_1.default.resolve(__dirname, '../../firebase-service-account.json');
 const initFirebaseAdmin = () => {
     try {
-        // @ts-ignore
-        if (admin.apps.length > 0)
+        if ((0, app_1.getApps)().length > 0)
             return;
         if (fs_1.default.existsSync(serviceAccountPath)) {
             const serviceAccount = require(serviceAccountPath);
-            admin.initializeApp({
-                // @ts-ignore
-                credential: admin.credential.cert(serviceAccount)
+            (0, app_1.initializeApp)({
+                credential: (0, app_1.cert)(serviceAccount)
             });
             console.log('🔥 Firebase Admin initialized successfully from JSON file');
         }
         else if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
             const serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('ascii'));
-            admin.initializeApp({
-                // @ts-ignore
-                credential: admin.credential.cert(serviceAccount)
+            (0, app_1.initializeApp)({
+                credential: (0, app_1.cert)(serviceAccount)
             });
             console.log('🔥 Firebase Admin initialized successfully from Base64 env variable');
         }
@@ -39,8 +37,7 @@ const initFirebaseAdmin = () => {
 };
 exports.initFirebaseAdmin = initFirebaseAdmin;
 const sendPushNotification = async (tokens, title, body, data) => {
-    // @ts-ignore
-    if (admin.apps.length === 0) {
+    if ((0, app_1.getApps)().length === 0) {
         console.warn('⚠️ Push notification skipped: Firebase Admin not initialized.');
         return;
     }
@@ -58,8 +55,7 @@ const sendPushNotification = async (tokens, title, body, data) => {
             },
             tokens: tokens
         };
-        // @ts-ignore
-        const response = await admin.messaging().sendMulticast(message);
+        const response = await (0, messaging_1.getMessaging)().sendEachForMulticast(message);
         console.log(`📡 Push notification sent. Success: ${response.successCount}, Failed: ${response.failureCount}`);
     }
     catch (error) {
