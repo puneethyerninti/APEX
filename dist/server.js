@@ -20,6 +20,8 @@ const realtyRoutes_1 = __importDefault(require("./routes/realtyRoutes"));
 const travelsRoutes_1 = __importDefault(require("./routes/travelsRoutes"));
 const notificationRoutes_1 = __importDefault(require("./routes/notificationRoutes"));
 const leadRoutes_1 = __importDefault(require("./routes/leadRoutes"));
+const academyRoutes_1 = __importDefault(require("./routes/academyRoutes"));
+const utilityRoutes_1 = __importDefault(require("./routes/utilityRoutes"));
 const Message_1 = __importDefault(require("./models/Message"));
 const User_1 = __importDefault(require("./models/User"));
 const TravelBooking_1 = __importDefault(require("./models/TravelBooking"));
@@ -197,6 +199,8 @@ app.use('/api/realty', realtyRoutes_1.default);
 app.use('/api/travels', travelsRoutes_1.default);
 app.use('/api/notifications', notificationRoutes_1.default);
 app.use('/api/leads', leadRoutes_1.default);
+app.use('/api/academy', academyRoutes_1.default);
+app.use('/api/utility', utilityRoutes_1.default);
 // Routes Placeholder
 app.get('/', (req, res) => {
     res.send('APEX Backend is running');

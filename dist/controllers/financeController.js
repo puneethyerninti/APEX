@@ -172,6 +172,7 @@ const recordMockTransaction = async (req, res) => {
             status: 'pending',
             referenceId: `mock_${Date.now()}`
         });
+        await (0, notificationController_1.createNotification)(userId, 'Payment Recorded', `Your payment of ₹${amount} for ${serviceName || category || 'service'} has been recorded.`, 'success');
         res.json({ success: true, message: 'Pending transaction recorded for verification' });
     }
     catch (error) {

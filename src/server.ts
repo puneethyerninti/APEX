@@ -15,6 +15,8 @@ import realtyRoutes from './routes/realtyRoutes';
 import travelsRoutes from './routes/travelsRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import leadRoutes from './routes/leadRoutes';
+import academyRoutes from './routes/academyRoutes';
+import utilityRoutes from './routes/utilityRoutes';
 
 import Message from './models/Message';
 import User from './models/User';
@@ -228,6 +230,8 @@ app.use('/api/realty', realtyRoutes);
 app.use('/api/travels', travelsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/leads', leadRoutes);
+app.use('/api/academy', academyRoutes);
+app.use('/api/utility', utilityRoutes);
 
 // Routes Placeholder
 app.get('/', (req, res) => {

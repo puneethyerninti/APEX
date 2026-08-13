@@ -1,6 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMarketData = void 0;
+exports.logInvestIntent = exports.getMarketData = void 0;
+const notificationController_1 = require("./notificationController");
+const User_1 = __importDefault(require("../models/User"));
 const getMarketData = async (req, res) => {
     // In a fully live production system with an ARN, this would call BSE StAR MF API or Finbox API
     // For now, this returns a highly realistic mock payload so the UI can be built
@@ -60,3 +65,22 @@ const getMarketData = async (req, res) => {
     });
 };
 exports.getMarketData = getMarketData;
+const logInvestIntent = async (req, res) => {
+    const { userId, amcName } = req.body;
+    if (!userId || !amcName) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+    try {
+        const user = await User_1.default.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        await (0, notificationController_1.createNotification)(userId, 'Redirecting to Partner', `You are being securely redirected to ${amcName} to complete your investment.`, 'info');
+        res.json({ success: true, message: 'Intent logged' });
+    }
+    catch (error) {
+        console.error('Error logging invest intent:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+exports.logInvestIntent = logInvestIntent;
