@@ -33,7 +33,8 @@ const createJob = async (req, res) => {
         if (io) {
             io.to('admin_room').emit('admin_data_refresh');
         }
-        res.status(201).json(newJob);
+        const savedJob = await newJob.save();
+        res.status(201).json(savedJob);
     }
     catch (error) {
         res.status(500).json({ error: 'Server error' });

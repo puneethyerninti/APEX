@@ -47,7 +47,7 @@ export const deductMoney = async (req: Request, res: Response) => {
     });
 
     await createNotification(
-      user._id,
+      user._id.toString(),
       'Payment Successful',
       `₹${amount} has been deducted from your wallet for ${category || 'payment'}.`,
       'success'
@@ -78,7 +78,7 @@ export const addMoney = async (req: Request, res: Response) => {
     });
 
     await createNotification(
-      user._id,
+      user._id.toString(),
       'Wallet Recharged',
       `₹${amount} has been added to your wallet.`,
       'success'

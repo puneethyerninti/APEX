@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.submitInquiry = void 0;
 const RealEstate_1 = __importDefault(require("../models/RealEstate"));
+const notificationController_1 = require("./notificationController");
 const submitInquiry = async (req, res) => {
     try {
         const { propertyTitle, userId } = req.body;
@@ -22,6 +23,9 @@ const submitInquiry = async (req, res) => {
         const io = req.app.get('io');
         if (io) {
             io.to('admin_room').emit('admin_data_refresh');
+        }
+        if (userId) {
+            await (0, notificationController_1.createNotification)(userId, 'Inquiry Submitted', `Your inquiry regarding ${propertyTitle} has been received.`, 'info');
         }
         res.status(201).json({ success: true, message: 'Inquiry submitted', data: newPropertyLead });
     }

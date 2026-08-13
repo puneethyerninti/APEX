@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllBookingsAdmin = exports.getUserBookings = exports.createBooking = void 0;
 const TravelBooking_1 = __importDefault(require("../models/TravelBooking"));
 const User_1 = __importDefault(require("../models/User"));
+const notificationController_1 = require("./notificationController");
 // Create a new travel booking
 const createBooking = async (req, res) => {
     const { userId, type, vehicleType, origin, destination, amount } = req.body;
@@ -34,6 +35,7 @@ const createBooking = async (req, res) => {
             amount,
             status: initialStatus
         });
+        await (0, notificationController_1.createNotification)(userId, 'Travel Booked', `Your ${type} booking from ${origin} to ${destination} was successful!`, 'success');
         res.json({ success: true, booking, message: 'Booking successful' });
     }
     catch (error) {

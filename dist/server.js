@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
-const socket_io_1 = require("socket.io");
+const socketManager_1 = require("./utils/socketManager");
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const db_1 = require("./config/db");
@@ -35,12 +35,7 @@ const server = http_1.default.createServer(app);
 app.use((0, cors_1.default)());
 app.use(express_1.default.json({ limit: '10mb' }));
 // Socket.io setup
-const io = new socket_io_1.Server(server, {
-    cors: {
-        origin: '*',
-        methods: ['GET', 'POST'],
-    },
-});
+const io = (0, socketManager_1.initSocket)(server);
 app.set('io', io); // Bind io to express app
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);

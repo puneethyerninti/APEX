@@ -7,6 +7,7 @@ exports.createNotification = exports.markAllAsRead = exports.markAsRead = export
 const resend_1 = require("resend");
 const User_1 = __importDefault(require("../models/User"));
 const Notification_1 = __importDefault(require("../models/Notification"));
+const socketManager_1 = require("../utils/socketManager");
 // Initialize Resend
 // Note: Fallback if API key is not provided yet
 const resend = process.env.RESEND_API_KEY ? new resend_1.Resend(process.env.RESEND_API_KEY) : null;
@@ -91,6 +92,15 @@ const createNotification = async (userId, title, message, type = 'info') => {
         const user = await User_1.default.findById(userId);
         if (user && user.fcmTokens && user.fcmTokens.length > 0) {
             await (0, firebaseAdmin_1.sendPushNotification)(user.fcmTokens, title, message, { notificationId: notification._id.toString() });
+        }
+        try {
+            const io = (0, socketManager_1.getIO)();
+            if (io) {
+                io.to(`user_${userId}`).emit('new_notification', notification);
+            }
+        }
+        catch (ioErr) {
+            console.error('Socket not initialized, could not emit live notification');
         }
         return notification;
     }

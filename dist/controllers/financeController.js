@@ -8,6 +8,7 @@ const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const razorpay_1 = __importDefault(require("razorpay"));
 const crypto_1 = __importDefault(require("crypto"));
+const notificationController_1 = require("./notificationController");
 const razorpay = new razorpay_1.default({
     key_id: process.env.RAZORPAY_KEY_ID || 'mock_key',
     key_secret: process.env.RAZORPAY_KEY_SECRET || 'mock_secret',
@@ -44,6 +45,7 @@ const deductMoney = async (req, res) => {
             category: category || 'payment',
             status: 'completed',
         });
+        await (0, notificationController_1.createNotification)(user._id.toString(), 'Payment Successful', `₹${amount} has been deducted from your wallet for ${category || 'payment'}.`, 'success');
         res.json({ message: 'Payment successful', balance: user.walletBalance, transaction });
     }
     catch (error) {
@@ -66,6 +68,7 @@ const addMoney = async (req, res) => {
             category: 'add_money',
             status: 'completed',
         });
+        await (0, notificationController_1.createNotification)(user._id.toString(), 'Wallet Recharged', `₹${amount} has been added to your wallet.`, 'success');
         res.json({ message: 'Money added successfully', balance: user.walletBalance, transaction });
     }
     catch (error) {
@@ -132,6 +135,7 @@ const verifyRazorpayPayment = async (req, res) => {
                 await User_1.default.findByIdAndUpdate(transaction.user, {
                     $inc: { walletBalance: transaction.amount }
                 });
+                await (0, notificationController_1.createNotification)(transaction.user.toString(), 'Wallet Recharged', `₹${transaction.amount} has been added to your wallet via Razorpay.`, 'success');
                 return res.json({ success: true, message: "Payment verified successfully" });
             }
             else {

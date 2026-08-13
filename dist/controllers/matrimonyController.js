@@ -9,6 +9,7 @@ const MatrimonyProfile_1 = __importDefault(require("../models/MatrimonyProfile")
 const Message_1 = __importDefault(require("../models/Message"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const User_1 = __importDefault(require("../models/User"));
+const notificationController_1 = require("./notificationController");
 const getMyProfile = async (req, res) => {
     try {
         const { userId } = req.query;
@@ -59,6 +60,9 @@ const createProfile = async (req, res) => {
         const io = req.app.get('io');
         if (io) {
             io.to('admin_room').emit('admin_data_refresh');
+        }
+        if (userId) {
+            await (0, notificationController_1.createNotification)(userId, 'Profile Created', 'Your matrimony profile has been submitted and is pending review.', 'info');
         }
         res.status(201).json(newProfile);
     }

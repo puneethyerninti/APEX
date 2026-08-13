@@ -13,7 +13,9 @@ const StoreOrder_1 = __importDefault(require("../models/StoreOrder"));
 const CharityDonation_1 = __importDefault(require("../models/CharityDonation"));
 const TravelBooking_1 = __importDefault(require("../models/TravelBooking"));
 const Lead_1 = __importDefault(require("../models/Lead"));
+const Notification_1 = __importDefault(require("../models/Notification"));
 const notificationController_1 = require("./notificationController");
+const firebaseAdmin_1 = require("../firebaseAdmin");
 const getDashboardStats = async (req, res) => {
     try {
         const totalUsers = await User_1.default.countDocuments();
@@ -246,21 +248,42 @@ const broadcastMessage = async (req, res) => {
         return res.status(400).json({ error: 'Title and message are required' });
     }
     try {
+        // 1. Fetch all users to create DB notifications and get FCM tokens
+        const users = await User_1.default.find({}, '_id fcmTokens');
+        // 2. Prepare notifications for DB
+        const notificationsToInsert = users.map(user => ({
+            user: user._id,
+            title,
+            message,
+            type: type || 'info',
+            isRead: false
+        }));
+        if (notificationsToInsert.length > 0) {
+            await Notification_1.default.insertMany(notificationsToInsert);
+        }
+        // 3. Emit real-time event to active connected clients
         const io = req.app.get('io');
         if (io) {
-            // Emit to a global channel, or let frontend listen to 'global_notification'
             io.emit('global_notification', {
-                _id: new Date().getTime().toString(),
+                _id: new Date().getTime().toString(), // Client sees this until refresh
                 title,
                 message,
                 type: type || 'info',
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                isRead: false
             });
-            res.json({ success: true, message: 'Broadcast sent to all active users' });
         }
-        else {
-            res.status(500).json({ error: 'Socket IO not initialized' });
+        // 4. Send Push Notifications in background
+        const allTokens = users.reduce((acc, user) => {
+            if (user.fcmTokens && user.fcmTokens.length > 0) {
+                return acc.concat(user.fcmTokens);
+            }
+            return acc;
+        }, []);
+        if (allTokens.length > 0) {
+            (0, firebaseAdmin_1.sendPushNotification)(allTokens, title, message).catch(err => console.error('Broadcast push failed:', err));
         }
+        res.json({ success: true, message: 'Broadcast sent to all active users and saved to database' });
     }
     catch (error) {
         console.error('Error broadcasting message:', error);
