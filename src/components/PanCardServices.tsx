@@ -98,7 +98,7 @@ export default function PanCardServices() {
 
             {/* Modal Form */}
             {isFormOpen && (
-                <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative animate-in fade-in zoom-in duration-200">
                         <button 
                             onClick={() => setIsFormOpen(false)}
@@ -154,9 +154,9 @@ export default function PanCardServices() {
 
                             <button 
                                 type="submit"
-                                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 mt-2"
+                                className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 mt-2"
                             >
-                                Continue <i className="fa-solid fa-arrow-right"></i>
+                                <i className="fa-brands fa-whatsapp text-lg"></i> Continue on WhatsApp
                             </button>
                         </form>
                     </div>

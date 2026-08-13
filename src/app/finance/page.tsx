@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import Link from 'next/link';
+import NotificationBell from '@/components/NotificationBell';
 
 export default function FinancePage() {
   return (
@@ -13,9 +14,7 @@ export default function FinancePage() {
               </Link>
               <h1 className="font-black text-lg text-gray-900">Financial Services</h1>
           </div>
-          <button className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-              <i className="fa-solid fa-bell"></i>
-          </button>
+          <NotificationBell className="w-8 h-8 rounded-full bg-blue-50 text-blue-600" />
       </div>
 
       {/* HERO DASHBOARD */}

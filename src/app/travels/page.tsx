@@ -6,6 +6,7 @@ import { SocketContext } from '@/context/SocketContext';
 import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/services/api';
 import MapboxSearch from '@/components/MapboxSearch';
+import NotificationBell from '@/components/NotificationBell';
 
 // Dynamically import the map
 const TravelsMap = dynamic(() => import('@/components/TravelsMap'), { ssr: false });
@@ -203,9 +204,12 @@ export default function Page() {
             </Link>
             <h1 className="font-black text-lg text-gray-900">APEX Travels</h1>
         </div>
-        <button className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
-            <i className="fa-solid fa-clock-rotate-left"></i>
-        </button>
+        <div className="flex items-center gap-3">
+            <NotificationBell className="w-8 h-8 rounded-full bg-purple-50 text-purple-600" />
+            <button className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
+                <i className="fa-solid fa-clock-rotate-left"></i>
+            </button>
+        </div>
     </div>
 
     {/* TABS */}

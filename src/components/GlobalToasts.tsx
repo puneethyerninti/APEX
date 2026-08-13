@@ -42,7 +42,7 @@ export default function GlobalToasts() {
   useEffect(() => {
     if (socket && user) {
       // Connect to personal user room for targeted notifications
-      socket.emit('join_room', `user_${user.phone}`);
+      socket.emit('join_user', user._id);
 
       const handleWalletUpdate = (data: { amount: number, type: 'credit'|'debit', message: string, newBalance: number }) => {
         setWalletBalance(data.newBalance);
