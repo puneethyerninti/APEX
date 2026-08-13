@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { api } from '@/services/api';
+import { useAppStore } from '@/store/useAppStore';
 
 const jobSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -17,6 +18,7 @@ type JobFormValues = z.infer<typeof jobSchema>;
 export default function JobsPage() {
   const [fileName, setFileName] = useState('');
   const [isRegistered, setIsRegistered] = useState(false);
+  const user = useAppStore((state) => state.user);
 
   const {
     register,
@@ -42,6 +44,9 @@ export default function JobsPage() {
           formData.append('fullName', data.fullName);
           formData.append('email', data.email);
           formData.append('jobRole', data.jobRole);
+          if (user && user._id) {
+              formData.append('userId', user._id);
+          }
           if (selectedFile) {
               formData.append('resume', selectedFile);
           }

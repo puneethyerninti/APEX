@@ -33,10 +33,10 @@ export default function Home() {
         }
         
         try {
-            await fetch('http://localhost:5000/api/leads', {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/leads`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: leadName, mobile: leadMobile, serviceType: leadServiceType })
+                body: JSON.stringify({ name: leadName, mobile: leadMobile, serviceType: leadServiceType, userId: user?._id })
             });
         } catch (error) {
             console.error('Failed to post lead', error);
@@ -1043,35 +1043,35 @@ export default function Home() {
             
             {/* Lead Form Modal */}
             {isLeadFormOpen && (
-                <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+                <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-hidden">
+                    <div className="bg-white border border-gray-100 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative animate-in fade-in zoom-in duration-200">
                         <button 
                             onClick={() => setIsLeadFormOpen(false)}
-                            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900 transition-colors"
                         >
                             <i className="fa-solid fa-xmark"></i>
                         </button>
                         
                         <div className="text-center mb-6">
-                            <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-3 border border-blue-500/30">
+                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
                                 <i className="fa-solid fa-headset text-xl"></i>
                             </div>
-                            <h3 className="text-white font-black text-xl mb-1">Apply for {leadServiceType}</h3>
-                            <p className="text-white/60 text-xs">Fill in your details and we will connect you to our expert on WhatsApp.</p>
+                            <h3 className="text-gray-900 font-black text-xl mb-1">Apply for {leadServiceType}</h3>
+                            <p className="text-gray-500 text-xs">Fill in your details and we will connect you to our expert on WhatsApp.</p>
                         </div>
                         
                         <form onSubmit={handleLeadSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-white/70 text-xs font-bold mb-1.5 ml-1">Full Name</label>
+                                <label className="block text-gray-700 text-xs font-bold mb-1.5 ml-1">Full Name</label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i className="fa-regular fa-user text-white/40"></i>
+                                        <i className="fa-regular fa-user text-gray-400"></i>
                                     </div>
                                     <input 
                                         type="text" 
                                         value={leadName}
                                         onChange={(e) => setLeadName(e.target.value)}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm"
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
                                         placeholder="Enter your name"
                                         required
                                     />
@@ -1079,16 +1079,16 @@ export default function Home() {
                             </div>
                             
                             <div>
-                                <label className="block text-white/70 text-xs font-bold mb-1.5 ml-1">Mobile Number</label>
+                                <label className="block text-gray-700 text-xs font-bold mb-1.5 ml-1">Mobile Number</label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i className="fa-solid fa-mobile-screen text-white/40"></i>
+                                        <i className="fa-solid fa-mobile-screen text-gray-400"></i>
                                     </div>
                                     <input 
                                         type="tel" 
                                         value={leadMobile}
                                         onChange={(e) => setLeadMobile(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm"
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
                                         placeholder="Enter 10-digit number"
                                         pattern="[0-9]{10}"
                                         required
@@ -1098,9 +1098,9 @@ export default function Home() {
                             
                             <button 
                                 type="submit"
-                                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all active:scale-95"
+                                className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 mt-2"
                             >
-                                Continue on WhatsApp <i className="fa-brands fa-whatsapp text-lg"></i>
+                                <i className="fa-brands fa-whatsapp text-lg"></i> Continue on WhatsApp
                             </button>
                         </form>
                     </div>

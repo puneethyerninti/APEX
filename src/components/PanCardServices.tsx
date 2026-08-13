@@ -1,11 +1,13 @@
 "use client";
 import React, { useState } from 'react';
+import { useAppStore } from '@/store/useAppStore';
 
 export default function PanCardServices() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [serviceType, setServiceType] = useState('Apply PAN');
     const [name, setName] = useState('');
     const [mobile, setMobile] = useState('');
+    const user = useAppStore(state => state.user);
 
     const handleOpenForm = (type: string) => {
         setServiceType(type);
@@ -27,7 +29,7 @@ export default function PanCardServices() {
             await fetch('http://localhost:5000/api/leads', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, mobile, serviceType })
+                body: JSON.stringify({ name, mobile, serviceType, userId: user?._id })
             });
         } catch (error) {
             console.error('Failed to post lead', error);
@@ -98,46 +100,46 @@ export default function PanCardServices() {
 
             {/* Modal Form */}
             {isFormOpen && (
-                <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+                <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-hidden">
+                    <div className="bg-white border border-gray-100 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative animate-in fade-in zoom-in duration-200">
                         <button 
                             onClick={() => setIsFormOpen(false)}
-                            className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
+                            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900 transition-colors"
                         >
-                            <i className="fa-solid fa-xmark text-lg"></i>
+                            <i className="fa-solid fa-xmark"></i>
                         </button>
                         
-                        <div className="text-center mb-5">
-                            <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3 text-purple-400">
+                        <div className="text-center mb-6">
+                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
                                 <i className="fa-solid fa-id-card text-xl"></i>
                             </div>
-                            <h2 className="text-white text-lg font-bold">PAN Services</h2>
-                            <p className="text-white/50 text-xs mt-1">Please enter your details to proceed</p>
+                            <h2 className="text-gray-900 font-black text-xl mb-1">PAN Services</h2>
+                            <p className="text-gray-500 text-xs">Please enter your details to proceed</p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-white/70 text-xs font-medium mb-1">Full Name</label>
+                                <label className="block text-gray-700 text-xs font-bold mb-1.5 ml-1">Full Name</label>
                                 <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40">
-                                        <i className="fa-solid fa-user text-xs"></i>
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i className="fa-regular fa-user text-gray-400"></i>
                                     </div>
                                     <input 
                                         type="text" 
                                         required
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        className="w-full bg-black/50 border border-white/10 rounded-lg py-2.5 pl-9 pr-3 text-white text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-white/20"
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
                                         placeholder="Enter your name"
                                     />
                                 </div>
                             </div>
                             
                             <div>
-                                <label className="block text-white/70 text-xs font-medium mb-1">Mobile Number</label>
+                                <label className="block text-gray-700 text-xs font-bold mb-1.5 ml-1">Mobile Number</label>
                                 <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40">
-                                        <i className="fa-solid fa-phone text-xs"></i>
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i className="fa-solid fa-phone text-gray-400"></i>
                                     </div>
                                     <input 
                                         type="tel" 
@@ -145,8 +147,8 @@ export default function PanCardServices() {
                                         pattern="[0-9]{10}"
                                         maxLength={10}
                                         value={mobile}
-                                        onChange={(e) => setMobile(e.target.value)}
-                                        className="w-full bg-black/50 border border-white/10 rounded-lg py-2.5 pl-9 pr-3 text-white text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-white/20"
+                                        onChange={(e) => setMobile(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
                                         placeholder="10-digit mobile number"
                                     />
                                 </div>
