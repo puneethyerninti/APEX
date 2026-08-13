@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Job from '../models/Job';
+import { createNotification } from './notificationController';
 
 // Get all jobs
 export const getJobs = async (req: Request, res: Response) => {
@@ -41,7 +42,7 @@ export const createJob = async (req: Request, res: Response) => {
 // Apply for a job (Mock File Upload)
 export const applyJob = async (req: Request, res: Response) => {
   try {
-    const { fullName, email, jobRole } = req.body;
+    const { fullName, email, jobRole, userId } = req.body;
     
     // In a real app, you would process req.file (from multer)
     // and save it to S3/Cloudinary, then store the URL in the database
@@ -63,6 +64,15 @@ export const applyJob = async (req: Request, res: Response) => {
     const io = req.app.get('io');
     if (io) {
       io.to('admin_room').emit('admin_data_refresh');
+    }
+
+    if (userId) {
+      await createNotification(
+        userId,
+        'Application Submitted',
+        `Your application for ${jobRole} has been successfully submitted.`,
+        'success'
+      );
     }
 
     res.status(200).json({ 

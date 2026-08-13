@@ -5,9 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createLead = void 0;
 const Lead_1 = __importDefault(require("../models/Lead"));
+const notificationController_1 = require("./notificationController");
 const createLead = async (req, res) => {
     try {
-        const { name, mobile, serviceType } = req.body;
+        const { name, mobile, serviceType, userId } = req.body;
         if (!name || !mobile || !serviceType) {
             return res.status(400).json({ error: 'Name, mobile, and service type are required' });
         }
@@ -21,6 +22,9 @@ const createLead = async (req, res) => {
         const io = req.app.get('io');
         if (io) {
             io.to('admin_room').emit('admin_data_refresh');
+        }
+        if (userId) {
+            await (0, notificationController_1.createNotification)(userId, `${serviceType} Request Received`, `Your request for ${serviceType} has been received. Our expert will contact you shortly.`, 'success');
         }
         res.status(201).json({ success: true, lead: newLead });
     }

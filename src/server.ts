@@ -20,6 +20,7 @@ import Message from './models/Message';
 import User from './models/User';
 import TravelBooking from './models/TravelBooking';
 import { initFirebaseAdmin } from './firebaseAdmin';
+import { createNotification } from './controllers/notificationController';
 
 dotenv.config();
 
@@ -80,10 +81,19 @@ io.on('connection', (socket) => {
         const sender = await User.findById(data.senderId);
         const receiver = await User.findById(data.receiverId);
         
-        if (sender && receiver && receiver.phone) {
-          io.to(`user_${receiver.phone}`).emit('system_notice', {
+        if (sender && receiver) {
+          // System Notice for temporary socket toasts
+          io.to(`user_${receiver._id}`).emit('system_notice', {
             message: `New message from ${sender.name}: ${data.text.length > 20 ? data.text.substring(0, 20) + '...' : data.text}`
           });
+          
+          // Persistent Notification in DB
+          await createNotification(
+            receiver._id.toString(),
+            `Message from ${sender.name}`,
+            data.text.length > 30 ? data.text.substring(0, 30) + '...' : data.text,
+            'info'
+          );
         }
       } catch (err) {
         console.error('Error fetching users for notification', err);

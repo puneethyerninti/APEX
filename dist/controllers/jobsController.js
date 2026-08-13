@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.applyJob = exports.createJob = exports.getJobs = void 0;
 const Job_1 = __importDefault(require("../models/Job"));
+const notificationController_1 = require("./notificationController");
 // Get all jobs
 const getJobs = async (req, res) => {
     try {
@@ -44,7 +45,7 @@ exports.createJob = createJob;
 // Apply for a job (Mock File Upload)
 const applyJob = async (req, res) => {
     try {
-        const { fullName, email, jobRole } = req.body;
+        const { fullName, email, jobRole, userId } = req.body;
         // In a real app, you would process req.file (from multer)
         // and save it to S3/Cloudinary, then store the URL in the database
         const file = req.file;
@@ -63,6 +64,9 @@ const applyJob = async (req, res) => {
         const io = req.app.get('io');
         if (io) {
             io.to('admin_room').emit('admin_data_refresh');
+        }
+        if (userId) {
+            await (0, notificationController_1.createNotification)(userId, 'Application Submitted', `Your application for ${jobRole} has been successfully submitted.`, 'success');
         }
         res.status(200).json({
             message: 'Application submitted successfully',

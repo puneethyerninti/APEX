@@ -24,6 +24,7 @@ const Message_1 = __importDefault(require("./models/Message"));
 const User_1 = __importDefault(require("./models/User"));
 const TravelBooking_1 = __importDefault(require("./models/TravelBooking"));
 const firebaseAdmin_1 = require("./firebaseAdmin");
+const notificationController_1 = require("./controllers/notificationController");
 dotenv_1.default.config();
 // Connect to Database
 (0, db_1.connectDB)();
@@ -70,10 +71,13 @@ io.on('connection', (socket) => {
             try {
                 const sender = await User_1.default.findById(data.senderId);
                 const receiver = await User_1.default.findById(data.receiverId);
-                if (sender && receiver && receiver.phone) {
-                    io.to(`user_${receiver.phone}`).emit('system_notice', {
+                if (sender && receiver) {
+                    // System Notice for temporary socket toasts
+                    io.to(`user_${receiver._id}`).emit('system_notice', {
                         message: `New message from ${sender.name}: ${data.text.length > 20 ? data.text.substring(0, 20) + '...' : data.text}`
                     });
+                    // Persistent Notification in DB
+                    await (0, notificationController_1.createNotification)(receiver._id.toString(), `Message from ${sender.name}`, data.text.length > 30 ? data.text.substring(0, 30) + '...' : data.text, 'info');
                 }
             }
             catch (err) {

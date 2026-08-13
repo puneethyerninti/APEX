@@ -4,7 +4,7 @@ import { createNotification } from './notificationController';
 
 export const createLead = async (req: Request, res: Response) => {
   try {
-    const { name, mobile, serviceType } = req.body;
+    const { name, mobile, serviceType, userId } = req.body;
 
     if (!name || !mobile || !serviceType) {
       return res.status(400).json({ error: 'Name, mobile, and service type are required' });
@@ -22,6 +22,15 @@ export const createLead = async (req: Request, res: Response) => {
     const io = req.app.get('io');
     if (io) {
       io.to('admin_room').emit('admin_data_refresh');
+    }
+
+    if (userId) {
+      await createNotification(
+        userId,
+        `${serviceType} Request Received`,
+        `Your request for ${serviceType} has been received. Our expert will contact you shortly.`,
+        'success'
+      );
     }
 
     res.status(201).json({ success: true, lead: newLead });

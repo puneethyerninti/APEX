@@ -164,6 +164,9 @@ const upgradeProfile = async (req, res) => {
         if (io) {
             io.to('admin_room').emit('admin_data_refresh');
         }
+        if (userId) {
+            await (0, notificationController_1.createNotification)(userId, 'Subscription Upgraded', `You have successfully upgraded to Matrimony ${plan} plan.`, 'success');
+        }
         res.json({ success: true, message: 'Subscription upgraded successfully!', profile });
     }
     catch (error) {
