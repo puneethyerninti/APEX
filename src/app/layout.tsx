@@ -35,6 +35,7 @@ export default function RootLayout({
           href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" 
           rel="stylesheet" 
         />
+        <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 md:bg-gray-100 text-gray-800">
         <div className="w-full max-w-[2000px] mx-auto bg-[#F4F6FB] min-h-screen relative shadow-[0_0_40px_rgba(0,0,0,0.05)] overflow-x-hidden md:border-x border-gray-200 pb-20 md:pb-0">

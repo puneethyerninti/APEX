@@ -78,41 +78,78 @@ export default function GlobalModals() {
 
     const handleCheckout = async () => {
         setCheckoutStep('processing');
-        
-        // Simulate a real-time payment gateway processing delay
-        setTimeout(async () => {
-            try {
-                if (user?.uid) {
-                    const amtStr = modalData?.amount || '0';
-                    const numericAmt = parseInt(amtStr.replace(/[^0-9]/g, ''), 10) || 0;
-                    
-                    if (modalData?.plan?.includes('Matrimony')) {
-                        // Call the upgrade API directly for matrimony plans
-                        const planName = modalData.plan.replace('Matrimony ', '').replace(' Plan', '');
-                        await api.post('/matrimony/upgrade', {
-                            userId: user.uid,
-                            plan: planName,
-                            amount: amtStr
-                        });
-                        
-                        window.dispatchEvent(new CustomEvent('paymentSuccess', { detail: { type: 'matrimony', plan: planName } }));
-                    } else {
-                        // Regular record transaction for admin tracking
-                        await api.post('/finance/razorpay/record-mock', {
-                            amount: numericAmt,
-                            userId: user.uid,
-                            category: 'subscription',
-                            serviceName: modalData?.plan || 'Service Payment'
-                        });
-                        window.dispatchEvent(new CustomEvent('paymentSuccess'));
+        try {
+            if (user?.uid) {
+                const amtStr = modalData?.amount || '0';
+                const numericAmt = parseInt(amtStr.replace(/[^0-9]/g, ''), 10) || 0;
+                
+                const orderRes = await api.post('/finance/razorpay/order', {
+                    amount: numericAmt,
+                    userId: user.uid,
+                    category: modalData?.plan?.includes('Matrimony') ? 'matrimony' : 'subscription',
+                    serviceName: modalData?.plan || 'Service Payment'
+                });
+                
+                const { order, keyId } = orderRes.data;
+                
+                const options = {
+                    key: keyId,
+                    amount: order.amount,
+                    currency: order.currency,
+                    name: "APEX App",
+                    description: modalData?.plan || 'Service Payment',
+                    order_id: order.id,
+                    handler: async function (response: any) {
+                        try {
+                            setCheckoutStep('processing');
+                            const verifyRes = await api.post('/finance/razorpay/verify', {
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                amount: numericAmt,
+                                userId: user.uid
+                            });
+                            
+                            if (verifyRes.data.success) {
+                                if (modalData?.plan?.includes('Matrimony')) {
+                                    const planName = modalData.plan.replace('Matrimony ', '').replace(' Plan', '');
+                                    await api.post('/matrimony/upgrade', {
+                                        userId: user.uid,
+                                        plan: planName,
+                                        amount: amtStr
+                                    });
+                                    window.dispatchEvent(new CustomEvent('paymentSuccess', { detail: { type: 'matrimony', plan: planName } }));
+                                } else {
+                                    window.dispatchEvent(new CustomEvent('paymentSuccess'));
+                                }
+                                setModal(null);
+                            }
+                        } catch (e) {
+                            console.error("Verification failed", e);
+                            setCheckoutStep('checkout');
+                        }
+                    },
+                    prefill: {
+                        name: user.name || "APEX User",
+                        contact: user.mobile || ""
+                    },
+                    theme: {
+                        color: "#2D1B69"
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            setCheckoutStep('checkout');
+                        }
                     }
-                }
-            } catch (e) {
-                console.error("Failed to process payment", e);
+                };
+                
+                const rzp = new (window as any).Razorpay(options);
+                rzp.open();
             }
-            
-            setModal(null);
-        }, 2000);
+        } catch (e) {
+            console.error("Failed to initialize payment", e);
+            setCheckoutStep('checkout');
+        }
     };
 
     const handleAddMoney = async () => {

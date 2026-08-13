@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import CreditCardCarousel from '@/components/CreditCardCarousel';
 import { useAppStore } from '@/store/useAppStore';
-
+import { api } from '@/services/api';
 export default function Home() {
     const user = useAppStore((state) => state.user);
 
@@ -31,10 +31,11 @@ export default function Home() {
         }
         
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/leads`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: leadName, mobile: leadMobile, serviceType: leadServiceType, userId: user?._id })
+            await api.post('/leads', {
+                name: leadName,
+                mobile: leadMobile,
+                serviceType: leadServiceType,
+                userId: user?.uid || user?._id
             });
         } catch (error) {
             console.error('Failed to post lead', error);
