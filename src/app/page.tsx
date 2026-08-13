@@ -568,6 +568,15 @@ export default function Home() {
                                                         <span className="text-white text-[8px] font-medium leading-tight">PAN<br />Correction</span>
                                                     </a>
                                                 </div>
+                                                {/* Dummy PAN Card Visual (Image) */}
+                                                <div className="mt-3 relative w-full aspect-[1.58] rounded-lg overflow-hidden border border-blue-300/50 shadow-inner bg-black">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img 
+                                                        src="/images/dummy-pan.jpg" 
+                                                        alt="Dummy PAN Card" 
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
                                             </div>
 
                                             {/* Payments (BBPS) Section */}

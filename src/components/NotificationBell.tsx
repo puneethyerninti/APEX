@@ -21,14 +21,16 @@ export default function NotificationBell({ className = "text-violet-100 hover:te
     const popupRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (user?._id) {
+        const userId = user?._id || user?.uid;
+        if (userId) {
             fetchNotifications();
         }
     }, [user]);
 
     useEffect(() => {
-        if (socket && user?._id) {
-            socket.emit('join_user', user._id);
+        const userId = user?._id || user?.uid;
+        if (socket && userId) {
+            socket.emit('join_user', userId);
 
             const handleNewNotification = (notification: any) => {
                 setNotifications(prev => {
@@ -69,9 +71,10 @@ export default function NotificationBell({ className = "text-violet-100 hover:te
     }, []);
 
     const fetchNotifications = async () => {
-        if (!user?._id) return;
+        const userId = user?._id || user?.uid;
+        if (!userId) return;
         try {
-            const res = await api.get(`/notifications/user/${user._id}`);
+            const res = await api.get(`/notifications/user/${userId}`);
             setNotifications(res.data.notifications || []);
         } catch (err) {
             console.error('Failed to fetch notifications', err);
@@ -88,9 +91,10 @@ export default function NotificationBell({ className = "text-violet-100 hover:te
     };
 
     const markAllAsRead = async () => {
-        if (!user?._id) return;
+        const userId = user?._id || user?.uid;
+        if (!userId) return;
         try {
-            await api.put(`/notifications/mark-all-read`, { userId: user._id });
+            await api.put(`/notifications/mark-all-read`, { userId });
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
         } catch (err) {
             console.error('Failed to mark all read', err);
