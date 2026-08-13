@@ -522,7 +522,7 @@ export default function Home() {
                                             </div>
 
                                             {/* Insurance Grid */}
-                                            <div>
+                                            <div className="mt-4">
                                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Insurance</h3>
                                                 <div className="grid grid-cols-4 gap-2">
                                                     <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Health Insurance')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
@@ -553,7 +553,7 @@ export default function Home() {
                                             </div>
 
                                             {/* PAN Services Grid */}
-                                            <div className="mb-3">
+                                            <div className="mt-4 mb-3">
                                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">PAN Services</h3>
                                                 <div className="grid grid-cols-4 gap-2">
                                                     <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Apply PAN')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
