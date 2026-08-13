@@ -569,7 +569,7 @@ export default function Home() {
                                                     </a>
                                                 </div>
                                                 {/* Dummy PAN Card Visual (Image) */}
-                                                <div className="mt-3 relative w-full aspect-[1.58] rounded-lg overflow-hidden border border-blue-300/50 shadow-inner bg-black">
+                                                <div className="mt-3 relative w-[70%] max-w-[200px] mx-auto aspect-[1.58] rounded-lg overflow-hidden border border-blue-300/50 shadow-inner bg-black">
                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                                     <img 
                                                         src="/images/dummy-pan.jpg" 
@@ -1083,7 +1083,11 @@ export default function Home() {
                             <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
                                 <i className="fa-solid fa-headset text-xl"></i>
                             </div>
-                            <h3 className="text-gray-900 font-black text-xl mb-1">Apply for {leadServiceType}</h3>
+                            <h3 className="text-gray-900 font-black text-xl mb-1">
+                                {leadServiceType === 'Apply PAN' ? 'Apply for PAN Card' : 
+                                 leadServiceType === 'PAN Correction' ? 'PAN Card Correction' : 
+                                 `Apply for ${leadServiceType}`}
+                            </h3>
                             <p className="text-gray-500 text-xs">Fill in your details and we will connect you to our expert on WhatsApp.</p>
                         </div>
                         
