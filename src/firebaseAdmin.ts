@@ -17,8 +17,11 @@ export const initFirebaseAdmin = () => {
       console.log('🔥 Firebase Admin initialized successfully from JSON file');
     } else if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
       const serviceAccount = JSON.parse(
-        Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('ascii')
+        Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8')
       );
+      if (serviceAccount.private_key) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+      }
       initializeApp({
         credential: cert(serviceAccount)
       });

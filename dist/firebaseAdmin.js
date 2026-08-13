@@ -21,7 +21,10 @@ const initFirebaseAdmin = () => {
             console.log('🔥 Firebase Admin initialized successfully from JSON file');
         }
         else if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
-            const serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('ascii'));
+            const serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8'));
+            if (serviceAccount.private_key) {
+                serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+            }
             (0, app_1.initializeApp)({
                 credential: (0, app_1.cert)(serviceAccount)
             });
