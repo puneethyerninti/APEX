@@ -31,32 +31,70 @@ function PaymentContent() {
         setLoading(true);
         
         try {
-            await api.post('/finance/razorpay/record-mock', {
+            if (scanResult && scanResult.toLowerCase().startsWith('upi://')) {
+                let upiUrl = new URL(scanResult);
+                upiUrl.searchParams.set('am', finalAmount.toString());
+                window.location.href = upiUrl.toString();
+                setLoading(false);
+                return;
+            } else if (scanResult && (scanResult.toLowerCase().startsWith('http://') || scanResult.toLowerCase().startsWith('https://'))) {
+                window.location.href = scanResult;
+                setLoading(false);
+                return;
+            }
+
+            const orderRes = await api.post('/finance/razorpay/order', {
                 amount: finalAmount,
                 userId: user.uid,
                 category: scanResult ? 'qr_payment' : 'wallet_recharge',
                 serviceName: scanResult ? 'Scan & Pay' : 'Wallet Top-up'
             });
             
-            if (scanResult) {
-                if (scanResult.toLowerCase().startsWith('upi://')) {
-                    // It's a UPI QR code! We need to inject the amount.
-                    let upiUrl = new URL(scanResult);
-                    upiUrl.searchParams.set('am', finalAmount.toString());
-                    // By setting href to a upi:// scheme, Android will automatically open UPI apps (PhonePe, GPay, etc.)
-                    window.location.href = upiUrl.toString();
-                } else if (scanResult.toLowerCase().startsWith('http://') || scanResult.toLowerCase().startsWith('https://')) {
-                    // It's a regular URL
-                    window.location.href = scanResult;
-                } else {
-                    // Fallback for unknown QR text types
-                    window.location.href = `https://razorpay.me/@apextradingcompany`;
-                }
-            } else {
-                // Not a QR scan, default online payment
-                window.location.href = `https://razorpay.me/@apextradingcompany`;
-            }
+            const { order, keyId } = orderRes.data;
             
+            const options = {
+                key: keyId,
+                amount: order.amount,
+                currency: order.currency,
+                name: "APEX App",
+                description: scanResult ? 'Scan & Pay' : 'Wallet Top-up',
+                order_id: order.id,
+                handler: async function (response: any) {
+                    try {
+                        const verifyRes = await api.post('/finance/razorpay/verify', {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            amount: finalAmount,
+                            userId: user.uid
+                        });
+                        
+                        if (verifyRes.data.success) {
+                            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Payment Successful', type: 'success' } }));
+                            setLoading(false);
+                        }
+                    } catch (e) {
+                        console.error("Verification failed", e);
+                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Verification failed', type: 'error' } }));
+                        setLoading(false);
+                    }
+                },
+                prefill: {
+                    name: user.name || "APEX User",
+                    contact: user.phone || ""
+                },
+                theme: {
+                    color: "#2D1B69"
+                },
+                modal: {
+                    ondismiss: function() {
+                        setLoading(false);
+                    }
+                }
+            };
+            
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
         } catch (error: any) {
             console.error("Payment error:", error);
             window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Failed to initiate payment', type: 'error' } }));

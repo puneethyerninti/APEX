@@ -303,10 +303,6 @@ export default function GlobalModals() {
                                     <i className="fa-solid fa-graduation-cap text-blue-500 text-xl"></i>
                                     <span className="text-[10px] font-bold text-gray-700">My Courses</span>
                                 </button>
-                                <button onClick={() => window.location.href = '/kyc'} className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
-                                    <i className="fa-solid fa-id-card text-green-500 text-xl"></i>
-                                    <span className="text-[10px] font-bold text-gray-700">KYC Verify</span>
-                                </button>
                                 {user?.role === 'admin' && (
                                     <button onClick={() => { setModal(null); window.location.href = '/admin-dashboard'; }} className="flex flex-col items-center justify-center gap-2 bg-violet-50 border border-violet-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
                                         <i className="fa-solid fa-shield-halved text-violet-600 text-xl"></i>

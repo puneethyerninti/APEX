@@ -19,21 +19,74 @@ export default function Page() {
 
   const handlePayment = async (e: React.FormEvent) => {
       e.preventDefault();
+      if (!user?.uid || !enrollCourse) {
+          window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please login to continue', type: 'warning' } }));
+          return;
+      }
       setIsSubmitting(true);
       
       try {
-          if (user?.uid && enrollCourse) {
-              await api.post('/academy/enroll', {
-                  userId: user.uid,
-                  courseName: enrollCourse.name,
-                  amount: enrollCourse.price
-              });
-          }
-          setIsSuccess(true);
+          const amountValue = parseInt(enrollCourse.price.replace(/[^0-9]/g, ''), 10) || 500;
+          const orderRes = await api.post('/finance/razorpay/order', {
+              amount: amountValue,
+              userId: user.uid,
+              category: 'academy_enrollment',
+              serviceName: `Academy - ${enrollCourse.name}`
+          });
+          
+          const { order, keyId } = orderRes.data;
+          
+          const options = {
+              key: keyId,
+              amount: order.amount,
+              currency: order.currency,
+              name: "APEX App",
+              description: `Enroll in ${enrollCourse.name}`,
+              order_id: order.id,
+              handler: async function (response: any) {
+                  try {
+                      const verifyRes = await api.post('/finance/razorpay/verify', {
+                          razorpay_order_id: response.razorpay_order_id,
+                          razorpay_payment_id: response.razorpay_payment_id,
+                          razorpay_signature: response.razorpay_signature,
+                          amount: amountValue,
+                          userId: user.uid
+                      });
+                      
+                      if (verifyRes.data.success) {
+                          // Call the academy enroll endpoint
+                          await api.post('/academy/enroll', {
+                              userId: user.uid,
+                              courseName: enrollCourse.name,
+                              amount: enrollCourse.price
+                          });
+                          setIsSuccess(true);
+                      }
+                  } catch (e) {
+                      console.error("Verification failed", e);
+                      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Verification failed', type: 'error' } }));
+                      setIsSubmitting(false);
+                  }
+              },
+              prefill: {
+                  name: user.name || "APEX User",
+                  contact: user.phone || ""
+              },
+              theme: {
+                  color: "#2D1B69"
+              },
+              modal: {
+                  ondismiss: function() {
+                      setIsSubmitting(false);
+                  }
+              }
+          };
+          
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
       } catch (error) {
           console.error("Enrollment failed:", error);
           window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Enrollment failed. Please try again.', type: 'error' } }));
-      } finally {
           setIsSubmitting(false);
       }
   };

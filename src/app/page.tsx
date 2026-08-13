@@ -555,28 +555,31 @@ export default function Home() {
                                             {/* PAN Services Grid */}
                                             <div className="mb-3">
                                                 <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">PAN Services</h3>
-                                                <div className="grid grid-cols-4 gap-2">
-                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Apply PAN')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
-                                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-blue-400 shadow-inner">
-                                                            <i className="fa-solid fa-id-card text-lg"></i>
-                                                        </div>
-                                                        <span className="text-white text-[8px] font-medium leading-tight">Apply<br />PAN</span>
-                                                    </a>
-                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'PAN Correction')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
-                                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-green-400 shadow-inner">
-                                                            <i className="fa-solid fa-file-pen text-lg"></i>
-                                                        </div>
-                                                        <span className="text-white text-[8px] font-medium leading-tight">PAN<br />Correction</span>
-                                                    </a>
-                                                </div>
-                                                {/* Dummy PAN Card Visual (Image) */}
-                                                <div className="mt-3 relative w-[70%] max-w-[200px] mx-auto aspect-[1.58] rounded-lg overflow-hidden border border-blue-300/50 shadow-inner bg-black">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img 
-                                                        src="/images/dummy-pan.jpg" 
-                                                        alt="Dummy PAN Card" 
-                                                        className="w-full h-full object-cover"
-                                                    />
+                                                <div className="flex items-center justify-between bg-white/5 rounded-xl p-3 border border-white/10">
+                                                    <div className="flex gap-6 pl-2">
+                                                        <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Apply PAN')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                            <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-blue-400 shadow-inner">
+                                                                <i className="fa-solid fa-id-card text-lg"></i>
+                                                            </div>
+                                                            <span className="text-white text-[8px] font-medium leading-tight">New PAN<br />Card</span>
+                                                        </a>
+                                                        <a href="#" onClick={(e) => handleOpenLeadForm(e, 'PAN Correction')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                            <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-green-400 shadow-inner">
+                                                                <i className="fa-solid fa-file-pen text-lg"></i>
+                                                            </div>
+                                                            <span className="text-white text-[8px] font-medium leading-tight">Update<br />PAN</span>
+                                                        </a>
+                                                    </div>
+                                                    
+                                                    {/* Dummy PAN Card Visual (Image) */}
+                                                    <div className="relative w-[110px] aspect-[1.58] rounded-lg overflow-hidden border border-blue-300/50 shadow-inner bg-black shrink-0 shadow-lg -rotate-2 hover:rotate-0 transition-transform">
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img 
+                                                            src="/images/dummy-pan.jpg" 
+                                                            alt="Dummy PAN Card" 
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
 

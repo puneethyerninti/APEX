@@ -16,16 +16,68 @@ export default function UtilityPage() {
     if (!user?.uid || !selectedBiller) return;
     setIsPaying(true);
     try {
-      await api.post('/utility/pay', {
-        userId: user.uid,
-        billerName: selectedBiller,
-        amount: 500
-      });
-      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Successfully paid ${selectedBiller} bill!`, type: 'success' } }));
-      setSelectedBiller(null);
+        const orderRes = await api.post('/finance/razorpay/order', {
+            amount: 500,
+            userId: user.uid,
+            category: 'utility_payment',
+            serviceName: `Bill Payment - ${selectedBiller}`
+        });
+        
+        const { order, keyId } = orderRes.data;
+        
+        const options = {
+            key: keyId,
+            amount: order.amount,
+            currency: order.currency,
+            name: "APEX App",
+            description: `Pay ${selectedBiller} Bill`,
+            order_id: order.id,
+            handler: async function (response: any) {
+                try {
+                    const verifyRes = await api.post('/finance/razorpay/verify', {
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        amount: 500,
+                        userId: user.uid
+                    });
+                    
+                    if (verifyRes.data.success) {
+                        // After successful verification, hit the utility endpoint to dispatch notifications/receipts
+                        await api.post('/utility/pay', {
+                            userId: user.uid,
+                            billerName: selectedBiller,
+                            amount: 500
+                        });
+                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Successfully paid ${selectedBiller} bill!`, type: 'success' } }));
+                        setSelectedBiller(null);
+                        setIsPaying(false);
+                    }
+                } catch (e) {
+                    console.error("Verification failed", e);
+                    window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Verification failed', type: 'error' } }));
+                    setIsPaying(false);
+                }
+            },
+            prefill: {
+                name: user.name || "APEX User",
+                contact: user.phone || ""
+            },
+            theme: {
+                color: "#2D1B69"
+            },
+            modal: {
+                ondismiss: function() {
+                    setIsPaying(false);
+                }
+            }
+        };
+        
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+
     } catch (error) {
       window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Payment failed for ${selectedBiller}`, type: 'error' } }));
-    } finally {
       setIsPaying(false);
     }
   };
