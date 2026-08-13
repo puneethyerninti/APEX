@@ -131,7 +131,7 @@ export default function GlobalModals() {
                     },
                     prefill: {
                         name: user.name || "APEX User",
-                        contact: user.mobile || ""
+                        contact: user.phone || ""
                     },
                     theme: {
                         color: "#2D1B69"
