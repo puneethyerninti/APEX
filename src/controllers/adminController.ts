@@ -8,7 +8,9 @@ import StoreOrder from '../models/StoreOrder';
 import CharityDonation from '../models/CharityDonation';
 import TravelBooking from '../models/TravelBooking';
 import Lead from '../models/Lead';
+import Notification from '../models/Notification';
 import { createNotification } from './notificationController';
+import { sendPushNotification } from '../firebaseAdmin';
 
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
@@ -251,20 +253,48 @@ export const broadcastMessage = async (req: Request, res: Response) => {
   }
 
   try {
+    // 1. Fetch all users to create DB notifications and get FCM tokens
+    const users = await User.find({}, '_id fcmTokens');
+    
+    // 2. Prepare notifications for DB
+    const notificationsToInsert = users.map(user => ({
+      user: user._id,
+      title,
+      message,
+      type: type || 'info',
+      isRead: false
+    }));
+
+    if (notificationsToInsert.length > 0) {
+      await Notification.insertMany(notificationsToInsert);
+    }
+
+    // 3. Emit real-time event to active connected clients
     const io = req.app.get('io');
     if (io) {
-      // Emit to a global channel, or let frontend listen to 'global_notification'
       io.emit('global_notification', {
-        _id: new Date().getTime().toString(),
+        _id: new Date().getTime().toString(), // Client sees this until refresh
         title,
         message,
         type: type || 'info',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        isRead: false
       });
-      res.json({ success: true, message: 'Broadcast sent to all active users' });
-    } else {
-      res.status(500).json({ error: 'Socket IO not initialized' });
     }
+
+    // 4. Send Push Notifications in background
+    const allTokens = users.reduce((acc, user) => {
+      if (user.fcmTokens && user.fcmTokens.length > 0) {
+        return acc.concat(user.fcmTokens);
+      }
+      return acc;
+    }, [] as string[]);
+
+    if (allTokens.length > 0) {
+      sendPushNotification(allTokens, title, message).catch(err => console.error('Broadcast push failed:', err));
+    }
+
+    res.json({ success: true, message: 'Broadcast sent to all active users and saved to database' });
   } catch (error) {
     console.error('Error broadcasting message:', error);
     res.status(500).json({ error: 'Server error' });
