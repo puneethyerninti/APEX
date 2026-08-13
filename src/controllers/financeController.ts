@@ -92,7 +92,7 @@ export const addMoney = async (req: Request, res: Response) => {
 
 // Razorpay Order Creation (Strict)
 export const createRazorpayOrder = async (req: Request, res: Response) => {
-  const { amount, userId } = req.body; 
+  const { amount, userId, category = 'add_money', serviceName } = req.body; 
   
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     return res.status(500).json({ error: 'Payment gateway configuration missing' });
@@ -115,7 +115,8 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
       user: userId,
       amount,
       type: 'credit',
-      category: 'add_money',
+      category: category,
+      referenceId: serviceName || 'wallet_topup',
       status: 'pending',
       razorpayOrderId: order.id
     });
@@ -137,6 +138,7 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
 
   try {
     const body = razorpay_order_id + "|" + razorpay_payment_id;
+
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
       .update(body.toString())
@@ -151,24 +153,33 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
         { 
           status: 'completed',
           razorpayPaymentId: razorpay_payment_id,
-          razorpaySignature: razorpay_signature,
-          referenceId: razorpay_payment_id
+          razorpaySignature: razorpay_signature
         },
         { new: true }
       );
 
       if (transaction) {
-        // Credit wallet only if transaction was pending and is now completed
-        await User.findByIdAndUpdate(transaction.user, {
-          $inc: { walletBalance: transaction.amount }
-        });
-        
-        await createNotification(
-          transaction.user.toString(),
-          'Wallet Recharged',
-          `₹${transaction.amount} has been added to your wallet via Razorpay.`,
-          'success'
-        );
+        if (transaction.category === 'add_money') {
+          // Credit wallet only if transaction was pending and is now completed
+          await User.findByIdAndUpdate(transaction.user, {
+            $inc: { walletBalance: transaction.amount }
+          });
+          
+          await createNotification(
+            transaction.user.toString(),
+            'Wallet Recharged',
+            `₹${transaction.amount} has been added to your wallet via Razorpay.`,
+            'success'
+          );
+        } else {
+           // For service payments (subscription, academy, etc)
+           await createNotification(
+             transaction.user.toString(),
+             'Payment Successful',
+             `Your payment of ₹${transaction.amount} for ${transaction.referenceId || transaction.category} was successful.`,
+             'success'
+           );
+        }
         
         return res.json({ success: true, message: "Payment verified successfully" });
       } else {

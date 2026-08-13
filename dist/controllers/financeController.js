@@ -78,7 +78,7 @@ const addMoney = async (req, res) => {
 exports.addMoney = addMoney;
 // Razorpay Order Creation (Strict)
 const createRazorpayOrder = async (req, res) => {
-    const { amount, userId } = req.body;
+    const { amount, userId, category = 'add_money', serviceName } = req.body;
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
         return res.status(500).json({ error: 'Payment gateway configuration missing' });
     }
@@ -97,7 +97,8 @@ const createRazorpayOrder = async (req, res) => {
             user: userId,
             amount,
             type: 'credit',
-            category: 'add_money',
+            category: category,
+            referenceId: serviceName || 'wallet_topup',
             status: 'pending',
             razorpayOrderId: order.id
         });
@@ -127,15 +128,20 @@ const verifyRazorpayPayment = async (req, res) => {
             const transaction = await Transaction_1.default.findOneAndUpdate({ razorpayOrderId: razorpay_order_id, status: 'pending' }, {
                 status: 'completed',
                 razorpayPaymentId: razorpay_payment_id,
-                razorpaySignature: razorpay_signature,
-                referenceId: razorpay_payment_id
+                razorpaySignature: razorpay_signature
             }, { new: true });
             if (transaction) {
-                // Credit wallet only if transaction was pending and is now completed
-                await User_1.default.findByIdAndUpdate(transaction.user, {
-                    $inc: { walletBalance: transaction.amount }
-                });
-                await (0, notificationController_1.createNotification)(transaction.user.toString(), 'Wallet Recharged', `₹${transaction.amount} has been added to your wallet via Razorpay.`, 'success');
+                if (transaction.category === 'add_money') {
+                    // Credit wallet only if transaction was pending and is now completed
+                    await User_1.default.findByIdAndUpdate(transaction.user, {
+                        $inc: { walletBalance: transaction.amount }
+                    });
+                    await (0, notificationController_1.createNotification)(transaction.user.toString(), 'Wallet Recharged', `₹${transaction.amount} has been added to your wallet via Razorpay.`, 'success');
+                }
+                else {
+                    // For service payments (subscription, academy, etc)
+                    await (0, notificationController_1.createNotification)(transaction.user.toString(), 'Payment Successful', `Your payment of ₹${transaction.amount} for ${transaction.referenceId || transaction.category} was successful.`, 'success');
+                }
                 return res.json({ success: true, message: "Payment verified successfully" });
             }
             else {
