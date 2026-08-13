@@ -1,6 +1,6 @@
 import express from 'express';
 import http from 'http';
-import { Server } from 'socket.io';
+import { initSocket } from './utils/socketManager';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db';
@@ -37,12 +37,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // Socket.io setup
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-  },
-});
+const io = initSocket(server);
 app.set('io', io); // Bind io to express app
 
 io.on('connection', (socket) => {

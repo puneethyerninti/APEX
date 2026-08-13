@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Resend } from 'resend';
 import User from '../models/User';
 import Notification from '../models/Notification';
+import { getIO } from '../utils/socketManager';
 
 // Initialize Resend
 // Note: Fallback if API key is not provided yet
@@ -98,6 +99,15 @@ export const createNotification = async (userId: string, title: string, message:
     const user = await User.findById(userId);
     if (user && user.fcmTokens && user.fcmTokens.length > 0) {
       await sendPushNotification(user.fcmTokens, title, message, { notificationId: (notification as any)._id.toString() });
+    }
+
+    try {
+      const io = getIO();
+      if (io) {
+        io.to(`user_${userId}`).emit('new_notification', notification);
+      }
+    } catch (ioErr) {
+      console.error('Socket not initialized, could not emit live notification');
     }
 
     return notification;

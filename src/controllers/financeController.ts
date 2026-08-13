@@ -3,6 +3,7 @@ import User from '../models/User';
 import Transaction from '../models/Transaction';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { createNotification } from './notificationController';
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || 'mock_key',
@@ -45,6 +46,13 @@ export const deductMoney = async (req: Request, res: Response) => {
       status: 'completed',
     });
 
+    await createNotification(
+      user._id,
+      'Payment Successful',
+      `₹${amount} has been deducted from your wallet for ${category || 'payment'}.`,
+      'success'
+    );
+
     res.json({ message: 'Payment successful', balance: user.walletBalance, transaction });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -68,6 +76,13 @@ export const addMoney = async (req: Request, res: Response) => {
       category: 'add_money',
       status: 'completed',
     });
+
+    await createNotification(
+      user._id,
+      'Wallet Recharged',
+      `₹${amount} has been added to your wallet.`,
+      'success'
+    );
 
     res.json({ message: 'Money added successfully', balance: user.walletBalance, transaction });
   } catch (error) {
@@ -147,6 +162,14 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
         await User.findByIdAndUpdate(transaction.user, {
           $inc: { walletBalance: transaction.amount }
         });
+        
+        await createNotification(
+          transaction.user.toString(),
+          'Wallet Recharged',
+          `₹${transaction.amount} has been added to your wallet via Razorpay.`,
+          'success'
+        );
+        
         return res.json({ success: true, message: "Payment verified successfully" });
       } else {
         // Transaction was already completed or not found

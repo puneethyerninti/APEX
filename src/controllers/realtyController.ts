@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import RealEstate from '../models/RealEstate';
+import { createNotification } from './notificationController';
 
 export const submitInquiry = async (req: Request, res: Response) => {
   try {
@@ -21,6 +22,15 @@ export const submitInquiry = async (req: Request, res: Response) => {
     const io = req.app.get('io');
     if (io) {
       io.to('admin_room').emit('admin_data_refresh');
+    }
+
+    if (userId) {
+      await createNotification(
+        userId,
+        'Inquiry Submitted',
+        `Your inquiry regarding ${propertyTitle} has been received.`,
+        'info'
+      );
     }
 
     res.status(201).json({ success: true, message: 'Inquiry submitted', data: newPropertyLead });

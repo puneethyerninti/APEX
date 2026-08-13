@@ -4,6 +4,7 @@ import MatrimonyProfile from '../models/MatrimonyProfile';
 import Message from '../models/Message';
 import Transaction from '../models/Transaction';
 import User from '../models/User';
+import { createNotification } from './notificationController';
 
 export const getMyProfile = async (req: Request, res: Response) => {
   try {
@@ -58,6 +59,15 @@ export const createProfile = async (req: Request, res: Response) => {
     const io = req.app.get('io');
     if (io) {
       io.to('admin_room').emit('admin_data_refresh');
+    }
+
+    if (userId) {
+      await createNotification(
+        userId,
+        'Profile Created',
+        'Your matrimony profile has been submitted and is pending review.',
+        'info'
+      );
     }
     
     res.status(201).json(newProfile);

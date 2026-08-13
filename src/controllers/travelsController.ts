@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import TravelBooking from '../models/TravelBooking';
 import User from '../models/User';
 import Transaction from '../models/Transaction';
+import { createNotification } from './notificationController';
 
 // Create a new travel booking
 export const createBooking = async (req: Request, res: Response) => {
@@ -36,6 +37,13 @@ export const createBooking = async (req: Request, res: Response) => {
       amount,
       status: initialStatus
     });
+
+    await createNotification(
+      userId,
+      'Travel Booked',
+      `Your ${type} booking from ${origin} to ${destination} was successful!`,
+      'success'
+    );
 
     res.json({ success: true, booking, message: 'Booking successful' });
   } catch (error) {
