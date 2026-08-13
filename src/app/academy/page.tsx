@@ -3,24 +3,39 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import AutoCarousel from '@/components/AutoCarousel';
+import { api } from '@/services/api';
+import { useAppStore } from '@/store/useAppStore';
 
 export default function Page() {
   const [enrollCourse, setEnrollCourse] = useState<{name: string, price: string} | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const user = useAppStore(state => state.user);
 
   const handleEnroll = (name: string, price: string) => {
       setEnrollCourse({name, price});
       setIsSuccess(false);
   };
 
-  const handlePayment = (e: React.FormEvent) => {
+  const handlePayment = async (e: React.FormEvent) => {
       e.preventDefault();
       setIsSubmitting(true);
-      setTimeout(() => {
-          setIsSubmitting(false);
+      
+      try {
+          if (user?.uid && enrollCourse) {
+              await api.post('/academy/enroll', {
+                  userId: user.uid,
+                  courseName: enrollCourse.name,
+                  amount: enrollCourse.price
+              });
+          }
           setIsSuccess(true);
-      }, 1500);
+      } catch (error) {
+          console.error("Enrollment failed:", error);
+          window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Enrollment failed. Please try again.', type: 'error' } }));
+      } finally {
+          setIsSubmitting(false);
+      }
   };
   return (
     <>

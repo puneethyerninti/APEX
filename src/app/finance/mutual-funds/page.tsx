@@ -1,6 +1,8 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useAppStore } from '@/store/useAppStore';
+import { api } from '@/services/api';
 
 type AMC = {
     id: number;
@@ -11,7 +13,27 @@ type AMC = {
 };
 
 export default function MutualFundsPage() {
+    const user = useAppStore(state => state.user);
     const [selectedAmc, setSelectedAmc] = useState<AMC | null>(null);
+    
+    const handleInvestClick = async (amc: AMC) => {
+        if (!amc.link) {
+            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Link coming soon for this AMC', type: 'info' } }));
+            return;
+        }
+        
+        if (user?.uid) {
+            try {
+                await api.post('/wealth/invest-intent', {
+                    userId: user.uid,
+                    amcName: amc.name
+                });
+            } catch (err) {
+                console.error("Failed to log intent", err);
+            }
+        }
+        setSelectedAmc(amc);
+    };
 
     const popularAMCs: AMC[] = [
         { 
@@ -137,11 +159,7 @@ export default function MutualFundsPage() {
                             <button 
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    if (amc.link) {
-                                        window.open(amc.link, '_blank');
-                                    } else {
-                                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Link coming soon for this AMC', type: 'info' } }));
-                                    }
+                                    handleInvestClick(amc);
                                 }}
                                 className="px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-wider bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-sm hover:shadow active:scale-[0.98] transition-all flex items-center justify-center whitespace-nowrap"
                             >

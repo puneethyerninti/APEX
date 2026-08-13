@@ -2,10 +2,33 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAppStore } from '@/store/useAppStore';
+import { api } from '@/services/api';
 
 export default function UtilityPage() {
   const router = useRouter();
+  const user = useAppStore(state => state.user);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedBiller, setSelectedBiller] = useState<string | null>(null);
+  const [isPaying, setIsPaying] = useState(false);
+
+  const handlePayBill = async () => {
+    if (!user?.uid || !selectedBiller) return;
+    setIsPaying(true);
+    try {
+      await api.post('/utility/pay', {
+        userId: user.uid,
+        billerName: selectedBiller,
+        amount: 500
+      });
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Successfully paid ${selectedBiller} bill!`, type: 'success' } }));
+      setSelectedBiller(null);
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Payment failed for ${selectedBiller}`, type: 'error' } }));
+    } finally {
+      setIsPaying(false);
+    }
+  };
 
   const billers = [
     { name: 'Electricity', icon: 'fa-solid fa-bolt', color: 'text-orange-500' },
@@ -85,7 +108,7 @@ export default function UtilityPage() {
               <button 
                 key={index} 
                 className={`flex flex-col items-center justify-center p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors group min-h-[105px] ${(index + 1) % 3 !== 0 ? 'border-r border-gray-100' : ''}`}
-                onClick={() => alert('Mock: Opening ' + biller.name)}
+                onClick={() => setSelectedBiller(biller.name)}
               >
                 <div className="mb-2.5 transition-transform duration-200 group-hover:scale-110">
                   <i className={`${biller.icon} text-3xl ${biller.color} drop-shadow-sm`}></i>
@@ -127,6 +150,25 @@ export default function UtilityPage() {
         </div>
 
       </div>
+
+      {/* Payment Modal */}
+      {selectedBiller && (
+        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center">
+            <div className="bg-white w-full max-w-md p-6 sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col animate-[slideUp_0.3s_ease-out]">
+                <h2 className="text-lg font-black text-gray-900 mb-2">Pay {selectedBiller} Bill</h2>
+                <p className="text-sm text-gray-500 mb-6">Confirm payment of ₹500 for your {selectedBiller} service.</p>
+                
+                <div className="flex gap-3">
+                    <button onClick={() => setSelectedBiller(null)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">
+                        Cancel
+                    </button>
+                    <button onClick={handlePayBill} disabled={isPaying} className="flex-1 py-3 bg-[#2D1B69] text-white font-bold rounded-xl shadow-lg flex justify-center items-center gap-2">
+                        {isPaying ? <i className="fa-solid fa-spinner fa-spin"></i> : "Pay ₹500"}
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
     </>
   );
 }
