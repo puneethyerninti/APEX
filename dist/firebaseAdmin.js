@@ -8,46 +8,35 @@ const app_1 = require("firebase-admin/app");
 const messaging_1 = require("firebase-admin/messaging");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
+const os_1 = __importDefault(require("os"));
 const serviceAccountPath = path_1.default.resolve(__dirname, '../../firebase-service-account.json');
 const initFirebaseAdmin = () => {
     try {
         if ((0, app_1.getApps)().length > 0)
             return;
         if (fs_1.default.existsSync(serviceAccountPath)) {
-            const serviceAccount = require(serviceAccountPath);
-            (0, app_1.initializeApp)({
-                credential: (0, app_1.cert)(serviceAccount)
-            });
+            process.env.GOOGLE_APPLICATION_CREDENTIALS = serviceAccountPath;
+            (0, app_1.initializeApp)();
             console.log('🔥 Firebase Admin initialized successfully from JSON file');
         }
         else if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
-            const serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8'));
+            const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8');
+            const serviceAccount = JSON.parse(decoded);
             if (serviceAccount.private_key) {
-                let pk = serviceAccount.private_key;
-                pk = pk.replace(/\\n/g, '\n'); // Handle literal \n
-                pk = pk.replace(/"/g, ''); // Remove stray quotes
-                pk = pk.replace(/\r/g, ''); // Remove carriage returns
-                // OpenSSL 3.0 STRICTLY rejects spaces in the PEM body. 
-                // We extract the body, remove all spaces, and reconstruct it.
-                let body = pk.replace('-----BEGIN PRIVATE KEY-----', '').replace('-----END PRIVATE KEY-----', '');
-                body = body.replace(/ /g, ''); // Remove all spaces
-                // Re-wrap to 64 characters per line just to be perfectly compliant
-                body = body.replace(/\n/g, '');
-                const match = body.match(/.{1,64}/g);
-                if (match) {
-                    body = match.join('\n');
-                }
-                serviceAccount.private_key = `-----BEGIN PRIVATE KEY-----\n${body}\n-----END PRIVATE KEY-----\n`;
+                // Fix any escaped newlines just in case
+                serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
             }
+            // Bypass firebase-admin's cert() strictness by using the native Google Auth Library
+            // which is usually much more robust across different Node/OpenSSL versions.
+            const tempFilePath = path_1.default.join(os_1.default.tmpdir(), 'firebase-service-account.json');
+            fs_1.default.writeFileSync(tempFilePath, JSON.stringify(serviceAccount, null, 2));
+            process.env.GOOGLE_APPLICATION_CREDENTIALS = tempFilePath;
             try {
-                (0, app_1.initializeApp)({
-                    credential: (0, app_1.cert)(serviceAccount)
-                });
+                (0, app_1.initializeApp)();
                 console.log('🔥 Firebase Admin initialized successfully from Base64 env variable');
             }
             catch (err) {
-                console.error('Failed to init Firebase with Base64 key. Key starts with:', serviceAccount.private_key.substring(0, 35));
-                console.error('Key ends with:', serviceAccount.private_key.substring(serviceAccount.private_key.length - 35));
+                console.error('Failed to init Firebase with Base64 key. Key starts with:', serviceAccount.private_key ? serviceAccount.private_key.substring(0, 35) : 'Missing');
                 throw err;
             }
         }
