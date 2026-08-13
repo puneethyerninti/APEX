@@ -23,12 +23,31 @@ const initFirebaseAdmin = () => {
         else if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
             const serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8'));
             if (serviceAccount.private_key) {
-                serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+                let pk = serviceAccount.private_key;
+                pk = pk.replace(/\\n/g, '\n'); // Handle literal \n
+                // Format strictly for Node 24 OpenSSL
+                pk = pk.replace(/"/g, '');
+                if (!pk.includes('-----BEGIN PRIVATE KEY-----\n')) {
+                    pk = pk.replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n');
+                }
+                if (!pk.includes('\n-----END PRIVATE KEY-----')) {
+                    pk = pk.replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----');
+                }
+                pk = pk.replace(/\r/g, ''); // Remove carriage returns
+                pk = pk.replace(/\n\n+/g, '\n'); // Remove duplicate newlines
+                serviceAccount.private_key = pk;
             }
-            (0, app_1.initializeApp)({
-                credential: (0, app_1.cert)(serviceAccount)
-            });
-            console.log('🔥 Firebase Admin initialized successfully from Base64 env variable');
+            try {
+                (0, app_1.initializeApp)({
+                    credential: (0, app_1.cert)(serviceAccount)
+                });
+                console.log('🔥 Firebase Admin initialized successfully from Base64 env variable');
+            }
+            catch (err) {
+                console.error('Failed to init Firebase with Base64 key. Key starts with:', serviceAccount.private_key.substring(0, 35));
+                console.error('Key ends with:', serviceAccount.private_key.substring(serviceAccount.private_key.length - 35));
+                throw err;
+            }
         }
         else {
             console.warn('⚠️ FIREBASE ADMIN NOT INITIALIZED: Missing service account JSON or environment variable.');
