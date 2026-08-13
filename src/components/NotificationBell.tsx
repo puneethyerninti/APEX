@@ -71,7 +71,7 @@ export default function NotificationBell({ className = "text-violet-100 hover:te
     const fetchNotifications = async () => {
         if (!user?._id) return;
         try {
-            const res = await api.get(`/api/notifications/user/${user._id}`);
+            const res = await api.get(`/notifications/user/${user._id}`);
             setNotifications(res.data.notifications || []);
         } catch (err) {
             console.error('Failed to fetch notifications', err);
@@ -80,7 +80,7 @@ export default function NotificationBell({ className = "text-violet-100 hover:te
 
     const markAsRead = async (id: string) => {
         try {
-            await api.put(`/api/notifications/${id}/read`);
+            await api.put(`/notifications/${id}/read`);
             setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
         } catch (err) {
             console.error('Failed to mark read', err);
@@ -90,7 +90,7 @@ export default function NotificationBell({ className = "text-violet-100 hover:te
     const markAllAsRead = async () => {
         if (!user?._id) return;
         try {
-            await api.put(`/api/notifications/mark-all-read`, { userId: user._id });
+            await api.put(`/notifications/mark-all-read`, { userId: user._id });
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
         } catch (err) {
             console.error('Failed to mark all read', err);

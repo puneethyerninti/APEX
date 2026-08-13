@@ -1,10 +1,8 @@
-
 "use client";
 import React from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import CreditCardCarousel from '@/components/CreditCardCarousel';
-import PanCardServices from '@/components/PanCardServices';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function Home() {
@@ -47,6 +45,9 @@ export default function Home() {
         const whatsappUrl = `https://wa.me/919494273763?text=${encodedMessage}`;
         
         window.open(whatsappUrl, '_blank');
+        if (leadServiceType.includes('PAN')) {
+            window.location.href = 'https://religaredigital.in/pan-service/';
+        }
         
         setIsLeadFormOpen(false);
         setLeadName('');
@@ -550,7 +551,24 @@ export default function Home() {
                                                 </div>
                                             </div>
 
-                                            <PanCardServices />
+                                            {/* PAN Services Grid */}
+                                            <div className="mb-3">
+                                                <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">PAN Services</h3>
+                                                <div className="grid grid-cols-4 gap-2">
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Apply PAN')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-blue-400 shadow-inner">
+                                                            <i className="fa-solid fa-id-card text-lg"></i>
+                                                        </div>
+                                                        <span className="text-white text-[8px] font-medium leading-tight">Apply<br />PAN</span>
+                                                    </a>
+                                                    <a href="#" onClick={(e) => handleOpenLeadForm(e, 'PAN Correction')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
+                                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-green-400 shadow-inner">
+                                                            <i className="fa-solid fa-file-pen text-lg"></i>
+                                                        </div>
+                                                        <span className="text-white text-[8px] font-medium leading-tight">PAN<br />Correction</span>
+                                                    </a>
+                                                </div>
+                                            </div>
 
                                             {/* Payments (BBPS) Section */}
                                             <div className="mt-4 border border-dashed border-white/20 rounded-xl p-3 relative">
