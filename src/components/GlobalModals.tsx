@@ -126,7 +126,7 @@ export default function GlobalModals() {
                             }
                         } catch (e) {
                             console.error("Verification failed", e);
-                            setCheckoutStep('checkout');
+                            setCheckoutStep('methods');
                         }
                     },
                     prefill: {
@@ -138,7 +138,7 @@ export default function GlobalModals() {
                     },
                     modal: {
                         ondismiss: function() {
-                            setCheckoutStep('checkout');
+                            setCheckoutStep('methods');
                         }
                     }
                 };
@@ -148,7 +148,7 @@ export default function GlobalModals() {
             }
         } catch (e) {
             console.error("Failed to initialize payment", e);
-            setCheckoutStep('checkout');
+            setCheckoutStep('methods');
         }
     };
 
