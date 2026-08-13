@@ -22,19 +22,21 @@ export const initFirebaseAdmin = () => {
       if (serviceAccount.private_key) {
         let pk = serviceAccount.private_key;
         pk = pk.replace(/\\n/g, '\n'); // Handle literal \n
-        
-        // Format strictly for Node 24 OpenSSL
-        pk = pk.replace(/"/g, '');
-        if (!pk.includes('-----BEGIN PRIVATE KEY-----\n')) {
-            pk = pk.replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n');
-        }
-        if (!pk.includes('\n-----END PRIVATE KEY-----')) {
-            pk = pk.replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----');
-        }
+        pk = pk.replace(/"/g, ''); // Remove stray quotes
         pk = pk.replace(/\r/g, ''); // Remove carriage returns
-        pk = pk.replace(/\n\n+/g, '\n'); // Remove duplicate newlines
+
+        // OpenSSL 3.0 STRICTLY rejects spaces in the PEM body. 
+        // We extract the body, remove all spaces, and reconstruct it.
+        let body = pk.replace('-----BEGIN PRIVATE KEY-----', '').replace('-----END PRIVATE KEY-----', '');
+        body = body.replace(/ /g, ''); // Remove all spaces
+        // Re-wrap to 64 characters per line just to be perfectly compliant
+        body = body.replace(/\n/g, ''); 
+        const match = body.match(/.{1,64}/g);
+        if (match) {
+            body = match.join('\n');
+        }
         
-        serviceAccount.private_key = pk;
+        serviceAccount.private_key = `-----BEGIN PRIVATE KEY-----\n${body}\n-----END PRIVATE KEY-----\n`;
       }
       try {
         initializeApp({
