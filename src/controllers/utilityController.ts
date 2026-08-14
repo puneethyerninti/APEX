@@ -3,7 +3,7 @@ import { createNotification } from './notificationController';
 import User from '../models/User';
 import Transaction from '../models/Transaction';
 import UtilityTransaction from '../models/UtilityTransaction';
-import { getUtilityOperators, processRecharge } from '../services/ekoService';
+import { getUtilityOperators, processRecharge, fetchRechargePlans } from '../services/ekoService';
 
 export const getOperators = async (req: Request, res: Response) => {
     try {
@@ -12,6 +12,21 @@ export const getOperators = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error in getOperators', error);
         res.status(500).json({ success: false, message: 'Failed to fetch operators' });
+    }
+};
+
+export const getPlans = async (req: Request, res: Response) => {
+    try {
+        const { operator } = req.query;
+        if (!operator) {
+            return res.status(400).json({ success: false, message: 'Operator is required' });
+        }
+        
+        const plans = await fetchRechargePlans(operator as string);
+        res.status(200).json({ success: true, data: plans });
+    } catch (error) {
+        console.error('Error in getPlans', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch plans' });
     }
 };
 

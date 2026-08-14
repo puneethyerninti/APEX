@@ -67,3 +67,69 @@ export const processRecharge = async (mobile: string, amount: number, operator: 
         throw error;
     }
 };
+
+/**
+ * Fetch Mobile Recharge Plans for an Operator
+ */
+export const fetchRechargePlans = async (operator: string) => {
+    try {
+        // In production, this would call Eko API: /tools/reference/plans?operator=...
+        // For now, we mock realistic plans to build the PhonePe-style UI
+        const isJio = operator.toLowerCase().includes('jio');
+        const isAirtel = operator.toLowerCase().includes('airtel');
+        
+        return [
+            {
+                id: 'plan_299',
+                category: 'Popular',
+                price: isJio ? 299 : 349,
+                data: '2GB/Day',
+                validity: '28 Days',
+                description: 'Unlimited Calls + 100 SMS/Day'
+            },
+            {
+                id: 'plan_719',
+                category: 'Popular',
+                price: isJio ? 719 : 799,
+                data: '2GB/Day',
+                validity: '84 Days',
+                description: 'Unlimited Calls + 100 SMS/Day + Free OTT Subscriptions'
+            },
+            {
+                id: 'plan_199',
+                category: 'Unlimited',
+                price: isJio ? 199 : 239,
+                data: '1.5GB/Day',
+                validity: '23 Days',
+                description: 'Unlimited Calls + 100 SMS/Day'
+            },
+            {
+                id: 'plan_19',
+                category: 'Data Add-on',
+                price: isJio ? 19 : 29,
+                data: '1.5GB',
+                validity: 'Existing Plan',
+                description: 'High-speed data add-on'
+            },
+            {
+                id: 'plan_61',
+                category: 'Data Add-on',
+                price: isJio ? 61 : 65,
+                data: '6GB',
+                validity: 'Existing Plan',
+                description: 'High-speed data add-on'
+            },
+            {
+                id: 'plan_2999',
+                category: 'Annual',
+                price: isJio ? 2999 : 3359,
+                data: '2.5GB/Day',
+                validity: '365 Days',
+                description: 'Unlimited Calls + Free OTT Subscriptions for 1 Year'
+            }
+        ];
+    } catch (error) {
+        console.error('Error fetching plans', error);
+        throw error;
+    }
+};
