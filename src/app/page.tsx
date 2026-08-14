@@ -560,7 +560,7 @@ export default function Home() {
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-blue-400 shadow-inner">
                                                             <i className="fa-solid fa-id-card text-lg"></i>
                                                         </div>
-                                                        <span className="text-white text-[8px] font-medium leading-tight">New PAN<br />Card</span>
+                                                        <span className="text-white text-[8px] font-medium leading-tight">Apply<br />Now</span>
                                                     </a>
                                                     <a href="#" onClick={(e) => handleOpenLeadForm(e, 'PAN Correction')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-green-400 shadow-inner">
@@ -667,29 +667,29 @@ export default function Home() {
                             </div>
                         </Link>
                         {/* Deal 3 */}
-                        <Link href="/realty" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
                             <div className="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
-                                <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=300&amp;q=80&amp;auto=format&amp;fit=crop" className="w-full h-full object-cover" />
-                                <span className="absolute top-1 left-1 bg-emerald-500 text-white text-[7px] font-extrabold px-1 rounded-sm">SAVE ₹5L</span>
+                                <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300&amp;q=80&amp;auto=format&amp;fit=crop" className="w-full h-full object-cover" />
+                                <span className="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">20% OFF</span>
                             </div>
-                            <span className="text-[9px] font-bold text-gray-700 truncate">Skyline Penthouse</span>
-                            <span className="text-[10px] font-black text-apex-purple mt-0.5">₹8.2 Cr <span className="text-[7px] text-gray-400 font-normal">Pre-Launch</span></span>
+                            <span className="text-[9px] font-bold text-gray-700 truncate">Nike Sneakers</span>
+                            <span className="text-[10px] font-black text-apex-purple mt-0.5">₹3,499 <span className="text-[8px] text-gray-400 line-through font-normal">₹4,399</span></span>
                             <div className="mt-1">
-                                <div className="flex justify-between text-[7px] text-gray-400 mb-0.5"><span>Remaining</span><span>1 unit</span></div>
-                                <div className="w-full bg-gray-200 h-0.5 rounded-full"><div className="bg-emerald-500 h-0.5 rounded-full" style={{ width: "80%" }}></div></div>
+                                <div className="flex justify-between text-[7px] text-gray-400 mb-0.5"><span>Remaining</span><span>8 left</span></div>
+                                <div className="w-full bg-gray-200 h-0.5 rounded-full"><div className="bg-red-500 h-0.5 rounded-full" style={{ width: "60%" }}></div></div>
                             </div>
                         </Link>
                         {/* Deal 4 */}
-                        <Link href="/academy" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
                             <div className="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
-                                <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=300&amp;q=80&amp;auto=format&amp;fit=crop" className="w-full h-full object-cover" />
-                                <span className="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">30% OFF</span>
+                                <img src="https://images.unsplash.com/photo-1584916201218-f4242ceb4809?w=300&amp;q=80&amp;auto=format&amp;fit=crop" className="w-full h-full object-cover" />
+                                <span className="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">15% OFF</span>
                             </div>
-                            <span className="text-[9px] font-bold text-gray-700 truncate">React Mastery</span>
-                            <span className="text-[10px] font-black text-apex-purple mt-0.5">₹1,299 <span className="text-[8px] text-gray-400 line-through font-normal">₹1,999</span></span>
+                            <span className="text-[9px] font-bold text-gray-700 truncate">Luxury Handbag</span>
+                            <span className="text-[10px] font-black text-apex-purple mt-0.5">₹1,299 <span className="text-[8px] text-gray-400 line-through font-normal">₹1,599</span></span>
                             <div className="mt-1">
-                                <div className="flex justify-between text-[7px] text-gray-400 mb-0.5"><span>Remaining</span><span>24 left</span></div>
-                                <div className="w-full bg-gray-200 h-0.5 rounded-full"><div className="bg-red-500 h-0.5 rounded-full" style={{ width: "48%" }}></div></div>
+                                <div className="flex justify-between text-[7px] text-gray-400 mb-0.5"><span>Remaining</span><span>15 left</span></div>
+                                <div className="w-full bg-gray-200 h-0.5 rounded-full"><div className="bg-red-500 h-0.5 rounded-full" style={{ width: "35%" }}></div></div>
                             </div>
                         </Link>
                     </div>
