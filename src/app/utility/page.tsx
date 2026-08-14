@@ -30,8 +30,34 @@ export default function UtilityPage() {
             serviceName: `Bill Payment - ${selectedBiller}`
         });
         
-        const { order, keyId } = orderRes.data;
+        const { order, keyId, mock } = orderRes.data;
         
+        if (mock) {
+            // Bypass Razorpay for testing when keys are missing
+            if (selectedBiller.includes('Mobile') || selectedBiller.includes('DTH')) {
+                await api.post('/utility/recharge', {
+                    userId: user.uid,
+                    mobile: consumerNumber,
+                    amount: numAmount,
+                    operator: selectedBiller
+                });
+            } else {
+                await api.post('/utility/pay', {
+                    userId: user.uid,
+                    billerName: selectedBiller,
+                    amount: numAmount,
+                    consumerNumber: consumerNumber
+                });
+            }
+
+            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `[Mock] Successfully paid ${selectedBiller} bill!`, type: 'success' } }));
+            setSelectedBiller(null);
+            setConsumerNumber('');
+            setAmount('');
+            setIsPaying(false);
+            return;
+        }
+
         const options = {
             key: keyId,
             amount: order.amount,
