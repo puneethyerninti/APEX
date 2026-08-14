@@ -19,58 +19,58 @@ export default function MobileRechargePage() {
   const user = useAppStore(state => state.user);
   
   const [mobileNumber, setMobileNumber] = useState('');
-  const [operator, setOperator] = useState('Airtel'); // Defaulting for demo
+  const [operator, setOperator] = useState('');
+  const [operatorCode, setOperatorCode] = useState('');
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('Popular');
+  const [activeCategory, setActiveCategory] = useState('All Plans');
   
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [isPaying, setIsPaying] = useState(false);
 
   useEffect(() => {
-      // Auto-fetch plans when operator is set
+      // Auto-fetch plans when mobile is 10 digits
       const fetchPlans = async () => {
-          if (mobileNumber.length !== 10) return;
+          if (mobileNumber.length !== 10) {
+              setPlans([]);
+              setOperator('');
+              setOperatorCode('');
+              return;
+          }
           setLoadingPlans(true);
           try {
-              const res = await api.get(`/utility/plans?operator=${operator}`);
+              const res = await api.get(`/utility/plans?mobile=${mobileNumber}`);
               if (res.data.success) {
                   setPlans(res.data.data);
+                  if (res.data.meta) {
+                      setOperatorCode(res.data.meta.phone_operator_code);
+                      // Fallback name mapping since Eko doesn't always return the operator name in plan response
+                      const code = String(res.data.meta.phone_operator_code);
+                      if (code === '1') setOperator('Airtel');
+                      else if (code === '2' || code === '400') setOperator('Jio'); // Assuming some codes based on docs
+                      else if (code === '3') setOperator('VI');
+                      else if (code === '4') setOperator('BSNL');
+                      else setOperator(`Operator ${code}`);
+                  }
               }
           } catch (e) {
               console.error(e);
           }
           setLoadingPlans(false);
       };
-      fetchPlans();
-  }, [operator, mobileNumber]);
+      
+      const delayDebounceFn = setTimeout(() => {
+        fetchPlans();
+      }, 500);
 
-  useEffect(() => {
-      // Dynamic Operator Detection based on prefixes (Fallback for MNP API)
-      if (mobileNumber.length === 10) {
-          const prefix = mobileNumber.substring(0, 4);
-          const firstDigit = mobileNumber[0];
-          
-          // Basic heuristic for Indian Telecom Providers
-          if (['6', '70', '79'].includes(prefix.substring(0, 2)) || firstDigit === '6') {
-              setOperator('Jio');
-          } else if (['99', '98', '94', '95'].includes(prefix.substring(0, 2)) || firstDigit === '9') {
-              setOperator('Airtel');
-          } else if (['89', '88', '84', '85'].includes(prefix.substring(0, 2)) || firstDigit === '8') {
-              setOperator('VI');
-          } else if (['94', '95'].includes(prefix.substring(0, 2))) {
-               setOperator('BSNL');
-          } else {
-              setOperator('Airtel'); // Fallback
-          }
-      }
+      return () => clearTimeout(delayDebounceFn);
   }, [mobileNumber]);
 
-  const categories = Array.from(new Set(plans.map(p => p.category)));
+  const categories = plans.length > 0 ? Array.from(new Set(plans.map(p => p.category))) : ['All Plans'];
   const displayedPlans = plans.filter(p => p.category === activeCategory);
 
   const handleRecharge = async () => {
-    if (!user?.uid || !selectedPlan || mobileNumber.length !== 10) {
+    if (!user?.uid || !selectedPlan || mobileNumber.length !== 10 || !operatorCode) {
         window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Enter a valid 10-digit mobile number', type: 'error' } }));
         return;
     }
@@ -88,15 +88,19 @@ export default function MobileRechargePage() {
         
         if (mock) {
             // Bypass Razorpay for testing when keys are missing
-            await api.post('/utility/recharge', {
+            const rechRes = await api.post('/utility/recharge', {
                 userId: user.uid,
                 mobile: mobileNumber,
                 amount: selectedPlan.price,
-                operator: operator
+                operatorCode: operatorCode
             });
 
-            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `[Mock] Successfully recharged ₹${selectedPlan.price}!`, type: 'success' } }));
-            router.push('/utility');
+            if (rechRes.data.success) {
+                window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `[Mock] Successfully recharged ₹${selectedPlan.price}!`, type: 'success' } }));
+                router.push('/utility');
+            } else {
+                throw new Error(rechRes.data.message || 'Recharge failed');
+            }
             return;
         }
 
@@ -118,19 +122,23 @@ export default function MobileRechargePage() {
                     });
                     
                     if (verifyRes.data.success) {
-                        await api.post('/utility/recharge', {
+                        const realRechargeRes = await api.post('/utility/recharge', {
                             userId: user.uid,
                             mobile: mobileNumber,
                             amount: selectedPlan.price,
-                            operator: operator
+                            operatorCode: operatorCode
                         });
 
-                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Successfully recharged ₹${selectedPlan.price}!`, type: 'success' } }));
-                        router.push('/utility');
+                        if (realRechargeRes.data.success) {
+                            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Successfully recharged ₹${selectedPlan.price}!`, type: 'success' } }));
+                            router.push('/utility');
+                        } else {
+                            throw new Error(realRechargeRes.data.message || 'Recharge Failed');
+                        }
                     }
-                } catch (e) {
-                    console.error("Verification failed", e);
-                    window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Verification failed', type: 'error' } }));
+                } catch (e: any) {
+                    console.error("Verification/Recharge failed", e);
+                    window.dispatchEvent(new CustomEvent('showToast', { detail: { message: e.message || 'Verification failed', type: 'error' } }));
                     setIsPaying(false);
                 }
             },
@@ -151,8 +159,8 @@ export default function MobileRechargePage() {
         const rzp = new (window as any).Razorpay(options);
         rzp.open();
 
-    } catch (error) {
-      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Recharge failed`, type: 'error' } }));
+    } catch (error: any) {
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: error.message || `Recharge failed`, type: 'error' } }));
       setIsPaying(false);
     }
   };
@@ -194,9 +202,6 @@ export default function MobileRechargePage() {
                         </div>
                         <span className="text-sm font-bold text-gray-700">{operator} - Prepaid</span>
                     </div>
-                    <button onClick={() => setOperator(operator === 'Airtel' ? 'Jio' : 'Airtel')} className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full">
-                        Change
-                    </button>
                 </div>
             )}
         </div>
