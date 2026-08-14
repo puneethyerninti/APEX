@@ -30,6 +30,7 @@ export default function MobileRechargePage() {
   useEffect(() => {
       // Auto-fetch plans when operator is set
       const fetchPlans = async () => {
+          if (mobileNumber.length !== 10) return;
           setLoadingPlans(true);
           try {
               const res = await api.get(`/utility/plans?operator=${operator}`);
@@ -42,7 +43,28 @@ export default function MobileRechargePage() {
           setLoadingPlans(false);
       };
       fetchPlans();
-  }, [operator]);
+  }, [operator, mobileNumber]);
+
+  useEffect(() => {
+      // Dynamic Operator Detection based on prefixes (Fallback for MNP API)
+      if (mobileNumber.length === 10) {
+          const prefix = mobileNumber.substring(0, 4);
+          const firstDigit = mobileNumber[0];
+          
+          // Basic heuristic for Indian Telecom Providers
+          if (['6', '70', '79'].includes(prefix.substring(0, 2)) || firstDigit === '6') {
+              setOperator('Jio');
+          } else if (['99', '98', '94', '95'].includes(prefix.substring(0, 2)) || firstDigit === '9') {
+              setOperator('Airtel');
+          } else if (['89', '88', '84', '85'].includes(prefix.substring(0, 2)) || firstDigit === '8') {
+              setOperator('VI');
+          } else if (['94', '95'].includes(prefix.substring(0, 2))) {
+               setOperator('BSNL');
+          } else {
+              setOperator('Airtel'); // Fallback
+          }
+      }
+  }, [mobileNumber]);
 
   const categories = Array.from(new Set(plans.map(p => p.category)));
   const displayedPlans = plans.filter(p => p.category === activeCategory);
