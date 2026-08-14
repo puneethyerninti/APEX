@@ -205,7 +205,13 @@ export default function UtilityPage() {
               <button 
                 key={index} 
                 className={`flex flex-col items-center justify-center p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors group min-h-[105px] ${(index + 1) % 3 !== 0 ? 'border-r border-gray-100' : ''}`}
-                onClick={() => setSelectedBiller(biller.name)}
+                onClick={() => {
+                  if (biller.name === 'Mobile Recharge') {
+                    router.push('/utility/recharge');
+                  } else {
+                    setSelectedBiller(biller.name);
+                  }
+                }}
               >
                 <div className="mb-2.5 transition-transform duration-200 group-hover:scale-110">
                   <i className={`${biller.icon} text-3xl ${biller.color} drop-shadow-sm`}></i>
