@@ -76,14 +76,14 @@ export default function Page() {
             <Link href="#" className="text-[9px] font-bold text-amber-600">View All</Link>
         </div>
         <div className="flex gap-3 overflow-x-auto px-4 scrollbar-none flex-nowrap pb-2">
-            <div className="product-card bg-white rounded-xl p-3 shadow-sm border border-gray-100 w-[140px] flex-shrink-0 cursor-pointer" data-category="electronics mobiles sony headphones audio">
+            <div className="product-card bg-white rounded-xl p-3 shadow-sm border border-gray-100 w-[140px] flex-shrink-0 cursor-pointer" data-category="fashion clothing levis denim jacket">
                 <div className="h-24 w-full flex items-center justify-center mb-2">
-                    <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&amp;fit=crop&amp;q=80" alt="Product" className="h-full object-contain rounded" />
+                    <img src="https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&amp;fit=crop&amp;q=80" alt="Product" className="h-full object-contain rounded" />
                 </div>
-                <h4 className="font-bold text-[10px] text-gray-900 truncate mb-1">Sony WH-1000XM4</h4>
+                <h4 className="font-bold text-[10px] text-gray-900 truncate mb-1">Levi's Denim Jacket</h4>
                 <div className="flex items-end gap-1.5 mb-2">
-                    <span className="text-gray-900 font-black text-sm">₹24,990</span>
-                    <span className="text-[8px] text-gray-400 line-through">₹29,990</span>
+                    <span className="text-gray-900 font-black text-sm">₹2,499</span>
+                    <span className="text-[8px] text-gray-400 line-through">₹3,999</span>
                 </div>
                 <button onClick={() => {}} className="w-full bg-amber-100 text-amber-700 font-bold text-[9px] py-1.5 rounded-lg hover:bg-amber-200 transition-colors">Add to Cart</button>
             </div>
