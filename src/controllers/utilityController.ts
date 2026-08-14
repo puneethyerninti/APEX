@@ -3,7 +3,8 @@ import { createNotification } from './notificationController';
 import User from '../models/User';
 import Transaction from '../models/Transaction';
 import UtilityTransaction from '../models/UtilityTransaction';
-import { getUtilityOperators, processRecharge, fetchRechargePlans } from '../services/ekoService';
+import { getUtilityOperators, processRecharge, fetchRechargePlans, getOperatorCodeAndCircle } from '../services/ekoService';
+import crypto from 'crypto';
 
 export const getOperators = async (req: Request, res: Response) => {
     try {
@@ -17,40 +18,51 @@ export const getOperators = async (req: Request, res: Response) => {
 
 export const getPlans = async (req: Request, res: Response) => {
     try {
-        const { operator } = req.query;
-        if (!operator) {
-            return res.status(400).json({ success: false, message: 'Operator is required' });
+        const { mobile } = req.query;
+        if (!mobile) {
+            return res.status(400).json({ success: false, message: 'Mobile number is required' });
         }
         
-        const plans = await fetchRechargePlans(operator as string);
-        res.status(200).json({ success: true, data: plans });
-    } catch (error) {
+        // 1. Get Operator Code and Circle from Eko
+        const { phone_operator_code, circleid } = await getOperatorCodeAndCircle(mobile as string);
+
+        // 2. Fetch Plans
+        const plans = await fetchRechargePlans(mobile as string, phone_operator_code, circleid);
+        
+        res.status(200).json({ 
+            success: true, 
+            data: plans,
+            meta: { phone_operator_code, circleid } // Pass meta back to frontend so it can use it for recharge
+        });
+    } catch (error: any) {
         console.error('Error in getPlans', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch plans' });
+        res.status(500).json({ success: false, message: error.message || 'Failed to fetch plans' });
     }
 };
 
 export const rechargeMobile = async (req: Request, res: Response) => {
     try {
-        const { mobile, amount, operator, userId } = req.body;
+        const { mobile, amount, operatorCode, userId } = req.body;
 
-        if (!mobile || !amount || !operator || !userId) {
+        if (!mobile || !amount || !operatorCode || !userId) {
             return res.status(400).json({ success: false, message: 'Missing required fields' });
         }
+
+        const clientRefId = `req_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`.substring(0, 20); // max 20 chars
 
         // 1. Create Pending Transaction
         const transaction = new UtilityTransaction({
             userId,
             type: 'Mobile Recharge',
             amount,
-            operator,
+            operator: operatorCode,
             mobileOrAccountNumber: mobile,
             status: 'Pending'
         });
         await transaction.save();
 
         // 2. Call Eko Service
-        const ekoResult = await processRecharge(mobile, amount, operator);
+        const ekoResult = await processRecharge(mobile, amount, operatorCode, clientRefId);
 
         // 3. Update Transaction
         if (ekoResult.status === 0) {

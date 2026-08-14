@@ -1,17 +1,21 @@
 import crypto from 'crypto';
 import axios from 'axios';
 
-// UAT API Keys (Test)
+// Environment Variables
 const EKO_DEV_KEY = process.env.EKO_DEV_KEY || 'becbbce45f79c6f5109f848acd540567';
 const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY || 'd2fe1d99-6298-4af2-8cc5-d97dcf46df30';
-const EKO_BASE_URL = 'https://staging.eko.in:25004/ekoapi/v1';
+const EKO_INITIATOR_ID = process.env.EKO_INITIATOR_ID || '6303210224';
+const EKO_BASE_URL = 'https://staging.eko.in/ekoapi/v3';
 
 /**
  * Generates Eko Authentication headers
  */
 export const getEkoHeaders = () => {
     const timestamp = Date.now().toString();
-    const hmac = crypto.createHmac('sha256', EKO_ACCESS_KEY);
+    
+    // The signature is base64(HMAC-SHA256(timestamp, base64(access_key)))
+    const accessKeyBuffer = Buffer.from(EKO_ACCESS_KEY, 'base64');
+    const hmac = crypto.createHmac('sha256', accessKeyBuffer);
     hmac.update(timestamp);
     const signature = hmac.digest('base64');
 
@@ -19,117 +23,139 @@ export const getEkoHeaders = () => {
         'developer_key': EKO_DEV_KEY,
         'secret-key-timestamp': timestamp,
         'secret-key': signature,
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/json'
     };
 };
 
 /**
- * Fetch list of telecom operators (Mobile/DTH)
+ * Get Operator Code and Circle for a Mobile Number
  */
-export const getUtilityOperators = async () => {
+export const getOperatorCodeAndCircle = async (mobile: string) => {
     try {
-        // Mock response for now to ensure front-end can be built.
-        // Eko requires precise endpoints for operator fetch, which can vary based on API version.
-        return [
-            { id: 1, name: 'Airtel', category: 'Mobile' },
-            { id: 2, name: 'Jio', category: 'Mobile' },
-            { id: 3, name: 'VI', category: 'Mobile' },
-            { id: 4, name: 'BSNL', category: 'Mobile' },
-            { id: 5, name: 'Tata Play', category: 'DTH' },
-            { id: 6, name: 'Airtel Digital TV', category: 'DTH' }
-        ];
-    } catch (error) {
-        console.error('Error fetching operators', error);
+        const headers = getEkoHeaders();
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/recharge/${mobile}/operator?initiator_id=${EKO_INITIATOR_ID}`;
+        
+        const response = await axios.get(url, { headers });
+        const resData = response.data;
+        
+        if (resData.status !== 0 || !resData.dependent_params) {
+            throw new Error(resData.message || 'Failed to detect operator');
+        }
+
+        let phone_operator_code = '';
+        let circle_area = '';
+
+        resData.dependent_params.forEach((param: any) => {
+            if (param.name === 'phone_operator_code') phone_operator_code = param.value;
+            if (param.name === 'circle_area') circle_area = param.value;
+        });
+
+        return { phone_operator_code, circleid: circle_area };
+    } catch (error: any) {
+        console.error('Error in getOperatorCodeAndCircle', error.response?.data || error.message);
         throw error;
     }
+};
+
+/**
+ * Fetch Mobile Recharge Plans
+ */
+export const fetchRechargePlans = async (mobile: string, phone_operator_code: string, circleid: string) => {
+    try {
+        const headers = getEkoHeaders();
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/recharge/${mobile}/operator/plans?initiator_id=${EKO_INITIATOR_ID}&phone_operator_code=${phone_operator_code}&circleid=${circleid}`;
+        
+        const response = await axios.get(url, { headers });
+        const resData = response.data;
+
+        if (resData.status !== 0 || !resData.dependent_params) {
+            throw new Error(resData.message || 'Failed to fetch plans');
+        }
+
+        // Find req_list
+        const reqListObj = resData.dependent_params.find((p: any) => p.name === 'req_list');
+        if (!reqListObj || !reqListObj.value) {
+            return []; // No plans found
+        }
+
+        const typeMetadata = reqListObj.type_metadata?.[0]?.headers || [];
+        
+        // Map Eko's generic response to our UI schema
+        const mappedPlans = reqListObj.value.map((plan: any, index: number) => {
+            return {
+                id: `plan_${plan.amount}_${index}`,
+                category: 'All Plans', // Can categorize further if needed
+                price: parseFloat(plan.amount),
+                data: plan.plan_description?.includes('GB') ? extractDataText(plan.plan_description) : 'N/A',
+                validity: plan.validity || 'N/A',
+                description: plan.plan_description || 'Recharge Plan'
+            };
+        });
+
+        return mappedPlans;
+    } catch (error: any) {
+        console.error('Error fetching plans', error.response?.data || error.message);
+        throw error;
+    }
+};
+
+const extractDataText = (desc: string) => {
+    const match = desc.match(/(\d+(\.\d+)?\s?(GB|MB)(\/day)?)/i);
+    return match ? match[0] : 'Check Description';
 };
 
 /**
  * Process a recharge transaction
  */
-export const processRecharge = async (mobile: string, amount: number, operator: string) => {
+export const processRecharge = async (mobile: string, amount: number, operatorCode: string, clientRefId: string) => {
     try {
         const headers = getEkoHeaders();
-        // Mock success response for UAT
-        return {
-            status: 0,
-            message: 'Transaction Successful',
-            txid: 'EKO' + Date.now(),
-            data: {
-                amount,
-                mobile,
-                operator,
-                status: 'success'
-            }
+        const url = `${EKO_BASE_URL}/customer/payment/bbps`;
+        
+        const payload = {
+            initiator_id: EKO_INITIATOR_ID,
+            phone_operator_code: operatorCode,
+            utility_acc_no: mobile,
+            confirmation_mobile_no: mobile,
+            sender_name: "Customer", // Eko requirement, can be static for prepaid
+            amount: amount,
+            client_ref_id: clientRefId,
+            source_ip: "127.0.0.1"
         };
-    } catch (error) {
-        console.error('Error processing recharge', error);
+
+        const response = await axios.post(url, payload, { headers });
+        const resData = response.data;
+
+        if (resData.status === 0 || resData.response_type_id === 333) {
+            return {
+                status: 0,
+                message: resData.message || 'Transaction Successful',
+                txid: resData.data?.tid || clientRefId,
+                data: resData.data
+            };
+        } else {
+            return {
+                status: 1,
+                message: resData.message || 'Transaction Failed',
+                error: resData
+            };
+        }
+    } catch (error: any) {
+        console.error('Error processing recharge', error.response?.data || error.message);
         throw error;
     }
 };
 
 /**
- * Fetch Mobile Recharge Plans for an Operator
+ * Kept for backward compatibility if needed by DTH or other services
  */
-export const fetchRechargePlans = async (operator: string) => {
-    try {
-        // In production, this would call Eko API: /tools/reference/plans?operator=...
-        // For now, we mock realistic plans to build the PhonePe-style UI
-        const isJio = operator.toLowerCase().includes('jio');
-        const isAirtel = operator.toLowerCase().includes('airtel');
-        
-        return [
-            {
-                id: 'plan_299',
-                category: 'Popular',
-                price: isJio ? 299 : 349,
-                data: '2GB/Day',
-                validity: '28 Days',
-                description: 'Unlimited Calls + 100 SMS/Day'
-            },
-            {
-                id: 'plan_719',
-                category: 'Popular',
-                price: isJio ? 719 : 799,
-                data: '2GB/Day',
-                validity: '84 Days',
-                description: 'Unlimited Calls + 100 SMS/Day + Free OTT Subscriptions'
-            },
-            {
-                id: 'plan_199',
-                category: 'Unlimited',
-                price: isJio ? 199 : 239,
-                data: '1.5GB/Day',
-                validity: '23 Days',
-                description: 'Unlimited Calls + 100 SMS/Day'
-            },
-            {
-                id: 'plan_19',
-                category: 'Data Add-on',
-                price: isJio ? 19 : 29,
-                data: '1.5GB',
-                validity: 'Existing Plan',
-                description: 'High-speed data add-on'
-            },
-            {
-                id: 'plan_61',
-                category: 'Data Add-on',
-                price: isJio ? 61 : 65,
-                data: '6GB',
-                validity: 'Existing Plan',
-                description: 'High-speed data add-on'
-            },
-            {
-                id: 'plan_2999',
-                category: 'Annual',
-                price: isJio ? 2999 : 3359,
-                data: '2.5GB/Day',
-                validity: '365 Days',
-                description: 'Unlimited Calls + Free OTT Subscriptions for 1 Year'
-            }
-        ];
-    } catch (error) {
-        console.error('Error fetching plans', error);
-        throw error;
-    }
+export const getUtilityOperators = async () => {
+    return [
+        { id: 1, name: 'Airtel', category: 'Mobile' },
+        { id: 2, name: 'Jio', category: 'Mobile' },
+        { id: 3, name: 'VI', category: 'Mobile' },
+        { id: 4, name: 'BSNL', category: 'Mobile' },
+        { id: 5, name: 'Tata Play', category: 'DTH' },
+        { id: 6, name: 'Airtel Digital TV', category: 'DTH' }
+    ];
 };
