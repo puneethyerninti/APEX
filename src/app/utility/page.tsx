@@ -11,13 +11,20 @@ export default function UtilityPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBiller, setSelectedBiller] = useState<string | null>(null);
   const [isPaying, setIsPaying] = useState(false);
+  const [consumerNumber, setConsumerNumber] = useState('');
+  const [amount, setAmount] = useState('');
 
   const handlePayBill = async () => {
-    if (!user?.uid || !selectedBiller) return;
+    const numAmount = parseInt(amount, 10);
+    if (!user?.uid || !selectedBiller || !consumerNumber || !numAmount || numAmount <= 0) {
+        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please enter valid number and amount', type: 'error' } }));
+        return;
+    }
+    
     setIsPaying(true);
     try {
         const orderRes = await api.post('/finance/razorpay/order', {
-            amount: 500,
+            amount: numAmount,
             userId: user.uid,
             category: 'utility_payment',
             serviceName: `Bill Payment - ${selectedBiller}`
@@ -38,19 +45,31 @@ export default function UtilityPage() {
                         razorpay_order_id: response.razorpay_order_id,
                         razorpay_payment_id: response.razorpay_payment_id,
                         razorpay_signature: response.razorpay_signature,
-                        amount: 500,
+                        amount: numAmount,
                         userId: user.uid
                     });
                     
                     if (verifyRes.data.success) {
-                        // After successful verification, hit the utility endpoint to dispatch notifications/receipts
-                        await api.post('/utility/pay', {
-                            userId: user.uid,
-                            billerName: selectedBiller,
-                            amount: 500
-                        });
+                        if (selectedBiller.includes('Mobile') || selectedBiller.includes('DTH')) {
+                            await api.post('/utility/recharge', {
+                                userId: user.uid,
+                                mobile: consumerNumber,
+                                amount: numAmount,
+                                operator: selectedBiller
+                            });
+                        } else {
+                            await api.post('/utility/pay', {
+                                userId: user.uid,
+                                billerName: selectedBiller,
+                                amount: numAmount,
+                                consumerNumber: consumerNumber
+                            });
+                        }
+
                         window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Successfully paid ${selectedBiller} bill!`, type: 'success' } }));
                         setSelectedBiller(null);
+                        setConsumerNumber('');
+                        setAmount('');
                         setIsPaying(false);
                     }
                 } catch (e) {
@@ -208,14 +227,37 @@ export default function UtilityPage() {
         <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center">
             <div className="bg-white w-full max-w-md p-6 sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col animate-[slideUp_0.3s_ease-out]">
                 <h2 className="text-lg font-black text-gray-900 mb-2">Pay {selectedBiller} Bill</h2>
-                <p className="text-sm text-gray-500 mb-6">Confirm payment of ₹500 for your {selectedBiller} service.</p>
+                <p className="text-sm text-gray-500 mb-4">Enter details for your {selectedBiller} service.</p>
+                
+                <div className="space-y-4 mb-6">
+                    <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Mobile / Consumer Number</label>
+                        <input 
+                            type="text" 
+                            value={consumerNumber}
+                            onChange={(e) => setConsumerNumber(e.target.value)}
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D1B69] transition-all"
+                            placeholder="Enter number"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Amount (₹)</label>
+                        <input 
+                            type="number" 
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D1B69] transition-all"
+                            placeholder="Enter amount"
+                        />
+                    </div>
+                </div>
                 
                 <div className="flex gap-3">
                     <button onClick={() => setSelectedBiller(null)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">
                         Cancel
                     </button>
                     <button onClick={handlePayBill} disabled={isPaying} className="flex-1 py-3 bg-[#2D1B69] text-white font-bold rounded-xl shadow-lg flex justify-center items-center gap-2">
-                        {isPaying ? <i className="fa-solid fa-spinner fa-spin"></i> : "Pay ₹500"}
+                        {isPaying ? <i className="fa-solid fa-spinner fa-spin"></i> : `Pay ₹${amount || '0'}`}
                     </button>
                 </div>
             </div>
