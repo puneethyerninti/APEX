@@ -31,7 +31,7 @@ export default function Page() {
             <div className="relative z-10 w-2/3">
                 <p className="text-amber-100 text-[9px] font-bold uppercase tracking-widest mb-1">Big Billion Sale</p>
                 <h2 className="text-2xl font-black leading-tight mb-2">Up to 80% Off</h2>
-                <button className="bg-white text-orange-600 text-[10px] font-black px-4 py-1.5 rounded-full shadow-sm">Shop Now</button>
+                <button onClick={() => window.open('https://www.apextradingcompanystore.co.in/', '_blank')} className="bg-white text-orange-600 text-[10px] font-black px-4 py-1.5 rounded-full shadow-sm">Shop Now</button>
             </div>
             <div className="relative z-10 w-1/3 flex justify-end">
                 <i className="fa-solid fa-gift text-5xl text-white/90 drop-shadow-md"></i>
@@ -85,7 +85,7 @@ export default function Page() {
                     <span className="text-gray-900 font-black text-sm">₹2,499</span>
                     <span className="text-[8px] text-gray-400 line-through">₹3,999</span>
                 </div>
-                <button onClick={() => {}} className="w-full bg-amber-100 text-amber-700 font-bold text-[9px] py-1.5 rounded-lg hover:bg-amber-200 transition-colors">Add to Cart</button>
+                <button onClick={() => window.open('https://www.apextradingcompanystore.co.in/', '_blank')} className="w-full bg-amber-100 text-amber-700 font-bold text-[9px] py-1.5 rounded-lg hover:bg-amber-200 transition-colors">Buy on APEX Store</button>
             </div>
             <div className="product-card bg-white rounded-xl p-3 shadow-sm border border-gray-100 w-[140px] flex-shrink-0 cursor-pointer" data-category="fashion nike shoes sneakers footwear">
                 <div className="h-24 w-full flex items-center justify-center mb-2">
@@ -96,7 +96,7 @@ export default function Page() {
                     <span className="text-gray-900 font-black text-sm">₹8,495</span>
                     <span className="text-[8px] text-gray-400 line-through">₹12,995</span>
                 </div>
-                <button onClick={() => {}} className="w-full bg-amber-100 text-amber-700 font-bold text-[9px] py-1.5 rounded-lg hover:bg-amber-200 transition-colors">Add to Cart</button>
+                <button onClick={() => window.open('https://www.apextradingcompanystore.co.in/', '_blank')} className="w-full bg-amber-100 text-amber-700 font-bold text-[9px] py-1.5 rounded-lg hover:bg-amber-200 transition-colors">Buy on APEX Store</button>
             </div>
         </div>
     </div>

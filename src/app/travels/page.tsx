@@ -150,42 +150,96 @@ export default function Page() {
     setIsBooking(true);
     
     try {
-        const fare = type.includes('Mini') ? estimatedFare.mini : estimatedFare.xl;
+        let fare = 1500; // default fare for bus/train/flight
+        if (type.includes('Mini')) fare = estimatedFare.mini;
+        else if (type.includes('XL')) fare = estimatedFare.xl;
         
-        // Call backend to create booking
-        const res = await api.post('/travels/book', {
+        // Initiate Razorpay
+        const orderRes = await api.post('/finance/razorpay/order', {
+            amount: fare,
             userId: user._id || user.uid,
-            type: type.includes('Ride') ? 'Cab' : type.includes('Bus') ? 'Bus' : type.includes('Train') ? 'Train' : 'Flight',
-            vehicleType: type,
-            origin: pickupLocation || 'Current Location',
-            destination: destinationLocation || 'Selected Destination',
-            amount: fare
+            category: 'travel_booking',
+            serviceName: `Booking for ${type}`
         });
-        
-        const bookingId = res.data.booking._id;
 
-        if (type.includes('Ride') && socket) {
-            setRideStatus('searching');
-            const rideId = `ride_${Date.now()}`;
-            socket.emit('start_ride', {
-                rideId,
-                bookingId,
-                origin: pickupLocation || 'Current Location',
-                destination: destinationLocation || 'Selected Destination',
-                lat: userLocation?.lat,
-                lng: userLocation?.lng
-            });
-            setActiveRideId(rideId);
-        } else {
-            // Static success for non-cab
-            setBookingSuccess({
-                type,
-                message: `Your ${type} has been successfully booked!`
-            });
-        }
+        const { order, keyId } = orderRes.data;
+
+        const options = {
+            key: keyId,
+            amount: order.amount,
+            currency: order.currency,
+            name: "APEX Travels",
+            description: `Booking for ${type}`,
+            order_id: order.id,
+            handler: async function (response: any) {
+                try {
+                    const verifyRes = await api.post('/finance/razorpay/verify', {
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        amount: fare,
+                        userId: user._id || user.uid
+                    });
+                    
+                    if (verifyRes.data.success) {
+                        // Call backend to create booking
+                        const res = await api.post('/travels/book', {
+                            userId: user._id || user.uid,
+                            type: type.includes('Ride') ? 'Cab' : type.includes('Bus') ? 'Bus' : type.includes('Train') ? 'Train' : 'Flight',
+                            vehicleType: type,
+                            origin: pickupLocation || 'Current Location',
+                            destination: destinationLocation || 'Selected Destination',
+                            amount: fare
+                        });
+                        
+                        const bookingId = res.data.booking?._id || `temp_${Date.now()}`;
+
+                        if (type.includes('Ride') && socket) {
+                            setRideStatus('searching');
+                            const rideId = `ride_${Date.now()}`;
+                            socket.emit('start_ride', {
+                                rideId,
+                                bookingId,
+                                origin: pickupLocation || 'Current Location',
+                                destination: destinationLocation || 'Selected Destination',
+                                lat: userLocation?.lat,
+                                lng: userLocation?.lng
+                            });
+                            setActiveRideId(rideId);
+                        } else {
+                            // Static success for non-cab
+                            setBookingSuccess({
+                                type,
+                                message: `Your ${type} has been successfully booked!`
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error("Verification failed", err);
+                    alert("Payment verification failed");
+                } finally {
+                    setIsBooking(false);
+                }
+            },
+            prefill: {
+                name: user.name || "APEX User",
+                contact: user.phone || ""
+            },
+            theme: {
+                color: "#9333ea"
+            },
+            modal: {
+                ondismiss: function() {
+                    setIsBooking(false);
+                }
+            }
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
     } catch (err: any) {
+        console.error("Error initiating payment", err);
         alert(err.response?.data?.error || "Error booking ride. Please try again.");
-    } finally {
         setIsBooking(false);
     }
   };
