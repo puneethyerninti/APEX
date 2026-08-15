@@ -625,71 +625,110 @@ export default function Home() {
                         </div>    </div>
                 </section>
 
-                {/* Deals of the Day Deck */}
-                <div className="mx-4 my-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 reveal-up">
-                    {/* Header with Countdown */}
-                    <div className="flex items-center justify-between pb-2 border-b border-gray-50 mb-3">
-                        <div className="flex items-center gap-1.5">
-                            <i className="fa-solid fa-fire text-orange-500 animate-pulse text-sm"></i>
-                            <span className="font-extrabold text-xs text-gray-800 uppercase tracking-wider">Deals of the Day</span>
-                        </div>
-                        <div className="flex items-center gap-1 bg-red-50 text-red-600 font-mono text-[9px] font-black px-2 py-0.5 rounded border border-red-100" id="countdown-timer">
-                            23h : 42m : 15s left
-                        </div>
+                {/* Household, Stationery & Lifestyle Section */}
+                <div className="mx-4 my-5 reveal-up">
+                    <h3 className="font-extrabold text-[15px] text-gray-900 mb-3 tracking-tight">Household, Stationery & Lifestyle</h3>
+                    <div className="grid grid-cols-4 gap-2">
+                        {/* Cleaning Essentials */}
+                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
+                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Cleaning<br/>Essentials</span>
+                            <div className="w-full h-12 mt-auto px-1">
+                                <img src="https://images.unsplash.com/photo-1584820927508-eaafdf49a421?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Cleaning" />
+                            </div>
+                        </Link>
+                        {/* Stationery Supplies */}
+                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
+                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Stationery<br/>Supplies</span>
+                            <div className="w-full h-12 mt-auto px-1">
+                                <img src="https://images.unsplash.com/photo-1513258525046-24f6cb908070?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Stationery" />
+                            </div>
+                        </Link>
+                        {/* Toys & Games */}
+                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
+                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Toys &<br/>Games</span>
+                            <div className="w-full h-12 mt-auto px-1">
+                                <img src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Toys" />
+                            </div>
+                        </Link>
+                        {/* Sports & Fitness */}
+                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
+                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Sports &<br/>Fitness</span>
+                            <div className="w-full h-12 mt-auto px-1">
+                                <img src="https://images.unsplash.com/photo-1515523110800-9415d13b84a8?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Sports" />
+                            </div>
+                        </Link>
+                        {/* Home & Kitchen */}
+                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
+                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Home &<br/>Kitchen</span>
+                            <div className="w-full h-12 mt-auto px-1">
+                                <img src="https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Home Kitchen" />
+                            </div>
+                        </Link>
+                        {/* Electricals & Tools */}
+                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
+                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Electricals<br/>& Tools</span>
+                            <div className="w-full h-12 mt-auto px-1">
+                                <img src="https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Tools" />
+                            </div>
+                        </Link>
+                        {/* Fashion & Accessories */}
+                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
+                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Fashion &<br/>Accessories</span>
+                            <div className="w-full h-12 mt-auto px-1">
+                                <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Fashion" />
+                            </div>
+                        </Link>
+                        {/* Pet Supplies */}
+                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
+                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Pet<br/>Supplies</span>
+                            <div className="w-full h-12 mt-auto px-1">
+                                <img src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Pets" />
+                            </div>
+                        </Link>
                     </div>
+                </div>
 
-                    {/* Swipeable Cards */}
-                    <div className="flex gap-3 overflow-x-auto scrollbar-none flex-nowrap pb-1">
-                        {/* Deal 1 */}
-                        <Link href="https://www.apextradingcompanystore.co.in/" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
-                            <div className="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
-                                <img src="https://images.unsplash.com/photo-1589810635657-232948472d98?w=300&amp;q=80&amp;auto=format&amp;fit=crop" className="w-full h-full object-cover" />
-                                <span className="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">50% OFF</span>
-                            </div>
-                            <span className="text-[9px] font-bold text-gray-700 truncate">Premium Chunni</span>
-                            <span className="text-[10px] font-black text-apex-purple mt-0.5">₹100 <span className="text-[8px] text-gray-400 line-through font-normal">₹200</span></span>
-                            <div className="mt-1">
-                                <div className="flex justify-between text-[7px] text-gray-400 mb-0.5"><span>Remaining</span><span>12 left</span></div>
-                                <div className="w-full bg-gray-200 h-0.5 rounded-full"><div className="bg-red-500 h-0.5 rounded-full" style={{ width: "30%" }}></div></div>
+                {/* Mobiles & Electronics Section */}
+                <div className="mx-4 my-5 reveal-up">
+                    <h3 className="font-extrabold text-[15px] text-gray-900 mb-3 tracking-tight">Mobiles & Electronics</h3>
+                    <div className="grid grid-cols-4 gap-2">
+                        {/* Row 1 */}
+                        <Link href="/store" className="col-span-1 bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[100px]">
+                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Mobiles</span>
+                            <div className="w-full h-16 mt-auto px-1">
+                                <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Mobiles" />
                             </div>
                         </Link>
-                        {/* Deal 2 */}
-                        <Link href="https://www.apextradingcompanystore.co.in/" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
-                            <div className="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
-                                <img src="https://images.unsplash.com/photo-1603487742131-4160ec999306?w=300&amp;q=80&amp;auto=format&amp;fit=crop" className="w-full h-full object-cover" />
-                                <span className="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">40% OFF</span>
-                            </div>
-                            <span className="text-[9px] font-bold text-gray-700 truncate">Cotton Blouse</span>
-                            <span className="text-[10px] font-black text-apex-purple mt-0.5">₹60 <span className="text-[8px] text-gray-400 line-through font-normal">₹100</span></span>
-                            <div className="mt-1">
-                                <div className="flex justify-between text-[7px] text-gray-400 mb-0.5"><span>Remaining</span><span>5 left</span></div>
-                                <div className="w-full bg-gray-200 h-0.5 rounded-full"><div className="bg-red-500 h-0.5 rounded-full" style={{ width: "15%" }}></div></div>
+                        <Link href="/store" className="col-span-1 bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[100px]">
+                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Electronics<br/>& Gadgets</span>
+                            <div className="w-full h-16 mt-auto px-1">
+                                <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Electronics" />
                             </div>
                         </Link>
-                        {/* Deal 3 */}
-                        <Link href="https://www.apextradingcompanystore.co.in/" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
-                            <div className="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
-                                <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300&amp;q=80&amp;auto=format&amp;fit=crop" className="w-full h-full object-cover" />
-                                <span className="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">20% OFF</span>
-                            </div>
-                            <span className="text-[9px] font-bold text-gray-700 truncate">Nike Sneakers</span>
-                            <span className="text-[10px] font-black text-apex-purple mt-0.5">₹3,499 <span className="text-[8px] text-gray-400 line-through font-normal">₹4,399</span></span>
-                            <div className="mt-1">
-                                <div className="flex justify-between text-[7px] text-gray-400 mb-0.5"><span>Remaining</span><span>8 left</span></div>
-                                <div className="w-full bg-gray-200 h-0.5 rounded-full"><div className="bg-red-500 h-0.5 rounded-full" style={{ width: "60%" }}></div></div>
+                        <Link href="/store" className="col-span-2 bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-2 flex flex-col items-start hover:scale-[1.02] transition-transform min-h-[100px] relative overflow-hidden">
+                            <span className="text-[10px] font-bold text-gray-800 leading-[1.1] z-10">Audio & Smart<br/>Watches</span>
+                            <div className="absolute right-0 bottom-0 w-24 h-20">
+                                <img src="https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=400&q=80&fit=crop" className="w-full h-full object-cover rounded-br-xl mix-blend-multiply" alt="Smartwatches" />
                             </div>
                         </Link>
-                        {/* Deal 4 */}
-                        <Link href="https://www.apextradingcompanystore.co.in/" className="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
-                            <div className="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
-                                <img src="https://images.unsplash.com/photo-1584916201218-f4242ceb4809?w=300&amp;q=80&amp;auto=format&amp;fit=crop" className="w-full h-full object-cover" />
-                                <span className="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">15% OFF</span>
+                        
+                        {/* Row 2 */}
+                        <Link href="/store" className="col-span-2 bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-2 flex flex-col items-start hover:scale-[1.02] transition-transform min-h-[100px] relative overflow-hidden">
+                            <span className="text-[10px] font-bold text-gray-800 leading-[1.1] z-10">Home & Kitchen<br/>Appliances</span>
+                            <div className="absolute right-0 bottom-0 w-24 h-20">
+                                <img src="https://images.unsplash.com/photo-1585828604771-4a3172e27bde?w=400&q=80&fit=crop" className="w-full h-full object-cover rounded-br-xl mix-blend-multiply" alt="Appliances" />
                             </div>
-                            <span className="text-[9px] font-bold text-gray-700 truncate">Luxury Handbag</span>
-                            <span className="text-[10px] font-black text-apex-purple mt-0.5">₹1,299 <span className="text-[8px] text-gray-400 line-through font-normal">₹1,599</span></span>
-                            <div className="mt-1">
-                                <div className="flex justify-between text-[7px] text-gray-400 mb-0.5"><span>Remaining</span><span>15 left</span></div>
-                                <div className="w-full bg-gray-200 h-0.5 rounded-full"><div className="bg-red-500 h-0.5 rounded-full" style={{ width: "35%" }}></div></div>
+                        </Link>
+                        <Link href="/store" className="col-span-1 bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[100px]">
+                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Laptops &<br/>Tablets</span>
+                            <div className="w-full h-16 mt-auto px-1">
+                                <img src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Laptops" />
+                            </div>
+                        </Link>
+                        <Link href="/store" className="col-span-1 bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[100px]">
+                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Accessories<br/>& more</span>
+                            <div className="w-full h-16 mt-auto px-1">
+                                <img src="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Accessories" />
                             </div>
                         </Link>
                     </div>
