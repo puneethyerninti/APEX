@@ -640,7 +640,7 @@ export default function Home() {
                         <Link href="https://www.apextradingcompanystore.co.in/" className="bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
                             <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Stationery<br/>Supplies</span>
                             <div className="w-full flex-1 flex items-end justify-center">
-                                <img src="https://images.unsplash.com/photo-1497032208257-9e1248a09151?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Stationery" />
+                                <img src="https://images.unsplash.com/photo-1513258496099-48168024aec0?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Stationery" />
                             </div>
                         </Link>
                         {/* Toys & Games */}
