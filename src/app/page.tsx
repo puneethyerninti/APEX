@@ -633,14 +633,14 @@ export default function Home() {
                         <Link href="https://www.apextradingcompanystore.co.in/" className="bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
                             <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Cleaning<br/>Essentials</span>
                             <div className="w-full flex-1 flex items-end justify-center">
-                                <img src="https://images.unsplash.com/photo-1585561783457-4100c5bc681b?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Cleaning" />
+                                <img src="https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Cleaning" />
                             </div>
                         </Link>
                         {/* Stationery Supplies */}
                         <Link href="https://www.apextradingcompanystore.co.in/" className="bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
                             <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Stationery<br/>Supplies</span>
                             <div className="w-full flex-1 flex items-end justify-center">
-                                <img src="https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Stationery" />
+                                <img src="https://images.unsplash.com/photo-1497032208257-9e1248a09151?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Stationery" />
                             </div>
                         </Link>
                         {/* Toys & Games */}
@@ -716,7 +716,7 @@ export default function Home() {
                         <Link href="https://www.apextradingcompanystore.co.in/" className="col-span-2 bg-[#f0f2f5] rounded-xl p-2 md:p-4 flex flex-row items-center justify-between hover:scale-[1.02] transition-transform aspect-[2/1] md:aspect-[8/3] overflow-hidden">
                             <span className="text-[10px] md:text-sm font-bold text-gray-800 leading-[1.1] md:leading-tight z-10 w-1/2">Home & Kitchen<br/>Appliances</span>
                             <div className="w-1/2 h-full flex justify-end items-center">
-                                <img src="https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=400&q=80&fit=crop" className="h-[90%] max-h-32 object-contain mix-blend-multiply" alt="Appliances" />
+                                <img src="https://images.unsplash.com/photo-1556911220-bff31c812dba?w=400&q=80&fit=crop" className="h-[90%] max-h-32 object-contain mix-blend-multiply" alt="Appliances" />
                             </div>
                         </Link>
                         <Link href="https://www.apextradingcompanystore.co.in/" className="col-span-1 bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
