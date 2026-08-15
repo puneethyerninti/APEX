@@ -82,7 +82,33 @@ export const rechargeMobile = async (req: Request, res: Response) => {
         } else {
             transaction.status = 'Failed';
             await transaction.save();
-            return res.status(400).json({ success: false, message: 'Recharge failed', error: ekoResult.message });
+
+            // Refund Safety Net: Credit the exact amount back to the APEX wallet
+            const user = await User.findById(userId);
+            if (user) {
+                user.walletBalance += amount;
+                await user.save();
+
+                // Create a refund transaction
+                await Transaction.create({
+                    user: userId,
+                    amount,
+                    type: 'credit',
+                    category: 'refund',
+                    referenceId: transaction._id,
+                    status: 'completed',
+                } as any);
+
+                // Notify User of Refund
+                await createNotification(
+                    userId,
+                    'Recharge Failed - Amount Refunded',
+                    `Your recharge of ₹${amount} for ${mobile} failed due to an upstream error. The amount has been safely refunded to your APEX wallet.`,
+                    'info'
+                );
+            }
+
+            return res.status(400).json({ success: false, message: 'Recharge failed. Amount refunded to wallet.', error: ekoResult.message });
         }
 
     } catch (error) {
@@ -92,41 +118,5 @@ export const rechargeMobile = async (req: Request, res: Response) => {
 };
 
 export const payBill = async (req: Request, res: Response) => {
-  const { userId, billerName, amount } = req.body;
-
-  if (!userId || !billerName) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const numericAmount = parseInt(amount.toString().replace(/[^0-9]/g, ''), 10) || 500;
-
-    // Record the mock transaction
-    await Transaction.create({
-      user: userId,
-      amount: numericAmount,
-      type: 'debit',
-      category: 'utility_payment',
-      status: 'completed',
-      referenceId: `bill_${Date.now()}`
-    } as any);
-
-    // Send Real-Time Notification
-    await createNotification(
-      userId,
-      'Bill Payment Successful',
-      `Your payment of ₹${numericAmount} for ${billerName} was successful.`,
-      'success'
-    );
-
-    res.json({ success: true, message: 'Bill paid successfully' });
-  } catch (error) {
-    console.error('Error paying bill:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
+  return res.status(501).json({ error: 'Bill Payments (BBPS) integration is coming soon. Please try again later.' });
 };

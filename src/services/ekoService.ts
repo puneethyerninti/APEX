@@ -5,7 +5,7 @@ import axios from 'axios';
 const EKO_DEV_KEY = process.env.EKO_DEV_KEY || 'becbbce45f79c6f5109f848acd540567';
 const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY || 'd2fe1d99-6298-4af2-8cc5-d97dcf46df30';
 const EKO_INITIATOR_ID = process.env.EKO_INITIATOR_ID || '6303210224';
-const EKO_BASE_URL = 'https://staging.eko.in/ekoapi/v3';
+const EKO_BASE_URL = process.env.EKO_BASE_URL || 'https://staging.eko.in/ekoapi/v3';
 
 /**
  * Generates Eko Authentication headers

@@ -95,24 +95,8 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
   const { amount, userId, category = 'add_money', serviceName } = req.body; 
   
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-    // Mock mode for testing without real keys
-    const mockOrder = {
-       id: `order_mock_${Date.now()}`,
-       amount: Math.round(amount * 100),
-       currency: "INR"
-    };
-    
-    await Transaction.create({
-      user: userId,
-      amount,
-      type: 'credit',
-      category: category,
-      referenceId: serviceName || 'wallet_topup',
-      status: 'pending',
-      razorpayOrderId: mockOrder.id
-    });
-
-    return res.json({ order: mockOrder, keyId: 'mock', mock: true });
+    console.error("CRITICAL: Razorpay keys are missing from environment variables.");
+    return res.status(500).json({ error: 'Payment gateway is not configured correctly on the server.' });
   }
 
   if (!userId) {
