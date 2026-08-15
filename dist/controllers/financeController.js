@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.recordMockTransaction = exports.verifyRazorpayPayment = exports.createRazorpayOrder = exports.addMoney = exports.deductMoney = exports.getWalletBalance = void 0;
+exports.verifyRazorpayPayment = exports.createRazorpayOrder = exports.addMoney = exports.deductMoney = exports.getWalletBalance = void 0;
 const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const razorpay_1 = __importDefault(require("razorpay"));
@@ -80,7 +80,8 @@ exports.addMoney = addMoney;
 const createRazorpayOrder = async (req, res) => {
     const { amount, userId, category = 'add_money', serviceName } = req.body;
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-        return res.status(500).json({ error: 'Payment gateway configuration missing' });
+        console.error("CRITICAL: Razorpay keys are missing from environment variables.");
+        return res.status(500).json({ error: 'Payment gateway is not configured correctly on the server.' });
     }
     if (!userId) {
         return res.status(400).json({ error: 'User ID is required' });
@@ -142,6 +143,10 @@ const verifyRazorpayPayment = async (req, res) => {
                     // For service payments (subscription, academy, etc)
                     await (0, notificationController_1.createNotification)(transaction.user.toString(), 'Payment Successful', `Your payment of ₹${transaction.amount} for ${transaction.referenceId || transaction.category} was successful.`, 'success');
                 }
+                const io = req.app.get('io');
+                if (io) {
+                    io.to('admin_room').emit('admin_data_refresh', { type: 'new_transaction', data: transaction });
+                }
                 return res.json({ success: true, message: "Payment verified successfully" });
             }
             else {
@@ -159,31 +164,3 @@ const verifyRazorpayPayment = async (req, res) => {
     }
 };
 exports.verifyRazorpayPayment = verifyRazorpayPayment;
-// Record Mock Transaction for razorpay.me redirects
-const recordMockTransaction = async (req, res) => {
-    const { amount, userId, category, serviceName } = req.body;
-    if (!userId || !amount) {
-        return res.status(400).json({ error: 'Missing userId or amount' });
-    }
-    try {
-        const user = await User_1.default.findById(userId);
-        if (!user)
-            return res.status(404).json({ error: 'User not found' });
-        // Create pending transaction for admin tracking
-        await Transaction_1.default.create({
-            user: userId,
-            amount,
-            type: 'debit',
-            category: category || 'service_payment',
-            status: 'pending',
-            referenceId: `mock_${Date.now()}`
-        });
-        await (0, notificationController_1.createNotification)(userId, 'Payment Recorded', `Your payment of ₹${amount} for ${serviceName || category || 'service'} has been recorded.`, 'success');
-        res.json({ success: true, message: 'Pending transaction recorded for verification' });
-    }
-    catch (error) {
-        console.error('Error recording mock transaction:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-};
-exports.recordMockTransaction = recordMockTransaction;

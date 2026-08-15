@@ -3,13 +3,30 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logInvestIntent = exports.getMarketData = void 0;
+exports.logInvestIntent = exports.seedMutualFunds = exports.getMarketData = void 0;
 const notificationController_1 = require("./notificationController");
 const User_1 = __importDefault(require("../models/User"));
+const MutualFund_1 = __importDefault(require("../models/MutualFund"));
 const getMarketData = async (req, res) => {
-    // In a fully live production system with an ARN, this would call BSE StAR MF API or Finbox API
-    // For now, this returns a highly realistic mock payload so the UI can be built
-    const mockMutualFunds = [
+    try {
+        const mutualFunds = await MutualFund_1.default.find({}).lean();
+        res.json({
+            success: true,
+            message: "Market data fetched successfully",
+            timestamp: new Date().toISOString(),
+            data: {
+                mutualFunds
+            }
+        });
+    }
+    catch (error) {
+        console.error('Error fetching market data:', error);
+        res.status(500).json({ error: 'Server error fetching market data' });
+    }
+};
+exports.getMarketData = getMarketData;
+const seedMutualFunds = async (req, res) => {
+    const initialFunds = [
         {
             id: "MF_001",
             name: "HDFC Small Cap Fund",
@@ -55,16 +72,21 @@ const getMarketData = async (req, res) => {
             fundHouse: "PPFAS Mutual Fund"
         }
     ];
-    res.json({
-        success: true,
-        message: "Market data fetched successfully",
-        timestamp: new Date().toISOString(),
-        data: {
-            mutualFunds: mockMutualFunds
+    try {
+        // Prevent double seeding
+        const count = await MutualFund_1.default.countDocuments();
+        if (count > 0) {
+            return res.status(400).json({ message: 'Mutual funds already seeded', count });
         }
-    });
+        await MutualFund_1.default.insertMany(initialFunds);
+        res.json({ success: true, message: 'Seeded successfully' });
+    }
+    catch (error) {
+        console.error('Seed error:', error);
+        res.status(500).json({ error: 'Failed to seed mutual funds' });
+    }
 };
-exports.getMarketData = getMarketData;
+exports.seedMutualFunds = seedMutualFunds;
 const logInvestIntent = async (req, res) => {
     const { userId, amcName } = req.body;
     if (!userId || !amcName) {

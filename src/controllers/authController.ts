@@ -55,6 +55,11 @@ export const verifySimulatedOTP = async (req: Request, res: Response) => {
           walletBalance: 0,
           role: isAdminPhone ? 'admin' : 'user'
         });
+        
+        const io = req.app.get('io');
+        if (io) {
+            io.to('admin_room').emit('admin_data_refresh', { type: 'new_user', data: user });
+        }
       } else if (isAdminPhone && user.role !== 'admin') {
         // Automatically upgrade existing user to admin if phone matches
         user.role = 'admin';

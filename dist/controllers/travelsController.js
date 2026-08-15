@@ -36,6 +36,10 @@ const createBooking = async (req, res) => {
             status: initialStatus
         });
         await (0, notificationController_1.createNotification)(userId, 'Travel Booked', `Your ${type} booking from ${origin} to ${destination} was successful!`, 'success');
+        const io = req.app.get('io');
+        if (io) {
+            io.to('admin_room').emit('admin_data_refresh', { type: 'new_travel_booking' });
+        }
         res.json({ success: true, booking, message: 'Booking successful' });
     }
     catch (error) {

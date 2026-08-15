@@ -3,9 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveFCMToken = exports.sendEmailNotification = exports.verifyPan = exports.updateUserProfile = exports.getUserProfile = void 0;
+exports.saveFCMToken = exports.sendEmailNotification = exports.updateUserProfile = exports.getUserProfile = void 0;
 const User_1 = __importDefault(require("../models/User"));
-const axios_1 = __importDefault(require("axios"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const resend_1 = require("resend");
 const notificationController_1 = require("./notificationController");
@@ -102,54 +101,6 @@ const updateUserProfile = async (req, res) => {
     }
 };
 exports.updateUserProfile = updateUserProfile;
-// Cashfree Identity Verification (Hybrid Mock)
-const verifyPan = async (req, res) => {
-    const { pan_number, name } = req.body;
-    if (!pan_number) {
-        return res.status(400).json({ error: "PAN number is required" });
-    }
-    // MOCK BYPASS
-    if (!process.env.CASHFREE_CLIENT_ID) {
-        return res.json({
-            success: true,
-            mockMode: true,
-            message: "PAN successfully verified (Mock Mode)",
-            data: {
-                pan: pan_number,
-                name_provided: name,
-                registered_name: "Mocked User Identity",
-                valid: true
-            }
-        });
-    }
-    // REAL CASHFREE VERIFICATION
-    try {
-        const environment = process.env.CASHFREE_ENVIRONMENT === 'PRODUCTION'
-            ? 'https://api.cashfree.com/verification'
-            : 'https://sandbox.cashfree.com/verification';
-        const response = await axios_1.default.post(`${environment}/pan`, {
-            pan: pan_number,
-            name: name || ""
-        }, {
-            headers: {
-                'x-client-id': process.env.CASHFREE_CLIENT_ID,
-                'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
-                'Content-Type': 'application/json'
-            }
-        });
-        if (response.data.valid === true) {
-            res.json({ success: true, mockMode: false, data: response.data });
-        }
-        else {
-            res.status(400).json({ success: false, error: "Invalid PAN", data: response.data });
-        }
-    }
-    catch (error) {
-        console.error("Cashfree API Error:", error?.response?.data || error);
-        res.status(500).json({ error: "Failed to verify identity with provider" });
-    }
-};
-exports.verifyPan = verifyPan;
 // Resend Email Notification (Hybrid Mock)
 const sendEmailNotification = async (req, res) => {
     const { to, subject, html } = req.body;
@@ -157,7 +108,7 @@ const sendEmailNotification = async (req, res) => {
         return res.status(400).json({ error: "Missing email parameters" });
     }
     // MOCK BYPASS
-    if (!process.env.RESEND_API_KEY) {
+    if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'mock_key') {
         console.log("=== MOCK EMAIL DISPATCHED ===");
         console.log(`To: ${to}`);
         console.log(`Subject: ${subject}`);

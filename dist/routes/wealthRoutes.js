@@ -8,4 +8,5 @@ const wealthController_1 = require("../controllers/wealthController");
 const router = express_1.default.Router();
 router.get('/market-data', wealthController_1.getMarketData);
 router.post('/invest-intent', wealthController_1.logInvestIntent);
+router.post('/seed', wealthController_1.seedMutualFunds);
 exports.default = router;

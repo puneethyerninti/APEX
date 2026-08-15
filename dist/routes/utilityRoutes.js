@@ -7,4 +7,7 @@ const express_1 = __importDefault(require("express"));
 const utilityController_1 = require("../controllers/utilityController");
 const router = express_1.default.Router();
 router.post('/pay', utilityController_1.payBill);
+router.get('/operators', utilityController_1.getOperators);
+router.get('/plans', utilityController_1.getPlans);
+router.post('/recharge', utilityController_1.rechargeMobile);
 exports.default = router;

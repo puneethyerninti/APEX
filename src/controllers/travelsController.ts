@@ -45,6 +45,11 @@ export const createBooking = async (req: Request, res: Response) => {
       'success'
     );
 
+    const io = req.app.get('io');
+    if (io) {
+        io.to('admin_room').emit('admin_data_refresh', { type: 'new_travel_booking' });
+    }
+
     res.json({ success: true, booking, message: 'Booking successful' });
   } catch (error) {
     console.error('Error creating travel booking:', error);

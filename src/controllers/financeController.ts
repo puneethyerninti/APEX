@@ -181,6 +181,10 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
              'success'
            );
         }
+        const io = req.app.get('io');
+        if (io) {
+            io.to('admin_room').emit('admin_data_refresh', { type: 'new_transaction', data: transaction });
+        }
         
         return res.json({ success: true, message: "Payment verified successfully" });
       } else {

@@ -14,5 +14,4 @@ router.post('/wallet/add', financeController_1.addMoney);
 router.post('/razorpay/order', financeController_1.createRazorpayOrder);
 router.post('/razorpay/verify', financeController_1.verifyRazorpayPayment);
 router.post('/razorpay/webhook', webhookController_1.handleRazorpayWebhook);
-router.post('/razorpay/record-mock', financeController_1.recordMockTransaction);
 exports.default = router;
