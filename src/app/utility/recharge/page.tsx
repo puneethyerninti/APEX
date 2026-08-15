@@ -84,25 +84,7 @@ export default function MobileRechargePage() {
             serviceName: `Recharge - ${operator}`
         });
         
-        const { order, keyId, mock } = orderRes.data;
-        
-        if (mock) {
-            // Bypass Razorpay for testing when keys are missing
-            const rechRes = await api.post('/utility/recharge', {
-                userId: user.uid,
-                mobile: mobileNumber,
-                amount: selectedPlan.price,
-                operatorCode: operatorCode
-            });
-
-            if (rechRes.data.success) {
-                window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `[Mock] Successfully recharged ₹${selectedPlan.price}!`, type: 'success' } }));
-                router.push('/utility');
-            } else {
-                throw new Error(rechRes.data.message || 'Recharge failed');
-            }
-            return;
-        }
+        const { order, keyId } = orderRes.data;
 
         const options = {
             key: keyId,
