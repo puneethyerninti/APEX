@@ -626,109 +626,109 @@ export default function Home() {
                 </section>
 
                 {/* Household, Stationery & Lifestyle Section */}
-                <div className="mx-4 my-5 reveal-up">
-                    <h3 className="font-extrabold text-[15px] text-gray-900 mb-3 tracking-tight">Household, Stationery & Lifestyle</h3>
-                    <div className="grid grid-cols-4 gap-2">
+                <div className="mx-4 my-5 reveal-up max-w-7xl md:mx-auto">
+                    <h3 className="font-extrabold text-[15px] md:text-lg text-gray-900 mb-3 tracking-tight">Household, Stationery & Lifestyle</h3>
+                    <div className="grid grid-cols-4 gap-2 md:gap-4">
                         {/* Cleaning Essentials */}
-                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
-                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Cleaning<br/>Essentials</span>
-                            <div className="w-full h-12 mt-auto px-1">
-                                <img src="https://images.unsplash.com/photo-1584820927508-eaafdf49a421?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Cleaning" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Cleaning<br/>Essentials</span>
+                            <div className="w-full flex-1 flex items-end justify-center">
+                                <img src="https://images.unsplash.com/photo-1585561783457-4100c5bc681b?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Cleaning" />
                             </div>
                         </Link>
                         {/* Stationery Supplies */}
-                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
-                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Stationery<br/>Supplies</span>
-                            <div className="w-full h-12 mt-auto px-1">
-                                <img src="https://images.unsplash.com/photo-1513258525046-24f6cb908070?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Stationery" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Stationery<br/>Supplies</span>
+                            <div className="w-full flex-1 flex items-end justify-center">
+                                <img src="https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Stationery" />
                             </div>
                         </Link>
                         {/* Toys & Games */}
-                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
-                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Toys &<br/>Games</span>
-                            <div className="w-full h-12 mt-auto px-1">
-                                <img src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Toys" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Toys &<br/>Games</span>
+                            <div className="w-full flex-1 flex items-end justify-center">
+                                <img src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Toys" />
                             </div>
                         </Link>
                         {/* Sports & Fitness */}
-                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
-                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Sports &<br/>Fitness</span>
-                            <div className="w-full h-12 mt-auto px-1">
-                                <img src="https://images.unsplash.com/photo-1515523110800-9415d13b84a8?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Sports" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Sports &<br/>Fitness</span>
+                            <div className="w-full flex-1 flex items-end justify-center">
+                                <img src="https://images.unsplash.com/photo-1515523110800-9415d13b84a8?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Sports" />
                             </div>
                         </Link>
                         {/* Home & Kitchen */}
-                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
-                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Home &<br/>Kitchen</span>
-                            <div className="w-full h-12 mt-auto px-1">
-                                <img src="https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Home Kitchen" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Home &<br/>Kitchen</span>
+                            <div className="w-full flex-1 flex items-end justify-center">
+                                <img src="https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Home Kitchen" />
                             </div>
                         </Link>
                         {/* Electricals & Tools */}
-                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
-                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Electricals<br/>& Tools</span>
-                            <div className="w-full h-12 mt-auto px-1">
-                                <img src="https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Tools" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Electricals<br/>& Tools</span>
+                            <div className="w-full flex-1 flex items-end justify-center">
+                                <img src="https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Tools" />
                             </div>
                         </Link>
                         {/* Fashion & Accessories */}
-                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
-                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Fashion &<br/>Accessories</span>
-                            <div className="w-full h-12 mt-auto px-1">
-                                <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Fashion" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Fashion &<br/>Accessories</span>
+                            <div className="w-full flex-1 flex items-end justify-center">
+                                <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Fashion" />
                             </div>
                         </Link>
                         {/* Pet Supplies */}
-                        <Link href="/store" className="bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[90px]">
-                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Pet<br/>Supplies</span>
-                            <div className="w-full h-12 mt-auto px-1">
-                                <img src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Pets" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Pet<br/>Supplies</span>
+                            <div className="w-full flex-1 flex items-end justify-center">
+                                <img src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Pets" />
                             </div>
                         </Link>
                     </div>
                 </div>
 
                 {/* Mobiles & Electronics Section */}
-                <div className="mx-4 my-5 reveal-up">
-                    <h3 className="font-extrabold text-[15px] text-gray-900 mb-3 tracking-tight">Mobiles & Electronics</h3>
-                    <div className="grid grid-cols-4 gap-2">
+                <div className="mx-4 my-5 reveal-up max-w-7xl md:mx-auto">
+                    <h3 className="font-extrabold text-[15px] md:text-lg text-gray-900 mb-3 tracking-tight">Mobiles & Electronics</h3>
+                    <div className="grid grid-cols-4 gap-2 md:gap-4">
                         {/* Row 1 */}
-                        <Link href="/store" className="col-span-1 bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[100px]">
-                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Mobiles</span>
-                            <div className="w-full h-16 mt-auto px-1">
-                                <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Mobiles" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="col-span-1 bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Mobiles</span>
+                            <div className="w-full flex-1 flex items-end justify-center">
+                                <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Mobiles" />
                             </div>
                         </Link>
-                        <Link href="/store" className="col-span-1 bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[100px]">
-                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Electronics<br/>& Gadgets</span>
-                            <div className="w-full h-16 mt-auto px-1">
-                                <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Electronics" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="col-span-1 bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Electronics<br/>& Gadgets</span>
+                            <div className="w-full flex-1 flex items-end justify-center">
+                                <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Electronics" />
                             </div>
                         </Link>
-                        <Link href="/store" className="col-span-2 bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-2 flex flex-col items-start hover:scale-[1.02] transition-transform min-h-[100px] relative overflow-hidden">
-                            <span className="text-[10px] font-bold text-gray-800 leading-[1.1] z-10">Audio & Smart<br/>Watches</span>
-                            <div className="absolute right-0 bottom-0 w-24 h-20">
-                                <img src="https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=400&q=80&fit=crop" className="w-full h-full object-cover rounded-br-xl mix-blend-multiply" alt="Smartwatches" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="col-span-2 bg-[#f0f2f5] rounded-xl p-2 md:p-4 flex flex-row items-center justify-between hover:scale-[1.02] transition-transform aspect-[2/1] md:aspect-[8/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 leading-[1.1] md:leading-tight z-10 w-1/2">Audio & Smart<br/>Watches</span>
+                            <div className="w-1/2 h-full flex justify-end items-center">
+                                <img src="https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=400&q=80&fit=crop" className="h-[90%] max-h-32 object-contain mix-blend-multiply" alt="Smartwatches" />
                             </div>
                         </Link>
                         
                         {/* Row 2 */}
-                        <Link href="/store" className="col-span-2 bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-2 flex flex-col items-start hover:scale-[1.02] transition-transform min-h-[100px] relative overflow-hidden">
-                            <span className="text-[10px] font-bold text-gray-800 leading-[1.1] z-10">Home & Kitchen<br/>Appliances</span>
-                            <div className="absolute right-0 bottom-0 w-24 h-20">
-                                <img src="https://images.unsplash.com/photo-1585828604771-4a3172e27bde?w=400&q=80&fit=crop" className="w-full h-full object-cover rounded-br-xl mix-blend-multiply" alt="Appliances" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="col-span-2 bg-[#f0f2f5] rounded-xl p-2 md:p-4 flex flex-row items-center justify-between hover:scale-[1.02] transition-transform aspect-[2/1] md:aspect-[8/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 leading-[1.1] md:leading-tight z-10 w-1/2">Home & Kitchen<br/>Appliances</span>
+                            <div className="w-1/2 h-full flex justify-end items-center">
+                                <img src="https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=400&q=80&fit=crop" className="h-[90%] max-h-32 object-contain mix-blend-multiply" alt="Appliances" />
                             </div>
                         </Link>
-                        <Link href="/store" className="col-span-1 bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[100px]">
-                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Laptops &<br/>Tablets</span>
-                            <div className="w-full h-16 mt-auto px-1">
-                                <img src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Laptops" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="col-span-1 bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Laptops &<br/>Tablets</span>
+                            <div className="w-full flex-1 flex items-end justify-center">
+                                <img src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Laptops" />
                             </div>
                         </Link>
-                        <Link href="/store" className="col-span-1 bg-[#f0f2f5] rounded-xl pt-2 pb-1 px-1 flex flex-col items-center hover:scale-[1.02] transition-transform min-h-[100px]">
-                            <span className="text-[9px] font-bold text-gray-800 text-center leading-[1.1] w-full mb-1">Accessories<br/>& more</span>
-                            <div className="w-full h-16 mt-auto px-1">
-                                <img src="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200&q=80&fit=crop" className="w-full h-full object-cover rounded-md mix-blend-multiply" alt="Accessories" />
+                        <Link href="https://www.apextradingcompanystore.co.in/" className="col-span-1 bg-[#f0f2f5] rounded-xl p-2 flex flex-col items-center justify-between hover:scale-[1.02] transition-transform aspect-[4/5] md:aspect-[4/3] overflow-hidden">
+                            <span className="text-[10px] md:text-sm font-bold text-gray-800 text-center leading-[1.1] md:leading-tight w-full mb-1">Accessories<br/>& more</span>
+                            <div className="w-full flex-1 flex items-end justify-center">
+                                <img src="https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200&q=80&fit=crop" className="max-h-[60px] md:max-h-24 object-contain mix-blend-multiply" alt="Accessories" />
                             </div>
                         </Link>
                     </div>
