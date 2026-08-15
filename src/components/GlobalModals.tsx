@@ -83,10 +83,12 @@ export default function GlobalModals() {
                 const amtStr = modalData?.amount || '0';
                 const numericAmt = parseInt(amtStr.replace(/[^0-9]/g, ''), 10) || 0;
                 
+                const isWalletTopup = modalData?.plan === 'Wallet Top-up';
+                
                 const orderRes = await api.post('/finance/razorpay/order', {
                     amount: numericAmt,
                     userId: user.uid,
-                    category: modalData?.plan?.includes('Matrimony') ? 'matrimony' : 'subscription',
+                    category: modalData?.plan?.includes('Matrimony') ? 'matrimony' : (isWalletTopup ? 'add_money' : 'subscription'),
                     serviceName: modalData?.plan || 'Service Payment'
                 });
                 
@@ -153,9 +155,14 @@ export default function GlobalModals() {
     };
 
     const handleAddMoney = async () => {
-        // Temporary Redirect to razorpay.me until API keys are verified
-        alert("Redirecting to Razorpay. Please complete your payment securely.");
-        window.location.href = "https://razorpay.me/@apextradingcompany";
+        const amount = window.prompt("Enter amount to add to wallet (₹):", "500");
+        if (!amount || isNaN(parseInt(amount)) || parseInt(amount) <= 0) return;
+        
+        setModal('checkout');
+        setModalData({
+            amount: amount,
+            plan: 'Wallet Top-up'
+        });
     };
 
     const handleUPISelection = () => {

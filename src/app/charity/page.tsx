@@ -1,8 +1,11 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { api } from '@/services/api';
+import { useAppStore } from '@/store/useAppStore';
 
 export default function Page() {
+  const user = useAppStore(state => state.user);
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -20,14 +23,70 @@ export default function Page() {
     setIsSuccess(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!amount || parseInt(amount) <= 0 || !user?.uid) return;
+    
     setIsSubmitting(true);
-    // Simulate network request
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSuccess(true);
-    }, 1500);
+    try {
+        const numAmount = parseInt(amount, 10);
+        const orderRes = await api.post('/finance/razorpay/order', {
+            amount: numAmount,
+            userId: user.uid,
+            category: 'charity',
+            serviceName: `Donation to ${selectedCampaign}`
+        });
+        
+        const { order, keyId } = orderRes.data;
+
+        const options = {
+            key: keyId,
+            amount: order.amount,
+            currency: order.currency,
+            name: "APEX Foundation",
+            description: `Donation to ${selectedCampaign}`,
+            order_id: order.id,
+            handler: async function (response: any) {
+                try {
+                    const verifyRes = await api.post('/finance/razorpay/verify', {
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        amount: numAmount,
+                        userId: user.uid
+                    });
+                    
+                    if (verifyRes.data.success) {
+                        setIsSubmitting(false);
+                        setIsSuccess(true);
+                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Thank you for donating ₹${numAmount}!`, type: 'success' } }));
+                    }
+                } catch (err) {
+                    console.error("Verification failed", err);
+                    window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Donation verification failed', type: 'error' } }));
+                    setIsSubmitting(false);
+                }
+            },
+            prefill: {
+                name: name || user.name || "APEX Donor",
+                contact: user.phone || ""
+            },
+            theme: {
+                color: "#f97316"
+            },
+            modal: {
+                ondismiss: function() {
+                    setIsSubmitting(false);
+                }
+            }
+        };
+        
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+    } catch (error) {
+        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Failed to initiate donation', type: 'error' } }));
+        setIsSubmitting(false);
+    }
   };
 
   return (
