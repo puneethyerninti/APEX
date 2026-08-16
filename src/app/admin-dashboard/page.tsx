@@ -199,12 +199,17 @@ export default function AdminDashboardPage() {
   }
 
   // --- CHART DATA ---
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  const historyLabels = dbStats?.revenueHistory?.map((h: any) => `${monthNames[h._id.month - 1]} ${h._id.year}`) || ['No Data'];
+  const historyData = dbStats?.revenueHistory?.map((h: any) => h.total) || [0];
+
   const lineChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    labels: historyLabels,
     datasets: [
       {
         label: 'Revenue',
-        data: [12000, 19000, 15000, 22000, 25000, dbStats?.revenue || 30000], // Mocking some history
+        data: historyData,
         borderColor: '#A0684A',
         backgroundColor: 'rgba(160, 104, 74, 0.1)',
         borderWidth: 2,
@@ -214,12 +219,19 @@ export default function AdminDashboardPage() {
     ],
   };
 
+  const categoryLabels = dbStats?.categoryDistribution?.map((c: any) => c._id.replace('_', ' ').toUpperCase()) || ['No Data'];
+  const categoryData = dbStats?.categoryDistribution?.map((c: any) => c.total) || [1];
+  
+  // Base colors for chart segments
+  const baseColors = ['#A0684A', '#25D366', '#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6', '#10B981', '#6366F1'];
+  const colors = categoryLabels.map((_: any, i: number) => baseColors[i % baseColors.length]);
+
   const doughnutData = {
-    labels: ['Store', 'Finance', 'Realty', 'Matrimony'],
+    labels: categoryLabels,
     datasets: [
       {
-        data: [45, 30, 15, 10], // Static based on HTML for now
-        backgroundColor: ['#A0684A', '#25D366', '#3B82F6', '#EF4444'],
+        data: categoryData,
+        backgroundColor: colors,
         borderWidth: 0,
       },
     ],
@@ -403,22 +415,22 @@ export default function AdminDashboardPage() {
                                 <Doughnut data={doughnutData} options={{ maintainAspectRatio: false, cutout: '70%' }} />
                             </div>
                             <div className="mt-5 space-y-2.5">
-                                <div className="flex justify-between items-center text-xs text-gray-500">
-                                    <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#A0684A]"></span><span className="font-medium text-gray-700">Store</span></span>
-                                    <span className="font-bold text-gray-700">45%</span>
-                                </div>
-                                <div className="flex justify-between items-center text-xs text-gray-500">
-                                    <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#25D366]"></span><span className="font-medium text-gray-700">Finance</span></span>
-                                    <span className="font-bold text-gray-700">30%</span>
-                                </div>
-                                <div className="flex justify-between items-center text-xs text-gray-500">
-                                    <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#3B82F6]"></span><span className="font-medium text-gray-700">Realty</span></span>
-                                    <span className="font-bold text-gray-700">15%</span>
-                                </div>
-                                <div className="flex justify-between items-center text-xs text-gray-500">
-                                    <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]"></span><span className="font-medium text-gray-700">Matrimony</span></span>
-                                    <span className="font-bold text-gray-700">10%</span>
-                                </div>
+                                {dbStats?.categoryDistribution?.map((cat: any, i: number) => {
+                                    const totalAll = dbStats.categoryDistribution.reduce((sum: number, c: any) => sum + c.total, 0);
+                                    const percentage = totalAll > 0 ? Math.round((cat.total / totalAll) * 100) : 0;
+                                    return (
+                                      <div key={cat._id} className="flex justify-between items-center text-xs text-gray-500">
+                                          <span className="flex items-center gap-2">
+                                              <span className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: colors[i]}}></span>
+                                              <span className="font-medium text-gray-700 capitalize">{cat._id.replace('_', ' ')}</span>
+                                          </span>
+                                          <span className="font-bold text-gray-700">{percentage}%</span>
+                                      </div>
+                                    );
+                                })}
+                                {(!dbStats?.categoryDistribution || dbStats.categoryDistribution.length === 0) && (
+                                    <p className="text-xs text-gray-400 text-center py-2">No category data yet.</p>
+                                )}
                             </div>
                         </div>
                     </div>
