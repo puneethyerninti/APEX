@@ -4,7 +4,11 @@ import Transaction from '../models/Transaction';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { createNotification } from './notificationController';
-
+import { handleAPEXPlanUpgrade } from './userController';
+import { handleMatrimonyUpgrade } from './matrimonyController';
+import { handleTravelBooking } from './travelsController';
+import { handleUtilityRecharge } from './utilityController';
+import { handleAcademyEnrollment } from './academyController';
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || 'mock_key',
   key_secret: process.env.RAZORPAY_KEY_SECRET || 'mock_secret',
@@ -92,7 +96,7 @@ export const addMoney = async (req: Request, res: Response) => {
 
 // Razorpay Order Creation (Strict)
 export const createRazorpayOrder = async (req: Request, res: Response) => {
-  const { amount, userId, category = 'add_money', serviceName } = req.body; 
+  const { amount, userId, category = 'add_money', serviceName, metadata } = req.body; 
   
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     console.error("CRITICAL: Razorpay keys are missing from environment variables.");
@@ -119,7 +123,8 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
       category: category,
       referenceId: serviceName || 'wallet_topup',
       status: 'pending',
-      razorpayOrderId: order.id
+      razorpayOrderId: order.id,
+      metadata: metadata || {}
     });
 
     res.json({ order, keyId: process.env.RAZORPAY_KEY_ID });
@@ -160,33 +165,54 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
       );
 
       if (transaction) {
-        if (transaction.category === 'add_money') {
-          // Credit wallet only if transaction was pending and is now completed
-          await User.findByIdAndUpdate(transaction.user, {
-            $inc: { walletBalance: transaction.amount }
-          });
-          
+        let fulfillmentResult = null;
+        const metadata = transaction.metadata || {};
+
+        // Secure Server-Side Fulfillment
+        try {
+          switch(transaction.category) {
+            case 'add_money':
+              await User.findByIdAndUpdate(transaction.user, { $inc: { walletBalance: transaction.amount } });
+              break;
+            case 'matrimony':
+              fulfillmentResult = await handleMatrimonyUpgrade(transaction.user.toString(), metadata.plan || transaction.referenceId?.replace('Matrimony ', '').replace(' Plan', ''));
+              break;
+            case 'subscription':
+              fulfillmentResult = await handleAPEXPlanUpgrade(transaction.user.toString(), metadata.plan || transaction.referenceId);
+              break;
+            case 'travel_booking':
+              fulfillmentResult = await handleTravelBooking(transaction.user.toString(), metadata);
+              break;
+            case 'mobile_recharge':
+              fulfillmentResult = await handleUtilityRecharge(transaction.user.toString(), metadata);
+              break;
+            case 'academy_enrollment':
+              fulfillmentResult = await handleAcademyEnrollment(transaction.user.toString(), metadata);
+              break;
+            case 'charity':
+              // Charity just takes money, no fulfillment required
+              break;
+          }
+
+          // Global success notification
           await createNotification(
             transaction.user.toString(),
-            'Wallet Recharged',
-            `₹${transaction.amount} has been added to your wallet via Razorpay.`,
+            'Payment Successful',
+            `Your payment of ₹${transaction.amount} for ${transaction.referenceId || transaction.category} was successful.`,
             'success'
           );
-        } else {
-           // For service payments (subscription, academy, etc)
-           await createNotification(
-             transaction.user.toString(),
-             'Payment Successful',
-             `Your payment of ₹${transaction.amount} for ${transaction.referenceId || transaction.category} was successful.`,
-             'success'
-           );
+
+          const io = req.app.get('io');
+          if (io) {
+              io.to('admin_room').emit('admin_data_refresh', { type: 'new_transaction', data: transaction });
+          }
+          
+          return res.json({ success: true, message: "Payment verified successfully", fulfillmentData: fulfillmentResult, category: transaction.category });
+        } catch (fulfillmentError: any) {
+           console.error("Fulfillment failed after successful payment:", fulfillmentError);
+           // NOTE: In a robust production system, if fulfillment fails after payment, you would either queue it for retry or auto-refund the user.
+           return res.status(500).json({ error: 'Payment verified, but failed to deliver service.', details: fulfillmentError.message });
         }
-        const io = req.app.get('io');
-        if (io) {
-            io.to('admin_room').emit('admin_data_refresh', { type: 'new_transaction', data: transaction });
-        }
-        
-        return res.json({ success: true, message: "Payment verified successfully" });
       } else {
         // Transaction was already completed or not found
         return res.json({ success: true, message: "Payment already verified" });

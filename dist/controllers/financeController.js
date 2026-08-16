@@ -9,6 +9,11 @@ const Transaction_1 = __importDefault(require("../models/Transaction"));
 const razorpay_1 = __importDefault(require("razorpay"));
 const crypto_1 = __importDefault(require("crypto"));
 const notificationController_1 = require("./notificationController");
+const userController_1 = require("./userController");
+const matrimonyController_1 = require("./matrimonyController");
+const travelsController_1 = require("./travelsController");
+const utilityController_1 = require("./utilityController");
+const academyController_1 = require("./academyController");
 const razorpay = new razorpay_1.default({
     key_id: process.env.RAZORPAY_KEY_ID || 'mock_key',
     key_secret: process.env.RAZORPAY_KEY_SECRET || 'mock_secret',
@@ -78,7 +83,7 @@ const addMoney = async (req, res) => {
 exports.addMoney = addMoney;
 // Razorpay Order Creation (Strict)
 const createRazorpayOrder = async (req, res) => {
-    const { amount, userId, category = 'add_money', serviceName } = req.body;
+    const { amount, userId, category = 'add_money', serviceName, metadata } = req.body;
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
         console.error("CRITICAL: Razorpay keys are missing from environment variables.");
         return res.status(500).json({ error: 'Payment gateway is not configured correctly on the server.' });
@@ -101,7 +106,8 @@ const createRazorpayOrder = async (req, res) => {
             category: category,
             referenceId: serviceName || 'wallet_topup',
             status: 'pending',
-            razorpayOrderId: order.id
+            razorpayOrderId: order.id,
+            metadata: metadata || {}
         });
         res.json({ order, keyId: process.env.RAZORPAY_KEY_ID });
     }
@@ -132,22 +138,46 @@ const verifyRazorpayPayment = async (req, res) => {
                 razorpaySignature: razorpay_signature
             }, { new: true });
             if (transaction) {
-                if (transaction.category === 'add_money') {
-                    // Credit wallet only if transaction was pending and is now completed
-                    await User_1.default.findByIdAndUpdate(transaction.user, {
-                        $inc: { walletBalance: transaction.amount }
-                    });
-                    await (0, notificationController_1.createNotification)(transaction.user.toString(), 'Wallet Recharged', `₹${transaction.amount} has been added to your wallet via Razorpay.`, 'success');
-                }
-                else {
-                    // For service payments (subscription, academy, etc)
+                let fulfillmentResult = null;
+                const metadata = transaction.metadata || {};
+                // Secure Server-Side Fulfillment
+                try {
+                    switch (transaction.category) {
+                        case 'add_money':
+                            await User_1.default.findByIdAndUpdate(transaction.user, { $inc: { walletBalance: transaction.amount } });
+                            break;
+                        case 'matrimony':
+                            fulfillmentResult = await (0, matrimonyController_1.handleMatrimonyUpgrade)(transaction.user.toString(), metadata.plan || transaction.referenceId?.replace('Matrimony ', '').replace(' Plan', ''));
+                            break;
+                        case 'subscription':
+                            fulfillmentResult = await (0, userController_1.handleAPEXPlanUpgrade)(transaction.user.toString(), metadata.plan || transaction.referenceId);
+                            break;
+                        case 'travel_booking':
+                            fulfillmentResult = await (0, travelsController_1.handleTravelBooking)(transaction.user.toString(), metadata);
+                            break;
+                        case 'mobile_recharge':
+                            fulfillmentResult = await (0, utilityController_1.handleUtilityRecharge)(transaction.user.toString(), metadata);
+                            break;
+                        case 'academy_enrollment':
+                            fulfillmentResult = await (0, academyController_1.handleAcademyEnrollment)(transaction.user.toString(), metadata);
+                            break;
+                        case 'charity':
+                            // Charity just takes money, no fulfillment required
+                            break;
+                    }
+                    // Global success notification
                     await (0, notificationController_1.createNotification)(transaction.user.toString(), 'Payment Successful', `Your payment of ₹${transaction.amount} for ${transaction.referenceId || transaction.category} was successful.`, 'success');
+                    const io = req.app.get('io');
+                    if (io) {
+                        io.to('admin_room').emit('admin_data_refresh', { type: 'new_transaction', data: transaction });
+                    }
+                    return res.json({ success: true, message: "Payment verified successfully", fulfillmentData: fulfillmentResult, category: transaction.category });
                 }
-                const io = req.app.get('io');
-                if (io) {
-                    io.to('admin_room').emit('admin_data_refresh', { type: 'new_transaction', data: transaction });
+                catch (fulfillmentError) {
+                    console.error("Fulfillment failed after successful payment:", fulfillmentError);
+                    // NOTE: In a robust production system, if fulfillment fails after payment, you would either queue it for retry or auto-refund the user.
+                    return res.status(500).json({ error: 'Payment verified, but failed to deliver service.', details: fulfillmentError.message });
                 }
-                return res.json({ success: true, message: "Payment verified successfully" });
             }
             else {
                 // Transaction was already completed or not found

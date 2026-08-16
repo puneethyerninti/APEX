@@ -3,9 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.upgradeUserPlan = exports.saveFCMToken = exports.sendEmailNotification = exports.updateUserProfile = exports.getUserProfile = void 0;
+exports.handleAPEXPlanUpgrade = exports.saveFCMToken = exports.sendEmailNotification = exports.updateUserProfile = exports.getUserProfile = void 0;
 const User_1 = __importDefault(require("../models/User"));
-const Transaction_1 = __importDefault(require("../models/Transaction"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const resend_1 = require("resend");
 const notificationController_1 = require("./notificationController");
@@ -162,31 +161,15 @@ const saveFCMToken = async (req, res) => {
     }
 };
 exports.saveFCMToken = saveFCMToken;
-const upgradeUserPlan = async (req, res) => {
-    const { userId, plan } = req.body;
-    if (!userId || !plan) {
-        return res.status(400).json({ error: "User ID and plan are required" });
-    }
-    try {
-        const user = await User_1.default.findById(userId);
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-        user.apexPlan = plan;
-        await user.save();
-        await Transaction_1.default.create({
-            user: userId,
-            type: 'debit',
-            amount: plan === 'APEX Prime' ? 2999 : (plan === 'APEX Plus' ? 999 : 0),
-            category: `Purchased ${plan}`,
-            status: 'completed'
-        });
-        await (0, notificationController_1.createNotification)(userId, 'Subscription Upgraded', `Welcome to ${plan}! You now have exclusive access to premium features.`, 'success');
-        res.json({ success: true, message: `Successfully upgraded to ${plan}`, user });
-    }
-    catch (error) {
-        console.error("Error upgrading user plan:", error);
-        res.status(500).json({ error: "Server error upgrading plan" });
-    }
+const handleAPEXPlanUpgrade = async (userId, plan) => {
+    if (!userId || !plan)
+        throw new Error("User ID and plan are required");
+    const user = await User_1.default.findById(userId);
+    if (!user)
+        throw new Error("User not found");
+    user.apexPlan = plan;
+    await user.save();
+    await (0, notificationController_1.createNotification)(userId, 'Subscription Upgraded', `Welcome to ${plan}! You now have exclusive access to premium features.`, 'success');
+    return user;
 };
-exports.upgradeUserPlan = upgradeUserPlan;
+exports.handleAPEXPlanUpgrade = handleAPEXPlanUpgrade;

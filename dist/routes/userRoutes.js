@@ -8,7 +8,6 @@ const userController_1 = require("../controllers/userController");
 const router = express_1.default.Router();
 router.get('/profile', userController_1.getUserProfile);
 router.post('/profile', userController_1.updateUserProfile);
-router.post('/upgrade-plan', userController_1.upgradeUserPlan);
 router.post('/send-email', userController_1.sendEmailNotification);
 router.post('/fcm-token', userController_1.saveFCMToken);
 exports.default = router;

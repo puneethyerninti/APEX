@@ -45,5 +45,6 @@ const TransactionSchema = new mongoose_1.Schema({
     razorpayPaymentId: { type: String, index: true, sparse: true },
     razorpaySignature: { type: String },
     webhookPayload: { type: mongoose_1.Schema.Types.Mixed },
+    metadata: { type: mongoose_1.Schema.Types.Mixed }
 }, { timestamps: true });
 exports.default = mongoose_1.default.model('Transaction', TransactionSchema);

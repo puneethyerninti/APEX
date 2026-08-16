@@ -5,56 +5,38 @@ import Transaction from '../models/Transaction';
 import { createNotification } from './notificationController';
 
 // Create a new travel booking
-export const createBooking = async (req: Request, res: Response) => {
-  const { userId, type, vehicleType, origin, destination, amount } = req.body;
-
+export const handleTravelBooking = async (userId: string, metadata: any) => {
+  const { type, vehicleType, origin, destination, amount } = metadata;
+  
+  let user;
   try {
-    let user;
-    try {
-      user = await User.findById(userId);
-    } catch (e) {
-      // If CastError happens (e.g. userId is firebase uid), we try to find by some fallback or just fail gracefully
-      return res.status(404).json({ error: 'Invalid User ID format. Please log out and log in again.' });
-    }
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Wallet deduction and transaction creation removed as per request
-
-
-    // Determine initial status based on type
-    const initialStatus = type.toLowerCase() === 'cab' ? 'searching' : 'completed';
-
-    // Create booking
-    const booking = await TravelBooking.create({
-      user: userId,
-      type,
-      vehicleType,
-      origin,
-      destination,
-      amount,
-      status: initialStatus
-    });
-
-    await createNotification(
-      userId,
-      'Travel Booked',
-      `Your ${type} booking from ${origin} to ${destination} was successful!`,
-      'success'
-    );
-
-    const io = req.app.get('io');
-    if (io) {
-        io.to('admin_room').emit('admin_data_refresh', { type: 'new_travel_booking' });
-    }
-
-    res.json({ success: true, booking, message: 'Booking successful' });
-  } catch (error) {
-    console.error('Error creating travel booking:', error);
-    res.status(500).json({ error: 'Server error creating booking' });
+    user = await User.findById(userId);
+  } catch (e) {
+    throw new Error('Invalid User ID format.');
   }
+
+  if (!user) throw new Error('User not found');
+
+  const initialStatus = type?.toLowerCase() === 'cab' ? 'searching' : 'completed';
+
+  const booking = await TravelBooking.create({
+    user: userId,
+    type,
+    vehicleType,
+    origin,
+    destination,
+    amount,
+    status: initialStatus
+  });
+
+  await createNotification(
+    userId,
+    'Travel Booked',
+    `Your ${type} booking from ${origin} to ${destination} was successful!`,
+    'success'
+  );
+
+  return booking;
 };
 
 // Get all bookings for a user

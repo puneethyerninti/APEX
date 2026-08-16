@@ -11,6 +11,7 @@ export interface ITransaction extends Document {
   razorpayPaymentId?: string;
   razorpaySignature?: string;
   webhookPayload?: any;
+  metadata?: any;
 }
 
 const TransactionSchema = new Schema<ITransaction>(
@@ -25,6 +26,7 @@ const TransactionSchema = new Schema<ITransaction>(
     razorpayPaymentId: { type: String, index: true, sparse: true },
     razorpaySignature: { type: String },
     webhookPayload: { type: Schema.Types.Mixed },
+    metadata: { type: Schema.Types.Mixed }
   },
   { timestamps: true }
 );

@@ -3,51 +3,36 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllBookingsAdmin = exports.getUserBookings = exports.createBooking = void 0;
+exports.getAllBookingsAdmin = exports.getUserBookings = exports.handleTravelBooking = void 0;
 const TravelBooking_1 = __importDefault(require("../models/TravelBooking"));
 const User_1 = __importDefault(require("../models/User"));
 const notificationController_1 = require("./notificationController");
 // Create a new travel booking
-const createBooking = async (req, res) => {
-    const { userId, type, vehicleType, origin, destination, amount } = req.body;
+const handleTravelBooking = async (userId, metadata) => {
+    const { type, vehicleType, origin, destination, amount } = metadata;
+    let user;
     try {
-        let user;
-        try {
-            user = await User_1.default.findById(userId);
-        }
-        catch (e) {
-            // If CastError happens (e.g. userId is firebase uid), we try to find by some fallback or just fail gracefully
-            return res.status(404).json({ error: 'Invalid User ID format. Please log out and log in again.' });
-        }
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        // Wallet deduction and transaction creation removed as per request
-        // Determine initial status based on type
-        const initialStatus = type.toLowerCase() === 'cab' ? 'searching' : 'completed';
-        // Create booking
-        const booking = await TravelBooking_1.default.create({
-            user: userId,
-            type,
-            vehicleType,
-            origin,
-            destination,
-            amount,
-            status: initialStatus
-        });
-        await (0, notificationController_1.createNotification)(userId, 'Travel Booked', `Your ${type} booking from ${origin} to ${destination} was successful!`, 'success');
-        const io = req.app.get('io');
-        if (io) {
-            io.to('admin_room').emit('admin_data_refresh', { type: 'new_travel_booking' });
-        }
-        res.json({ success: true, booking, message: 'Booking successful' });
+        user = await User_1.default.findById(userId);
     }
-    catch (error) {
-        console.error('Error creating travel booking:', error);
-        res.status(500).json({ error: 'Server error creating booking' });
+    catch (e) {
+        throw new Error('Invalid User ID format.');
     }
+    if (!user)
+        throw new Error('User not found');
+    const initialStatus = type?.toLowerCase() === 'cab' ? 'searching' : 'completed';
+    const booking = await TravelBooking_1.default.create({
+        user: userId,
+        type,
+        vehicleType,
+        origin,
+        destination,
+        amount,
+        status: initialStatus
+    });
+    await (0, notificationController_1.createNotification)(userId, 'Travel Booked', `Your ${type} booking from ${origin} to ${destination} was successful!`, 'success');
+    return booking;
 };
-exports.createBooking = createBooking;
+exports.handleTravelBooking = handleTravelBooking;
 // Get all bookings for a user
 const getUserBookings = async (req, res) => {
     const { userId } = req.params;

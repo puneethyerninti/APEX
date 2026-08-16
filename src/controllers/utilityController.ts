@@ -40,81 +40,75 @@ export const getPlans = async (req: Request, res: Response) => {
     }
 };
 
-export const rechargeMobile = async (req: Request, res: Response) => {
-    try {
-        const { mobile, amount, operatorCode, userId } = req.body;
+export const handleUtilityRecharge = async (userId: string, metadata: any) => {
+  const { mobile, amount, operatorCode } = metadata;
+  
+  if (!mobile || !amount || !operatorCode || !userId) {
+      throw new Error('Missing required fields');
+  }
 
-        if (!mobile || !amount || !operatorCode || !userId) {
-            return res.status(400).json({ success: false, message: 'Missing required fields' });
-        }
+  const clientRefId = `req_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`.substring(0, 20); // max 20 chars
 
-        const clientRefId = `req_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`.substring(0, 20); // max 20 chars
+  // 1. Create Pending Transaction
+  const transaction = new UtilityTransaction({
+      userId,
+      type: 'Mobile Recharge',
+      amount,
+      operator: operatorCode,
+      mobileOrAccountNumber: mobile,
+      status: 'Pending'
+  });
+  await transaction.save();
 
-        // 1. Create Pending Transaction
-        const transaction = new UtilityTransaction({
-            userId,
-            type: 'Mobile Recharge',
-            amount,
-            operator: operatorCode,
-            mobileOrAccountNumber: mobile,
-            status: 'Pending'
-        });
-        await transaction.save();
+  // 2. Call Eko Service
+  const ekoResult = await processRecharge(mobile, amount, operatorCode, clientRefId);
 
-        // 2. Call Eko Service
-        const ekoResult = await processRecharge(mobile, amount, operatorCode, clientRefId);
+  // 3. Update Transaction
+  if (ekoResult.status === 0) {
+      transaction.status = 'Success';
+      transaction.ekoTxId = ekoResult.txid;
+      await transaction.save();
+      
+      // Send Notification
+      await createNotification(
+        userId,
+        'Recharge Successful',
+        `Your recharge of ₹${amount} for ${mobile} was successful. (TxID: ${ekoResult.txid})`,
+        'success'
+      );
 
-        // 3. Update Transaction
-        if (ekoResult.status === 0) {
-            transaction.status = 'Success';
-            transaction.ekoTxId = ekoResult.txid;
-            await transaction.save();
-            
-            // Send Notification
-            await createNotification(
+      return transaction;
+  } else {
+      transaction.status = 'Failed';
+      await transaction.save();
+
+      // Refund Safety Net: Credit the exact amount back to the APEX wallet
+      const user = await User.findById(userId);
+      if (user) {
+          user.walletBalance += amount;
+          await user.save();
+
+          // Create a refund transaction
+          await Transaction.create({
+              user: userId,
+              amount,
+              type: 'credit',
+              category: 'refund',
+              referenceId: transaction._id,
+              status: 'completed',
+          } as any);
+
+          // Notify User of Refund
+          await createNotification(
               userId,
-              'Recharge Successful',
-              `Your recharge of ₹${amount} for ${mobile} was successful. (TxID: ${ekoResult.txid})`,
-              'success'
-            );
+              'Recharge Failed - Amount Refunded',
+              `Your recharge of ₹${amount} for ${mobile} failed due to an upstream error. The amount has been safely refunded to your APEX wallet.`,
+              'info'
+          );
+      }
 
-            return res.status(200).json({ success: true, message: 'Recharge successful', data: transaction });
-        } else {
-            transaction.status = 'Failed';
-            await transaction.save();
-
-            // Refund Safety Net: Credit the exact amount back to the APEX wallet
-            const user = await User.findById(userId);
-            if (user) {
-                user.walletBalance += amount;
-                await user.save();
-
-                // Create a refund transaction
-                await Transaction.create({
-                    user: userId,
-                    amount,
-                    type: 'credit',
-                    category: 'refund',
-                    referenceId: transaction._id,
-                    status: 'completed',
-                } as any);
-
-                // Notify User of Refund
-                await createNotification(
-                    userId,
-                    'Recharge Failed - Amount Refunded',
-                    `Your recharge of ₹${amount} for ${mobile} failed due to an upstream error. The amount has been safely refunded to your APEX wallet.`,
-                    'info'
-                );
-            }
-
-            return res.status(400).json({ success: false, message: 'Recharge failed. Amount refunded to wallet.', error: ekoResult.message });
-        }
-
-    } catch (error) {
-        console.error('Error in rechargeMobile', error);
-        res.status(500).json({ success: false, message: 'Internal server error' });
-    }
+      throw new Error(ekoResult.message || 'Recharge failed. Amount refunded to wallet.');
+  }
 };
 
 export const payBill = async (req: Request, res: Response) => {

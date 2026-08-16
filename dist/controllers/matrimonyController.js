@@ -3,11 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.upgradeProfile = exports.getInbox = exports.markMessagesAsRead = exports.getMessages = exports.createProfile = exports.getProfiles = exports.getMyProfile = void 0;
+exports.handleMatrimonyUpgrade = exports.getInbox = exports.markMessagesAsRead = exports.getMessages = exports.createProfile = exports.getProfiles = exports.getMyProfile = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const MatrimonyProfile_1 = __importDefault(require("../models/MatrimonyProfile"));
 const Message_1 = __importDefault(require("../models/Message"));
-const Transaction_1 = __importDefault(require("../models/Transaction"));
 const User_1 = __importDefault(require("../models/User"));
 const notificationController_1 = require("./notificationController");
 const getMyProfile = async (req, res) => {
@@ -136,42 +135,18 @@ const getInbox = async (req, res) => {
 };
 exports.getInbox = getInbox;
 // Upgrade Profile / Purchase Subscription
-const upgradeProfile = async (req, res) => {
-    try {
-        const { userId, plan, amount } = req.body;
-        // Find the user's profile
-        const profile = await MatrimonyProfile_1.default.findOne({ user: userId });
-        if (!profile) {
-            return res.status(404).json({ error: 'Matrimony profile not found' });
-        }
-        // Update profile
-        profile.subscription = {
-            plan,
-            isActive: true
-        };
-        await profile.save();
-        // Create a transaction record for Admin Dashboard
-        const numericAmount = parseInt(amount.replace(/[^0-9]/g, ''), 10) || 5000;
-        await Transaction_1.default.create({
-            user: userId,
-            type: 'debit',
-            amount: numericAmount,
-            category: `Purchased Matrimony ${plan} Plan`,
-            status: 'completed'
-        });
-        // Notify Admin Dashboard in real-time
-        const io = req.app.get('io');
-        if (io) {
-            io.to('admin_room').emit('admin_data_refresh');
-        }
-        if (userId) {
-            await (0, notificationController_1.createNotification)(userId, 'Subscription Upgraded', `You have successfully upgraded to Matrimony ${plan} plan.`, 'success');
-        }
-        res.json({ success: true, message: 'Subscription upgraded successfully!', profile });
+const handleMatrimonyUpgrade = async (userId, plan) => {
+    const profile = await MatrimonyProfile_1.default.findOne({ user: userId });
+    if (!profile)
+        throw new Error('Matrimony profile not found');
+    profile.subscription = {
+        plan: plan,
+        isActive: true
+    };
+    await profile.save();
+    if (userId) {
+        await (0, notificationController_1.createNotification)(userId, 'Subscription Upgraded', `You have successfully upgraded to Matrimony ${plan} plan.`, 'success');
     }
-    catch (error) {
-        console.error('Upgrade error:', error);
-        res.status(500).json({ error: 'Server error during upgrade' });
-    }
+    return profile;
 };
-exports.upgradeProfile = upgradeProfile;
+exports.handleMatrimonyUpgrade = handleMatrimonyUpgrade;

@@ -12,5 +12,4 @@ router.post('/profile', matrimonyController_1.createProfile);
 router.get('/messages/:roomId', matrimonyController_1.getMessages);
 router.put('/messages/:roomId/read', matrimonyController_1.markMessagesAsRead);
 router.get('/inbox/:userId', matrimonyController_1.getInbox);
-router.post('/upgrade', matrimonyController_1.upgradeProfile);
 exports.default = router;

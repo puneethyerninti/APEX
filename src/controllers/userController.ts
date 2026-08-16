@@ -189,39 +189,21 @@ export const saveFCMToken = async (req: Request, res: Response) => {
   }
 };
 
-export const upgradeUserPlan = async (req: Request, res: Response) => {
-  const { userId, plan } = req.body;
-  if (!userId || !plan) {
-    return res.status(400).json({ error: "User ID and plan are required" });
-  }
+export const handleAPEXPlanUpgrade = async (userId: string, plan: string) => {
+  if (!userId || !plan) throw new Error("User ID and plan are required");
 
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
 
-    user.apexPlan = plan;
-    await user.save();
+  user.apexPlan = plan as any;
+  await user.save();
 
-    await Transaction.create({
-      user: userId,
-      type: 'debit',
-      amount: plan === 'APEX Prime' ? 2999 : (plan === 'APEX Plus' ? 999 : 0),
-      category: `Purchased ${plan}`,
-      status: 'completed'
-    } as any);
+  await createNotification(
+    userId,
+    'Subscription Upgraded',
+    `Welcome to ${plan}! You now have exclusive access to premium features.`,
+    'success'
+  );
 
-    await createNotification(
-      userId,
-      'Subscription Upgraded',
-      `Welcome to ${plan}! You now have exclusive access to premium features.`,
-      'success'
-    );
-
-    res.json({ success: true, message: `Successfully upgraded to ${plan}`, user });
-  } catch (error) {
-    console.error("Error upgrading user plan:", error);
-    res.status(500).json({ error: "Server error upgrading plan" });
-  }
+  return user;
 };

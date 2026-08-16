@@ -148,53 +148,25 @@ export const getInbox = async (req: Request, res: Response) => {
 };
 
 // Upgrade Profile / Purchase Subscription
-export const upgradeProfile = async (req: Request, res: Response) => {
-  try {
-    const { userId, plan, amount } = req.body;
-    
-    // Find the user's profile
-    const profile = await MatrimonyProfile.findOne({ user: userId } as any);
-    
-    if (!profile) {
-      return res.status(404).json({ error: 'Matrimony profile not found' });
-    }
+export const handleMatrimonyUpgrade = async (userId: string, plan: string) => {
+  const profile = await MatrimonyProfile.findOne({ user: userId } as any);
+  
+  if (!profile) throw new Error('Matrimony profile not found');
 
-    // Update profile
-    profile.subscription = {
-      plan,
-      isActive: true
-    };
-    await profile.save();
+  profile.subscription = {
+    plan: plan as any,
+    isActive: true
+  };
+  await profile.save();
 
-    // Create a transaction record for Admin Dashboard
-    const numericAmount = parseInt(amount.replace(/[^0-9]/g, ''), 10) || 5000;
-    
-    await Transaction.create({
-      user: userId,
-      type: 'debit',
-      amount: numericAmount,
-      category: `Purchased Matrimony ${plan} Plan`,
-      status: 'completed'
-    } as any);
-
-    // Notify Admin Dashboard in real-time
-    const io = req.app.get('io');
-    if (io) {
-      io.to('admin_room').emit('admin_data_refresh');
-    }
-
-    if (userId) {
-      await createNotification(
-        userId,
-        'Subscription Upgraded',
-        `You have successfully upgraded to Matrimony ${plan} plan.`,
-        'success'
-      );
-    }
-
-    res.json({ success: true, message: 'Subscription upgraded successfully!', profile });
-  } catch (error) {
-    console.error('Upgrade error:', error);
-    res.status(500).json({ error: 'Server error during upgrade' });
+  if (userId) {
+    await createNotification(
+      userId,
+      'Subscription Upgraded',
+      `You have successfully upgraded to Matrimony ${plan} plan.`,
+      'success'
+    );
   }
+
+  return profile;
 };
