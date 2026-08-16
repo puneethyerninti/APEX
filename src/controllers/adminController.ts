@@ -28,6 +28,44 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     ]);
     const revenue = revenueAgg.length > 0 ? revenueAgg[0].total : 0;
 
+    // Revenue History (last 6 months)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+
+    const historyAgg = await Transaction.aggregate([
+      { 
+        $match: { 
+          status: 'completed',
+          createdAt: { $gte: sixMonthsAgo }
+        } 
+      },
+      {
+        $group: {
+          _id: { 
+            year: { $year: "$createdAt" }, 
+            month: { $month: "$createdAt" } 
+          },
+          total: { $sum: "$amount" }
+        }
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    // Category Distribution
+    const categoryAgg = await Transaction.aggregate([
+      { $match: { status: 'completed' } },
+      {
+        $group: {
+          _id: "$category",
+          total: { $sum: "$amount" },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { total: -1 } }
+    ]);
+
     res.json({
       stats: {
         totalUsers,
@@ -36,7 +74,9 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         pendingJobs,
         pendingProfiles,
         pendingRealty,
-        totalTravelBookings
+        totalTravelBookings,
+        revenueHistory: historyAgg,
+        categoryDistribution: categoryAgg
       }
     });
   } catch (error) {
