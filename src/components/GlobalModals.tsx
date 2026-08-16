@@ -81,15 +81,28 @@ export default function GlobalModals() {
         try {
             if (user?.uid) {
                 const amtStr = modalData?.amount || '0';
-                const numericAmt = parseInt(amtStr.replace(/[^0-9]/g, ''), 10) || 0;
+                const numericAmt = parseInt(amtStr.toString().replace(/[^0-9]/g, ''), 10) || 0;
                 
                 const isWalletTopup = modalData?.plan === 'Wallet Top-up';
+                let category = 'subscription';
+                if (modalData?.plan?.includes('Matrimony')) category = 'matrimony';
+                else if (isWalletTopup) category = 'add_money';
+                else if (modalData?.metadata?.type) category = 'travel_booking'; // We'll assume if there is a type it's travel, we will fix travel page to pass correct category or we just rely on page doing it. Wait, `category` is passed directly in some cases, let's just use `modalData?.category` if it exists.
+                
+                const actualCategory = modalData?.category || category;
+                
+                // For metadata, we merge plan and other things
+                const metadata = {
+                    plan: modalData?.plan,
+                    ...(modalData?.metadata || {})
+                };
                 
                 const orderRes = await api.post('/finance/razorpay/order', {
                     amount: numericAmt,
                     userId: user.uid,
-                    category: modalData?.plan?.includes('Matrimony') ? 'matrimony' : (isWalletTopup ? 'add_money' : 'subscription'),
-                    serviceName: modalData?.plan || 'Service Payment'
+                    category: actualCategory,
+                    serviceName: modalData?.plan || 'Service Payment',
+                    metadata
                 });
                 
                 const { order, keyId } = orderRes.data;
@@ -113,20 +126,21 @@ export default function GlobalModals() {
                             });
                             
                             if (verifyRes.data.success) {
-                                if (modalData?.plan?.includes('Matrimony')) {
-                                    const planName = modalData.plan.replace('Matrimony ', '').replace(' Plan', '');
-                                    await api.post('/matrimony/upgrade', {
-                                        userId: user.uid,
-                                        plan: planName,
-                                        amount: amtStr
-                                    });
+                                // The backend completely handled the fulfillment and updated DB. 
+                                // We just need to trigger the UI updates!
+                                const returnedCategory = verifyRes.data.category || actualCategory;
+                                
+                                if (returnedCategory === 'matrimony') {
+                                    const planName = modalData.plan?.replace('Matrimony ', '')?.replace(' Plan', '');
                                     window.dispatchEvent(new CustomEvent('paymentSuccess', { detail: { type: 'matrimony', plan: planName } }));
-                                } else if (modalData?.plan === 'APEX Plus' || modalData?.plan === 'APEX Prime') {
-                                    await api.post('/user/upgrade-plan', {
-                                        userId: user.uid,
-                                        plan: modalData.plan
-                                    });
+                                } else if (returnedCategory === 'subscription') {
                                     window.dispatchEvent(new CustomEvent('paymentSuccess', { detail: { type: 'apex_plan', plan: modalData.plan } }));
+                                } else if (returnedCategory === 'travel_booking') {
+                                    window.dispatchEvent(new CustomEvent('paymentSuccess', { detail: { type: 'travel_booking', data: verifyRes.data.fulfillmentData } }));
+                                } else if (returnedCategory === 'mobile_recharge') {
+                                    window.dispatchEvent(new CustomEvent('paymentSuccess', { detail: { type: 'mobile_recharge', data: verifyRes.data.fulfillmentData } }));
+                                } else if (returnedCategory === 'academy_enrollment') {
+                                    window.dispatchEvent(new CustomEvent('paymentSuccess', { detail: { type: 'academy_enrollment' } }));
                                 } else {
                                     window.dispatchEvent(new CustomEvent('paymentSuccess'));
                                 }
@@ -167,12 +181,9 @@ export default function GlobalModals() {
         setModal('checkout');
         setModalData({
             amount: amount,
-            plan: 'Wallet Top-up'
+            plan: 'Wallet Top-up',
+            category: 'add_money'
         });
-    };
-
-    const handleUPISelection = () => {
-        setCheckoutStep('qr');
     };
 
     return (
@@ -200,67 +211,14 @@ export default function GlobalModals() {
                             </div>
 
                             {checkoutStep === 'methods' && (
-                                <div className="space-y-3 mt-2 animate-[fadeIn_0.3s_ease-out]">
-                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Payment Method</h4>
-                                    
-                                    <button onClick={handleUPISelection} className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-violet-500 hover:bg-violet-50 transition-all group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:bg-violet-200 group-hover:text-violet-700 transition-colors">
-                                                <i className="fa-brands fa-google-pay text-xl"></i>
-                                            </div>
-                                            <div className="text-left">
-                                                <p className="font-bold text-gray-900 text-sm">UPI / QR Code</p>
-                                                <p className="text-[10px] text-gray-500">Scan via GPay, PhonePe, Paytm</p>
-                                            </div>
-                                        </div>
-                                        <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-violet-500"></i>
+                                <div className="mt-4 animate-[fadeIn_0.3s_ease-out]">
+                                    <button onClick={handleCheckout} className="w-full py-4 bg-violet-600 text-white font-bold rounded-xl shadow-lg shadow-violet-600/30 hover:bg-violet-700 transition-all flex items-center justify-center gap-2">
+                                        <i className="fa-solid fa-lock text-sm"></i>
+                                        Proceed to Pay Securely
                                     </button>
-
-                                    <button onClick={handleCheckout} className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-violet-500 hover:bg-violet-50 transition-all group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:bg-violet-200 group-hover:text-violet-700 transition-colors">
-                                                <i className="fa-regular fa-credit-card"></i>
-                                            </div>
-                                            <div className="text-left">
-                                                <p className="font-bold text-gray-900 text-sm">Credit / Debit Card</p>
-                                                <p className="text-[10px] text-gray-500">Visa, Mastercard, RuPay</p>
-                                            </div>
-                                        </div>
-                                        <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-violet-500"></i>
-                                    </button>
-
-                                    <button onClick={handleCheckout} className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-violet-500 hover:bg-violet-50 transition-all group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center group-hover:bg-violet-200 group-hover:text-violet-700 transition-colors">
-                                                <i className="fa-solid fa-building-columns"></i>
-                                            </div>
-                                            <div className="text-left">
-                                                <p className="font-bold text-gray-900 text-sm">Netbanking</p>
-                                                <p className="text-[10px] text-gray-500">All Indian banks supported</p>
-                                            </div>
-                                        </div>
-                                        <i className="fa-solid fa-chevron-right text-gray-400 group-hover:text-violet-500"></i>
-                                    </button>
-                                </div>
-                            )}
-
-                            {checkoutStep === 'qr' && (
-                                <div className="mt-2 text-center animate-[fadeIn_0.3s_ease-out]">
-                                    <h4 className="text-sm font-black text-gray-900 mb-1">Scan to Pay</h4>
-                                    <p className="text-[10px] text-gray-500 mb-4">Use any UPI app to scan and complete the payment.</p>
-                                    
-                                    <div className="w-48 h-48 mx-auto bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-center p-2 mb-6">
-                                        <img src="/apex_payment_qr.png" alt="Payment QR Code" className="w-full h-full object-contain rounded-xl" />
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        <button onClick={() => setCheckoutStep('methods')} className="w-1/3 py-3.5 bg-gray-100 text-gray-600 font-bold rounded-xl shadow-sm hover:bg-gray-200 transition-all">
-                                            Back
-                                        </button>
-                                        <button onClick={handleCheckout} className="flex-1 py-3.5 bg-violet-600 text-white font-bold rounded-xl shadow-lg shadow-violet-600/30 hover:bg-violet-700 transition-all">
-                                            I have paid
-                                        </button>
-                                    </div>
+                                    <p className="text-[10px] text-gray-400 text-center mt-3 flex items-center justify-center gap-1">
+                                        <i className="fa-solid fa-shield-halved"></i> Payments are processed securely via Razorpay
+                                    </p>
                                 </div>
                             )}
 

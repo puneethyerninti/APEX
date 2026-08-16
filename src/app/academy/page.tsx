@@ -31,7 +31,11 @@ export default function Page() {
               amount: amountValue,
               userId: user.uid,
               category: 'academy_enrollment',
-              serviceName: `Academy - ${enrollCourse.name}`
+              serviceName: `Academy - ${enrollCourse.name}`,
+              metadata: {
+                  courseName: enrollCourse.name,
+                  amount: enrollCourse.price
+              }
           });
           
           const { order, keyId } = orderRes.data;
@@ -54,12 +58,6 @@ export default function Page() {
                       });
                       
                       if (verifyRes.data.success) {
-                          // Call the academy enroll endpoint
-                          await api.post('/academy/enroll', {
-                              userId: user.uid,
-                              courseName: enrollCourse.name,
-                              amount: enrollCourse.price
-                          });
                           setIsSuccess(true);
                       }
                   } catch (e) {

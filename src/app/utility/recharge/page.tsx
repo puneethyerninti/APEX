@@ -81,7 +81,12 @@ export default function MobileRechargePage() {
             amount: selectedPlan.price,
             userId: user.uid,
             category: 'mobile_recharge',
-            serviceName: `Recharge - ${operator}`
+            serviceName: `Recharge - ${mobileNumber}`,
+            metadata: {
+                mobile: mobileNumber,
+                amount: selectedPlan.price,
+                operatorCode: operatorCode
+            }
         });
         
         const { order, keyId } = orderRes.data;
@@ -104,19 +109,8 @@ export default function MobileRechargePage() {
                     });
                     
                     if (verifyRes.data.success) {
-                        const realRechargeRes = await api.post('/utility/recharge', {
-                            userId: user.uid,
-                            mobile: mobileNumber,
-                            amount: selectedPlan.price,
-                            operatorCode: operatorCode
-                        });
-
-                        if (realRechargeRes.data.success) {
-                            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Successfully recharged ₹${selectedPlan.price}!`, type: 'success' } }));
-                            router.push('/utility');
-                        } else {
-                            throw new Error(realRechargeRes.data.message || 'Recharge Failed');
-                        }
+                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Successfully recharged ₹${selectedPlan.price}!`, type: 'success' } }));
+                        router.push('/utility');
                     }
                 } catch (e: any) {
                     console.error("Verification/Recharge failed", e);

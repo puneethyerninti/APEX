@@ -159,7 +159,14 @@ export default function Page() {
             amount: fare,
             userId: user._id || user.uid,
             category: 'travel_booking',
-            serviceName: `Booking for ${type}`
+            serviceName: `Booking for ${type}`,
+            metadata: {
+                type: type.includes('Ride') ? 'Cab' : type.includes('Bus') ? 'Bus' : type.includes('Train') ? 'Train' : 'Flight',
+                vehicleType: type,
+                origin: pickupLocation || 'Current Location',
+                destination: destinationLocation || 'Selected Destination',
+                amount: fare
+            }
         });
 
         const { order, keyId } = orderRes.data;
@@ -182,17 +189,8 @@ export default function Page() {
                     });
                     
                     if (verifyRes.data.success) {
-                        // Call backend to create booking
-                        const res = await api.post('/travels/book', {
-                            userId: user._id || user.uid,
-                            type: type.includes('Ride') ? 'Cab' : type.includes('Bus') ? 'Bus' : type.includes('Train') ? 'Train' : 'Flight',
-                            vehicleType: type,
-                            origin: pickupLocation || 'Current Location',
-                            destination: destinationLocation || 'Selected Destination',
-                            amount: fare
-                        });
-                        
-                        const bookingId = res.data.booking?._id || `temp_${Date.now()}`;
+                        const booking = verifyRes.data.fulfillmentData;
+                        const bookingId = booking?._id || `temp_${Date.now()}`;
 
                         if (type.includes('Ride') && socket) {
                             setRideStatus('searching');
