@@ -11,6 +11,7 @@ interface UserProfile {
   isPremium?: boolean;
   profilePicture?: string;
   role?: string;
+  apexPlan?: string;
 }
 
 interface AppState {

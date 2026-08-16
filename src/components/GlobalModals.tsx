@@ -121,6 +121,12 @@ export default function GlobalModals() {
                                         amount: amtStr
                                     });
                                     window.dispatchEvent(new CustomEvent('paymentSuccess', { detail: { type: 'matrimony', plan: planName } }));
+                                } else if (modalData?.plan === 'APEX Plus' || modalData?.plan === 'APEX Prime') {
+                                    await api.post('/user/upgrade-plan', {
+                                        userId: user.uid,
+                                        plan: modalData.plan
+                                    });
+                                    window.dispatchEvent(new CustomEvent('paymentSuccess', { detail: { type: 'apex_plan', plan: modalData.plan } }));
                                 } else {
                                     window.dispatchEvent(new CustomEvent('paymentSuccess'));
                                 }

@@ -7,11 +7,37 @@ import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/services/api';
 export default function Home() {
     const user = useAppStore((state) => state.user);
+    const updateUserProfile = useAppStore((state) => state.updateUserProfile);
 
     const [isLeadFormOpen, setIsLeadFormOpen] = React.useState(false);
     const [leadServiceType, setLeadServiceType] = React.useState('');
     const [leadName, setLeadName] = React.useState('');
     const [leadMobile, setLeadMobile] = React.useState('');
+
+    const triggerPrimeCheckout = (planName: string, amount: string) => {
+        if (!user) {
+            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please login to upgrade plan.', type: 'error' } }));
+            return;
+        }
+        window.dispatchEvent(new CustomEvent('openModal', { 
+            detail: { type: 'checkout', data: { amount, plan: planName } }
+        }));
+    };
+
+    React.useEffect(() => {
+        const handlePaymentSuccess = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            if (customEvent.detail?.type === 'apex_plan') {
+                updateUserProfile({ apexPlan: customEvent.detail.plan });
+                window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Successfully upgraded to ${customEvent.detail.plan}!`, type: 'success' } }));
+            }
+        };
+
+        window.addEventListener('paymentSuccess', handlePaymentSuccess);
+        return () => {
+            window.removeEventListener('paymentSuccess', handlePaymentSuccess);
+        };
+    }, [updateUserProfile]);
 
     const handleOpenLeadForm = (e: React.MouseEvent, type: string) => {
         e.preventDefault();
@@ -713,7 +739,7 @@ export default function Home() {
                                     <li className="flex items-center gap-1.5 text-[10px] text-gray-600"><i className="fa-solid fa-check text-apex-purple w-3 text-center"></i>Priority Support</li>
                                     <li className="flex items-center gap-1.5 text-[10px] text-gray-600"><i className="fa-solid fa-check text-apex-purple w-3 text-center"></i>Exclusive Offers</li>
                                 </ul>
-                                <button className="w-full bg-apex-purple text-white font-bold py-1.5 rounded-lg text-[10px] hover:bg-purple-700 transition-colors shadow-xs">Upgrade</button>
+                                <button onClick={() => triggerPrimeCheckout('APEX Plus', '₹99')} className="w-full bg-apex-purple text-white font-bold py-1.5 rounded-lg text-[10px] hover:bg-purple-700 transition-colors shadow-xs">Upgrade</button>
                             </div>
                             {/* APEX PRIME */}
                             <div className="plan-card popular p-4 w-48 flex-shrink-0 flex flex-col text-white reveal-zoom delay-300" style={{ background: "linear-gradient(135deg,#1E0E4B,#3B1E8E)" }}>
@@ -728,7 +754,7 @@ export default function Home() {
                                     <li className="flex items-center gap-1.5 text-[10px] text-white/95"><i className="fa-solid fa-check text-yellow-300 w-3 text-center"></i>VIP Support</li>
                                     <li className="flex items-center gap-1.5 text-[10px] text-white/95"><i className="fa-solid fa-check text-yellow-300 w-3 text-center"></i>Highest Rewards</li>
                                 </ul>
-                                <button className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-black py-1.5 rounded-lg text-[10px] hover:from-yellow-300 hover:to-orange-300 transition-colors shadow-xs">Get Prime</button>
+                                <button onClick={() => triggerPrimeCheckout('APEX Prime', '₹299')} className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-black py-1.5 rounded-lg text-[10px] hover:from-yellow-300 hover:to-orange-300 transition-colors shadow-xs">Get Prime</button>
                             </div>
                         </div>
                     </div>
