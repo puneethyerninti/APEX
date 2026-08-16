@@ -9,6 +9,7 @@ export interface IUser extends Document {
   walletBalance: number;
   profilePicture?: string;
   fcmTokens?: string[];
+  apexPlan: 'Free' | 'APEX Plus' | 'APEX Prime';
 }
 
 const UserSchema = new Schema<IUser>(
@@ -20,7 +21,8 @@ const UserSchema = new Schema<IUser>(
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     walletBalance: { type: Number, default: 0 },
     profilePicture: { type: String },
-    fcmTokens: [{ type: String }]
+    fcmTokens: [{ type: String }],
+    apexPlan: { type: String, enum: ['Free', 'APEX Plus', 'APEX Prime'], default: 'Free' }
   },
   { timestamps: true }
 );

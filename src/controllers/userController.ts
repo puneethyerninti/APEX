@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
+import Transaction from '../models/Transaction';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { Resend } from 'resend';
@@ -185,5 +186,42 @@ export const saveFCMToken = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error saving FCM token:", error);
     res.status(500).json({ error: "Server error saving FCM token" });
+  }
+};
+
+export const upgradeUserPlan = async (req: Request, res: Response) => {
+  const { userId, plan } = req.body;
+  if (!userId || !plan) {
+    return res.status(400).json({ error: "User ID and plan are required" });
+  }
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    user.apexPlan = plan;
+    await user.save();
+
+    await Transaction.create({
+      user: userId,
+      type: 'debit',
+      amount: plan === 'APEX Prime' ? 2999 : (plan === 'APEX Plus' ? 999 : 0),
+      category: `Purchased ${plan}`,
+      status: 'completed'
+    } as any);
+
+    await createNotification(
+      userId,
+      'Subscription Upgraded',
+      `Welcome to ${plan}! You now have exclusive access to premium features.`,
+      'success'
+    );
+
+    res.json({ success: true, message: `Successfully upgraded to ${plan}`, user });
+  } catch (error) {
+    console.error("Error upgrading user plan:", error);
+    res.status(500).json({ error: "Server error upgrading plan" });
   }
 };

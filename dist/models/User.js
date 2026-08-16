@@ -42,6 +42,7 @@ const UserSchema = new mongoose_1.Schema({
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     walletBalance: { type: Number, default: 0 },
     profilePicture: { type: String },
-    fcmTokens: [{ type: String }]
+    fcmTokens: [{ type: String }],
+    apexPlan: { type: String, enum: ['Free', 'APEX Plus', 'APEX Prime'], default: 'Free' }
 }, { timestamps: true });
 exports.default = mongoose_1.default.model('User', UserSchema);
