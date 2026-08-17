@@ -254,9 +254,14 @@ export default function Home() {
                                 Quality Products &bull; Best Prices &bull; Fast Delivery
                             </p>
                             
-                            <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="ml-2 md:ml-0 bg-pink-500 hover:bg-pink-600 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-md text-[10px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform transition-transform backdrop-blur-sm border border-pink-400/30">
-                                SHOP NOW <i className="fa-solid fa-arrow-right text-[8px] group-hover:translate-x-1 transition-transform"></i>
-                            </a>
+                            <div className="ml-2 md:ml-0 flex items-center gap-2">
+                                <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-md text-[10px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-pink-400/30">
+                                    SHOP NOW <i className="fa-solid fa-arrow-right text-[8px] group-hover:translate-x-1 transition-transform"></i>
+                                </a>
+                                <a href="https://www.apextradingcompanystore.co.in/cart" target="_blank" rel="noopener noreferrer" className="bg-white/20 hover:bg-white/30 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-md text-[10px] md:text-xs hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-white/30">
+                                    <i className="fa-solid fa-cart-shopping"></i> CART
+                                </a>
+                            </div>
                             
                             {/* Features */}
                             <div className="flex items-center gap-3 mt-3 ml-2 md:ml-0">
@@ -1007,14 +1012,14 @@ export default function Home() {
                 <section id="matrimony" className="py-4 px-4">
                     <div className="relative rounded-2xl overflow-hidden shadow-lg border border-rose-100 group">
                         <div className="h-48 relative">
-                            <img src="./Matrimony%20Hero.png" alt="Matrimony" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                            <img src="/Matrimony%20Hero.png" alt="Matrimony" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                             <div className="absolute inset-0 bg-gradient-to-t from-rose-900/90 via-rose-900/30 to-transparent"></div>
                         </div>
 
                         <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between z-10 reveal-up">
                             <div className="flex flex-col">
                                 <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-lg inline-block mb-2 border border-white/30 shadow-sm self-start">
-                                    <img src="Anand%20Matrimony%20logo.jpeg" alt="Anand Matrimony" className="h-8 object-contain rounded-md" />
+                                    <img src="/Anand%20Matrimony%20logo.jpeg" alt="Anand Matrimony" className="h-8 object-contain rounded-md" />
                                 </div>
                                 <h3 className="text-white font-black text-sm tracking-wide leading-tight drop-shadow-md">Find Your<br />Perfect Match</h3>
                             </div>
@@ -1046,7 +1051,7 @@ export default function Home() {
                             {/* Brand */}
                             <div className="col-span-2 reveal-up">
                                 <div className="flex items-center gap-3 mb-3">
-                                    <img src="./APEX%20logo.jpeg" alt="APEX" className="h-9 w-9 object-contain rounded-lg" />
+                                    <img src="/APEX%20logo.jpeg" alt="APEX" className="h-9 w-9 object-contain rounded-lg" />
                                     <div>
                                         <span className="font-black text-gray-900 uppercase tracking-wider block text-xs">APEX</span>
                                     </div>

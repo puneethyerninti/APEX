@@ -7,9 +7,9 @@ export function generateStaticParams() {
         { category: 'cosmetics' },
         { category: 'electronics' },
         { category: 'watches' },
-        { category: 'computers' },
+        { category: 'mobiles' },
         { category: 'gifts' },
-        { category: 'courses' },
+        { category: 'accessories' },
     ];
 }
 
@@ -18,9 +18,9 @@ const categoryDetails: Record<string, { icon: string, gradient: string, color: s
     'cosmetics': { icon: 'fa-wand-magic-sparkles', gradient: 'from-rose-500 to-pink-600', color: 'text-rose-600' },
     'electronics': { icon: 'fa-headphones', gradient: 'from-slate-600 to-gray-800', color: 'text-slate-700' },
     'watches': { icon: 'fa-stopwatch', gradient: 'from-emerald-500 to-teal-600', color: 'text-emerald-600' },
-    'computers': { icon: 'fa-laptop', gradient: 'from-purple-500 to-indigo-600', color: 'text-purple-600' },
+    'mobiles': { icon: 'fa-mobile-screen-button', gradient: 'from-purple-500 to-indigo-600', color: 'text-purple-600' },
     'gifts': { icon: 'fa-gift', gradient: 'from-amber-500 to-orange-500', color: 'text-amber-600' },
-    'courses': { icon: 'fa-graduation-cap', gradient: 'from-indigo-500 to-blue-600', color: 'text-indigo-600' }
+    'accessories': { icon: 'fa-headphones-simple', gradient: 'from-indigo-500 to-blue-600', color: 'text-indigo-600' }
 };
 
 export default function CategoryPage({ params }: { params: { category: string } }) {
