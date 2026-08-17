@@ -232,43 +232,45 @@ export default function Home() {
                             <img 
                                 src="/apex-store-hero.jpeg" 
                                 alt="Store Background" 
-                                className="w-full h-full object-cover object-right md:object-center opacity-90"
+                                className="w-full h-full object-cover object-right md:object-center transition-transform duration-700 group-hover:scale-105"
                                 loading="eager"
                                 fetchPriority="high"
                             />
+                            {/* Dark Gradient Overlay like Matrimony Hero */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-rose-900/95 via-rose-900/60 to-transparent"></div>
                         </div>
 
                         {/* Content */}
-                        <div className="z-10 w-full md:w-1/2 mb-2 md:mb-0 relative">
+                        <div className="z-10 w-full md:w-1/2 mb-2 md:mb-0 relative reveal-up">
                             <div className="flex items-center gap-2 mb-1.5 mt-2 md:mt-0 ml-2 md:ml-0">
-                                <h1 className="text-xl md:text-3xl font-black text-[#1B2956] tracking-tight leading-none">
-                                    APEX <span className="text-[#E61963]">STORE</span>
+                                <h1 className="text-xl md:text-3xl font-black text-white tracking-tight leading-none drop-shadow-md">
+                                    APEX <span className="text-pink-400">STORE</span>
                                 </h1>
                             </div>
-                            <h2 className="text-[10px] md:text-sm font-bold text-gray-700 mb-0.5 ml-2 md:ml-0">
+                            <h2 className="text-[10px] md:text-sm font-bold text-white/90 mb-0.5 ml-2 md:ml-0 drop-shadow">
                                 Everything You Need, Delivered to You
                             </h2>
-                            <p className="text-[9px] md:text-xs text-gray-500 mb-3 font-medium ml-2 md:ml-0">
+                            <p className="text-[9px] md:text-xs text-white/70 mb-3 font-medium ml-2 md:ml-0 drop-shadow">
                                 Quality Products &bull; Best Prices &bull; Fast Delivery
                             </p>
                             
-                            <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="ml-2 md:ml-0 bg-pink-600 hover:bg-pink-700 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-sm text-[10px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform transition-transform">
+                            <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="ml-2 md:ml-0 bg-pink-500 hover:bg-pink-600 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-md text-[10px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform transition-transform backdrop-blur-sm border border-pink-400/30">
                                 SHOP NOW <i className="fa-solid fa-arrow-right text-[8px] group-hover:translate-x-1 transition-transform"></i>
                             </a>
                             
                             {/* Features */}
-                            <div className="flex items-center gap-3 mt-3">
+                            <div className="flex items-center gap-3 mt-3 ml-2 md:ml-0">
                                 <div className="flex items-center gap-1 anim-float-icon" style={{ animationDelay: '0s' }}>
-                                    <div className="w-5 h-5 rounded-full bg-white/80 border border-pink-200 flex items-center justify-center text-pink-600 shadow-sm"><i className="fa-solid fa-bag-shopping text-[8px]"></i></div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-800 leading-tight">1000+<br/>Products</span>
+                                    <div className="w-5 h-5 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-pink-300 shadow-sm backdrop-blur-sm"><i className="fa-solid fa-bag-shopping text-[8px]"></i></div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-white leading-tight drop-shadow">1000+<br/>Products</span>
                                 </div>
                                 <div className="flex items-center gap-1 anim-float-icon" style={{ animationDelay: '0.2s' }}>
-                                    <div className="w-5 h-5 rounded-full bg-white/80 border border-pink-200 flex items-center justify-center text-pink-600 shadow-sm"><i className="fa-solid fa-shield-halved text-[8px]"></i></div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-800 leading-tight">Secure<br/>Payment</span>
+                                    <div className="w-5 h-5 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-pink-300 shadow-sm backdrop-blur-sm"><i className="fa-solid fa-shield-halved text-[8px]"></i></div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-white leading-tight drop-shadow">Secure<br/>Payment</span>
                                 </div>
                                 <div className="flex items-center gap-1 anim-float-icon" style={{ animationDelay: '0.4s' }}>
-                                    <div className="w-5 h-5 rounded-full bg-white/80 border border-pink-200 flex items-center justify-center text-pink-600 shadow-sm"><i className="fa-solid fa-rotate-left text-[8px]"></i></div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-800 leading-tight">Easy<br/>Returns</span>
+                                    <div className="w-5 h-5 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-pink-300 shadow-sm backdrop-blur-sm"><i className="fa-solid fa-rotate-left text-[8px]"></i></div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-white leading-tight drop-shadow">Easy<br/>Returns</span>
                                 </div>
                             </div>
                         </div>
@@ -284,9 +286,9 @@ export default function Home() {
                                 { name: "Cosmetics", icon: 'fa-wand-magic-sparkles', bg: 'bg-rose-50', color: 'text-rose-500', border: 'border-rose-100', link: 'cosmetics' },
                                 { name: "Electronics", icon: 'fa-headphones', bg: 'bg-slate-100', color: 'text-slate-600', border: 'border-slate-200', link: 'electronics' },
                                 { name: "Watches", icon: 'fa-stopwatch', bg: 'bg-emerald-50', color: 'text-emerald-500', border: 'border-emerald-100', link: 'watches' },
-                                { name: "Computers", icon: 'fa-laptop', bg: 'bg-purple-50', color: 'text-purple-500', border: 'border-purple-100', link: 'computers' },
+                                { name: "Mobiles", icon: 'fa-mobile-screen-button', bg: 'bg-purple-50', color: 'text-purple-500', border: 'border-purple-100', link: 'mobiles' },
                                 { name: "Gifts", icon: 'fa-gift', bg: 'bg-amber-50', color: 'text-amber-500', border: 'border-amber-100', link: 'gifts' },
-                                { name: "Courses", icon: 'fa-graduation-cap', bg: 'bg-indigo-50', color: 'text-indigo-500', border: 'border-indigo-100', link: 'courses' },
+                                { name: "Accessories", icon: 'fa-headphones-simple', bg: 'bg-indigo-50', color: 'text-indigo-500', border: 'border-indigo-100', link: 'accessories' },
                             ].map((cat, i) => (
                                 <Link href={`/store/${cat.link}`} key={i} className="flex flex-col items-center flex-shrink-0 text-center gap-1 group min-w-[50px]">
                                     <div className={`w-9 h-9 md:w-12 md:h-12 rounded-full ${cat.bg} border ${cat.border} flex items-center justify-center text-[14px] md:text-lg ${cat.color} group-hover:scale-110 transition-transform shadow-xs`}>
