@@ -226,7 +226,11 @@ export default function Home() {
                     
                     {/* Store Banner */}
                     <div className="hero-gradient rounded-2xl p-3 md:p-6 flex flex-col md:flex-row items-center justify-between shadow-md relative overflow-hidden group">
-
+                        
+                        {/* Background Image Overlay */}
+                        <div className="absolute inset-0 z-0">
+                            <img src="https://images.unsplash.com/photo-1607083206869-4c76720d11b1?auto=format&fit=crop&q=80" alt="Store Background" className="w-full h-full object-cover opacity-20 mix-blend-overlay hover-zoom-img" />
+                        </div>
 
                         {/* Content */}
                         <div className="z-10 w-full md:w-1/2 mb-2 md:mb-0 relative">
@@ -263,10 +267,7 @@ export default function Home() {
                             </div>
                         </div>
                         
-                        {/* Girl Image (Right side) */}
-                        <div className="z-10 flex w-full md:w-1/2 justify-center md:justify-end relative mt-4 md:mt-0">
-                            <img src="https://images.unsplash.com/photo-1607083206869-4c76720d11b1?w=800&q=80&auto=format&fit=crop" alt="Girl Shopping" className="w-48 h-32 rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.3)] object-cover hover:scale-105 transition-transform duration-300" />
-                        </div>
+
                         
                         {/* Decorative background elements */}
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500 rounded-full mix-blend-screen filter blur-2xl opacity-20 animate-pulse"></div>
