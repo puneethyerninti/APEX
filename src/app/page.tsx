@@ -205,83 +205,76 @@ export default function Home() {
                 {/* ═══════════════════════════════ STICKY HEADER & SEARCH ═══════════════════════════════ */}
 
 
-                {/* ═══ TOP HIGHLIGHT: APEX STORE ═══ */}
-                <section className="pt-4 pb-2 px-4 max-w-7xl mx-auto reveal-up">
+                {/* ═══ TOP HIGHLIGHT: APEX STORE (COMPACT) ═══ */}
+                <section className="pt-3 pb-1 px-3 max-w-7xl mx-auto reveal-up">
                     {/* Store Banner */}
-                    <div className="bg-gradient-to-r from-pink-50 to-pink-100 rounded-3xl p-5 md:p-8 flex flex-col md:flex-row items-center justify-between shadow-sm border border-pink-200/50 relative overflow-hidden">
+                    <div className="bg-gradient-to-r from-pink-50 to-pink-100 rounded-2xl p-3 md:p-6 flex flex-col md:flex-row items-center justify-between shadow-sm border border-pink-200/50 relative overflow-hidden">
                         
                         {/* Content */}
-                        <div className="z-10 w-full md:w-1/2 mb-6 md:mb-0">
-                            <div className="bg-pink-600 text-white text-[10px] font-black px-2 py-1 rounded w-fit mb-3">1</div>
-                            <h1 className="text-3xl md:text-5xl font-black text-[#1E0E4B] mb-2 tracking-tight">
-                                APEX <span className="text-pink-600">STORE</span>
-                            </h1>
-                            <h2 className="text-sm md:text-lg font-bold text-gray-800 mb-2">
+                        <div className="z-10 w-full md:w-1/2 mb-2 md:mb-0">
+                            <div className="flex items-center gap-2 mb-1.5">
+                                <div className="bg-pink-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded">1</div>
+                                <h1 className="text-xl md:text-3xl font-black text-[#1E0E4B] tracking-tight leading-none">
+                                    APEX <span className="text-pink-600">STORE</span>
+                                </h1>
+                            </div>
+                            <h2 className="text-[10px] md:text-sm font-bold text-gray-800 mb-0.5">
                                 Everything You Need, Delivered to You
                             </h2>
-                            <p className="text-xs md:text-sm text-gray-600 mb-6 font-medium">
+                            <p className="text-[9px] md:text-xs text-gray-600 mb-3 font-medium">
                                 Quality Products &bull; Best Prices &bull; Fast Delivery
                             </p>
                             
-                            <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2.5 px-6 rounded-full inline-flex items-center gap-2 transition-colors shadow-md text-sm">
-                                SHOP NOW <i className="fa-solid fa-arrow-right"></i>
+                            <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="bg-pink-600 hover:bg-pink-700 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-sm text-[10px] md:text-xs">
+                                SHOP NOW <i className="fa-solid fa-arrow-right text-[8px]"></i>
                             </a>
                             
                             {/* Features */}
-                            <div className="flex items-center gap-4 mt-8">
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-6 h-6 rounded-full bg-pink-100 border border-pink-200 flex items-center justify-center text-pink-600"><i className="fa-solid fa-bag-shopping text-[10px]"></i></div>
-                                    <span className="text-[9px] md:text-xs font-bold text-gray-700 leading-tight">1000+<br/>Products</span>
+                            <div className="flex items-center gap-3 mt-3">
+                                <div className="flex items-center gap-1">
+                                    <div className="w-5 h-5 rounded-full bg-pink-100 border border-pink-200 flex items-center justify-center text-pink-600"><i className="fa-solid fa-bag-shopping text-[8px]"></i></div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-700 leading-tight">1000+<br/>Products</span>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-6 h-6 rounded-full bg-pink-100 border border-pink-200 flex items-center justify-center text-pink-600"><i className="fa-solid fa-shield-halved text-[10px]"></i></div>
-                                    <span className="text-[9px] md:text-xs font-bold text-gray-700 leading-tight">Secure<br/>Payment</span>
+                                <div className="flex items-center gap-1">
+                                    <div className="w-5 h-5 rounded-full bg-pink-100 border border-pink-200 flex items-center justify-center text-pink-600"><i className="fa-solid fa-shield-halved text-[8px]"></i></div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-700 leading-tight">Secure<br/>Payment</span>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-6 h-6 rounded-full bg-pink-100 border border-pink-200 flex items-center justify-center text-pink-600"><i className="fa-solid fa-rotate-left text-[10px]"></i></div>
-                                    <span className="text-[9px] md:text-xs font-bold text-gray-700 leading-tight">Easy<br/>Returns</span>
+                                <div className="flex items-center gap-1">
+                                    <div className="w-5 h-5 rounded-full bg-pink-100 border border-pink-200 flex items-center justify-center text-pink-600"><i className="fa-solid fa-rotate-left text-[8px]"></i></div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-700 leading-tight">Easy<br/>Returns</span>
                                 </div>
                             </div>
                         </div>
                         
-                        {/* Image/Graphic */}
-                        <div className="z-10 w-full md:w-1/2 flex justify-center md:justify-end relative">
-                            {/* Using an Unsplash shopping image as placeholder, matching the pink theme */}
-                            <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80&auto=format&fit=crop" alt="Shopping" className="w-64 md:w-80 h-48 md:h-64 rounded-2xl shadow-lg object-cover" />
+                        {/* Image/Graphic (Hidden on mobile for compactness) */}
+                        <div className="z-10 hidden md:flex w-full md:w-1/2 justify-end relative">
+                            <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80&auto=format&fit=crop" alt="Shopping" className="w-48 h-32 rounded-xl shadow-md object-cover" />
                         </div>
                         
                         {/* Decorative background elements */}
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-pink-300 rounded-full mix-blend-multiply filter blur-2xl opacity-30"></div>
-                        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-pink-300 rounded-full mix-blend-multiply filter blur-2xl opacity-30"></div>
-                        <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-white rounded-full mix-blend-overlay filter blur-xl opacity-50"></div>
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-pink-300 rounded-full mix-blend-multiply filter blur-2xl opacity-30"></div>
+                        <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-pink-300 rounded-full mix-blend-multiply filter blur-2xl opacity-30"></div>
                     </div>
 
                     {/* Store Categories Row (Circular) */}
-                    <div className="mt-4 bg-white rounded-3xl p-4 md:p-6 shadow-sm border border-gray-100">
-                        <div className="flex justify-between items-center overflow-x-auto scrollbar-none gap-4 pb-2">
+                    <div className="mt-2 bg-white rounded-2xl p-2 md:p-4 shadow-xs border border-gray-100">
+                        <div className="flex justify-between items-center overflow-x-auto scrollbar-none gap-2 pb-1">
                             {[
-                                { name: "Women's Clothing", icon: 'fa-person-dress', bg: 'bg-pink-50', color: 'text-pink-500', border: 'border-pink-100' },
+                                { name: "Women's", icon: 'fa-person-dress', bg: 'bg-pink-50', color: 'text-pink-500', border: 'border-pink-100' },
                                 { name: "Cosmetics", icon: 'fa-wand-magic-sparkles', bg: 'bg-rose-50', color: 'text-rose-500', border: 'border-rose-100' },
                                 { name: "Electronics", icon: 'fa-headphones', bg: 'bg-slate-100', color: 'text-slate-600', border: 'border-slate-200' },
-                                { name: "Smart Watches", icon: 'fa-stopwatch', bg: 'bg-emerald-50', color: 'text-emerald-500', border: 'border-emerald-100' },
+                                { name: "Watches", icon: 'fa-stopwatch', bg: 'bg-emerald-50', color: 'text-emerald-500', border: 'border-emerald-100' },
                                 { name: "Computers", icon: 'fa-laptop', bg: 'bg-purple-50', color: 'text-purple-500', border: 'border-purple-100' },
                                 { name: "Gifts", icon: 'fa-gift', bg: 'bg-amber-50', color: 'text-amber-500', border: 'border-amber-100' },
-                                { name: "Online Courses", icon: 'fa-graduation-cap', bg: 'bg-indigo-50', color: 'text-indigo-500', border: 'border-indigo-100' },
+                                { name: "Courses", icon: 'fa-graduation-cap', bg: 'bg-indigo-50', color: 'text-indigo-500', border: 'border-indigo-100' },
                             ].map((cat, i) => (
-                                <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" key={i} className="flex flex-col items-center flex-shrink-0 text-center gap-2 group min-w-[70px]">
-                                    <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full ${cat.bg} border ${cat.border} flex items-center justify-center text-xl md:text-2xl ${cat.color} group-hover:scale-110 transition-transform shadow-sm`}>
+                                <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" key={i} className="flex flex-col items-center flex-shrink-0 text-center gap-1 group min-w-[50px]">
+                                    <div className={`w-9 h-9 md:w-12 md:h-12 rounded-full ${cat.bg} border ${cat.border} flex items-center justify-center text-[14px] md:text-lg ${cat.color} group-hover:scale-110 transition-transform shadow-xs`}>
                                         <i className={`fa-solid ${cat.icon}`}></i>
                                     </div>
-                                    <span className="text-[10px] md:text-xs font-bold text-gray-700 leading-tight w-16 md:w-20 whitespace-normal">{cat.name}</span>
+                                    <span className="text-[8px] md:text-[10px] font-bold text-gray-600 leading-tight w-14 whitespace-normal">{cat.name}</span>
                                 </a>
                             ))}
-                        </div>
-                        {/* Dots indicator */}
-                        <div className="flex justify-center gap-1.5 mt-3">
-                            <div className="w-2 h-2 rounded-full bg-pink-500"></div>
-                            <div className="w-2 h-2 rounded-full bg-gray-200"></div>
-                            <div className="w-2 h-2 rounded-full bg-gray-200"></div>
-                            <div className="w-2 h-2 rounded-full bg-gray-200"></div>
                         </div>
                     </div>
                 </section>
