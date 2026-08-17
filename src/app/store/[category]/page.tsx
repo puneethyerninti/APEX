@@ -1,11 +1,20 @@
-"use client";
 import React from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 
-export default function CategoryPage() {
-    const params = useParams();
-    const category = params.category as string;
+export function generateStaticParams() {
+    return [
+        { category: 'womens' },
+        { category: 'cosmetics' },
+        { category: 'electronics' },
+        { category: 'watches' },
+        { category: 'computers' },
+        { category: 'gifts' },
+        { category: 'courses' },
+    ];
+}
+
+export default function CategoryPage({ params }: { params: { category: string } }) {
+    const category = params.category;
     
     // Capitalize and format category name
     const formattedCategory = category 
