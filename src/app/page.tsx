@@ -268,6 +268,11 @@ export default function Home() {
                             </div>
                         </div>
                         
+                        {/* Girl Image (Right side) */}
+                        <div className="z-10 hidden md:flex w-full md:w-1/2 justify-end relative">
+                            <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80&auto=format&fit=crop" alt="Girl Shopping" className="w-48 h-32 rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.3)] object-cover hover:scale-105 transition-transform duration-300" />
+                        </div>
+                        
                         {/* Decorative background elements */}
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500 rounded-full mix-blend-screen filter blur-2xl opacity-20 animate-pulse"></div>
                         <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500 rounded-full mix-blend-screen filter blur-2xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>

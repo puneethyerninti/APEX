@@ -111,8 +111,8 @@ export default function CategoryPage({ params }: { params: { category: string } 
                         <div className="flex gap-3 overflow-x-auto scrollbar-none flex-nowrap pb-2">
                             {/* Dummy Product 1 */}
                             <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0 cursor-pointer hover:border-gray-200 transition-colors">
-                                <div className="h-24 bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-400 text-3xl">
-                                    <i className="fa-solid fa-image"></i>
+                                <div className="h-24 bg-gray-100 rounded-lg mb-2 overflow-hidden">
+                                    <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80" alt="Product 1" className="w-full h-full object-cover" />
                                 </div>
                                 <h4 className="font-black text-[11px] text-gray-900 truncate">Premium Item 1</h4>
                                 <div className="flex items-center gap-1 mb-1">
@@ -126,8 +126,8 @@ export default function CategoryPage({ params }: { params: { category: string } 
                             
                             {/* Dummy Product 2 */}
                             <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0 cursor-pointer hover:border-gray-200 transition-colors">
-                                <div className="h-24 bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-400 text-3xl">
-                                    <i className="fa-solid fa-image"></i>
+                                <div className="h-24 bg-gray-100 rounded-lg mb-2 overflow-hidden">
+                                    <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80" alt="Product 2" className="w-full h-full object-cover" />
                                 </div>
                                 <h4 className="font-black text-[11px] text-gray-900 truncate">Premium Item 2</h4>
                                 <div className="flex items-center gap-1 mb-1">
@@ -141,8 +141,8 @@ export default function CategoryPage({ params }: { params: { category: string } 
 
                             {/* Dummy Product 3 */}
                             <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0 cursor-pointer hover:border-gray-200 transition-colors">
-                                <div className="h-24 bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-400 text-3xl">
-                                    <i className="fa-solid fa-image"></i>
+                                <div className="h-24 bg-gray-100 rounded-lg mb-2 overflow-hidden">
+                                    <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80" alt="Product 3" className="w-full h-full object-cover" />
                                 </div>
                                 <h4 className="font-black text-[11px] text-gray-900 truncate">Premium Item 3</h4>
                                 <div className="flex items-center gap-1 mb-1">
