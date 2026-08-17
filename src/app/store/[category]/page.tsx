@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export function generateStaticParams() {
     return [
-        { category: 'womens' },
+        { category: 'clothing' },
         { category: 'cosmetics' },
         { category: 'electronics' },
         { category: 'watches' },
@@ -14,7 +14,7 @@ export function generateStaticParams() {
 }
 
 const categoryDetails: Record<string, { icon: string, gradient: string, color: string }> = {
-    'womens': { icon: 'fa-person-dress', gradient: 'from-pink-500 to-rose-600', color: 'text-pink-600' },
+    'clothing': { icon: 'fa-person-dress', gradient: 'from-pink-500 to-rose-600', color: 'text-pink-600' },
     'cosmetics': { icon: 'fa-wand-magic-sparkles', gradient: 'from-rose-500 to-pink-600', color: 'text-rose-600' },
     'electronics': { icon: 'fa-headphones', gradient: 'from-slate-600 to-gray-800', color: 'text-slate-700' },
     'watches': { icon: 'fa-stopwatch', gradient: 'from-emerald-500 to-teal-600', color: 'text-emerald-600' },

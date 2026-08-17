@@ -235,7 +235,6 @@ export default function Home() {
                         {/* Content */}
                         <div className="z-10 w-full md:w-1/2 mb-2 md:mb-0 relative">
                             <div className="flex items-center gap-2 mb-1.5">
-                                <div className="bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded">1</div>
                                 <h1 className="text-xl md:text-3xl font-black text-white tracking-tight leading-none">
                                     APEX <span className="text-amber-400">STORE</span>
                                 </h1>
@@ -270,7 +269,7 @@ export default function Home() {
                         
                         {/* Girl Image (Right side) */}
                         <div className="z-10 hidden md:flex w-full md:w-1/2 justify-end relative">
-                            <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80&auto=format&fit=crop" alt="Girl Shopping" className="w-48 h-32 rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.3)] object-cover hover:scale-105 transition-transform duration-300" />
+                            <img src="https://images.unsplash.com/photo-1607083206869-4c76720d11b1?w=800&q=80&auto=format&fit=crop" alt="Girl Shopping" className="w-48 h-32 rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.3)] object-cover hover:scale-105 transition-transform duration-300" />
                         </div>
                         
                         {/* Decorative background elements */}
