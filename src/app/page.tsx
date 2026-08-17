@@ -225,64 +225,59 @@ export default function Home() {
                     `}} />
                     
                     {/* Store Banner */}
-                    <div className="hero-gradient rounded-2xl p-3 md:p-6 flex flex-col md:flex-row items-center justify-between shadow-md relative overflow-hidden group">
+                    <div className="rounded-2xl flex flex-col md:flex-row items-center justify-between shadow-md relative overflow-hidden group bg-gradient-to-r from-rose-100 to-pink-50">
                         
-                        {/* Decorative Background Overlay */}
-                        <div className="absolute inset-0 z-0 bg-gradient-to-r from-purple-900/40 to-transparent"></div>
+                        {/* Background Hero Image */}
+                        <div className="absolute inset-0 z-0">
+                            <img 
+                                src="/apex-store-hero.jpeg" 
+                                alt="Store Background" 
+                                className="w-full h-full object-cover object-right md:object-center opacity-90"
+                                loading="eager"
+                                fetchPriority="high"
+                            />
+                        </div>
 
                         {/* Content */}
                         <div className="z-10 w-full md:w-1/2 mb-2 md:mb-0 relative">
-                            <div className="flex items-center gap-2 mb-1.5">
-                                <h1 className="text-xl md:text-3xl font-black text-white tracking-tight leading-none">
-                                    APEX <span className="text-amber-400">STORE</span>
+                            <div className="flex items-center gap-2 mb-1.5 mt-2 md:mt-0 ml-2 md:ml-0">
+                                <h1 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight leading-none">
+                                    APEX <span className="text-pink-600">STORE</span>
                                 </h1>
                             </div>
-                            <h2 className="text-[10px] md:text-sm font-bold text-gray-100 mb-0.5">
+                            <h2 className="text-[10px] md:text-sm font-bold text-gray-700 mb-0.5 ml-2 md:ml-0">
                                 Everything You Need, Delivered to You
                             </h2>
-                            <p className="text-[9px] md:text-xs text-gray-300 mb-3 font-medium">
+                            <p className="text-[9px] md:text-xs text-gray-500 mb-3 font-medium ml-2 md:ml-0">
                                 Quality Products &bull; Best Prices &bull; Fast Delivery
                             </p>
                             
-                            <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-sm text-[10px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform transition-transform">
+                            <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="ml-2 md:ml-0 bg-pink-600 hover:bg-pink-700 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-sm text-[10px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform transition-transform">
                                 SHOP NOW <i className="fa-solid fa-arrow-right text-[8px] group-hover:translate-x-1 transition-transform"></i>
                             </a>
                             
                             {/* Features */}
                             <div className="flex items-center gap-3 mt-3">
                                 <div className="flex items-center gap-1 anim-float-icon" style={{ animationDelay: '0s' }}>
-                                    <div className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-amber-400"><i className="fa-solid fa-bag-shopping text-[8px]"></i></div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-200 leading-tight">1000+<br/>Products</span>
+                                    <div className="w-5 h-5 rounded-full bg-white/80 border border-pink-200 flex items-center justify-center text-pink-600 shadow-sm"><i className="fa-solid fa-bag-shopping text-[8px]"></i></div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-800 leading-tight">1000+<br/>Products</span>
                                 </div>
                                 <div className="flex items-center gap-1 anim-float-icon" style={{ animationDelay: '0.2s' }}>
-                                    <div className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-amber-400"><i className="fa-solid fa-shield-halved text-[8px]"></i></div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-200 leading-tight">Secure<br/>Payment</span>
+                                    <div className="w-5 h-5 rounded-full bg-white/80 border border-pink-200 flex items-center justify-center text-pink-600 shadow-sm"><i className="fa-solid fa-shield-halved text-[8px]"></i></div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-800 leading-tight">Secure<br/>Payment</span>
                                 </div>
                                 <div className="flex items-center gap-1 anim-float-icon" style={{ animationDelay: '0.4s' }}>
-                                    <div className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-amber-400"><i className="fa-solid fa-rotate-left text-[8px]"></i></div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-200 leading-tight">Easy<br/>Returns</span>
+                                    <div className="w-5 h-5 rounded-full bg-white/80 border border-pink-200 flex items-center justify-center text-pink-600 shadow-sm"><i className="fa-solid fa-rotate-left text-[8px]"></i></div>
+                                    <span className="text-[7px] md:text-[10px] font-bold text-gray-800 leading-tight">Easy<br/>Returns</span>
                                 </div>
                             </div>
                         </div>
                         
-                        {/* Girl Image (Right side - Desktop & Mobile) */}
-                        <div className="z-10 flex w-full md:w-1/2 justify-center md:justify-end relative mt-4 md:mt-0">
-                            <img 
-                                src="https://images.unsplash.com/photo-1607083206869-4c76720d11b1?w=800&q=80&auto=format&fit=crop" 
-                                alt="Girl Shopping" 
-                                className="w-48 h-32 md:w-56 md:h-40 rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.3)] object-cover hover:scale-105 transition-transform duration-300"
-                                loading="eager"
-                                fetchPriority="high"
-                            />
-                        </div>
-                        
-                        {/* Decorative background elements */}
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500 rounded-full mix-blend-screen filter blur-2xl opacity-20 animate-pulse"></div>
-                        <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500 rounded-full mix-blend-screen filter blur-2xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                        {/* Removed isolated girl image, using full hero background instead */}
                     </div>
 
                     {/* Store Categories Row (Circular) */}
-                    <div className="mt-2 bg-white rounded-2xl p-2 md:p-4 shadow-xs border border-gray-100">
+                    <div className="mt-2 bg-white rounded-2xl p-2 md:p-4 shadow-xs border border-gray-100 relative z-10">
                         <div className="flex justify-between items-center overflow-x-auto scrollbar-none gap-2 pb-1">
                             {[
                                 { name: "Clothing", icon: 'fa-person-dress', bg: 'bg-pink-50', color: 'text-pink-500', border: 'border-pink-100', link: 'clothing' },
