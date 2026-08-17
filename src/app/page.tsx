@@ -267,7 +267,13 @@ export default function Home() {
                         
                         {/* Girl Image (Right side - Desktop & Mobile) */}
                         <div className="z-10 flex w-full md:w-1/2 justify-center md:justify-end relative mt-4 md:mt-0">
-                            <img src="https://images.unsplash.com/photo-1607083206869-4c76720d11b1?w=800&q=80&auto=format&fit=crop" alt="Girl Shopping" className="w-48 h-32 md:w-56 md:h-40 rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.3)] object-cover hover:scale-105 transition-transform duration-300" />
+                            <img 
+                                src="https://images.unsplash.com/photo-1607083206869-4c76720d11b1?w=800&q=80&auto=format&fit=crop" 
+                                alt="Girl Shopping" 
+                                className="w-48 h-32 md:w-56 md:h-40 rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.3)] object-cover hover:scale-105 transition-transform duration-300"
+                                loading="eager"
+                                fetchPriority="high"
+                            />
                         </div>
                         
                         {/* Decorative background elements */}
