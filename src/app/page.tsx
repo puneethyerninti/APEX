@@ -241,8 +241,8 @@ export default function Home() {
                         {/* Content */}
                         <div className="z-10 w-full md:w-1/2 mb-2 md:mb-0 relative">
                             <div className="flex items-center gap-2 mb-1.5 mt-2 md:mt-0 ml-2 md:ml-0">
-                                <h1 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight leading-none">
-                                    APEX <span className="text-pink-600">STORE</span>
+                                <h1 className="text-xl md:text-3xl font-black text-[#1B2956] tracking-tight leading-none">
+                                    APEX <span className="text-[#E61963]">STORE</span>
                                 </h1>
                             </div>
                             <h2 className="text-[10px] md:text-sm font-bold text-gray-700 mb-0.5 ml-2 md:ml-0">
