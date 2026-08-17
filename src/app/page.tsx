@@ -228,9 +228,7 @@ export default function Home() {
                     <div className="hero-gradient rounded-2xl p-3 md:p-6 flex flex-col md:flex-row items-center justify-between shadow-md relative overflow-hidden group">
                         
                         {/* Background Image Overlay */}
-                        <div className="absolute inset-0 z-0">
-                            <img src="https://images.unsplash.com/photo-1607083206869-4c76720d11b1?auto=format&fit=crop&q=80" alt="Store Background" className="w-full h-full object-cover opacity-20 mix-blend-overlay hover-zoom-img" />
-                        </div>
+                        <div className="absolute inset-0 z-0 opacity-20 mix-blend-overlay hover-zoom-img" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1607083206869-4c76720d11b1?auto=format&fit=crop&q=80")', backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
 
                         {/* Content */}
                         <div className="z-10 w-full md:w-1/2 mb-2 md:mb-0 relative">
@@ -278,7 +276,7 @@ export default function Home() {
                     <div className="mt-2 bg-white rounded-2xl p-2 md:p-4 shadow-xs border border-gray-100">
                         <div className="flex justify-between items-center overflow-x-auto scrollbar-none gap-2 pb-1">
                             {[
-                                { name: "Women's", icon: 'fa-person-dress', bg: 'bg-pink-50', color: 'text-pink-500', border: 'border-pink-100', link: 'womens' },
+                                { name: "Clothing", icon: 'fa-person-dress', bg: 'bg-pink-50', color: 'text-pink-500', border: 'border-pink-100', link: 'clothing' },
                                 { name: "Cosmetics", icon: 'fa-wand-magic-sparkles', bg: 'bg-rose-50', color: 'text-rose-500', border: 'border-rose-100', link: 'cosmetics' },
                                 { name: "Electronics", icon: 'fa-headphones', bg: 'bg-slate-100', color: 'text-slate-600', border: 'border-slate-200', link: 'electronics' },
                                 { name: "Watches", icon: 'fa-stopwatch', bg: 'bg-emerald-50', color: 'text-emerald-500', border: 'border-emerald-100', link: 'watches' },
