@@ -207,16 +207,33 @@ export default function Home() {
 
                 {/* ═══ TOP HIGHLIGHT: APEX STORE (COMPACT) ═══ */}
                 <section className="pt-3 pb-1 px-3 max-w-7xl mx-auto reveal-up">
+                    <style dangerouslySetInnerHTML={{__html: `
+                        @keyframes pulseGlow {
+                            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+                            70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+                            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+                        }
+                        @keyframes floatIcon {
+                            0% { transform: translateY(0px); }
+                            50% { transform: translateY(-4px); }
+                            100% { transform: translateY(0px); }
+                        }
+                        .anim-pulse-glow { animation: pulseGlow 2s infinite; }
+                        .anim-float-icon { animation: floatIcon 3s ease-in-out infinite; }
+                        .hover-zoom-img { transition: transform 0.5s ease; }
+                        .group:hover .hover-zoom-img { transform: scale(1.05); }
+                    `}} />
+                    
                     {/* Store Banner */}
-                    <div className="hero-gradient rounded-2xl p-3 md:p-6 flex flex-col md:flex-row items-center justify-between shadow-md relative overflow-hidden">
+                    <div className="hero-gradient rounded-2xl p-3 md:p-6 flex flex-col md:flex-row items-center justify-between shadow-md relative overflow-hidden group">
                         
                         {/* Background Image Overlay */}
                         <div className="absolute inset-0 z-0">
-                            <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80" alt="Store Background" className="w-full h-full object-cover opacity-20 mix-blend-overlay" />
+                            <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80" alt="Store Background" className="w-full h-full object-cover opacity-20 mix-blend-overlay hover-zoom-img" />
                         </div>
 
                         {/* Content */}
-                        <div className="z-10 w-full md:w-1/2 mb-2 md:mb-0">
+                        <div className="z-10 w-full md:w-1/2 mb-2 md:mb-0 relative">
                             <div className="flex items-center gap-2 mb-1.5">
                                 <div className="bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded">1</div>
                                 <h1 className="text-xl md:text-3xl font-black text-white tracking-tight leading-none">
@@ -230,21 +247,21 @@ export default function Home() {
                                 Quality Products &bull; Best Prices &bull; Fast Delivery
                             </p>
                             
-                            <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-sm text-[10px] md:text-xs">
-                                SHOP NOW <i className="fa-solid fa-arrow-right text-[8px]"></i>
+                            <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-sm text-[10px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform transition-transform">
+                                SHOP NOW <i className="fa-solid fa-arrow-right text-[8px] group-hover:translate-x-1 transition-transform"></i>
                             </a>
                             
                             {/* Features */}
                             <div className="flex items-center gap-3 mt-3">
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 anim-float-icon" style={{ animationDelay: '0s' }}>
                                     <div className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-amber-400"><i className="fa-solid fa-bag-shopping text-[8px]"></i></div>
                                     <span className="text-[7px] md:text-[10px] font-bold text-gray-200 leading-tight">1000+<br/>Products</span>
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 anim-float-icon" style={{ animationDelay: '0.2s' }}>
                                     <div className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-amber-400"><i className="fa-solid fa-shield-halved text-[8px]"></i></div>
                                     <span className="text-[7px] md:text-[10px] font-bold text-gray-200 leading-tight">Secure<br/>Payment</span>
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 anim-float-icon" style={{ animationDelay: '0.4s' }}>
                                     <div className="w-5 h-5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-amber-400"><i className="fa-solid fa-rotate-left text-[8px]"></i></div>
                                     <span className="text-[7px] md:text-[10px] font-bold text-gray-200 leading-tight">Easy<br/>Returns</span>
                                 </div>
@@ -252,8 +269,8 @@ export default function Home() {
                         </div>
                         
                         {/* Decorative background elements */}
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500 rounded-full mix-blend-screen filter blur-2xl opacity-20"></div>
-                        <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500 rounded-full mix-blend-screen filter blur-2xl opacity-20"></div>
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500 rounded-full mix-blend-screen filter blur-2xl opacity-20 animate-pulse"></div>
+                        <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-500 rounded-full mix-blend-screen filter blur-2xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
                     </div>
 
                     {/* Store Categories Row (Circular) */}
