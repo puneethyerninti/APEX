@@ -232,7 +232,7 @@ export default function Home() {
                             <img 
                                 src="/apex-store-hero.jpeg" 
                                 alt="Store Background" 
-                                className="w-full h-full object-cover object-right md:object-center transition-transform duration-700 group-hover:scale-105"
+                                className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
                                 loading="eager"
                                 fetchPriority="high"
                             />
@@ -378,14 +378,7 @@ export default function Home() {
                                 {user?.isPremium && <span className="prime-badge">★ PRIME</span>}
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: { type: 'checkout', data: { amount: '₹ 0.00', plan: 'Scan & Pay' } } }))} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs shadow-sm transition-all" aria-label="QR">
-                                <i className="fa-solid fa-qrcode"></i>
-                            </button>
-                            <button onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'account' }))} className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs shadow-sm transition-all" aria-label="Account">
-                                <i className="fa-solid fa-user-gear"></i>
-                            </button>
-                        </div>
+
                     </div>
 
 
