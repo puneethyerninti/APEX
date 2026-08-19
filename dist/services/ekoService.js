@@ -25,7 +25,7 @@ const getEkoHeaders = () => {
         'developer_key': EKO_DEV_KEY,
         'secret-key-timestamp': timestamp,
         'secret-key': signature,
-        'Content-Type': 'application/json'
+        'Accept': 'application/json'
     };
 };
 exports.getEkoHeaders = getEkoHeaders;
