@@ -86,18 +86,24 @@ export default function Header() {
     <div className="sticky top-0 z-50 bg-violet-700 border-b border-violet-800 shadow-sm" id="navbar">
       {/* Top Row */}
       <div className="flex items-center justify-between px-4 py-2.5">
-        <Link href="/" className="flex items-center gap-2 cursor-pointer">
+        <Link href="/" className="flex items-center gap-2 cursor-pointer group">
           <Image
             src="/APEX logo.jpeg"
             alt="APEX"
             width={32}
             height={32}
-            className="h-8 w-8 object-contain rounded-lg shadow-sm border border-violet-400"
+            className="h-8 w-8 object-contain rounded-lg shadow-sm border border-violet-400 group-hover:scale-105 transition-transform"
           />
-          <div>
-            <span className="font-black text-sm tracking-wider text-white uppercase block leading-none">
+          <div className="flex items-end leading-none">
+            <span className="font-black text-[17px] tracking-widest text-white uppercase block leading-none">
               APEX
             </span>
+            <svg width="22" height="22" viewBox="0 0 35 30" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-pink-400 -ml-1 -mb-1 relative z-10 transition-colors group-hover:text-pink-300">
+              {/* 't' vertical */}
+              <path d="M 10 5 L 10 22 Q 10 26 14 26" />
+              {/* crossbar and 'c' */}
+              <path d="M 2 12 L 24 12 C 16 12 16 26 24 26 C 28 26 31 22 31 20" />
+            </svg>
           </div>
         </Link>
 
