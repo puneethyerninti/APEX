@@ -247,12 +247,6 @@ export default function Home() {
                                     APEX <span className="text-pink-400">STORE</span>
                                 </h1>
                             </div>
-                            <h2 className="text-[10px] md:text-sm font-bold text-white/90 mb-0.5 ml-2 md:ml-0 drop-shadow">
-                                Everything You Need, Delivered to You
-                            </h2>
-                            <p className="text-[9px] md:text-xs text-white/70 mb-3 font-medium ml-2 md:ml-0 drop-shadow">
-                                Quality Products &bull; Best Prices &bull; Fast Delivery
-                            </p>
                             
                             <div className="ml-2 md:ml-0 flex items-center gap-2">
                                 <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-md text-[10px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-pink-400/30">
