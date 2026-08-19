@@ -241,18 +241,15 @@ export default function Home() {
                         </div>
 
                         {/* Content */}
-                        <div className="z-10 w-[65%] sm:w-[60%] md:w-1/2 relative reveal-up flex flex-col gap-3">
+                        <div className="z-10 w-[55%] sm:w-1/2 relative reveal-up flex flex-col gap-3">
                             <div>
-                                <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight leading-none drop-shadow-xl">
-                                    APEX <span className="text-pink-400">STORE</span>
+                                <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-none drop-shadow-xl">
+                                    APEX<br className="sm:hidden" /> <span className="text-pink-400">STORE</span>
                                 </h1>
                             </div>
                             
                             <div className="flex items-center gap-3">
-                                <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-5 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-lg text-[11px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-pink-400/30">
-                                    SHOP NOW <i className="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
-                                </a>
-                                <a href="https://www.apextradingcompanystore.co.in/cart" target="_blank" rel="noopener noreferrer" className="bg-white/20 hover:bg-white/30 text-white font-bold py-2 px-5 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-lg text-[11px] md:text-xs hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-white/30">
+                                <a href="https://www.apextradingcompanystore.co.in/cart" target="_blank" rel="noopener noreferrer" className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-5 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-lg text-[11px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-pink-400/30">
                                     <i className="fa-solid fa-cart-shopping"></i> CART
                                 </a>
                             </div>

@@ -94,15 +94,20 @@ export default function Header() {
             height={32}
             className="h-8 w-8 object-contain rounded-lg shadow-sm border border-violet-400 group-hover:scale-105 transition-transform"
           />
-          <div className="flex items-end leading-none">
-            <span className="font-black text-[17px] tracking-widest text-white uppercase block leading-none">
-              APEX
-            </span>
-            <svg width="22" height="22" viewBox="0 0 35 30" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-pink-400 -ml-1 -mb-1 relative z-10 transition-colors group-hover:text-pink-300">
-              {/* 't' vertical */}
-              <path d="M 10 5 L 10 22 Q 10 26 14 26" />
-              {/* crossbar and 'c' */}
-              <path d="M 2 12 L 24 12 C 16 12 16 26 24 26 C 28 26 31 22 31 20" />
+          <div className="flex items-center">
+            <svg width="100" height="26" viewBox="0 0 100 26" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative z-10 transition-transform group-hover:scale-[1.02]">
+              {/* APEX block text */}
+              <text x="0" y="21" fill="white" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="900" fontSize="18" letterSpacing="1.5">
+                APEX
+              </text>
+              
+              {/* Stylized 'tc' hand-drawn flourish */}
+              <g stroke="#f472b6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" transform="translate(56, -4)">
+                {/* 't' vertical */}
+                <path d="M 10 5 L 10 22 Q 10 26 14 26" />
+                {/* crossbar and 'c' flowing together */}
+                <path d="M 2 12 L 24 12 C 16 12 16 26 24 26 C 28 26 31 22 31 20" />
+              </g>
             </svg>
           </div>
         </Link>
