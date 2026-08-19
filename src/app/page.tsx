@@ -225,56 +225,54 @@ export default function Home() {
                     `}} />
                     
                     {/* Store Banner */}
-                    <div className="rounded-2xl flex flex-col md:flex-row items-center justify-between shadow-md relative overflow-hidden group bg-gradient-to-r from-rose-100 to-pink-50">
+                    <div className="rounded-2xl flex flex-col justify-center p-5 min-h-[160px] shadow-lg relative overflow-hidden group">
                         
                         {/* Background Hero Image */}
                         <div className="absolute inset-0 z-0">
                             <img 
                                 src="/apex-store-hero.jpeg" 
                                 alt="Store Background" 
-                                className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                                className="w-full h-full object-cover object-right md:object-center transition-transform duration-700 group-hover:scale-105"
                                 loading="eager"
                                 fetchPriority="high"
                             />
-                            {/* Dark Gradient Overlay like Matrimony Hero */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-rose-900/95 via-rose-900/60 to-transparent"></div>
+                            {/* Gradient Overlay for text readability without obscuring the right side (girl) */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent"></div>
                         </div>
 
                         {/* Content */}
-                        <div className="z-10 w-full md:w-1/2 mb-2 md:mb-0 relative reveal-up">
-                            <div className="flex items-center gap-2 mb-1.5 mt-2 md:mt-0 ml-2 md:ml-0">
-                                <h1 className="text-xl md:text-3xl font-black text-white tracking-tight leading-none drop-shadow-md">
+                        <div className="z-10 w-full md:w-2/3 relative reveal-up flex flex-col gap-3">
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight leading-none drop-shadow-xl">
                                     APEX <span className="text-pink-400">STORE</span>
                                 </h1>
                             </div>
                             
-                            <div className="ml-2 md:ml-0 flex items-center gap-2">
-                                <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-md text-[10px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-pink-400/30">
-                                    SHOP NOW <i className="fa-solid fa-arrow-right text-[8px] group-hover:translate-x-1 transition-transform"></i>
+                            <div className="flex items-center gap-3">
+                                <a href="https://www.apextradingcompanystore.co.in/" target="_blank" rel="noopener noreferrer" className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-5 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-lg text-[11px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-pink-400/30">
+                                    SHOP NOW <i className="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
                                 </a>
-                                <a href="https://www.apextradingcompanystore.co.in/cart" target="_blank" rel="noopener noreferrer" className="bg-white/20 hover:bg-white/30 text-white font-bold py-1.5 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-md text-[10px] md:text-xs hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-white/30">
+                                <a href="https://www.apextradingcompanystore.co.in/cart" target="_blank" rel="noopener noreferrer" className="bg-white/20 hover:bg-white/30 text-white font-bold py-2 px-5 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-lg text-[11px] md:text-xs hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-white/30">
                                     <i className="fa-solid fa-cart-shopping"></i> CART
                                 </a>
                             </div>
                             
                             {/* Features */}
-                            <div className="flex items-center gap-3 mt-3 ml-2 md:ml-0">
-                                <div className="flex items-center gap-1 anim-float-icon" style={{ animationDelay: '0s' }}>
-                                    <div className="w-5 h-5 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-pink-300 shadow-sm backdrop-blur-sm"><i className="fa-solid fa-bag-shopping text-[8px]"></i></div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-white leading-tight drop-shadow">1000+<br/>Products</span>
+                            <div className="flex items-center gap-4 mt-1">
+                                <div className="flex items-center gap-1.5 anim-float-icon" style={{ animationDelay: '0s' }}>
+                                    <div className="w-6 h-6 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-pink-400 shadow-sm backdrop-blur-sm"><i className="fa-solid fa-bag-shopping text-[10px]"></i></div>
+                                    <span className="text-[9px] md:text-[11px] font-bold text-white/90 leading-tight drop-shadow">1000+<br/>Products</span>
                                 </div>
-                                <div className="flex items-center gap-1 anim-float-icon" style={{ animationDelay: '0.2s' }}>
-                                    <div className="w-5 h-5 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-pink-300 shadow-sm backdrop-blur-sm"><i className="fa-solid fa-shield-halved text-[8px]"></i></div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-white leading-tight drop-shadow">Secure<br/>Payment</span>
+                                <div className="flex items-center gap-1.5 anim-float-icon" style={{ animationDelay: '0.2s' }}>
+                                    <div className="w-6 h-6 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-pink-400 shadow-sm backdrop-blur-sm"><i className="fa-solid fa-shield-halved text-[10px]"></i></div>
+                                    <span className="text-[9px] md:text-[11px] font-bold text-white/90 leading-tight drop-shadow">Secure<br/>Payment</span>
                                 </div>
-                                <div className="flex items-center gap-1 anim-float-icon" style={{ animationDelay: '0.4s' }}>
-                                    <div className="w-5 h-5 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-pink-300 shadow-sm backdrop-blur-sm"><i className="fa-solid fa-rotate-left text-[8px]"></i></div>
-                                    <span className="text-[7px] md:text-[10px] font-bold text-white leading-tight drop-shadow">Easy<br/>Returns</span>
+                                <div className="flex items-center gap-1.5 anim-float-icon" style={{ animationDelay: '0.4s' }}>
+                                    <div className="w-6 h-6 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-pink-400 shadow-sm backdrop-blur-sm"><i className="fa-solid fa-rotate-left text-[10px]"></i></div>
+                                    <span className="text-[9px] md:text-[11px] font-bold text-white/90 leading-tight drop-shadow">Easy<br/>Returns</span>
                                 </div>
                             </div>
                         </div>
-                        
-                        {/* Removed isolated girl image, using full hero background instead */}
                     </div>
 
                     {/* Store Categories Row (Circular) */}
