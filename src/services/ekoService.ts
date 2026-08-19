@@ -147,15 +147,86 @@ export const processRecharge = async (mobile: string, amount: number, operatorCo
 };
 
 /**
- * Kept for backward compatibility if needed by DTH or other services
+ * BBPS: Fetch Categories
  */
-export const getUtilityOperators = async () => {
-    return [
-        { id: 1, name: 'Airtel', category: 'Mobile' },
-        { id: 2, name: 'Jio', category: 'Mobile' },
-        { id: 3, name: 'VI', category: 'Mobile' },
-        { id: 4, name: 'BSNL', category: 'Mobile' },
-        { id: 5, name: 'Tata Play', category: 'DTH' },
-        { id: 6, name: 'Airtel Digital TV', category: 'DTH' }
-    ];
+export const fetchCategories = async () => {
+    try {
+        const headers = getEkoHeaders();
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/categories?initiator_id=${EKO_INITIATOR_ID}`;
+        const response = await axios.get(url, { headers });
+        return response.data;
+    } catch (error: any) {
+        console.error('Error fetching categories', error.response?.data || error.message);
+        throw error;
+    }
+};
+
+/**
+ * BBPS: Fetch Locations
+ */
+export const fetchLocations = async () => {
+    try {
+        const headers = getEkoHeaders();
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/locations?initiator_id=${EKO_INITIATOR_ID}`;
+        const response = await axios.get(url, { headers });
+        return response.data;
+    } catch (error: any) {
+        console.error('Error fetching locations', error.response?.data || error.message);
+        throw error;
+    }
+};
+
+/**
+ * BBPS: Fetch Operators
+ */
+export const fetchBBPSOperators = async (categoryId?: string, locationId?: string) => {
+    try {
+        const headers = getEkoHeaders();
+        let url = `${EKO_BASE_URL}/customer/payment/bbps/operators?initiator_id=${EKO_INITIATOR_ID}`;
+        if (categoryId) url += `&category=${categoryId}`;
+        if (locationId) url += `&location=${locationId}`;
+        const response = await axios.get(url, { headers });
+        return response.data;
+    } catch (error: any) {
+        console.error('Error fetching operators', error.response?.data || error.message);
+        throw error;
+    }
+};
+
+/**
+ * BBPS: Fetch Operator Parameters
+ */
+export const fetchOperatorParameters = async (operatorId: string) => {
+    try {
+        const headers = getEkoHeaders();
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/operator/${operatorId}/parameters?initiator_id=${EKO_INITIATOR_ID}`;
+        const response = await axios.get(url, { headers });
+        return response.data;
+    } catch (error: any) {
+        console.error('Error fetching operator parameters', error.response?.data || error.message);
+        throw error;
+    }
+};
+
+/**
+ * BBPS: Fetch Bill
+ */
+export const fetchBill = async (params: any) => {
+    try {
+        const headers = getEkoHeaders();
+        
+        // Construct query string dynamically from the input parameters
+        const queryParams = new URLSearchParams({
+            initiator_id: EKO_INITIATOR_ID,
+            ...params
+        });
+
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/bill?${queryParams.toString()}`;
+        
+        const response = await axios.get(url, { headers });
+        return response.data;
+    } catch (error: any) {
+        console.error('Error fetching bill', error.response?.data || error.message);
+        throw error;
+    }
 };

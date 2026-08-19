@@ -3,7 +3,17 @@ import { createNotification } from './notificationController';
 import User from '../models/User';
 import Transaction from '../models/Transaction';
 import UtilityTransaction from '../models/UtilityTransaction';
-import { getUtilityOperators, processRecharge, fetchRechargePlans, getOperatorCodeAndCircle } from '../services/ekoService';
+import { 
+  getUtilityOperators, 
+  processRecharge, 
+  fetchRechargePlans, 
+  getOperatorCodeAndCircle,
+  fetchCategories,
+  fetchLocations,
+  fetchBBPSOperators,
+  fetchOperatorParameters,
+  fetchBill
+} from '../services/ekoService';
 import crypto from 'crypto';
 
 export const getOperators = async (req: Request, res: Response) => {
@@ -13,6 +23,61 @@ export const getOperators = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error in getOperators', error);
         res.status(500).json({ success: false, message: 'Failed to fetch operators' });
+    }
+};
+
+export const getCategories = async (req: Request, res: Response) => {
+    try {
+        const categories = await fetchCategories();
+        res.status(200).json({ success: true, data: categories });
+    } catch (error: any) {
+        console.error('Error in getCategories', error);
+        res.status(500).json({ success: false, message: error.message || 'Failed to fetch categories' });
+    }
+};
+
+export const getLocations = async (req: Request, res: Response) => {
+    try {
+        const locations = await fetchLocations();
+        res.status(200).json({ success: true, data: locations });
+    } catch (error: any) {
+        console.error('Error in getLocations', error);
+        res.status(500).json({ success: false, message: error.message || 'Failed to fetch locations' });
+    }
+};
+
+export const getBBPSOperatorsList = async (req: Request, res: Response) => {
+    try {
+        const { category, location } = req.query;
+        const operators = await fetchBBPSOperators(category as string, location as string);
+        res.status(200).json({ success: true, data: operators });
+    } catch (error: any) {
+        console.error('Error in getBBPSOperatorsList', error);
+        res.status(500).json({ success: false, message: error.message || 'Failed to fetch BBPS operators' });
+    }
+};
+
+export const getOperatorParams = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        if (!id) return res.status(400).json({ success: false, message: 'Operator ID is required' });
+        
+        const params = await fetchOperatorParameters(id);
+        res.status(200).json({ success: true, data: params });
+    } catch (error: any) {
+        console.error('Error in getOperatorParams', error);
+        res.status(500).json({ success: false, message: error.message || 'Failed to fetch operator parameters' });
+    }
+};
+
+export const fetchBBPSBill = async (req: Request, res: Response) => {
+    try {
+        // req.body will contain the dynamic parameters needed by the operator
+        const bill = await fetchBill(req.body);
+        res.status(200).json({ success: true, data: bill });
+    } catch (error: any) {
+        console.error('Error in fetchBBPSBill', error);
+        res.status(500).json({ success: false, message: error.message || 'Failed to fetch bill' });
     }
 };
 
@@ -112,5 +177,70 @@ export const handleUtilityRecharge = async (userId: string, metadata: any) => {
 };
 
 export const payBill = async (req: Request, res: Response) => {
-  return res.status(501).json({ error: 'Bill Payments (BBPS) integration is coming soon. Please try again later.' });
+  try {
+      const { userId, operatorCode, amount, utility_acc_no, ...otherParams } = req.body;
+      
+      if (!userId || !operatorCode || !amount || !utility_acc_no) {
+          return res.status(400).json({ success: false, message: 'Missing required fields' });
+      }
+
+      // We call processRecharge, which maps to Eko BBPS POST endpoint
+      // We pass utility_acc_no as the primary account/mobile field
+      const clientRefId = `req_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`.substring(0, 20);
+      
+      const transaction = new UtilityTransaction({
+          userId,
+          type: 'Bill Payment',
+          amount,
+          operator: operatorCode,
+          mobileOrAccountNumber: utility_acc_no,
+          status: 'Pending'
+      });
+      await transaction.save();
+
+      const ekoResult = await processRecharge(utility_acc_no, amount, operatorCode, clientRefId);
+
+      if (ekoResult.status === 0) {
+          transaction.status = 'Success';
+          transaction.ekoTxId = ekoResult.txid;
+          await transaction.save();
+          
+          await createNotification(
+            userId,
+            'Bill Payment Successful',
+            `Your bill payment of ₹${amount} was successful. (TxID: ${ekoResult.txid})`,
+            'success'
+          );
+
+          res.status(200).json({ success: true, data: transaction });
+      } else {
+          transaction.status = 'Failed';
+          await transaction.save();
+
+          // Refund User
+          const user = await User.findById(userId);
+          if (user) {
+              user.walletBalance += amount;
+              await user.save();
+              await Transaction.create({
+                  user: userId,
+                  amount,
+                  type: 'credit',
+                  category: 'refund',
+                  referenceId: transaction._id,
+                  status: 'completed',
+              } as any);
+              await createNotification(
+                  userId,
+                  'Bill Payment Failed - Refunded',
+                  `Your bill payment of ₹${amount} failed. The amount has been refunded to your wallet.`,
+                  'info'
+              );
+          }
+          res.status(400).json({ success: false, message: ekoResult.message || 'Payment failed' });
+      }
+  } catch (error: any) {
+      console.error('Error in payBill', error);
+      res.status(500).json({ success: false, message: error.message || 'Payment failed' });
+  }
 };
