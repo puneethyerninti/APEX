@@ -2,29 +2,42 @@ import crypto from 'crypto';
 import axios from 'axios';
 
 // Environment Variables
-const EKO_DEV_KEY = process.env.EKO_DEV_KEY || 'becbbce45f79c6f5109f848acd540567';
-const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY || 'd2fe1d99-6298-4af2-8cc5-d97dcf46df30';
+const EKO_DEV_KEY = process.env.EKO_DEV_KEY || '9a40fb2f68f06c86581737e05b58cd3e';
+const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY || 'd49acab3-ed93-4f44-a366-3ff6746dc58d';
 const EKO_INITIATOR_ID = process.env.EKO_INITIATOR_ID || '6303210224';
-const EKO_BASE_URL = process.env.EKO_BASE_URL || 'https://staging.eko.in/ekoapi/v3';
+const EKO_BASE_URL = process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici';
 
 /**
  * Generates Eko Authentication headers
  */
-export const getEkoHeaders = () => {
+export const getEkoHeaders = (requestHashString?: string) => {
     const timestamp = Date.now().toString();
     
-    // The signature is base64(HMAC-SHA256(timestamp, base64(access_key)))
-    const accessKeyBuffer = Buffer.from(EKO_ACCESS_KEY, 'base64');
+    // Eko requires the key to be converted to base64, then passed to HMAC.
+    // Using Buffer.from(key) uses UTF-8 by default, exactly as Eko expects.
+    const encodedKey = Buffer.from(EKO_ACCESS_KEY).toString('base64');
+    const accessKeyBuffer = Buffer.from(encodedKey, 'base64'); 
+    
     const hmac = crypto.createHmac('sha256', accessKeyBuffer);
     hmac.update(timestamp);
     const signature = hmac.digest('base64');
 
-    return {
+    const headers: any = {
         'developer_key': EKO_DEV_KEY,
         'secret-key-timestamp': timestamp,
         'secret-key': signature,
         'Accept': 'application/json'
     };
+
+    if (requestHashString) {
+        // Concatenate timestamp and the required parameters
+        const concatenatedString = timestamp + requestHashString;
+        const requestHmac = crypto.createHmac('sha256', accessKeyBuffer);
+        requestHmac.update(concatenatedString);
+        headers['request_hash'] = requestHmac.digest('base64');
+    }
+
+    return headers;
 };
 
 /**
@@ -109,7 +122,9 @@ const extractDataText = (desc: string) => {
  */
 export const processRecharge = async (mobile: string, amount: number, operatorCode: string, clientRefId: string) => {
     try {
-        const headers = getEkoHeaders();
+        const USER_CODE = '42290001'; // Given by Eko Support
+        const requestHashString = `${mobile}${amount}${USER_CODE}`;
+        const headers = getEkoHeaders(requestHashString);
         const url = `${EKO_BASE_URL}/customer/payment/bbps`;
         
         const payload = {
@@ -229,4 +244,42 @@ export const fetchBill = async (params: any) => {
         console.error('Error fetching bill', error.response?.data || error.message);
         throw error;
     }
+};
+
+/**
+ * Activate a Service for the User
+ */
+    export const activateService = async (serviceCode: string) => {
+        try {
+            const headers = getEkoHeaders();
+            const USER_CODE = '42290001'; 
+            
+            // Reverted URL based on latest documentation screenshot
+            const url = `${EKO_BASE_URL}/v3/admin/network/agent/${USER_CODE}/service/${serviceCode}/activate`;
+            
+            const payload = {
+                initiator_id: EKO_INITIATOR_ID,
+                client_ref_id: 'ACT_' + Date.now()
+            };
+    
+            const response = await axios.put(url, payload, { headers });
+            return response.data;
+        } catch (error: any) {
+            console.error('Error activating service', error.response?.data || error.message);
+            throw error;
+        }
+    };
+
+/**
+ * Kept for backward compatibility if needed by DTH or other services
+ */
+export const getUtilityOperators = async () => {
+    return [
+        { id: 1, name: 'Airtel', category: 'Mobile' },
+        { id: 2, name: 'Jio', category: 'Mobile' },
+        { id: 3, name: 'VI', category: 'Mobile' },
+        { id: 4, name: 'BSNL', category: 'Mobile' },
+        { id: 5, name: 'Tata Play', category: 'DTH' },
+        { id: 6, name: 'Airtel Digital TV', category: 'DTH' }
+    ];
 };

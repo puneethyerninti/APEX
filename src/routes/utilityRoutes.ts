@@ -7,7 +7,8 @@ import {
     getLocations,
     getBBPSOperatorsList,
     getOperatorParams,
-    fetchBBPSBill
+    fetchBBPSBill,
+    activateServiceEndpoint
 } from '../controllers/utilityController';
 
 const router = express.Router();
@@ -22,6 +23,7 @@ router.get('/bbps/locations', getLocations);
 router.get('/bbps/operators', getBBPSOperatorsList);
 router.get('/bbps/operator/:id/parameters', getOperatorParams);
 router.post('/bbps/fetch-bill', fetchBBPSBill);
+router.post('/bbps/activate', activateServiceEndpoint);
 router.post('/pay', payBill);
 
 export default router;
