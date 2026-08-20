@@ -115,13 +115,15 @@ export default function Header() {
               </text>
               
               {/* tc Logo - Vector Path matching user's requested monogram */}
-              <g transform="translate(68, 4)">
-                {/* Vertical Bar */}
-                <path d="M 0 4 L 0 20" stroke="url(#tcGrad)" strokeWidth="3" strokeLinecap="round" />
-                {/* Horizontal Bar */}
-                <path d="M 0 12 L 14 12" stroke="url(#tcGrad)" strokeWidth="3" strokeLinecap="round" />
-                {/* C Curve */}
-                <path d="M 24 4 A 8 8 0 0 0 14 12 A 8 8 0 0 0 24 20" stroke="url(#tcGrad)" strokeWidth="3" strokeLinecap="round" fill="none" />
+              <g transform="translate(64, 0)">
+                <path 
+                  d="M 2 8 L 2 24 M 2 16 L 16 16 M 26 8 A 8 8 0 0 0 16 16 A 8 8 0 0 0 26 24" 
+                  stroke="url(#apexGrad)" 
+                  strokeWidth="3.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  fill="none" 
+                />
               </g>
             </svg>
           </div>
