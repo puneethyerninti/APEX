@@ -109,13 +109,13 @@ export default function Header() {
                 </linearGradient>
               </defs>
               
-              {/* APEX Text - Geometric & Modern */}
-              <text x="0" y="24" fill="url(#apexGrad)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="900" fontSize="22" letterSpacing="1.2">
+              {/* APEX Text - Sleek & Premium to match the monogram */}
+              <text x="0" y="23" fill="url(#apexGrad)" fontFamily="'Outfit', 'Montserrat', 'Helvetica Neue', sans-serif" fontWeight="600" fontSize="20" letterSpacing="2.5">
                 APEX
               </text>
               
               {/* tc Logo - Vector Path matching user's requested monogram */}
-              <g transform="translate(64, 0)">
+              <g transform="translate(72, 0)">
                 <path 
                   d="M 2 8 L 2 24 M 2 16 L 16 16 M 26 8 A 8 8 0 0 0 16 16 A 8 8 0 0 0 26 24" 
                   stroke="url(#apexGrad)" 
