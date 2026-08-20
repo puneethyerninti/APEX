@@ -104,14 +104,7 @@ function PaymentContent() {
     const searchParams = useSearchParams();
     const autoScan = searchParams.get('scan');
 
-    useEffect(() => {
-        if (autoScan === 'true') {
-            // Add a small delay to ensure DOM is fully ready
-            setTimeout(() => {
-                startScanner();
-            }, 500);
-        }
-    }, [autoScan]);
+    // Moved useEffect below startScanner
 
     const startScanner = async () => {
         setIsScannerOpen(true);
@@ -162,6 +155,15 @@ function PaymentContent() {
             setIsScannerOpen(false);
         }
     };
+
+    useEffect(() => {
+        if (autoScan === 'true') {
+            // Add a small delay to ensure DOM is fully ready
+            setTimeout(() => {
+                startScanner();
+            }, 500);
+        }
+    }, [autoScan]);
 
     useEffect(() => {
         return () => {

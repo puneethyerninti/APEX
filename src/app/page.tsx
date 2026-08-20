@@ -241,9 +241,9 @@ export default function Home() {
                         </div>
 
                         {/* Content */}
-                        <div className="z-10 w-[55%] sm:w-1/2 relative reveal-up flex flex-col gap-3">
+                        <div className="z-10 w-[45%] max-w-[160px] sm:max-w-none sm:w-[40%] relative reveal-up flex flex-col gap-2.5">
                             <div>
-                                <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-none drop-shadow-xl">
+                                <h1 className="text-lg sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-none drop-shadow-xl">
                                     APEX<br className="sm:hidden" /> <span className="text-pink-400">STORE</span>
                                 </h1>
                             </div>

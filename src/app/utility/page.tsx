@@ -29,11 +29,6 @@ export default function UtilityPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 1. Fetch Categories on Mount
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
   const fetchCategories = async () => {
     setIsLoading(true);
     setErrorMsg(null);
@@ -54,6 +49,11 @@ export default function UtilityPage() {
       setIsLoading(false);
     }
   };
+
+  // 1. Fetch Categories on Mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   // 2. Fetch Operators when Category is selected
   const handleCategorySelect = async (category: any) => {

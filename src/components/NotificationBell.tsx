@@ -20,6 +20,17 @@ export default function NotificationBell({ className = "text-violet-100 hover:te
     const [isOpen, setIsOpen] = useState(false);
     const popupRef = useRef<HTMLDivElement>(null);
 
+    const fetchNotifications = async () => {
+        const userId = user?._id || user?.uid;
+        if (!userId) return;
+        try {
+            const res = await api.get(`/notifications/user/${userId}`);
+            setNotifications(res.data.notifications || []);
+        } catch (err) {
+            console.error('Failed to fetch notifications', err);
+        }
+    };
+
     useEffect(() => {
         const userId = user?._id || user?.uid;
         if (userId) {
@@ -69,17 +80,6 @@ export default function NotificationBell({ className = "text-violet-100 hover:te
         window.addEventListener('update_notifications', handleUpdate);
         return () => window.removeEventListener('update_notifications', handleUpdate);
     }, []);
-
-    const fetchNotifications = async () => {
-        const userId = user?._id || user?.uid;
-        if (!userId) return;
-        try {
-            const res = await api.get(`/notifications/user/${userId}`);
-            setNotifications(res.data.notifications || []);
-        } catch (err) {
-            console.error('Failed to fetch notifications', err);
-        }
-    };
 
     const markAsRead = async (id: string) => {
         try {

@@ -71,11 +71,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  useEffect(() => {
-    setIsAuthorized(true);
-    fetchAllData();
-  }, [user]);
-
   const fetchAllData = async () => {
     try {
       const [statsRes, approvalsRes, usersRes, transRes, travelsRes, storeRes, charityRes, leadsRes] = await Promise.all([
@@ -100,6 +95,11 @@ export default function AdminDashboardPage() {
       console.error("Failed to fetch admin data", error);
     }
   };
+
+  useEffect(() => {
+    setIsAuthorized(true);
+    fetchAllData();
+  }, [user]);
 
   useEffect(() => {
     if (isAuthorized && socket) {

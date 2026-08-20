@@ -95,18 +95,33 @@ export default function Header() {
             className="h-8 w-8 object-contain rounded-lg shadow-sm border border-violet-400 group-hover:scale-105 transition-transform"
           />
           <div className="flex items-center">
-            <svg width="100" height="26" viewBox="0 0 100 26" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative z-10 transition-transform group-hover:scale-[1.02]">
-              {/* APEX block text */}
-              <text x="0" y="21" fill="white" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="900" fontSize="18" letterSpacing="1.5">
+            <svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative z-10 transition-transform group-hover:scale-[1.02]">
+              <defs>
+                <linearGradient id="apexGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#ffffff" />
+                  <stop offset="100%" stopColor="#e2e8f0" />
+                </linearGradient>
+                {/* Premium Gold Gradient for the monogram */}
+                <linearGradient id="tcGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#fde047" /> {/* Yellow-300 */}
+                  <stop offset="50%" stopColor="#f59e0b" /> {/* Amber-500 */}
+                  <stop offset="100%" stopColor="#d97706" /> {/* Amber-600 */}
+                </linearGradient>
+              </defs>
+              
+              {/* APEX Text - Geometric & Modern */}
+              <text x="0" y="24" fill="url(#apexGrad)" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="900" fontSize="22" letterSpacing="1.2">
                 APEX
               </text>
               
-              {/* Stylized 'tc' hand-drawn flourish */}
-              <g stroke="#f472b6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" transform="translate(56, -4)">
-                {/* 't' vertical */}
-                <path d="M 10 5 L 10 22 Q 10 26 14 26" />
-                {/* crossbar and 'c' flowing together */}
-                <path d="M 2 12 L 24 12 C 16 12 16 26 24 26 C 28 26 31 22 31 20" />
+              {/* tc Logo - Vector Path matching user's requested monogram */}
+              <g transform="translate(68, 4)">
+                {/* Vertical Bar */}
+                <path d="M 0 4 L 0 20" stroke="url(#tcGrad)" strokeWidth="3" strokeLinecap="round" />
+                {/* Horizontal Bar */}
+                <path d="M 0 12 L 14 12" stroke="url(#tcGrad)" strokeWidth="3" strokeLinecap="round" />
+                {/* C Curve */}
+                <path d="M 24 4 A 8 8 0 0 0 14 12 A 8 8 0 0 0 24 20" stroke="url(#tcGrad)" strokeWidth="3" strokeLinecap="round" fill="none" />
               </g>
             </svg>
           </div>
