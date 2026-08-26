@@ -9,10 +9,21 @@ import { handleMatrimonyUpgrade } from './matrimonyController';
 import { handleTravelBooking } from './travelsController';
 import { handleUtilityRecharge } from './utilityController';
 import { handleAcademyEnrollment } from './academyController';
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'mock_key',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'mock_secret',
-});
+// Razorpay will be instantiated dynamically to avoid crashing the server on startup if keys are missing
+let razorpayInstance: any = null;
+
+const getRazorpay = () => {
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    throw new Error("Razorpay keys missing");
+  }
+  if (!razorpayInstance) {
+    razorpayInstance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+  }
+  return razorpayInstance;
+};
 
 // Note: In a real app, you would have middleware extracting user ID from JWT
 // For this stage, we simulate passing userId in the body or finding the first user
@@ -137,7 +148,7 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
       currency: "INR",
       receipt: `receipt_${Date.now()}`
     };
-    const order = await razorpay.orders.create(options);
+    const order = await getRazorpay().orders.create(options);
     
     // Create pending transaction
     await Transaction.create({

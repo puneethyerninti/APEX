@@ -129,19 +129,8 @@ export const sendEmailNotification = async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Missing email parameters" });
   }
 
-  // MOCK BYPASS
-  if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'mock_key') {
-    console.log("=== MOCK EMAIL DISPATCHED ===");
-    console.log(`To: ${to}`);
-    console.log(`Subject: ${subject}`);
-    console.log(`HTML Length: ${html.length} chars`);
-    console.log("=============================");
-    
-    return res.json({ 
-      success: true, 
-      mockMode: true,
-      message: "Email dispatched via Mock Service"
-    });
+  if (!process.env.RESEND_API_KEY) {
+    return res.status(500).json({ error: "Email service configuration missing" });
   }
 
   // REAL RESEND DISPATCH

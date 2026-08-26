@@ -32,15 +32,8 @@ export const getCategories = async (req: Request, res: Response) => {
         const categories = await fetchCategories();
         res.status(200).json({ success: true, data: categories });
     } catch (error: any) {
-        console.log('Falling back to mock Categories due to upstream API error');
-        const mockCategories = [
-            { category_id: "1", category_name: "Electricity" },
-            { category_id: "2", category_name: "Water" },
-            { category_id: "3", category_name: "DTH" },
-            { category_id: "4", category_name: "Mobile Postpaid" },
-            { category_id: "5", category_name: "Broadband" }
-        ];
-        res.status(200).json({ success: true, data: mockCategories });
+        console.error('API Error in getCategories:', error.message);
+        res.status(500).json({ success: false, message: 'Failed to fetch categories' });
     }
 };
 
@@ -49,8 +42,8 @@ export const getLocations = async (req: Request, res: Response) => {
         const locations = await fetchLocations();
         res.status(200).json({ success: true, data: locations });
     } catch (error: any) {
-        console.log('Falling back to mock Locations');
-        res.status(200).json({ success: true, data: [{ location_id: "1", location_name: "National" }, { location_id: "2", location_name: "Delhi" }] });
+        console.error('API Error in getLocations:', error.message);
+        res.status(500).json({ success: false, message: 'Failed to fetch locations' });
     }
 };
 
@@ -60,14 +53,8 @@ export const getBBPSOperatorsList = async (req: Request, res: Response) => {
         const operators = await fetchBBPSOperators(category as string, location as string);
         res.status(200).json({ success: true, data: operators });
     } catch (error: any) {
-        console.log('Falling back to mock BBPS Operators');
-        const mockOperators = [
-            { operator_id: "101", operator_name: "BSES Rajdhani", category: "Electricity", location: "Delhi" },
-            { operator_id: "102", operator_name: "Tata Power", category: "Electricity", location: "Delhi" },
-            { operator_id: "103", operator_name: "Airtel Postpaid", category: "Mobile Postpaid", location: "National" },
-            { operator_id: "104", operator_name: "Tata Sky", category: "DTH", location: "National" }
-        ];
-        res.status(200).json({ success: true, data: mockOperators });
+        console.error('API Error in getBBPSOperatorsList:', error.message);
+        res.status(500).json({ success: false, message: 'Failed to fetch operators' });
     }
 };
 
@@ -79,13 +66,8 @@ export const getOperatorParams = async (req: Request, res: Response) => {
         const params = await fetchOperatorParameters(id as string);
         res.status(200).json({ success: true, data: params });
     } catch (error: any) {
-        console.log('Falling back to mock Operator Params');
-        const mockParams = {
-            parameters: [
-                { name: "Consumer Number", param_type: "ALPHANUMERIC", min_length: 9, max_length: 12, is_mandatory: true }
-            ]
-        };
-        res.status(200).json({ success: true, data: mockParams });
+        console.error('API Error in getOperatorParams:', error.message);
+        res.status(500).json({ success: false, message: 'Failed to fetch operator parameters' });
     }
 };
 
@@ -95,15 +77,8 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
         const bill = await fetchBill(req.body);
         res.status(200).json({ success: true, data: bill });
     } catch (error: any) {
-        console.log('Falling back to mock BBPS Bill');
-        const mockBill = {
-            amount: 1540.00,
-            bill_date: new Date().toISOString().split('T')[0],
-            due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
-            customer_name: "John Doe",
-            bill_number: "BILL" + Math.floor(Math.random() * 100000)
-        };
-        res.status(200).json({ success: true, data: mockBill });
+        console.error('API Error in fetchBBPSBill:', error.message);
+        res.status(500).json({ success: false, message: 'Failed to fetch BBPS bill' });
     }
 };
 
@@ -126,16 +101,8 @@ export const getPlans = async (req: Request, res: Response) => {
             meta: { phone_operator_code, circleid } // Pass meta back to frontend so it can use it for recharge
         });
     } catch (error: any) {
-        console.log('Falling back to mock Plans');
-        const mockPlans = [
-            { plan_id: "1", amount: 299, validity: "28 Days", description: "1.5GB/Day, Unlimited Calls" },
-            { plan_id: "2", amount: 699, validity: "56 Days", description: "2GB/Day, Unlimited Calls" }
-        ];
-        res.status(200).json({ 
-            success: true, 
-            data: mockPlans,
-            meta: { phone_operator_code: "1", circleid: "1" } 
-        });
+        console.error('API Error in getPlans:', error.message);
+        res.status(500).json({ success: false, message: 'Failed to fetch recharge plans' });
     }
 };
 
@@ -181,20 +148,11 @@ export const handleUtilityRecharge = async (userId: string, metadata: any) => {
       } else {
           throw new Error(ekoResult.message || 'Recharge failed.');
       }
-  } catch (error) {
-      console.log('Falling back to mock Recharge Success');
-      transaction.status = 'Success';
-      transaction.ekoTxId = "MOCK_TX_" + Math.floor(Math.random() * 1000000);
+  } catch (error: any) {
+      console.error('Recharge failed:', error.message);
+      transaction.status = 'Failed';
       await transaction.save();
-      
-      await createNotification(
-        userId,
-        'Recharge Successful (Mock)',
-        `Your recharge of ₹${amount} for ${mobile} was successful. (TxID: ${transaction.ekoTxId})`,
-        'success'
-      );
-      
-      return transaction;
+      throw error;
   }
 };
 
@@ -239,20 +197,11 @@ export const payBill = async (req: Request, res: Response) => {
           } else {
              throw new Error(ekoResult.message || 'Payment failed');
           }
-      } catch (error) {
-          console.log('Falling back to mock Bill Payment Success');
-          transaction.status = 'Success';
-          transaction.ekoTxId = "MOCK_BILL_" + Math.floor(Math.random() * 1000000);
+      } catch (error: any) {
+          console.error('Bill payment failed:', error.message);
+          transaction.status = 'Failed';
           await transaction.save();
-          
-          await createNotification(
-            userId,
-            'Bill Payment Successful (Mock)',
-            `Your bill payment of ₹${amount} was successful. (TxID: ${transaction.ekoTxId})`,
-            'success'
-          );
-
-          return res.status(200).json({ success: true, data: transaction });
+          return res.status(500).json({ success: false, message: 'Payment failed' });
       }
   } catch (error: any) {
       console.error('Error in payBill', error);
