@@ -137,7 +137,7 @@ export default function Page() {
         <div className="flex gap-3 md:gap-6 overflow-x-auto px-4 scrollbar-none flex-nowrap md:flex-wrap pb-2 snap-x snap-mandatory">
             
             {/* Spoken English */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
+            <div onClick={() => handleEnroll('Spoken English', '₹4,999')} className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
                 <div className="h-24 md:h-32 bg-purple-50 relative flex items-center justify-center text-purple-500 text-3xl">
                     <i className="fa-solid fa-comments"></i>
                 </div>
@@ -149,7 +149,7 @@ export default function Page() {
             </div>
 
             {/* Spoken Hindi */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
+            <div onClick={() => handleEnroll('Spoken Hindi', '₹3,999')} className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
                 <div className="h-24 md:h-32 bg-orange-50 relative flex items-center justify-center text-orange-500 text-3xl">
                     <i className="fa-solid fa-language"></i>
                 </div>
@@ -161,7 +161,7 @@ export default function Page() {
             </div>
 
             {/* Computer Courses */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
+            <div onClick={() => handleEnroll('Computer Courses', '₹1200')} className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
                 <div className="h-24 md:h-32 bg-blue-50 relative flex items-center justify-center text-blue-500 text-3xl">
                     <i className="fa-solid fa-desktop"></i>
                 </div>
@@ -173,7 +173,7 @@ export default function Page() {
             </div>
             
             {/* Competitive Exam Courses */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
+            <div onClick={() => handleEnroll('Competitive Exams', '₹1500')} className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
                 <div className="h-24 md:h-32 bg-green-50 relative flex items-center justify-center text-green-500 text-3xl">
                     <i className="fa-solid fa-book-open-reader"></i>
                 </div>
