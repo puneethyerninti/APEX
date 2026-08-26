@@ -13,12 +13,11 @@ const EKO_BASE_URL = process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoic
 export const getEkoHeaders = (requestHashString?: string) => {
     const timestamp = Date.now().toString();
     
-    // Eko requires the key to be converted to base64, then passed to HMAC.
-    // Using Buffer.from(key) uses UTF-8 by default, exactly as Eko expects.
+    // CORRECT: Base64-encode the access key, then use that base64 STRING 
+    // directly as the HMAC key (as UTF-8 bytes). Do NOT decode it back.
     const encodedKey = Buffer.from(EKO_ACCESS_KEY).toString('base64');
-    const accessKeyBuffer = Buffer.from(encodedKey, 'base64'); 
     
-    const hmac = crypto.createHmac('sha256', accessKeyBuffer);
+    const hmac = crypto.createHmac('sha256', encodedKey);
     hmac.update(timestamp);
     const signature = hmac.digest('base64');
 
@@ -32,7 +31,7 @@ export const getEkoHeaders = (requestHashString?: string) => {
     if (requestHashString) {
         // Concatenate timestamp and the required parameters
         const concatenatedString = timestamp + requestHashString;
-        const requestHmac = crypto.createHmac('sha256', accessKeyBuffer);
+        const requestHmac = crypto.createHmac('sha256', encodedKey);
         requestHmac.update(concatenatedString);
         headers['request_hash'] = requestHmac.digest('base64');
     }
