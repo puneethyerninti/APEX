@@ -508,7 +508,7 @@ export default function UtilityPage() {
                     />
                     {selectedCategory?.operator_category_name?.toLowerCase().includes('mobile') && (
                       <button 
-                        onClick={handleFetchPlans}
+                        onClick={() => handleFetchPlans()}
                         disabled={isFetchingPlans}
                         className="px-4 py-3 bg-indigo-50 text-indigo-700 font-bold rounded-xl whitespace-nowrap hover:bg-indigo-100 transition-colors border border-indigo-100"
                       >
