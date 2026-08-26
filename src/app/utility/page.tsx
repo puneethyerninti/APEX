@@ -21,6 +21,9 @@ export default function UtilityPage() {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   
   const [billInfo, setBillInfo] = useState<any>(null);
+  const [rechargePlans, setRechargePlans] = useState<any[]>(null);
+  const [isFetchingPlans, setIsFetchingPlans] = useState(false);
+  const [showPlansModal, setShowPlansModal] = useState(false);
   
   // Loading & Error States
   const [isLoading, setIsLoading] = useState(true);
@@ -82,6 +85,7 @@ export default function UtilityPage() {
     setOperatorParams([]);
     setFormValues({});
     setBillInfo(null);
+    setRechargePlans(null);
     setPaySuccess(null);
     setIsLoading(true);
     setErrorMsg(null);
@@ -131,6 +135,35 @@ export default function UtilityPage() {
       setErrorMsg(error.response?.data?.message || error.message || 'Failed to fetch bill. Check the details and try again.');
     } finally {
       setIsFetchingBill(false);
+    }
+  };
+
+  // 4b. Fetch Recharge Plans (for prepaid/postpaid without bill fetch)
+  const handleFetchPlans = async () => {
+    if (!selectedOperator) return;
+
+    const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
+    const mobileNo = formValues[primaryParamName] || '';
+
+    if (!mobileNo || mobileNo.length < 10) {
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Please enter a valid ${operatorParams[0]?.param_label || 'mobile number'} first to see plans`, type: 'error' } }));
+      return;
+    }
+
+    setIsFetchingPlans(true);
+    try {
+      const res = await api.get(`/utility/plans?mobile=${mobileNo}`);
+      if (res.data.success && res.data.data) {
+        setRechargePlans(res.data.data);
+        setShowPlansModal(true);
+      } else {
+        throw new Error(res.data.message || 'Could not fetch plans');
+      }
+    } catch (error: any) {
+      console.error('Error fetching plans:', error);
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: error.response?.data?.message || 'Failed to fetch plans for this number.', type: 'error' } }));
+    } finally {
+      setIsFetchingPlans(false);
     }
   };
 
@@ -450,17 +483,28 @@ export default function UtilityPage() {
                 </div>
               ))}
 
-              {/* For operators without bill fetch, show an amount field */}
+              {/* For operators without bill fetch, show an amount field and browse plans button */}
               {!supportsBillFetch && (
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Amount (₹)</label>
-                  <input 
-                    type="tel"
-                    value={formValues['amount'] || ''}
-                    onChange={(e) => setFormValues({...formValues, amount: e.target.value})}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D1B69] transition-all"
-                    placeholder="Enter amount"
-                  />
+                  <div className="flex gap-2">
+                    <input 
+                      type="tel"
+                      value={formValues['amount'] || ''}
+                      onChange={(e) => setFormValues({...formValues, amount: e.target.value})}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D1B69] transition-all"
+                      placeholder="Enter amount"
+                    />
+                    {selectedCategory?.operator_category_name?.toLowerCase().includes('mobile') && (
+                      <button 
+                        onClick={handleFetchPlans}
+                        disabled={isFetchingPlans}
+                        className="px-4 py-3 bg-indigo-50 text-indigo-700 font-bold rounded-xl whitespace-nowrap hover:bg-indigo-100 transition-colors border border-indigo-100"
+                      >
+                        {isFetchingPlans ? <i className="fa-solid fa-spinner fa-spin"></i> : 'View Plans'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -515,6 +559,44 @@ export default function UtilityPage() {
                   </button>
                </div>
             )}
+          </div>
+        )}
+
+        {/* Plans Modal */}
+        {showPlansModal && rechargePlans && (
+          <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center p-4 bg-black/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+            <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[80vh] animate-[slideUp_0.3s_ease-out]">
+              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 className="font-bold text-gray-800">Available Plans</h3>
+                <button onClick={() => setShowPlansModal(false)} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-500 hover:text-gray-800">
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <div className="p-4 overflow-y-auto flex-1 space-y-3">
+                {rechargePlans.length > 0 ? rechargePlans.map((plan: any, idx: number) => (
+                  <div key={idx} className="border border-gray-100 rounded-xl p-4 bg-white hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer" onClick={() => {
+                    setFormValues({...formValues, amount: plan.price.toString()});
+                    setShowPlansModal(false);
+                  }}>
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="text-2xl font-black text-[#2D1B69]">₹{plan.price}</div>
+                      <span className="bg-green-50 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full border border-green-200">
+                        {plan.validity}
+                      </span>
+                    </div>
+                    <div className="text-sm font-bold text-gray-800 mb-1 flex items-center gap-2">
+                      <i className="fa-solid fa-wifi text-indigo-500"></i> {plan.data !== 'N/A' ? plan.data : 'Unlimited/NA'}
+                    </div>
+                    <p className="text-xs text-gray-500 line-clamp-2">{plan.description}</p>
+                  </div>
+                )) : (
+                  <div className="text-center py-10 text-gray-500">
+                    <i className="fa-solid fa-box-open text-4xl mb-3 text-gray-300"></i>
+                    <p>No plans found for this number.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
