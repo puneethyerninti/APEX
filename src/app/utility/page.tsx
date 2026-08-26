@@ -582,31 +582,57 @@ export default function UtilityPage() {
 
             {/* Step 4: Show Bill Info */}
             {billInfo && (
-               <div className="mt-6 bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-                  {billInfo.utilitycustomername && (
-                    <div className="flex justify-between items-center mb-3 pb-3 border-b border-indigo-100">
-                       <span className="text-xs text-indigo-900/70 font-bold uppercase tracking-wider">Customer Name</span>
-                       <span className="text-sm font-bold text-indigo-900 truncate pl-2 max-w-[200px] text-right">{billInfo.utilitycustomername}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center mb-4">
-                     <span className="text-xs text-indigo-900/70 font-bold uppercase tracking-wider">Bill Amount</span>
-                     <span className="text-2xl font-black text-[#2D1B69]">₹{billInfo.amount}</span>
-                  </div>
-                  {formatDueDate(billInfo.billDueDate) && (
-                    <div className="flex justify-between items-center mb-4">
-                      <span className="text-xs text-indigo-900/70 font-bold uppercase tracking-wider">Due Date</span>
-                      <span className="text-sm font-bold text-red-600">{formatDueDate(billInfo.billDueDate)}</span>
-                    </div>
-                  )}
+               <div className="mt-8 animate-[slideUp_0.4s_ease-out]">
+                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden relative">
+                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#2D1B69] to-indigo-500"></div>
+                   
+                   <div className="p-6">
+                     <div className="flex items-center justify-between mb-6">
+                       <div>
+                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Bill Amount Due</p>
+                         <h2 className="text-4xl font-black text-[#2D1B69]">₹{billInfo.amount}</h2>
+                       </div>
+                       <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center">
+                         <i className="fa-solid fa-file-invoice text-indigo-500 text-xl"></i>
+                       </div>
+                     </div>
 
-                  <button 
-                    onClick={handlePayBill} 
-                    disabled={isPaying}
-                    className="w-full py-3.5 bg-green-500 text-white font-bold rounded-xl shadow-lg flex justify-center items-center gap-2 hover:bg-green-600 transition-colors disabled:opacity-70"
-                  >
-                    {isPaying ? <i className="fa-solid fa-spinner fa-spin"></i> : `Pay ₹${billInfo.amount}`}
-                  </button>
+                     <div className="space-y-4 border-t border-dashed border-gray-200 pt-5">
+                       {billInfo.utilitycustomername && (
+                         <div className="flex justify-between items-start">
+                           <span className="text-sm text-gray-500 font-medium">Biller Name</span>
+                           <span className="text-sm font-bold text-gray-900 text-right max-w-[180px]">{billInfo.utilitycustomername}</span>
+                         </div>
+                       )}
+                       
+                       {formatDueDate(billInfo.billDueDate) && (
+                         <div className="flex justify-between items-center">
+                           <span className="text-sm text-gray-500 font-medium">Due Date</span>
+                           <span className="text-[11px] font-bold bg-red-50 text-red-600 px-2.5 py-1 rounded-md border border-red-100 flex items-center">
+                             <i className="fa-regular fa-calendar mr-1.5"></i> {formatDueDate(billInfo.billDueDate)}
+                           </span>
+                         </div>
+                       )}
+                     </div>
+                   </div>
+
+                   <div className="p-4 bg-gray-50 border-t border-gray-100">
+                     <button 
+                       onClick={handlePayBill} 
+                       disabled={isPaying}
+                       className="w-full py-4 bg-[#2D1B69] text-white font-bold rounded-xl shadow-[0_8px_20px_-8px_rgba(45,27,105,0.6)] flex justify-center items-center gap-2 hover:bg-[#3D2587] transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:hover:translate-y-0"
+                     >
+                       {isPaying ? (
+                         <><i className="fa-solid fa-spinner fa-spin"></i> Processing...</>
+                       ) : (
+                         <>Proceed to Pay ₹{billInfo.amount}</>
+                       )}
+                     </button>
+                   </div>
+                 </div>
+                 <p className="text-center text-[10px] text-gray-400 mt-4 flex items-center justify-center gap-1.5 uppercase tracking-wider font-bold">
+                   <i className="fa-solid fa-shield-halved"></i> 100% Safe and secure
+                 </p>
                </div>
             )}
           </div>
