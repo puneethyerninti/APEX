@@ -343,7 +343,7 @@ export default function Page() {
                             </div>
                             
                             <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 text-center">
-                                <i className="fa-solid fa-qrcode text-4xl text-purple-300 mb-2"></i>
+                                <img src="/apex_payment_qr.png" alt="APEX Payment QR" className="mx-auto h-32 w-32 object-contain mb-2 rounded-lg shadow-sm" />
                                 <p className="text-[10px] text-purple-600 font-bold mb-1">Pay with any UPI App</p>
                                 <p className="text-xs font-black text-purple-800">apex@upi</p>
                             </div>
