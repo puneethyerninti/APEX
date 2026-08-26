@@ -139,11 +139,11 @@ export default function UtilityPage() {
   };
 
   // 4b. Fetch Recharge Plans (for prepaid/postpaid without bill fetch)
-  const handleFetchPlans = async () => {
+  const handleFetchPlans = async (overrideMobileNo?: string) => {
     if (!selectedOperator) return;
 
     const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
-    const mobileNo = formValues[primaryParamName] || '';
+    const mobileNo = overrideMobileNo || formValues[primaryParamName] || '';
 
     if (!mobileNo || mobileNo.length < 10) {
       window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Please enter a valid ${operatorParams[0]?.param_label || 'mobile number'} first to see plans`, type: 'error' } }));
@@ -168,13 +168,14 @@ export default function UtilityPage() {
   };
 
   // 5. Pay Bill via Razorpay -> Eko
-  const handlePayBill = async () => {
-    if (!user?.uid || !selectedOperator || !billInfo?.amount) {
+  const handlePayBill = async (billOverride?: any) => {
+    const currentBill = billOverride || billInfo;
+    if (!user?.uid || !selectedOperator || !currentBill?.amount) {
         window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Invalid bill information', type: 'error' } }));
         return;
     }
     
-    const numAmount = parseFloat(billInfo.amount);
+    const numAmount = parseFloat(currentBill.amount);
     setIsPaying(true);
     try {
         const orderRes = await api.post('/finance/razorpay/order', {
@@ -217,8 +218,8 @@ export default function UtilityPage() {
                             confirmation_mobile_no: user.phone || accountNo,
                             sender_name: user.name || 'Customer',
                             category: selectedCategory?.operator_category_id || 0,
-                            utilitycustomername: billInfo.utilitycustomername || user.name || 'Customer',
-                            client_ref_id: billInfo.client_ref_id,
+                            utilitycustomername: currentBill.utilitycustomername || user.name || 'Customer',
+                            client_ref_id: currentBill.client_ref_id,
                             ...formValues
                         });
 
@@ -273,11 +274,13 @@ export default function UtilityPage() {
     }
 
     // Set fake bill info so Pay Bill flow works
-    setBillInfo({
+    const fakeBill = {
         amount: numAmount.toString(),
         utilitycustomername: user.name || 'Customer',
         client_ref_id: `ref_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`
-    });
+    };
+    setBillInfo(fakeBill);
+    handlePayBill(fakeBill);
   };
 
   const getCategoryIcon = (catName: string) => {
@@ -476,7 +479,15 @@ export default function UtilityPage() {
                   <input 
                     type={param.param_type === 'Numeric' ? 'tel' : 'text'}
                     value={formValues[param.param_name] || ''}
-                    onChange={(e) => setFormValues({...formValues, [param.param_name]: e.target.value})}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormValues({...formValues, [param.param_name]: val});
+                      
+                      // Auto-fetch plans for 10-digit mobile numbers in prepaid
+                      if (val.length === 10 && !supportsBillFetch && selectedCategory?.operator_category_name?.toLowerCase().includes('mobile')) {
+                        handleFetchPlans(val);
+                      }
+                    }}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D1B69] transition-all"
                     placeholder={param.error_message || `Enter ${param.param_label || param.param_name}`}
                   />
@@ -577,6 +588,15 @@ export default function UtilityPage() {
                   <div key={idx} className="border border-gray-100 rounded-xl p-4 bg-white hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer" onClick={() => {
                     setFormValues({...formValues, amount: plan.price.toString()});
                     setShowPlansModal(false);
+                    
+                    // Directly proceed to pay for seamless flow
+                    const fakeBill = {
+                        amount: plan.price.toString(),
+                        utilitycustomername: user.name || 'Customer',
+                        client_ref_id: `ref_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`
+                    };
+                    setBillInfo(fakeBill);
+                    handlePayBill(fakeBill);
                   }}>
                     <div className="flex justify-between items-start mb-2">
                       <div className="text-2xl font-black text-[#2D1B69]">₹{plan.price}</div>
