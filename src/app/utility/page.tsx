@@ -17,6 +17,7 @@ export default function UtilityPage() {
   const [selectedOperator, setSelectedOperator] = useState<any>(null);
   
   const [operatorParams, setOperatorParams] = useState<any[]>([]);
+  const [supportsBillFetch, setSupportsBillFetch] = useState(false);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   
   const [billInfo, setBillInfo] = useState<any>(null);
@@ -26,45 +27,44 @@ export default function UtilityPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isFetchingBill, setIsFetchingBill] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
+  const [paySuccess, setPaySuccess] = useState<any>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchCategories = async () => {
-    setIsLoading(true);
-    setErrorMsg(null);
-    try {
-      const res = await api.get('/utility/bbps/categories');
-      if (res.data.success && res.data.data?.data) {
-        setCategories(res.data.data.data);
-      } else {
-        throw new Error(res.data.message || 'Failed to load categories');
-      }
-    } catch (error: any) {
-      console.error('Error fetching categories:', error);
-      const is401 = error.response?.status === 401;
-      setErrorMsg(is401 
-        ? 'Eko Server blocked access (401 Unauthorized). Service Code 53 is not yet active for your Developer Key.' 
-        : 'Failed to load BBPS categories from server.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // 1. Fetch Categories on Mount
   useEffect(() => {
-    fetchCategories();
+    const fetchCats = async () => {
+      setIsLoading(true);
+      setErrorMsg(null);
+      try {
+        const res = await api.get('/utility/bbps/categories');
+        if (res.data.success) {
+          setCategories(res.data.data);
+        } else {
+          throw new Error(res.data.message || 'Failed to load categories');
+        }
+      } catch (error: any) {
+        console.error('Error fetching categories:', error);
+        setErrorMsg('Failed to load BBPS categories. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCats();
   }, []);
 
   // 2. Fetch Operators when Category is selected
   const handleCategorySelect = async (category: any) => {
     setSelectedCategory(category);
     setOperators([]);
+    setSelectedOperator(null);
+    setSearchQuery('');
     setIsLoading(true);
     setErrorMsg(null);
     try {
-      const res = await api.get(`/utility/bbps/operators?category=${category.category_id}`);
-      if (res.data.success && res.data.data?.data) {
-        setOperators(res.data.data.data);
+      const res = await api.get(`/utility/bbps/operators?category=${category.operator_category_id}`);
+      if (res.data.success) {
+        setOperators(res.data.data);
       } else {
         throw new Error(res.data.message || 'Failed to load operators');
       }
@@ -82,14 +82,17 @@ export default function UtilityPage() {
     setOperatorParams([]);
     setFormValues({});
     setBillInfo(null);
+    setPaySuccess(null);
     setIsLoading(true);
     setErrorMsg(null);
     try {
       const res = await api.get(`/utility/bbps/operator/${operator.operator_id}/parameters`);
-      if (res.data.success && res.data.data?.data) {
-        // Eko usually returns a req_list in dependent_params or directly
-        const p = res.data.data.data;
-        setOperatorParams(p);
+      if (res.data.success && res.data.data) {
+        const paramData = res.data.data;
+        const fields = paramData.list_elements || [];
+        setOperatorParams(fields);
+        // Check if this operator supports bill fetch
+        setSupportsBillFetch(paramData.fetchBill === 1);
       } else {
         throw new Error(res.data.message || 'Failed to load parameters');
       }
@@ -101,28 +104,31 @@ export default function UtilityPage() {
     }
   };
 
-  // 4. Fetch Bill dynamically based on form input
+  // 4. Fetch Bill
   const handleFetchBill = async () => {
     if (!selectedOperator) return;
     
-    // Convert formValues to the query required by Eko
-    const fetchPayload = {
-      phone_operator_code: selectedOperator.operator_id,
-      ...formValues
+    const fetchPayload: any = {
+      phone_operator_code: selectedOperator.operator_id.toString(),
     };
+
+    // Add all form values (param_name is the key)
+    Object.entries(formValues).forEach(([key, value]) => {
+      if (value.trim()) fetchPayload[key] = value.trim();
+    });
 
     setIsFetchingBill(true);
     setErrorMsg(null);
     try {
       const res = await api.post('/utility/bbps/fetch-bill', fetchPayload);
-      if (res.data.success && res.data.data?.data) {
-        setBillInfo(res.data.data.data);
+      if (res.data.success && res.data.data) {
+        setBillInfo(res.data.data);
       } else {
-        throw new Error(res.data.data?.message || res.data.message || 'Could not fetch bill');
+        throw new Error(res.data.message || 'Could not fetch bill');
       }
     } catch (error: any) {
       console.error('Error fetching bill:', error);
-      setErrorMsg(error.response?.data?.message || error.message || 'Failed to fetch bill details. Check the details and try again.');
+      setErrorMsg(error.response?.data?.message || error.message || 'Failed to fetch bill. Check the details and try again.');
     } finally {
       setIsFetchingBill(false);
     }
@@ -165,26 +171,34 @@ export default function UtilityPage() {
                     });
                     
                     if (verifyRes.data.success) {
-                        const primaryParamName = operatorParams[0]?.name || operatorParams[0]?.param_name || 'utility_acc_no';
+                        // Get the primary account number from form
+                        const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
                         const accountNo = formValues[primaryParamName] || 'UNKNOWN';
 
-                        await api.post('/utility/pay', {
+                        const payRes = await api.post('/utility/pay', {
                             userId: user.uid,
                             operatorCode: selectedOperator.operator_id,
+                            operatorName: selectedOperator.name,
                             amount: numAmount,
                             utility_acc_no: accountNo,
+                            confirmation_mobile_no: user.phone || accountNo,
+                            sender_name: user.name || 'Customer',
+                            category: selectedCategory?.operator_category_id || 0,
+                            utilitycustomername: billInfo.utilitycustomername || user.name || 'Customer',
+                            client_ref_id: billInfo.client_ref_id,
                             ...formValues
                         });
 
-                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Successfully paid bill!`, type: 'success' } }));
-                        
-                        setSelectedOperator(null);
-                        setBillInfo(null);
-                        setFormValues({});
+                        if (payRes.data.success) {
+                            setPaySuccess(payRes.data.data);
+                            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Payment successful!`, type: 'success' } }));
+                        } else {
+                            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: payRes.data.message || 'Payment failed at biller', type: 'error' } }));
+                        }
                     }
-                } catch (e) {
-                    console.error("Verification failed", e);
-                    window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Verification failed', type: 'error' } }));
+                } catch (e: any) {
+                    console.error("Payment failed", e);
+                    window.dispatchEvent(new CustomEvent('showToast', { detail: { message: e.response?.data?.message || 'Payment failed', type: 'error' } }));
                 } finally {
                     setIsPaying(false);
                 }
@@ -206,32 +220,101 @@ export default function UtilityPage() {
     }
   };
 
+  // 6. Direct Pay (for operators that don't support bill fetch)
+  const handleDirectPay = async () => {
+    if (!user?.uid || !selectedOperator) return;
+    
+    const amountStr = formValues['amount'] || '';
+    if (!amountStr) {
+        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please enter amount', type: 'error' } }));
+        return;
+    }
+
+    const numAmount = parseFloat(amountStr);
+    const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
+    const accountNo = formValues[primaryParamName] || '';
+
+    if (!accountNo) {
+        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Please enter ${operatorParams[0]?.param_label || 'account number'}`, type: 'error' } }));
+        return;
+    }
+
+    // Set fake bill info so Pay Bill flow works
+    setBillInfo({
+        amount: numAmount.toString(),
+        utilitycustomername: user.name || 'Customer',
+        client_ref_id: `ref_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`
+    });
+  };
+
   const getCategoryIcon = (catName: string) => {
     const n = catName.toLowerCase();
-    if (n.includes('electric')) return 'fa-solid fa-bolt text-orange-500';
+    if (n.includes('electric')) return 'fa-solid fa-bolt text-yellow-500';
     if (n.includes('water')) return 'fa-solid fa-droplet text-blue-500';
-    if (n.includes('gas')) return 'fa-solid fa-fire-flame-simple text-red-500';
-    if (n.includes('dth') || n.includes('tv')) return 'fa-solid fa-satellite-dish text-purple-500';
-    if (n.includes('mobile') || n.includes('prepaid')) return 'fa-solid fa-mobile-screen text-green-500';
-    if (n.includes('broadband') || n.includes('landline')) return 'fa-solid fa-phone-volume text-gray-600';
+    if (n.includes('gas') || n.includes('lpg')) return 'fa-solid fa-fire-flame-simple text-red-500';
+    if (n.includes('dth') || n.includes('cable tv')) return 'fa-solid fa-satellite-dish text-purple-500';
+    if (n.includes('mobile') && n.includes('prepaid')) return 'fa-solid fa-mobile-screen text-green-500';
+    if (n.includes('mobile') && n.includes('postpaid')) return 'fa-solid fa-mobile-screen-button text-teal-500';
+    if (n.includes('broadband') || n.includes('landline')) return 'fa-solid fa-wifi text-cyan-500';
+    if (n.includes('insurance')) return 'fa-solid fa-shield-halved text-emerald-500';
+    if (n.includes('loan')) return 'fa-solid fa-hand-holding-dollar text-amber-600';
+    if (n.includes('credit card')) return 'fa-solid fa-credit-card text-pink-500';
+    if (n.includes('tax') || n.includes('municipal')) return 'fa-solid fa-landmark text-slate-600';
+    if (n.includes('education')) return 'fa-solid fa-graduation-cap text-indigo-500';
+    if (n.includes('fastag')) return 'fa-solid fa-car text-violet-500';
+    if (n.includes('housing') || n.includes('rental')) return 'fa-solid fa-house text-orange-500';
+    if (n.includes('hospital')) return 'fa-solid fa-hospital text-red-400';
+    if (n.includes('subscription') || n.includes('club')) return 'fa-solid fa-star text-yellow-400';
     return 'fa-solid fa-file-invoice-dollar text-indigo-500';
+  };
+
+  const formatDueDate = (dateStr: string) => {
+    if (!dateStr || dateStr === 'null') return null;
+    // Eko returns YYYYMMDD format
+    if (dateStr.length === 8) {
+      const y = dateStr.substring(0, 4);
+      const m = dateStr.substring(4, 6);
+      const d = dateStr.substring(6, 8);
+      return `${d}/${m}/${y}`;
+    }
+    return dateStr;
+  };
+
+  const handleBack = () => {
+    if (paySuccess) {
+      setPaySuccess(null);
+      setBillInfo(null);
+      setSelectedOperator(null);
+      setSelectedCategory(null);
+    } else if (billInfo) {
+      setBillInfo(null);
+    } else if (selectedOperator) {
+      setSelectedOperator(null);
+    } else if (selectedCategory) {
+      setSelectedCategory(null);
+    } else {
+      router.back();
+    }
+  };
+
+  const getHeaderTitle = () => {
+    if (paySuccess) return 'Payment Receipt';
+    if (selectedOperator) return selectedOperator.name;
+    if (selectedCategory) return selectedCategory.operator_category_name;
+    return 'BBPS Payments';
   };
 
   return (
     <>
       <div className="bg-[#2D1B69] text-white p-4 py-3 flex items-center justify-between sticky top-0 z-50 shadow-md">
         <button 
-          onClick={() => {
-            if (selectedOperator) setSelectedOperator(null);
-            else if (selectedCategory) setSelectedCategory(null);
-            else router.back();
-          }} 
+          onClick={handleBack} 
           className="text-white hover:text-gray-200 transition-colors p-2 -ml-2"
         >
           <i className="fa-solid fa-arrow-left text-lg"></i>
         </button>
         <h1 className="text-[17px] font-bold truncate px-4 max-w-[200px]">
-          {selectedOperator ? selectedOperator.name : selectedCategory ? selectedCategory.category_name : 'BBPS Payments'}
+          {getHeaderTitle()}
         </h1>
         <Link href="/" className="text-white hover:text-gray-200 transition-colors p-2 -mr-2 flex items-center justify-center">
           <i className="fa-solid fa-house text-[17px]"></i>
@@ -254,8 +337,45 @@ export default function UtilityPage() {
           </div>
         )}
 
+        {/* PAYMENT SUCCESS SCREEN */}
+        {paySuccess && (
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center animate-[slideUp_0.3s_ease-out]">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="fa-solid fa-check text-green-600 text-2xl"></i>
+            </div>
+            <h2 className="text-xl font-black text-gray-900 mb-1">Payment Successful!</h2>
+            <p className="text-gray-500 text-sm mb-6">Your payment has been processed successfully</p>
+            
+            <div className="bg-gray-50 rounded-xl p-4 text-left space-y-3 mb-6">
+              {paySuccess.ekoData?.tid && (
+                <div className="flex justify-between">
+                  <span className="text-xs text-gray-500 font-semibold">Transaction ID</span>
+                  <span className="text-xs font-bold text-gray-800">{paySuccess.ekoData.tid}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-xs text-gray-500 font-semibold">Amount</span>
+                <span className="text-sm font-black text-green-600">₹{paySuccess.ekoData?.amount || paySuccess.transaction?.amount}</span>
+              </div>
+              {paySuccess.ekoData?.operator_name && (
+                <div className="flex justify-between">
+                  <span className="text-xs text-gray-500 font-semibold">Biller</span>
+                  <span className="text-xs font-bold text-gray-800">{paySuccess.ekoData.operator_name}</span>
+                </div>
+              )}
+            </div>
+
+            <button 
+              onClick={() => { setPaySuccess(null); setBillInfo(null); setSelectedOperator(null); setSelectedCategory(null); }}
+              className="w-full py-3 bg-[#2D1B69] text-white font-bold rounded-xl"
+            >
+              Done
+            </button>
+          </div>
+        )}
+
         {/* STEP 1: Categories */}
-        {!isLoading && !selectedCategory && categories.length > 0 && (
+        {!isLoading && !selectedCategory && !paySuccess && categories.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-4 py-4 border-b border-gray-50 bg-gray-50/50">
                <h3 className="text-[13px] font-bold text-gray-500 tracking-wider uppercase">Select Category</h3>
@@ -263,14 +383,14 @@ export default function UtilityPage() {
             <div className="grid grid-cols-3 divide-y divide-gray-100">
               {categories.map((cat, index) => (
                 <button 
-                  key={cat.category_id || index} 
+                  key={cat.operator_category_id || index} 
                   className={`flex flex-col items-center justify-center p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors group min-h-[105px] ${(index + 1) % 3 !== 0 ? 'border-r border-gray-100' : ''}`}
                   onClick={() => handleCategorySelect(cat)}
                 >
                   <div className="mb-2.5 transition-transform duration-200 group-hover:scale-110">
-                    <i className={`${getCategoryIcon(cat.category_name)} text-3xl drop-shadow-sm`}></i>
+                    <i className={`${getCategoryIcon(cat.operator_category_name)} text-3xl drop-shadow-sm`}></i>
                   </div>
-                  <span className="text-[11px] font-bold text-gray-700 text-center leading-[1.2]">{cat.category_name}</span>
+                  <span className="text-[11px] font-bold text-gray-700 text-center leading-[1.2]">{cat.operator_category_name}</span>
                 </button>
               ))}
             </div>
@@ -278,7 +398,7 @@ export default function UtilityPage() {
         )}
 
         {/* STEP 2: Operators */}
-        {!isLoading && selectedCategory && !selectedOperator && operators.length > 0 && (
+        {!isLoading && selectedCategory && !selectedOperator && !paySuccess && operators.length > 0 && (
           <div>
             <div className="relative shadow-sm rounded-xl overflow-hidden bg-white border border-gray-100 mb-4">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -304,31 +424,49 @@ export default function UtilityPage() {
                     <i className="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
                  </button>
               ))}
+              {operators.filter(o => o.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                <p className="text-center text-gray-400 py-6 text-sm">No operators found</p>
+              )}
             </div>
           </div>
         )}
 
         {/* STEP 3: Dynamic Form & Bill Payment */}
-        {!isLoading && selectedOperator && (
+        {!isLoading && selectedOperator && !paySuccess && (
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 animate-[slideUp_0.3s_ease-out]">
             <h3 className="text-sm font-bold text-gray-800 mb-4">Enter Details</h3>
             
             <div className="space-y-4">
               {operatorParams.map((param: any, idx) => (
                 <div key={idx}>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">{param.name || param.param_name}</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">{param.param_label || param.param_name}</label>
                   <input 
-                    type={param.regex?.includes('^\\d') ? 'number' : 'text'}
-                    value={formValues[param.name || param.param_name] || ''}
-                    onChange={(e) => setFormValues({...formValues, [param.name || param.param_name]: e.target.value})}
+                    type={param.param_type === 'Numeric' ? 'tel' : 'text'}
+                    value={formValues[param.param_name] || ''}
+                    onChange={(e) => setFormValues({...formValues, [param.param_name]: e.target.value})}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D1B69] transition-all"
-                    placeholder={`Enter ${param.name || param.param_name}`}
+                    placeholder={param.error_message || `Enter ${param.param_label || param.param_name}`}
                   />
                 </div>
               ))}
+
+              {/* For operators without bill fetch, show an amount field */}
+              {!supportsBillFetch && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Amount (₹)</label>
+                  <input 
+                    type="tel"
+                    value={formValues['amount'] || ''}
+                    onChange={(e) => setFormValues({...formValues, amount: e.target.value})}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D1B69] transition-all"
+                    placeholder="Enter amount"
+                  />
+                </div>
+              )}
             </div>
 
-            {!billInfo && (
+            {/* Fetch Bill button (only for operators that support it) */}
+            {!billInfo && supportsBillFetch && (
               <button 
                 onClick={handleFetchBill} 
                 disabled={isFetchingBill}
@@ -338,21 +476,33 @@ export default function UtilityPage() {
               </button>
             )}
 
+            {/* Direct Pay button (for operators without bill fetch like prepaid recharge) */}
+            {!billInfo && !supportsBillFetch && (
+              <button 
+                onClick={handleDirectPay} 
+                className="w-full mt-6 py-3.5 bg-[#2D1B69] text-white font-bold rounded-xl shadow-lg flex justify-center items-center gap-2 hover:bg-[#3D2587] transition-colors"
+              >
+                Proceed to Pay
+              </button>
+            )}
+
             {/* Step 4: Show Bill Info */}
             {billInfo && (
                <div className="mt-6 bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-                  <div className="flex justify-between items-center mb-3 pb-3 border-b border-indigo-100">
-                     <span className="text-xs text-indigo-900/70 font-bold uppercase tracking-wider">Customer Name</span>
-                     <span className="text-sm font-bold text-indigo-900 truncate pl-2 max-w-[200px] text-right">{billInfo.customer_name || 'N/A'}</span>
-                  </div>
+                  {billInfo.utilitycustomername && (
+                    <div className="flex justify-between items-center mb-3 pb-3 border-b border-indigo-100">
+                       <span className="text-xs text-indigo-900/70 font-bold uppercase tracking-wider">Customer Name</span>
+                       <span className="text-sm font-bold text-indigo-900 truncate pl-2 max-w-[200px] text-right">{billInfo.utilitycustomername}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center mb-4">
                      <span className="text-xs text-indigo-900/70 font-bold uppercase tracking-wider">Bill Amount</span>
                      <span className="text-2xl font-black text-[#2D1B69]">₹{billInfo.amount}</span>
                   </div>
-                  {billInfo.due_date && (
+                  {formatDueDate(billInfo.billDueDate) && (
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-xs text-indigo-900/70 font-bold uppercase tracking-wider">Due Date</span>
-                      <span className="text-sm font-bold text-red-600">{billInfo.due_date}</span>
+                      <span className="text-sm font-bold text-red-600">{formatDueDate(billInfo.billDueDate)}</span>
                     </div>
                   )}
 
