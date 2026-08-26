@@ -23,7 +23,6 @@ export default function UtilityPage() {
   const [billInfo, setBillInfo] = useState<any>(null);
   const [rechargePlans, setRechargePlans] = useState<any[] | null>(null);
   const [isFetchingPlans, setIsFetchingPlans] = useState(false);
-  const [showPlansModal, setShowPlansModal] = useState(false);
   
   // Loading & Error States
   const [isLoading, setIsLoading] = useState(true);
@@ -155,7 +154,6 @@ export default function UtilityPage() {
       const res = await api.get(`/utility/plans?mobile=${mobileNo}`);
       if (res.data.success && res.data.data) {
         setRechargePlans(res.data.data);
-        setShowPlansModal(true);
       } else {
         throw new Error(res.data.message || 'Could not fetch plans');
       }
@@ -340,6 +338,8 @@ export default function UtilityPage() {
     return 'BBPS Payments';
   };
 
+  const isMobileRecharge = selectedCategory?.operator_category_name?.toLowerCase().includes('mobile');
+
   return (
     <>
       <div className="bg-[#2D1B69] text-white p-4 py-3 flex items-center justify-between sticky top-0 z-50 shadow-md">
@@ -484,8 +484,10 @@ export default function UtilityPage() {
                       setFormValues({...formValues, [param.param_name]: val});
                       
                       // Auto-fetch plans for 10-digit mobile numbers in prepaid
-                      if (val.length === 10 && !supportsBillFetch && selectedCategory?.operator_category_name?.toLowerCase().includes('mobile')) {
+                      if (val.length === 10 && !supportsBillFetch && isMobileRecharge) {
                         handleFetchPlans(val);
+                      } else if (isMobileRecharge && val.length !== 10) {
+                        setRechargePlans(null);
                       }
                     }}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D1B69] transition-all"
@@ -494,31 +496,68 @@ export default function UtilityPage() {
                 </div>
               ))}
 
-              {/* For operators without bill fetch, show an amount field and browse plans button */}
-              {!supportsBillFetch && (
+              {/* For operators without bill fetch (like DTH), show an amount field */}
+              {!supportsBillFetch && !isMobileRecharge && (
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Amount (₹)</label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="tel"
-                      value={formValues['amount'] || ''}
-                      onChange={(e) => setFormValues({...formValues, amount: e.target.value})}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D1B69] transition-all"
-                      placeholder="Enter amount"
-                    />
-                    {selectedCategory?.operator_category_name?.toLowerCase().includes('mobile') && (
-                      <button 
-                        onClick={() => handleFetchPlans()}
-                        disabled={isFetchingPlans}
-                        className="px-4 py-3 bg-indigo-50 text-indigo-700 font-bold rounded-xl whitespace-nowrap hover:bg-indigo-100 transition-colors border border-indigo-100"
-                      >
-                        {isFetchingPlans ? <i className="fa-solid fa-spinner fa-spin"></i> : 'View Plans'}
-                      </button>
-                    )}
-                  </div>
+                  <input 
+                    type="tel"
+                    value={formValues['amount'] || ''}
+                    onChange={(e) => setFormValues({...formValues, amount: e.target.value})}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D1B69] transition-all"
+                    placeholder="Enter amount"
+                  />
                 </div>
               )}
             </div>
+
+            {/* Inline Loading State for Plans */}
+            {isFetchingPlans && isMobileRecharge && (
+              <div className="mt-6 p-6 border border-gray-100 rounded-xl flex flex-col items-center justify-center bg-gray-50">
+                <i className="fa-solid fa-spinner fa-spin text-2xl text-indigo-500 mb-2"></i>
+                <p className="text-sm text-gray-500 font-medium">Fetching best plans...</p>
+              </div>
+            )}
+
+            {/* Inline Plans Display */}
+            {rechargePlans && isMobileRecharge && !isFetchingPlans && (
+              <div className="mt-6 animate-[fadeIn_0.3s_ease-out]">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Recommended Plans</h4>
+                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
+                  {rechargePlans.length > 0 ? rechargePlans.map((plan: any, idx: number) => (
+                    <div key={idx} className="border border-gray-100 rounded-xl p-4 bg-white hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer relative overflow-hidden group" onClick={() => {
+                      setFormValues({...formValues, amount: plan.price.toString()});
+                      
+                      // Directly proceed to pay for seamless flow
+                      const fakeBill = {
+                          amount: plan.price.toString(),
+                          utilitycustomername: user?.name || 'Customer',
+                          client_ref_id: `ref_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`
+                      };
+                      setBillInfo(fakeBill);
+                      handlePayBill(fakeBill);
+                    }}>
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="text-2xl font-black text-[#2D1B69]">₹{plan.price}</div>
+                        <span className="bg-green-50 text-green-700 text-[11px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full border border-green-200">
+                          {plan.validity}
+                        </span>
+                      </div>
+                      <div className="text-sm font-bold text-gray-800 mb-1 flex items-center gap-2">
+                        <i className="fa-solid fa-wifi text-indigo-500"></i> {plan.data !== 'N/A' ? plan.data : 'Unlimited/NA'}
+                      </div>
+                      <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{plan.description}</p>
+                    </div>
+                  )) : (
+                    <div className="text-center py-8 text-gray-500 border border-dashed border-gray-200 rounded-xl">
+                      <i className="fa-solid fa-box-open text-3xl mb-2 text-gray-300"></i>
+                      <p className="text-sm">No plans found for this number.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Fetch Bill button (only for operators that support it) */}
             {!billInfo && supportsBillFetch && (
@@ -531,8 +570,8 @@ export default function UtilityPage() {
               </button>
             )}
 
-            {/* Direct Pay button (for operators without bill fetch like prepaid recharge) */}
-            {!billInfo && !supportsBillFetch && (
+            {/* Direct Pay button (for operators without bill fetch like DTH, hidden for mobile) */}
+            {!billInfo && !supportsBillFetch && !isMobileRecharge && (
               <button 
                 onClick={handleDirectPay} 
                 className="w-full mt-6 py-3.5 bg-[#2D1B69] text-white font-bold rounded-xl shadow-lg flex justify-center items-center gap-2 hover:bg-[#3D2587] transition-colors"
@@ -570,53 +609,6 @@ export default function UtilityPage() {
                   </button>
                </div>
             )}
-          </div>
-        )}
-
-        {/* Plans Modal */}
-        {showPlansModal && rechargePlans && (
-          <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center p-4 bg-black/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-            <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[80vh] animate-[slideUp_0.3s_ease-out]">
-              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h3 className="font-bold text-gray-800">Available Plans</h3>
-                <button onClick={() => setShowPlansModal(false)} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-500 hover:text-gray-800">
-                  <i className="fa-solid fa-xmark"></i>
-                </button>
-              </div>
-              <div className="p-4 overflow-y-auto flex-1 space-y-3">
-                {rechargePlans.length > 0 ? rechargePlans.map((plan: any, idx: number) => (
-                  <div key={idx} className="border border-gray-100 rounded-xl p-4 bg-white hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer" onClick={() => {
-                    setFormValues({...formValues, amount: plan.price.toString()});
-                    setShowPlansModal(false);
-                    
-                    // Directly proceed to pay for seamless flow
-                    const fakeBill = {
-                        amount: plan.price.toString(),
-                        utilitycustomername: user?.name || 'Customer',
-                        client_ref_id: `ref_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`
-                    };
-                    setBillInfo(fakeBill);
-                    handlePayBill(fakeBill);
-                  }}>
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="text-2xl font-black text-[#2D1B69]">₹{plan.price}</div>
-                      <span className="bg-green-50 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full border border-green-200">
-                        {plan.validity}
-                      </span>
-                    </div>
-                    <div className="text-sm font-bold text-gray-800 mb-1 flex items-center gap-2">
-                      <i className="fa-solid fa-wifi text-indigo-500"></i> {plan.data !== 'N/A' ? plan.data : 'Unlimited/NA'}
-                    </div>
-                    <p className="text-xs text-gray-500 line-clamp-2">{plan.description}</p>
-                  </div>
-                )) : (
-                  <div className="text-center py-10 text-gray-500">
-                    <i className="fa-solid fa-box-open text-4xl mb-3 text-gray-300"></i>
-                    <p>No plans found for this number.</p>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         )}
 
