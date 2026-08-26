@@ -1,9 +1,9 @@
 import express from 'express';
-import multer from 'multer';
+import { uploadToS3 } from '../services/s3Upload';
 import { getJobs, createJob, applyJob } from '../controllers/jobsController';
 
 const router = express.Router();
-const upload = multer({ dest: 'uploads/' });
+const upload = uploadToS3;
 
 router.get('/', getJobs);
 router.post('/', createJob);

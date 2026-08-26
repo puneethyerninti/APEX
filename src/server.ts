@@ -4,7 +4,7 @@ import { initSocket } from './utils/socketManager';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db';
-import authRoutes from './routes/authRoutes';
+
 import financeRoutes from './routes/financeRoutes';
 import jobsRoutes from './routes/jobsRoutes';
 import matrimonyRoutes from './routes/matrimonyRoutes';
@@ -219,7 +219,7 @@ io.on('connection', (socket) => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
+
 app.use('/api/finance', financeRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/api/matrimony', matrimonyRoutes);

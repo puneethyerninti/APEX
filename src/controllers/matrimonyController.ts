@@ -44,6 +44,9 @@ export const createProfile = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Profile already exists for this user' });
     }
 
+    const files = req.files as any[];
+    const imageUrls = files ? files.map(file => file.location) : [];
+
     const newProfile = await MatrimonyProfile.create({
       user: userId,
       age,
@@ -52,7 +55,7 @@ export const createProfile = async (req: Request, res: Response) => {
       profession,
       location,
       bio,
-      images: [] // Handle image uploads in real implementation
+      images: imageUrls
     });
     
     // Emit live event to admin dashboard
