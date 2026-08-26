@@ -592,7 +592,7 @@ export default function UtilityPage() {
                     // Directly proceed to pay for seamless flow
                     const fakeBill = {
                         amount: plan.price.toString(),
-                        utilitycustomername: user.name || 'Customer',
+                        utilitycustomername: user?.name || 'Customer',
                         client_ref_id: `ref_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`
                     };
                     setBillInfo(fakeBill);
