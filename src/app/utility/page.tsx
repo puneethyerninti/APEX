@@ -21,7 +21,7 @@ export default function UtilityPage() {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   
   const [billInfo, setBillInfo] = useState<any>(null);
-  const [rechargePlans, setRechargePlans] = useState<any[]>(null);
+  const [rechargePlans, setRechargePlans] = useState<any[] | null>(null);
   const [isFetchingPlans, setIsFetchingPlans] = useState(false);
   const [showPlansModal, setShowPlansModal] = useState(false);
   
