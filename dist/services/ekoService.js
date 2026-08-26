@@ -3,30 +3,40 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUtilityOperators = exports.processRecharge = exports.fetchRechargePlans = exports.getOperatorCodeAndCircle = exports.getEkoHeaders = void 0;
+exports.getUtilityOperators = exports.activateService = exports.fetchBill = exports.fetchOperatorParameters = exports.fetchBBPSOperators = exports.fetchLocations = exports.fetchCategories = exports.processRecharge = exports.fetchRechargePlans = exports.getOperatorCodeAndCircle = exports.getEkoHeaders = void 0;
 const crypto_1 = __importDefault(require("crypto"));
 const axios_1 = __importDefault(require("axios"));
 // Environment Variables
-const EKO_DEV_KEY = process.env.EKO_DEV_KEY || 'becbbce45f79c6f5109f848acd540567';
-const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY || 'd2fe1d99-6298-4af2-8cc5-d97dcf46df30';
+const EKO_DEV_KEY = process.env.EKO_DEV_KEY || '9a40fb2f68f06c86581737e05b58cd3e';
+const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY || 'd49acab3-ed93-4f44-a366-3ff6746dc58d';
 const EKO_INITIATOR_ID = process.env.EKO_INITIATOR_ID || '6303210224';
-const EKO_BASE_URL = process.env.EKO_BASE_URL || 'https://staging.eko.in/ekoapi/v3';
+const EKO_BASE_URL = process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici';
 /**
  * Generates Eko Authentication headers
  */
-const getEkoHeaders = () => {
+const getEkoHeaders = (requestHashString) => {
     const timestamp = Date.now().toString();
-    // The signature is base64(HMAC-SHA256(timestamp, base64(access_key)))
-    const accessKeyBuffer = Buffer.from(EKO_ACCESS_KEY, 'base64');
+    // Eko requires the key to be converted to base64, then passed to HMAC.
+    // Using Buffer.from(key) uses UTF-8 by default, exactly as Eko expects.
+    const encodedKey = Buffer.from(EKO_ACCESS_KEY).toString('base64');
+    const accessKeyBuffer = Buffer.from(encodedKey, 'base64');
     const hmac = crypto_1.default.createHmac('sha256', accessKeyBuffer);
     hmac.update(timestamp);
     const signature = hmac.digest('base64');
-    return {
+    const headers = {
         'developer_key': EKO_DEV_KEY,
         'secret-key-timestamp': timestamp,
         'secret-key': signature,
         'Accept': 'application/json'
     };
+    if (requestHashString) {
+        // Concatenate timestamp and the required parameters
+        const concatenatedString = timestamp + requestHashString;
+        const requestHmac = crypto_1.default.createHmac('sha256', accessKeyBuffer);
+        requestHmac.update(concatenatedString);
+        headers['request_hash'] = requestHmac.digest('base64');
+    }
+    return headers;
 };
 exports.getEkoHeaders = getEkoHeaders;
 /**
@@ -103,7 +113,9 @@ const extractDataText = (desc) => {
  */
 const processRecharge = async (mobile, amount, operatorCode, clientRefId) => {
     try {
-        const headers = (0, exports.getEkoHeaders)();
+        const USER_CODE = '42290001'; // Given by Eko Support
+        const requestHashString = `${mobile}${amount}${USER_CODE}`;
+        const headers = (0, exports.getEkoHeaders)(requestHashString);
         const url = `${EKO_BASE_URL}/customer/payment/bbps`;
         const payload = {
             initiator_id: EKO_INITIATOR_ID,
@@ -139,6 +151,117 @@ const processRecharge = async (mobile, amount, operatorCode, clientRefId) => {
     }
 };
 exports.processRecharge = processRecharge;
+/**
+ * BBPS: Fetch Categories
+ */
+const fetchCategories = async () => {
+    try {
+        const headers = (0, exports.getEkoHeaders)();
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/categories?initiator_id=${EKO_INITIATOR_ID}`;
+        const response = await axios_1.default.get(url, { headers });
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error fetching categories', error.response?.data || error.message);
+        throw error;
+    }
+};
+exports.fetchCategories = fetchCategories;
+/**
+ * BBPS: Fetch Locations
+ */
+const fetchLocations = async () => {
+    try {
+        const headers = (0, exports.getEkoHeaders)();
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/locations?initiator_id=${EKO_INITIATOR_ID}`;
+        const response = await axios_1.default.get(url, { headers });
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error fetching locations', error.response?.data || error.message);
+        throw error;
+    }
+};
+exports.fetchLocations = fetchLocations;
+/**
+ * BBPS: Fetch Operators
+ */
+const fetchBBPSOperators = async (categoryId, locationId) => {
+    try {
+        const headers = (0, exports.getEkoHeaders)();
+        let url = `${EKO_BASE_URL}/customer/payment/bbps/operators?initiator_id=${EKO_INITIATOR_ID}`;
+        if (categoryId)
+            url += `&category=${categoryId}`;
+        if (locationId)
+            url += `&location=${locationId}`;
+        const response = await axios_1.default.get(url, { headers });
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error fetching operators', error.response?.data || error.message);
+        throw error;
+    }
+};
+exports.fetchBBPSOperators = fetchBBPSOperators;
+/**
+ * BBPS: Fetch Operator Parameters
+ */
+const fetchOperatorParameters = async (operatorId) => {
+    try {
+        const headers = (0, exports.getEkoHeaders)();
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/operator/${operatorId}/parameters?initiator_id=${EKO_INITIATOR_ID}`;
+        const response = await axios_1.default.get(url, { headers });
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error fetching operator parameters', error.response?.data || error.message);
+        throw error;
+    }
+};
+exports.fetchOperatorParameters = fetchOperatorParameters;
+/**
+ * BBPS: Fetch Bill
+ */
+const fetchBill = async (params) => {
+    try {
+        const headers = (0, exports.getEkoHeaders)();
+        // Construct query string dynamically from the input parameters
+        const queryParams = new URLSearchParams({
+            initiator_id: EKO_INITIATOR_ID,
+            ...params
+        });
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/bill?${queryParams.toString()}`;
+        const response = await axios_1.default.get(url, { headers });
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error fetching bill', error.response?.data || error.message);
+        throw error;
+    }
+};
+exports.fetchBill = fetchBill;
+/**
+ * Activate a Service for the User
+ */
+const activateService = async (serviceCode) => {
+    try {
+        const headers = (0, exports.getEkoHeaders)();
+        const USER_CODE = '42290001';
+        // Reverted URL based on latest documentation screenshot
+        const url = `${EKO_BASE_URL}/v3/admin/network/agent/${USER_CODE}/service/${serviceCode}/activate`;
+        const payload = {
+            initiator_id: EKO_INITIATOR_ID,
+            client_ref_id: 'ACT_' + Date.now()
+        };
+        const response = await axios_1.default.put(url, payload, { headers });
+        return response.data;
+    }
+    catch (error) {
+        console.error('Error activating service', error.response?.data || error.message);
+        throw error;
+    }
+};
+exports.activateService = activateService;
 /**
  * Kept for backward compatibility if needed by DTH or other services
  */

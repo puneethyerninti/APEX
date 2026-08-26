@@ -81,15 +81,38 @@ const addMoney = async (req, res) => {
     }
 };
 exports.addMoney = addMoney;
+const COURSE_PRICES = {
+    'Spoken English': 4999,
+    'Spoken Hindi': 3999,
+    'Computer Courses': 1200,
+    'Competitive Exams': 1500,
+    'Full-Stack Web Development': 9999,
+    'Data Science & AI/ML': 12499,
+    'Mobile App Development': 20000,
+    'Digital Marketing Masterclass': 7999,
+};
 // Razorpay Order Creation (Strict)
 const createRazorpayOrder = async (req, res) => {
-    const { amount, userId, category = 'add_money', serviceName, metadata } = req.body;
+    let { amount, userId, category = 'add_money', serviceName, metadata } = req.body;
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
         console.error("CRITICAL: Razorpay keys are missing from environment variables.");
         return res.status(500).json({ error: 'Payment gateway is not configured correctly on the server.' });
     }
     if (!userId) {
         return res.status(400).json({ error: 'User ID is required' });
+    }
+    // Ensure course enrollment payments are true to their prices
+    if (category === 'academy_enrollment' && metadata?.courseName) {
+        const actualPrice = COURSE_PRICES[metadata.courseName];
+        if (actualPrice !== undefined) {
+            if (amount !== actualPrice) {
+                console.warn(`Price mismatch for ${metadata.courseName}. Received: ${amount}, Expected: ${actualPrice}. Overriding to true price.`);
+            }
+            amount = actualPrice; // Keep it true to its price
+        }
+        else {
+            return res.status(400).json({ error: 'Invalid course selection' });
+        }
     }
     try {
         const options = {

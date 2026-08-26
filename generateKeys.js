@@ -1,0 +1,10 @@
+let key = "d49acab3-ed93-4f44-a366-3ff6746dc58d";
+let encodedKey = Buffer.from(key).toString('base64');
+let secretKeyTimestamp = Date.now();
+let hmac = require('crypto').createHmac('sha256', Buffer.from(encodedKey, 'base64'));
+hmac.update(secretKeyTimestamp.toString());
+let signature = hmac.digest('base64');
+console.log("=== PASTE THESE VALUES ===");
+console.log("secret-key:", signature);
+console.log("secret-key-timestamp:", secretKeyTimestamp);
+console.log("developer_key (first box): 9a40fb2f68f06c86581737e05b58cd3e");
