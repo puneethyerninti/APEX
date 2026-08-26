@@ -56,6 +56,11 @@ export default function NotificationBell({ className = "text-violet-100 hover:te
                         icon: '/icon.jpeg'
                     });
                 }
+
+                // Show in-app toast
+                window.dispatchEvent(new CustomEvent('showToast', { 
+                    detail: { message: notification.title + ': ' + notification.message, type: notification.type || 'info' } 
+                }));
             };
 
             socket.on('new_notification', handleNewNotification);

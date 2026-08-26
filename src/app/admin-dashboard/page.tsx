@@ -105,9 +105,19 @@ export default function AdminDashboardPage() {
     if (isAuthorized && socket) {
       socket.emit('join_admin_room');
       
-      const handleDataRefresh = () => {
+      const handleDataRefresh = (payload: any) => {
         playAlertSound();
-        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'New live data arrived!', type: 'success' } }));
+        let message = 'New live data arrived!';
+        let toastType = 'success';
+        
+        if (payload?.type === 'new_transaction' && payload?.data) {
+           message = `New Payment Received: ₹${payload.data.amount} for ${payload.data.category.replace(/_/g, ' ')}`;
+        } else if (payload?.type === 'new_user' && payload?.data) {
+           message = `New user registered: ${payload.data.name}`;
+           toastType = 'info';
+        }
+
+        window.dispatchEvent(new CustomEvent('showToast', { detail: { message, type: toastType } }));
         fetchAllData();
       };
       
