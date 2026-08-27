@@ -144,6 +144,9 @@ export default function UtilityPage() {
            // If Eko strictly requires multiple fields, append them
            if (ekoFields.length > 1) {
               for (let i = 1; i < ekoFields.length; i++) {
+                 // Prevent duplicate if Eko returns 'amount'
+                 if (ekoFields[i].param_name.toLowerCase() === 'amount' && baseInputs.some((b: any) => b.param_name === 'amount')) continue;
+                 
                  baseInputs.push({
                     param_name: ekoFields[i].param_name,
                     param_label: ekoFields[i].param_label,
@@ -575,20 +578,6 @@ export default function UtilityPage() {
                   />
                 </div>
               ))}
-
-              {/* For operators without bill fetch (like DTH), show an amount field */}
-              {!supportsBillFetch && !isMobileRecharge && (
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Amount (₹)</label>
-                  <input 
-                    type="tel"
-                    value={formValues['amount'] || ''}
-                    onChange={(e) => setFormValues({...formValues, amount: e.target.value})}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D1B69] transition-all"
-                    placeholder="Enter amount"
-                  />
-                </div>
-              )}
             </div>
 
             {/* Inline Loading State for Plans */}
