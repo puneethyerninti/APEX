@@ -97,15 +97,22 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
                 }
             });
         } else {
+            let errorMsg = raw.message || 'Could not fetch bill';
+            if (errorMsg === 'No key for Response') {
+                errorMsg = 'No pending bill found for these details, or invalid account number.';
+            }
             res.status(400).json({ 
                 success: false, 
-                message: raw.message || 'Could not fetch bill',
+                message: errorMsg,
                 data: raw.data
             });
         }
     } catch (error: any) {
         console.error('Error in fetchBBPSBill:', error.response?.data || error.message);
-        const ekoMsg = error.response?.data?.message || error.message;
+        let ekoMsg = error.response?.data?.message || error.message;
+        if (ekoMsg === 'No key for Response') {
+            ekoMsg = 'No pending bill found for these details, or invalid account number.';
+        }
         res.status(500).json({ success: false, message: ekoMsg || 'Failed to fetch bill' });
     }
 };
