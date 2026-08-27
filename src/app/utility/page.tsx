@@ -5,6 +5,40 @@ import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/services/api';
 
+const getCategoryBehavior = (catName: string) => {
+  const name = (catName || '').toLowerCase();
+  
+  if (name.includes('mobile') && name.includes('prepaid')) {
+    return {
+      type: 'recharge',
+      supportsBillFetch: false,
+      inputs: [
+        { param_name: 'utility_acc_no', param_label: 'Mobile Number', type: 'Numeric', regex: '^[6-9][0-9]{9}$', error: 'Enter a valid 10-digit mobile number' }
+      ]
+    };
+  }
+  
+  if (name.includes('dth') || name.includes('cable')) {
+    return {
+      type: 'direct_pay',
+      supportsBillFetch: false,
+      inputs: [
+        { param_name: 'utility_acc_no', param_label: 'Subscriber ID / Account Number', type: 'AlphaNumeric', regex: '^.{3,30}$', error: 'Enter a valid Subscriber ID' },
+        { param_name: 'amount', param_label: 'Amount (₹)', type: 'Numeric', regex: '^[1-9][0-9]{0,4}$', error: 'Enter a valid amount' }
+      ]
+    };
+  }
+  
+  // Default for Electricity, Gas, Water, Postpaid, Broadband, FASTag, etc.
+  return {
+    type: 'fetch_bill',
+    supportsBillFetch: true,
+    inputs: [
+      { param_name: 'utility_acc_no', param_label: 'Consumer Number / Account ID', type: 'AlphaNumeric', regex: '^.{3,30}$', error: 'Enter a valid Consumer/Account Number' }
+    ]
+  };
+};
+
 export default function UtilityPage() {
   const router = useRouter();
   const user = useAppStore(state => state.user);
@@ -81,47 +115,49 @@ export default function UtilityPage() {
   // 3. Fetch Operator Parameters when Operator is selected
   const handleOperatorSelect = async (operator: any) => {
     setSelectedOperator(operator);
-    setOperatorParams([]);
     setFormValues({});
     setBillInfo(null);
     setRechargePlans(null);
     setPaySuccess(null);
-    setIsLoading(true);
     setErrorMsg(null);
+    
+    const behavior = getCategoryBehavior(selectedCategory?.operator_category_name);
+    setSupportsBillFetch(behavior.supportsBillFetch);
+    
+    // We clone the inputs so we don't mutate the base definition
+    const baseInputs = JSON.parse(JSON.stringify(behavior.inputs));
+    setOperatorParams(baseInputs);
+    
+    // Check Eko API in background just to extract real param names if they exist and are useful
+    setIsLoading(true);
     try {
       const res = await api.get(`/utility/bbps/operator/${operator.operator_id}/parameters`);
       if (res.data.success && res.data.data) {
-        const paramData = res.data.data;
-        let fields = paramData.list_elements || [];
-        
-        // Fallback for Eko Staging API missing parameters for certain operators
-        const catName = selectedCategory?.operator_category_name || '';
-        const isUtility = !!catName.match(/electric|water|gas|broadband|landline|fastag|insurance|loan|credit/i);
-        const isMobileRechargeLocal = !!catName.match(/mobile/i);
-        
-        if (fields.length === 0) {
-            fields = [{
-                param_name: 'utility_acc_no',
-                param_label: isMobileRechargeLocal ? 'Mobile Number' : (isUtility ? 'Consumer / Account Number' : 'Subscriber ID'),
-                param_type: 'AlphaNumeric'
-            }];
+        const ekoFields = res.data.data.list_elements || [];
+        if (ekoFields.length > 0) {
+           const primaryEko = ekoFields[0];
+           baseInputs[0].param_label = primaryEko.param_label || baseInputs[0].param_label;
+           baseInputs[0].param_name = primaryEko.param_name || baseInputs[0].param_name;
+           if (primaryEko.regex) baseInputs[0].regex = primaryEko.regex;
+           if (primaryEko.error_message) baseInputs[0].error = primaryEko.error_message;
+           
+           // If Eko strictly requires multiple fields, append them
+           if (ekoFields.length > 1) {
+              for (let i = 1; i < ekoFields.length; i++) {
+                 baseInputs.push({
+                    param_name: ekoFields[i].param_name,
+                    param_label: ekoFields[i].param_label,
+                    type: ekoFields[i].param_type,
+                    regex: ekoFields[i].regex,
+                    error: ekoFields[i].error_message
+                 });
+              }
+           }
+           setOperatorParams([...baseInputs]);
         }
-        
-        setOperatorParams(fields);
-        
-        // Force bill fetch support for standard utilities even if Eko staging misses the flag
-        if (paramData.fetchBill === 1 || isUtility) {
-            setSupportsBillFetch(true);
-        } else {
-            setSupportsBillFetch(false);
-        }
-        
-      } else {
-        throw new Error(res.data.message || 'Failed to load parameters');
       }
     } catch (error: any) {
-      console.error('Error fetching operator params:', error);
-      setErrorMsg('Failed to load form fields for this operator.');
+      console.warn('Eko params fetch failed, relying entirely on robust fallback UI.', error);
     } finally {
       setIsLoading(false);
     }
@@ -130,6 +166,22 @@ export default function UtilityPage() {
   // 4. Fetch Bill
   const handleFetchBill = async () => {
     if (!selectedOperator) return;
+    
+    // Strict Validation
+    for (const param of operatorParams) {
+       const val = formValues[param.param_name] || '';
+       if (!val) {
+          window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Please enter ${param.param_label}`, type: 'error' } }));
+          return;
+       }
+       if (param.regex) {
+          const rx = new RegExp(param.regex);
+          if (!rx.test(val)) {
+             window.dispatchEvent(new CustomEvent('showToast', { detail: { message: param.error || `Invalid ${param.param_label}`, type: 'error' } }));
+             return;
+          }
+       }
+    }
     
     const fetchPayload: any = {
       phone_operator_code: selectedOperator.operator_id.toString(),
@@ -278,20 +330,26 @@ export default function UtilityPage() {
   const handleDirectPay = async () => {
     if (!user?.uid || !selectedOperator) return;
     
-    const amountStr = formValues['amount'] || '';
-    if (!amountStr) {
-        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please enter amount', type: 'error' } }));
-        return;
+    // Strict Validation
+    for (const param of operatorParams) {
+       const val = formValues[param.param_name] || '';
+       if (!val) {
+          window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Please enter ${param.param_label}`, type: 'error' } }));
+          return;
+       }
+       if (param.regex) {
+          const rx = new RegExp(param.regex);
+          if (!rx.test(val)) {
+             window.dispatchEvent(new CustomEvent('showToast', { detail: { message: param.error || `Invalid ${param.param_label}`, type: 'error' } }));
+             return;
+          }
+       }
     }
-
+    
+    const amountStr = formValues['amount'] || '';
     const numAmount = parseFloat(amountStr);
     const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
     const accountNo = formValues[primaryParamName] || '';
-
-    if (!accountNo) {
-        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Please enter ${operatorParams[0]?.param_label || 'account number'}`, type: 'error' } }));
-        return;
-    }
 
     // Set fake bill info so Pay Bill flow works
     const fakeBill = {
