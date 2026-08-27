@@ -113,6 +113,8 @@ export default function UtilityPage() {
     
     const fetchPayload: any = {
       phone_operator_code: selectedOperator.operator_id.toString(),
+      confirmation_mobile_no: user?.phone || '9999999999', // Required by Eko API
+      source_ip: '127.0.0.1' // Required by Eko API
     };
 
     // Add all form values (param_name is the key)
