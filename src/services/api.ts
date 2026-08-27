@@ -3,7 +3,7 @@ import axios from 'axios';
 // Create a centralized Axios instance
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api', // Replace with your real backend URL
-  timeout: 10000,
+  timeout: 60000, // Increased to 60s to handle Render free-tier cold starts
   headers: {
     'Content-Type': 'application/json',
   },
