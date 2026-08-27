@@ -92,10 +92,30 @@ export default function UtilityPage() {
       const res = await api.get(`/utility/bbps/operator/${operator.operator_id}/parameters`);
       if (res.data.success && res.data.data) {
         const paramData = res.data.data;
-        const fields = paramData.list_elements || [];
+        let fields = paramData.list_elements || [];
+        
+        // Fallback for Eko Staging API missing parameters for certain operators
+        const catName = selectedCategory?.operator_category_name || '';
+        const isUtility = !!catName.match(/electric|water|gas|broadband|landline|fastag|insurance|loan|credit/i);
+        const isMobileRechargeLocal = !!catName.match(/mobile/i);
+        
+        if (fields.length === 0) {
+            fields = [{
+                param_name: 'utility_acc_no',
+                param_label: isMobileRechargeLocal ? 'Mobile Number' : (isUtility ? 'Consumer / Account Number' : 'Subscriber ID'),
+                param_type: 'AlphaNumeric'
+            }];
+        }
+        
         setOperatorParams(fields);
-        // Check if this operator supports bill fetch
-        setSupportsBillFetch(paramData.fetchBill === 1);
+        
+        // Force bill fetch support for standard utilities even if Eko staging misses the flag
+        if (paramData.fetchBill === 1 || isUtility) {
+            setSupportsBillFetch(true);
+        } else {
+            setSupportsBillFetch(false);
+        }
+        
       } else {
         throw new Error(res.data.message || 'Failed to load parameters');
       }
