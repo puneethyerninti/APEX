@@ -252,12 +252,27 @@ export default function UtilityPage() {
     
     const numAmount = parseFloat(currentBill.amount);
     setIsPaying(true);
+    
+    // Collect the primary account number for this operator
+    const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
+    const accountNo = formValues[primaryParamName] || '';
+    
     try {
         const orderRes = await api.post('/finance/razorpay/order', {
             amount: numAmount,
             userId: user.uid,
             category: 'bbps_payment',
-            serviceName: `BBPS - ${selectedOperator.name}`
+            serviceName: `BBPS - ${selectedOperator.name}`,
+            metadata: {
+                operatorCode: selectedOperator.operator_id,
+                operatorName: selectedOperator.name,
+                utility_acc_no: accountNo,
+                confirmation_mobile_no: user.phone || accountNo,
+                category: selectedCategory?.operator_category_id || 0,
+                utilitycustomername: currentBill.utilitycustomername || user.name || 'Customer',
+                client_ref_id: currentBill.client_ref_id || '',
+                formValues: formValues
+            }
         });
         
         const { order, keyId } = orderRes.data;
