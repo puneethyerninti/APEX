@@ -164,9 +164,10 @@ export const payBill = async (req: Request, res: Response) => {
                 amount: parseFloat(amount),
                 utilitycustomername: utilitycustomername || sender_name || 'Customer',
                 client_ref_id: refId,
-                source_ip: req.ip || '127.0.0.1',
+                source_ip: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || '1.1.1.1',
                 ...extraParams
             });
+
 
             // 3. Check result
             if (ekoResult.status === 0 || ekoResult.response_type_id === 333) {
@@ -296,6 +297,79 @@ export const handleUtilityRecharge = async (userId: string, metadata: any) => {
         }
     } catch (error: any) {
         console.error('Recharge failed:', error.message);
+        transaction.status = 'Failed';
+        await transaction.save();
+        throw error;
+    }
+};
+
+/**
+ * handleBBPSPayment - Called by financeController after Razorpay payment is verified
+ * for BBPS bill payments (Electricity, Water, Gas, Postpaid, DTH, Credit Card, etc.)
+ */
+export const handleBBPSPayment = async (userId: string, metadata: any) => {
+    const {
+        operatorCode,
+        operatorName,
+        utility_acc_no,
+        confirmation_mobile_no,
+        category,
+        utilitycustomername,
+        client_ref_id,
+        amount,
+        formValues
+    } = metadata;
+
+    if (!operatorCode || !utility_acc_no || !amount) {
+        throw new Error('Missing required BBPS payment fields in metadata');
+    }
+
+    const refId = client_ref_id || `ref_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`.substring(0, 20);
+
+    const transaction = new UtilityTransaction({
+        userId,
+        type: 'Bill Payment',
+        amount: parseFloat(amount),
+        operator: operatorName || operatorCode,
+        mobileOrAccountNumber: utility_acc_no,
+        status: 'Pending'
+    });
+    await transaction.save();
+
+    try {
+        const ekoResult = await payBBPSBill({
+            phone_operator_code: operatorCode.toString(),
+            utility_acc_no,
+            confirmation_mobile_no: confirmation_mobile_no || utility_acc_no,
+            sender_name: 'Customer',
+            category: parseInt(category) || 0,
+            amount: parseFloat(amount),
+            utilitycustomername: utilitycustomername || 'Customer',
+            client_ref_id: refId,
+            source_ip: '1.1.1.1',
+            ...(formValues || {})
+        });
+
+        if (ekoResult.status === 0 || ekoResult.response_type_id === 333) {
+            transaction.status = 'Success';
+            transaction.ekoTxId = ekoResult.data?.tid || refId;
+            await transaction.save();
+
+            await createNotification(
+                userId,
+                'Bill Payment Successful',
+                `Your bill payment of ₹${amount} for ${operatorName || operatorCode} was successful. TxID: ${transaction.ekoTxId}`,
+                'success'
+            );
+
+            return transaction;
+        } else {
+            transaction.status = 'Failed';
+            await transaction.save();
+            throw new Error(ekoResult.message || 'Bill payment failed at biller end');
+        }
+    } catch (error: any) {
+        console.error('handleBBPSPayment failed:', error.response?.data || error.message);
         transaction.status = 'Failed';
         await transaction.save();
         throw error;

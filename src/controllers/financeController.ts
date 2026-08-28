@@ -7,7 +7,7 @@ import { createNotification } from './notificationController';
 import { handleAPEXPlanUpgrade } from './userController';
 import { handleMatrimonyUpgrade } from './matrimonyController';
 import { handleTravelBooking } from './travelsController';
-import { handleUtilityRecharge } from './utilityController';
+import { handleUtilityRecharge, handleBBPSPayment } from './utilityController';
 import { handleAcademyEnrollment } from './academyController';
 // Razorpay will be instantiated dynamically to avoid crashing the server on startup if keys are missing
 let razorpayInstance: any = null;
@@ -220,6 +220,13 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
               break;
             case 'mobile_recharge':
               fulfillmentResult = await handleUtilityRecharge(transaction.user.toString(), metadata);
+              break;
+            case 'bbps_payment':
+              // DTH, Electricity, Gas, Water, Postpaid, Credit Card — route to Eko Pay API
+              fulfillmentResult = await handleBBPSPayment(transaction.user.toString(), {
+                ...metadata,
+                amount: transaction.amount
+              });
               break;
             case 'academy_enrollment':
               fulfillmentResult = await handleAcademyEnrollment(transaction.user.toString(), metadata);

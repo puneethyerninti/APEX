@@ -1,11 +1,15 @@
 import crypto from 'crypto';
 import axios from 'axios';
 
-// Environment Variables
-const EKO_DEV_KEY = process.env.EKO_DEV_KEY || '9a40fb2f68f06c86581737e05b58cd3e';
-const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY || 'd49acab3-ed93-4f44-a366-3ff6746dc58d';
-const EKO_INITIATOR_ID = process.env.EKO_INITIATOR_ID || '6303210224';
-const EKO_BASE_URL = process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici/v3';
+// ─── Eko Configuration (all from env vars — no hardcoded fallbacks) ─────────
+const EKO_DEV_KEY = process.env.EKO_DEV_KEY!;
+const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY!;
+const EKO_INITIATOR_ID = process.env.EKO_INITIATOR_ID!;
+const EKO_BASE_URL = (process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici/v3').replace(/\/$/, '');
+
+if (!EKO_DEV_KEY || !EKO_ACCESS_KEY || !EKO_INITIATOR_ID) {
+    console.error('CRITICAL: Eko API credentials missing! Set EKO_DEV_KEY, EKO_ACCESS_KEY, EKO_INITIATOR_ID on Render.');
+}
 
 /**
  * Generates Eko Authentication headers (HMAC-SHA256)
@@ -109,7 +113,7 @@ export const getOperatorCodeAndCircle = async (mobile: string) => {
 };
 
 /**
- * Fetch Mobile Recharge Plans
+ * Fetch Mobile Recharge Plans — returns all plan categories, filters out zero-price entries
  */
 export const fetchRechargePlans = async (mobile: string, phone_operator_code: string, circleid: string) => {
     const headers = getEkoHeaders();
@@ -126,50 +130,74 @@ export const fetchRechargePlans = async (mobile: string, phone_operator_code: st
         return [];
     }
 
-    const mappedPlans = reqListObj.value.map((plan: any, index: number) => ({
-        id: `plan_${plan.amount}_${index}`,
-        category: 'All Plans',
-        price: parseFloat(plan.amount),
-        data: plan.plan_description?.includes('GB') ? extractDataText(plan.plan_description) : 'N/A',
-        validity: plan.validity || 'N/A',
-        description: plan.plan_description || 'Recharge Plan'
-    }));
+    // Flatten all plans — handles both grouped [{category, list:[]}] and flat array formats
+    let allPlans: any[] = [];
+    const rawList = reqListObj.value;
+
+    if (Array.isArray(rawList)) {
+        if (rawList.length > 0 && rawList[0].list) {
+            // Category-grouped format
+            rawList.forEach((group: any) => {
+                if (Array.isArray(group.list)) {
+                    group.list.forEach((plan: any) => {
+                        allPlans.push({ ...plan, category_name: group.category || group.plan_name || 'General' });
+                    });
+                }
+            });
+        } else {
+            // Flat list format
+            allPlans = rawList.map((plan: any) => ({ ...plan, category_name: 'All Plans' }));
+        }
+    }
+
+    const mappedPlans = allPlans
+        .filter((plan: any) => parseFloat(plan.amount || plan.price || '0') > 0) // Remove ₹0 plans
+        .map((plan: any, index: number) => ({
+            id: `plan_${plan.amount || plan.price}_${index}`,
+            category: plan.category_name || 'All Plans',
+            price: parseFloat(plan.amount || plan.price || '0'),
+            data: extractDataText(plan.plan_description || plan.desc || ''),
+            validity: plan.validity || plan.plan_validity || 'N/A',
+            description: plan.plan_description || plan.desc || 'Recharge Plan'
+        }));
 
     return mappedPlans;
 };
 
 const extractDataText = (desc: string) => {
+    if (!desc) return 'N/A';
     const match = desc.match(/(\d+(\.\d+)?\s?(GB|MB)(\/day)?)/i);
-    return match ? match[0] : 'Check Description';
+    return match ? match[0] : 'N/A';
 };
 
 // ─── Bill Fetch & Pay ──────────────────────────────────────────────────
 
 /**
- * BBPS: Fetch Bill (Section 5 of PDF)
- * Requires: phone_operator_code, utility_acc_no, + operator-specific params
- * Returns bill data including amount and utilitycustomername
+ * BBPS: Fetch Bill (Section 5 of Eko PDF)
+ * Uses clean query string encoding — source_ip NOT needed for GET fetch.
  */
 export const fetchBill = async (params: any) => {
     const headers = getEkoHeaders();
-    
-    const queryParams = new URLSearchParams({
-        initiator_id: EKO_INITIATOR_ID,
-        ...params
+
+    // Build clean query string — skip empty/null values, don't send source_ip in GET
+    const queryParts: string[] = [`initiator_id=${encodeURIComponent(EKO_INITIATOR_ID)}`];
+    Object.entries(params).forEach(([key, val]) => {
+        if (key === 'source_ip') return; // Not needed for GET bill fetch
+        if (val !== undefined && val !== null && val !== '') {
+            queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(val))}`);
+        }
     });
 
-    const url = `${EKO_BASE_URL}/customer/payment/bbps/bill?${queryParams.toString()}`;
+    const url = `${EKO_BASE_URL}/customer/payment/bbps/bill?${queryParts.join('&')}`;
+    console.log('[EKO] fetchBill URL:', url);
     const response = await axios.get(url, { headers });
+    console.log('[EKO] fetchBill response:', JSON.stringify(response.data));
     return response.data;
 };
 
 /**
- * BBPS: Pay Bill / Process Recharge (Section 6 of PDF)
- * POST /customer/payment/bbps
- * 
- * Required fields per PDF:
- * - initiator_id, phone_operator_code, utility_acc_no, confirmation_mobile_no
- * - sender_name, category, amount, utilitycustomername, client_ref_id, source_ip
+ * BBPS: Pay Bill / Process Recharge (Section 6 of Eko PDF)
+ * POST endpoint. Requires request_hash for financial transactions.
  */
 export const payBBPSBill = async (params: {
     phone_operator_code: string;
