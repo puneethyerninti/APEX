@@ -66,6 +66,8 @@ export default function UtilityPage() {
   const [paySuccess, setPaySuccess] = useState<any>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
+  // Stores phone_operator_code + circleid returned by Eko when fetching plans
+  const [detectedMeta, setDetectedMeta] = useState<{ phone_operator_code: string; circleid: string } | null>(null);
 
   // 1. Fetch Categories on Mount
   useEffect(() => {
@@ -244,27 +246,92 @@ export default function UtilityPage() {
   const handleFetchPlans = async (overrideMobileNo?: string) => {
     if (!selectedOperator) return;
 
-    const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
-    const mobileNo = overrideMobileNo || formValues[primaryParamName] || '';
-
-    if (!mobileNo || mobileNo.length < 10) {
-      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Please enter a valid ${operatorParams[0]?.param_label || 'mobile number'} first to see plans`, type: 'error' } }));
-      return;
-    }
-
+  // Handle Plans fetch — stores detected operator meta for use in recharge
+  const handleFetchPlans = async (mobile: string) => {
+    if (!selectedOperator) return;
     setIsFetchingPlans(true);
+    setRechargePlans(null);
+    setDetectedMeta(null);
     try {
-      const res = await api.get(`/utility/plans?mobile=${mobileNo}`);
+      const res = await api.get(`/utility/plans?mobile=${mobile}`);
       if (res.data.success && res.data.data) {
         setRechargePlans(res.data.data);
+        // Store meta (phone_operator_code + circleid) for the recharge pay call
+        if (res.data.meta) {
+          setDetectedMeta(res.data.meta);
+        }
       } else {
-        throw new Error(res.data.message || 'Could not fetch plans');
+        setRechargePlans([]);
       }
     } catch (error: any) {
       console.error('Error fetching plans:', error);
       window.dispatchEvent(new CustomEvent('showToast', { detail: { message: error.response?.data?.message || 'Failed to fetch plans for this number.', type: 'error' } }));
     } finally {
       setIsFetchingPlans(false);
+    }
+  };
+
+  // Handle plan tap — creates Razorpay order with mobile_recharge category
+  const handlePlanPay = async (plan: any) => {
+    if (!user?.uid || !selectedOperator) return;
+    const mobile = formValues['utility_acc_no'] || '';
+    if (!mobile || mobile.length !== 10) {
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please enter a valid 10-digit mobile number first', type: 'error' } }));
+      return;
+    }
+    const numAmount = parseFloat(plan.price);
+    setIsPaying(true);
+    try {
+      const orderRes = await api.post('/finance/razorpay/order', {
+        amount: numAmount,
+        userId: user.uid,
+        category: 'mobile_recharge',
+        serviceName: `Recharge ₹${numAmount} - ${selectedOperator.name}`,
+        metadata: {
+          mobile,
+          operatorCode: detectedMeta?.phone_operator_code || selectedOperator.operator_id.toString(),
+          circleid: detectedMeta?.circleid || '',
+          amount: numAmount,
+          planDescription: plan.description,
+          operatorName: selectedOperator.name
+        }
+      });
+      const { order, keyId } = orderRes.data;
+      const options = {
+        key: keyId,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'APEX App',
+        description: `${selectedOperator.name} — ₹${numAmount} Recharge`,
+        order_id: order.id,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await api.post('/finance/razorpay/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              amount: numAmount,
+              userId: user.uid
+            });
+            if (verifyRes.data.success) {
+              setPaySuccess(verifyRes.data);
+              window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Recharge of ₹${numAmount} successful! ${plan.validity} plan activated.`, type: 'success' } }));
+            }
+          } catch (e: any) {
+            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: e.response?.data?.message || 'Recharge failed', type: 'error' } }));
+          } finally {
+            setIsPaying(false);
+          }
+        },
+        prefill: { name: user.name || 'APEX User', contact: user.phone || mobile },
+        theme: { color: '#2D1B69' },
+        modal: { ondismiss: () => setIsPaying(false) }
+      };
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    } catch (error: any) {
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: error.response?.data?.message || 'Payment gateway failed', type: 'error' } }));
+      setIsPaying(false);
     }
   };
 
@@ -462,7 +529,10 @@ export default function UtilityPage() {
     return 'BBPS Payments';
   };
 
-  const isMobileRecharge = selectedCategory?.operator_category_name?.toLowerCase().includes('mobile');
+  const isMobileRecharge = selectedCategory?.operator_category_name?.toLowerCase().includes('mobile') &&
+    selectedCategory?.operator_category_name?.toLowerCase().includes('prepaid');
+  const isDTH = selectedCategory?.operator_category_name?.toLowerCase().includes('dth') ||
+    selectedCategory?.operator_category_name?.toLowerCase().includes('cable');
 
   return (
     <>
@@ -635,18 +705,7 @@ export default function UtilityPage() {
                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Recommended Plans</h4>
                 <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
                   {rechargePlans.length > 0 ? rechargePlans.map((plan: any, idx: number) => (
-                    <div key={idx} className="border border-gray-100 rounded-xl p-4 bg-white hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer relative overflow-hidden group" onClick={() => {
-                      setFormValues({...formValues, amount: plan.price.toString()});
-                      
-                      // Directly proceed to pay for seamless flow
-                      const fakeBill = {
-                          amount: plan.price.toString(),
-                          utilitycustomername: user?.name || 'Customer',
-                          client_ref_id: `ref_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`
-                      };
-                      setBillInfo(fakeBill);
-                      handlePayBill(fakeBill);
-                    }}>
+                    <div key={idx} className="border border-gray-100 rounded-xl p-4 bg-white hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer relative overflow-hidden group" onClick={() => handlePlanPay(plan)}>
                       <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
                       <div className="flex justify-between items-start mb-2">
                         <div className="text-2xl font-black text-[#2D1B69]">₹{plan.price}</div>
@@ -682,12 +741,36 @@ export default function UtilityPage() {
 
             {/* Direct Pay button (for operators without bill fetch like DTH, hidden for mobile) */}
             {!billInfo && !supportsBillFetch && !isMobileRecharge && (
-              <button 
-                onClick={handleDirectPay} 
-                className="w-full mt-6 py-3.5 bg-[#2D1B69] text-white font-bold rounded-xl shadow-lg flex justify-center items-center gap-2 hover:bg-[#3D2587] transition-colors"
-              >
-                Proceed to Pay
-              </button>
+              <div className="mt-6 space-y-4">
+                {/* DTH: Quick-select preset recharge amounts */}
+                {isDTH && (
+                  <div>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Quick Recharge</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[100, 200, 300, 500, 1000, 1500, 2000, 3000].map(amt => (
+                        <button
+                          key={amt}
+                          onClick={() => setFormValues({...formValues, amount: amt.toString()})}
+                          className={`py-2 rounded-xl text-sm font-bold border-2 transition-all ${
+                            formValues['amount'] === amt.toString()
+                              ? 'bg-[#2D1B69] text-white border-[#2D1B69] shadow-md'
+                              : 'bg-white text-gray-700 border-gray-200 hover:border-[#2D1B69]'
+                          }`}
+                        >
+                          ₹{amt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={handleDirectPay}
+                  disabled={isPaying}
+                  className="w-full py-3.5 bg-[#2D1B69] text-white font-bold rounded-xl shadow-lg flex justify-center items-center gap-2 hover:bg-[#3D2587] transition-colors disabled:opacity-70"
+                >
+                  {isPaying ? <><i className="fa-solid fa-spinner fa-spin"></i> Processing...</> : 'Proceed to Pay'}
+                </button>
+              </div>
             )}
 
             {/* Step 4: Show Bill Info */}
