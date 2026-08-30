@@ -13,6 +13,29 @@ import {
 } from '../services/ekoService';
 import crypto from 'crypto';
 
+/**
+ * Maps Eko BBPS category name OR integer to the correct integer category code for the Pay API.
+ * Reference: Eko BBPS API documentation — operator_category_id values.
+ */
+const getCategoryNumber = (categoryNameOrId: string | number): number => {
+    if (typeof categoryNameOrId === 'number' && categoryNameOrId > 0) return categoryNameOrId;
+    const name = String(categoryNameOrId || '').toLowerCase();
+    if (name.includes('electric')) return 1;
+    if (name.includes('gas') || name.includes('lpg')) return 2;
+    if (name.includes('postpaid')) return 3;
+    if (name.includes('broadband') || name.includes('landline')) return 4;
+    if (name.includes('prepaid')) return 5;
+    if (name.includes('dth') || name.includes('cable')) return 6;
+    if (name.includes('water')) return 7;
+    if (name.includes('insurance')) return 14;
+    if (name.includes('credit card')) return 17;
+    if (name.includes('fastag')) return 22;
+    if (name.includes('loan') || name.includes('emi')) return 23;
+    if (name.includes('education')) return 29;
+    if (name.includes('municipal') || name.includes('tax')) return 30;
+    return 5; // Default: Mobile Prepaid
+};
+
 // ─── Discovery Endpoints ───────────────────────────────────────────────
 
 export const getCategories = async (req: Request, res: Response) => {
@@ -172,7 +195,7 @@ export const payBill = async (req: Request, res: Response) => {
                 utility_acc_no,
                 confirmation_mobile_no: confirmation_mobile_no || utility_acc_no,
                 sender_name: sender_name || 'Customer',
-                category: category || 0,
+                category: getCategoryNumber(category || operatorName || ''),
                 amount: parseFloat(amount),
                 utilitycustomername: utilitycustomername || sender_name || 'Customer',
                 client_ref_id: refId,
@@ -284,11 +307,11 @@ export const handleUtilityRecharge = async (userId: string, metadata: any) => {
             utility_acc_no: mobile,
             confirmation_mobile_no: mobile,
             sender_name: 'Customer',
-            category: 5, // Mobile Prepaid category
+            category: 5, // Mobile Prepaid
             amount: amount,
             utilitycustomername: 'Customer',
             client_ref_id: clientRefId,
-            source_ip: '127.0.0.1'
+            source_ip: '1.1.1.1'
         });
 
         if (ekoResult.status === 0 || ekoResult.response_type_id === 333) {
@@ -354,7 +377,7 @@ export const handleBBPSPayment = async (userId: string, metadata: any) => {
             utility_acc_no,
             confirmation_mobile_no: confirmation_mobile_no || utility_acc_no,
             sender_name: 'Customer',
-            category: parseInt(category) || 0,
+            category: getCategoryNumber(category || operatorName || ''),
             amount: parseFloat(amount),
             utilitycustomername: utilitycustomername || 'Customer',
             client_ref_id: refId,
