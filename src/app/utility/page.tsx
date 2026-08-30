@@ -124,53 +124,62 @@ export default function UtilityPage() {
     const behavior = getCategoryBehavior(selectedCategory?.operator_category_name);
     setSupportsBillFetch(behavior.supportsBillFetch);
     
-    // We clone the inputs so we don't mutate the base definition
+    // Start with base fallback inputs
     const baseInputs = JSON.parse(JSON.stringify(behavior.inputs));
     setOperatorParams(baseInputs);
     
-    // Check Eko API in background just to extract real param names if they exist and are useful
+    // For recharge type (prepaid), no need to fetch Eko params — use base inputs
+    if (behavior.type === 'recharge') {
+      setIsLoading(false);
+      return;
+    }
+    
+    // For all bill-based services: fetch the EXACT param_names from Eko
+    // These are critical — e.g. Axis Bank needs 'mobile_number' NOT 'utility_acc_no' as field 1
     setIsLoading(true);
     try {
       const res = await api.get(`/utility/bbps/operator/${operator.operator_id}/parameters`);
       if (res.data.success && res.data.data) {
-        const ekoFields = res.data.data.list_elements || [];
+        const ekoFields: any[] = res.data.data.list_elements || [];
+        
         if (ekoFields.length > 0) {
-           const primaryEko = ekoFields[0];
-           baseInputs[0].param_label = primaryEko.param_label || baseInputs[0].param_label;
-           baseInputs[0].param_name = primaryEko.param_name || baseInputs[0].param_name;
-           if (primaryEko.regex) baseInputs[0].regex = primaryEko.regex;
-           if (primaryEko.error_message) baseInputs[0].error = primaryEko.error_message;
-           
-           // If Eko strictly requires multiple fields, append them
-           if (ekoFields.length > 1) {
-              for (let i = 1; i < ekoFields.length; i++) {
-                 // Prevent duplicate if Eko returns 'amount'
-                 if (ekoFields[i].param_name.toLowerCase() === 'amount' && baseInputs.some((b: any) => b.param_name === 'amount')) continue;
-                 
-                 baseInputs.push({
-                    param_name: ekoFields[i].param_name,
-                    param_label: ekoFields[i].param_label,
-                    type: ekoFields[i].param_type,
-                    regex: ekoFields[i].regex,
-                    error: ekoFields[i].error_message
-                 });
-              }
-           }
-           setOperatorParams([...baseInputs]);
+          // Replace ALL base inputs with Eko's exact field definitions
+          // This ensures param_name keys match exactly what Eko expects in the bill fetch request
+          const ekoInputs = ekoFields
+            .filter((f: any) => f.param_name?.toLowerCase() !== 'amount') // amount is never user-entered for bill-fetch
+            .map((f: any) => ({
+              param_name: f.param_name,
+              param_label: f.param_label || f.param_name,
+              type: f.param_type || 'AlphaNumeric',
+              regex: f.regex || '',
+              error: f.error_message || `Please enter valid ${f.param_label}`
+            }));
+          
+          if (ekoInputs.length > 0) {
+            setOperatorParams(ekoInputs);
+          } else {
+            setOperatorParams(baseInputs);
+          }
+        }
+        
+        // Update bill fetch support based on what Eko actually says
+        const ekoFetchBill = res.data.data.fetchBill;
+        if (ekoFetchBill === 0) {
+          setSupportsBillFetch(false);
         }
       }
     } catch (error: any) {
-      console.warn('Eko params fetch failed, relying entirely on robust fallback UI.', error);
+      console.warn('Eko params fetch failed, using fallback UI.', error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 4. Fetch Bill
+  // 4. Fetch Bill — with graceful fallback when Eko biller is temporarily down
   const handleFetchBill = async () => {
     if (!selectedOperator) return;
     
-    // Strict Validation
+    // Strict Validation using Eko's exact regex
     for (const param of operatorParams) {
        const val = formValues[param.param_name] || '';
        if (!val) {
@@ -178,21 +187,21 @@ export default function UtilityPage() {
           return;
        }
        if (param.regex) {
-          const rx = new RegExp(param.regex);
-          if (!rx.test(val)) {
-             window.dispatchEvent(new CustomEvent('showToast', { detail: { message: param.error || `Invalid ${param.param_label}`, type: 'error' } }));
-             return;
-          }
+          try {
+            const rx = new RegExp(param.regex);
+            if (!rx.test(val)) {
+               window.dispatchEvent(new CustomEvent('showToast', { detail: { message: param.error || `Invalid ${param.param_label}`, type: 'error' } }));
+               return;
+            }
+          } catch (e) { /* Ignore bad regex patterns from Eko */ }
        }
     }
     
+    // Build payload using exact Eko param_names as keys
     const fetchPayload: any = {
       phone_operator_code: selectedOperator.operator_id.toString(),
-      confirmation_mobile_no: user?.phone || '9999999999', // Required by Eko API
-      source_ip: '127.0.0.1' // Required by Eko API
+      confirmation_mobile_no: user?.phone || '9999999999',
     };
-
-    // Add all form values (param_name is the key)
     Object.entries(formValues).forEach(([key, value]) => {
       if (value.trim()) fetchPayload[key] = value.trim();
     });
@@ -207,8 +216,25 @@ export default function UtilityPage() {
         throw new Error(res.data.message || 'Could not fetch bill');
       }
     } catch (error: any) {
-      console.error('Error fetching bill:', error);
-      setErrorMsg(error.response?.data?.message || error.message || 'Failed to fetch bill. Check the details and try again.');
+      const msg: string = error.response?.data?.message || error.message || '';
+      const isServerDown = msg.toLowerCase().includes('server is down') || 
+                           msg.toLowerCase().includes('unable to fetch') ||
+                           msg.toLowerCase().includes('biller') ||
+                           msg.toLowerCase().includes('no pending bill');
+      
+      if (isServerDown) {
+        // Eko's biller is temporarily down — let user pay with manual amount
+        setErrorMsg(`Biller's server is temporarily unavailable. You can still pay by entering the amount manually.`);
+        // Show manual amount entry fallback
+        setSupportsBillFetch(false);
+        setOperatorParams(prev => {
+          const hasAmount = prev.some(p => p.param_name === 'amount');
+          if (hasAmount) return prev;
+          return [...prev, { param_name: 'amount', param_label: 'Amount (₹)', type: 'Numeric', regex: '^[1-9][0-9]{0,5}$', error: 'Enter a valid amount' }];
+        });
+      } else {
+        setErrorMsg(msg || 'Failed to fetch bill. Please check your details and try again.');
+      }
     } finally {
       setIsFetchingBill(false);
     }
