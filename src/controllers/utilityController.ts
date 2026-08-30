@@ -65,7 +65,7 @@ export const getOperatorParams = async (req: Request, res: Response) => {
     }
 };
 
-// ─── Bill Fetch ────────────────────────────────────────────────────────
+// ─── Bill Fetch ──────────────────────────────────────────────────────
 
 export const fetchBBPSBill = async (req: Request, res: Response) => {
     try {
@@ -74,7 +74,6 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, message: 'phone_operator_code is required' });
         }
 
-        // Generate a unique client_ref_id that will be reused in Pay Bill
         const client_ref_id = `ref_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`.substring(0, 20);
 
         const raw = await fetchBill({
@@ -83,8 +82,9 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
             ...otherParams
         });
 
+        console.log('[fetchBBPSBill] Eko response:', JSON.stringify(raw));
+
         if (raw.status === 0 && raw.data) {
-            // Return bill data + the client_ref_id for reuse in Pay Bill
             res.status(200).json({ 
                 success: true, 
                 data: {
@@ -97,21 +97,33 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
                 }
             });
         } else {
+            // Map Eko error codes to user-friendly messages
             let errorMsg = raw.message || 'Could not fetch bill';
+            const data = raw.data || {};
+            
             if (errorMsg === 'No key for Response') {
-                errorMsg = 'No pending bill found for these details, or invalid account number.';
+                errorMsg = 'No pending bill found, or invalid account number.';
+            } else if (errorMsg === 'Unable to fetch bill' || data.reason?.includes('server is down')) {
+                errorMsg = `Biller's server is temporarily unavailable (${data.reason || 'HGPay down'}). Please try again later or pay manually.`;
+            } else if (raw.status === 97 && raw.invalid_params) {
+                // Eko parameter validation error — pass field-level errors
+                const fields = Object.values(raw.invalid_params).join(', ');
+                errorMsg = `Invalid input: ${fields}`;
             }
+            
             res.status(400).json({ 
                 success: false, 
                 message: errorMsg,
+                ekoStatus: raw.status,
                 data: raw.data
             });
         }
     } catch (error: any) {
         console.error('Error in fetchBBPSBill:', error.response?.data || error.message);
-        let ekoMsg = error.response?.data?.message || error.message;
+        const ekoData = error.response?.data || {};
+        let ekoMsg = ekoData.message || error.message;
         if (ekoMsg === 'No key for Response') {
-            ekoMsg = 'No pending bill found for these details, or invalid account number.';
+            ekoMsg = 'No pending bill found, or invalid account number.';
         }
         res.status(500).json({ success: false, message: ekoMsg || 'Failed to fetch bill' });
     }
