@@ -242,10 +242,6 @@ export default function UtilityPage() {
     }
   };
 
-  // 4b. Fetch Recharge Plans (for prepaid/postpaid without bill fetch)
-  const handleFetchPlans = async (overrideMobileNo?: string) => {
-    if (!selectedOperator) return;
-
   // Handle Plans fetch — stores detected operator meta for use in recharge
   const handleFetchPlans = async (mobile: string) => {
     if (!selectedOperator) return;
