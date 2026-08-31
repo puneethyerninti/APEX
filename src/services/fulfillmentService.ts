@@ -6,6 +6,7 @@ import { handleTravelBooking } from '../controllers/travelsController';
 import { handleUtilityRecharge, handleBBPSPayment } from '../controllers/utilityController';
 import { handleAcademyEnrollment } from '../controllers/academyController';
 import { createNotification } from '../controllers/notificationController';
+import { getRazorpay } from '../controllers/financeController';
 
 /**
  * Centralized, idempotent fulfillment handler for completed payments.
@@ -114,12 +115,55 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
     return fulfillmentResult;
   } catch (error: any) {
     console.error(`[Fulfillment] Error fulfilling transaction ${transaction._id}:`, error);
+    
+    let refundInfo: any = null;
+
+    // Auto-Refund Mechanism
+    if (transaction.razorpayPaymentId) {
+      console.log(`[Fulfillment] Auto-refunding payment ${transaction.razorpayPaymentId} due to fulfillment failure.`);
+      try {
+        const razorpay = getRazorpay();
+        // Amount must be in paise
+        const refund = await razorpay.payments.refund(transaction.razorpayPaymentId, {
+          amount: Math.round(transaction.amount * 100),
+          notes: {
+            reason: 'Biller/Service failure',
+            transactionId: transaction._id.toString()
+          }
+        });
+        
+        refundInfo = {
+          refundId: refund.id,
+          refundedAt: new Date(),
+          status: 'Refunded'
+        };
+        console.log(`[Fulfillment] Refund successful: ${refund.id}`);
+
+        // Notify user about the refund
+        await createNotification(
+          userIdStr,
+          'Payment Refunded',
+          `Your payment of ₹${transaction.amount} has been refunded because the service could not be delivered.`,
+          'info'
+        );
+      } catch (refundError: any) {
+        console.error(`[Fulfillment] CRITICAL: Auto-refund failed for ${transaction.razorpayPaymentId}:`, refundError);
+        refundInfo = {
+          status: 'Refund_Failed',
+          refundError: refundError.message
+        };
+      }
+    }
+
     await Transaction.findByIdAndUpdate(transaction._id, {
       $set: {
+        status: refundInfo?.status === 'Refunded' ? 'refunded' : 'failed',
         'metadata.fulfillmentError': error.message,
-        'metadata.fulfillmentFailedAt': new Date()
+        'metadata.fulfillmentFailedAt': new Date(),
+        ...(refundInfo && { 'metadata.refundInfo': refundInfo })
       }
     });
+
     throw error;
   }
 };

@@ -8,7 +8,7 @@ import { fulfillOrder } from '../services/fulfillmentService';
 // Razorpay will be instantiated dynamically to avoid crashing the server on startup if keys are missing
 let razorpayInstance: any = null;
 
-const getRazorpay = () => {
+export const getRazorpay = () => {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     throw new Error("Razorpay keys missing");
   }
