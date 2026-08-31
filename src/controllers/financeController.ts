@@ -4,11 +4,7 @@ import Transaction from '../models/Transaction';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { createNotification } from './notificationController';
-import { handleAPEXPlanUpgrade } from './userController';
-import { handleMatrimonyUpgrade } from './matrimonyController';
-import { handleTravelBooking } from './travelsController';
-import { handleUtilityRecharge, handleBBPSPayment } from './utilityController';
-import { handleAcademyEnrollment } from './academyController';
+import { fulfillOrder } from '../services/fulfillmentService';
 // Razorpay will be instantiated dynamically to avoid crashing the server on startup if keys are missing
 let razorpayInstance: any = null;
 
@@ -200,64 +196,29 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
       );
 
       if (transaction) {
-        let fulfillmentResult = null;
-        const metadata = transaction.metadata || {};
-
-        // Secure Server-Side Fulfillment
         try {
-          switch(transaction.category) {
-            case 'add_money':
-              await User.findByIdAndUpdate(transaction.user, { $inc: { walletBalance: transaction.amount } });
-              break;
-            case 'matrimony':
-              fulfillmentResult = await handleMatrimonyUpgrade(transaction.user.toString(), metadata.plan || transaction.referenceId?.replace('Matrimony ', '').replace(' Plan', ''));
-              break;
-            case 'subscription':
-              fulfillmentResult = await handleAPEXPlanUpgrade(transaction.user.toString(), metadata.plan || transaction.referenceId);
-              break;
-            case 'travel_booking':
-              fulfillmentResult = await handleTravelBooking(transaction.user.toString(), metadata);
-              break;
-            case 'mobile_recharge':
-              fulfillmentResult = await handleUtilityRecharge(transaction.user.toString(), metadata);
-              break;
-            case 'bbps_payment':
-              // DTH, Electricity, Gas, Water, Postpaid, Credit Card — route to Eko Pay API
-              fulfillmentResult = await handleBBPSPayment(transaction.user.toString(), {
-                ...metadata,
-                amount: transaction.amount
-              });
-              break;
-            case 'academy_enrollment':
-              fulfillmentResult = await handleAcademyEnrollment(transaction.user.toString(), metadata);
-              break;
-            case 'charity':
-              // Charity just takes money, no fulfillment required
-              break;
-          }
-
-          // Global success notification
-          await createNotification(
-            transaction.user.toString(),
-            'Payment Successful',
-            `Your payment of ₹${transaction.amount} for ${transaction.referenceId || transaction.category} was successful.`,
-            'success'
-          );
-
-          const io = req.app.get('io');
-          if (io) {
-              io.to('admin_room').emit('admin_data_refresh', { type: 'new_transaction', data: transaction });
-          }
-          
-          return res.json({ success: true, message: "Payment verified successfully", fulfillmentData: fulfillmentResult, category: transaction.category });
+          const fulfillmentResult = await fulfillOrder(transaction, req.app.get('io'));
+          return res.json({ 
+            success: true, 
+            message: "Payment verified and fulfilled successfully", 
+            fulfillmentData: fulfillmentResult, 
+            category: transaction.category 
+          });
         } catch (fulfillmentError: any) {
-           console.error("Fulfillment failed after successful payment:", fulfillmentError);
-           // NOTE: In a robust production system, if fulfillment fails after payment, you would either queue it for retry or auto-refund the user.
-           return res.status(500).json({ error: 'Payment verified, but failed to deliver service.', details: fulfillmentError.message });
+          console.error("Fulfillment failed after successful payment:", fulfillmentError);
+          return res.status(500).json({ 
+            error: 'Payment verified, but failed to deliver service.', 
+            details: fulfillmentError.message 
+          });
         }
       } else {
-        // Transaction was already completed or not found
-        return res.json({ success: true, message: "Payment already verified" });
+        // Transaction was already completed (e.g. by webhook) - check if fulfilled
+        const existingTx = await Transaction.findOne({ razorpayOrderId: razorpay_order_id });
+        if (existingTx && !existingTx.metadata?.fulfilled) {
+          const fulfillmentResult = await fulfillOrder(existingTx, req.app.get('io'));
+          return res.json({ success: true, message: "Payment fulfilled successfully", fulfillmentData: fulfillmentResult });
+        }
+        return res.json({ success: true, message: "Payment already verified and fulfilled" });
       }
     } else {
       res.status(400).json({ success: false, error: "Invalid signature" });

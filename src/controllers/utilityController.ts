@@ -20,19 +20,31 @@ import crypto from 'crypto';
 const getCategoryNumber = (categoryNameOrId: string | number): number => {
     if (typeof categoryNameOrId === 'number' && categoryNameOrId > 0) return categoryNameOrId;
     const name = String(categoryNameOrId || '').toLowerCase();
-    if (name.includes('electric')) return 1;
-    if (name.includes('gas') || name.includes('lpg')) return 2;
-    if (name.includes('postpaid')) return 3;
-    if (name.includes('broadband') || name.includes('landline')) return 4;
+    if (name.includes('broadband')) return 1;
+    if (name.includes('lpg') || name.includes('cylinder')) return 18;
+    if (name.includes('gas')) return 2;
+    if (name.includes('dth') || name.includes('cable tv')) return 4;
     if (name.includes('prepaid')) return 5;
-    if (name.includes('dth') || name.includes('cable')) return 6;
-    if (name.includes('water')) return 7;
-    if (name.includes('insurance')) return 14;
-    if (name.includes('credit card')) return 17;
+    if (name.includes('credit card')) return 7;
+    if (name.includes('electric')) return 8;
+    if (name.includes('landline')) return 9;
+    if (name.includes('postpaid')) return 10;
+    if (name.includes('water')) return 11;
+    if (name.includes('housing')) return 12;
+    if (name.includes('subscription')) return 13;
+    if (name.includes('education')) return 14;
+    if (name.includes('municipal tax')) return 15;
+    if (name.includes('club') || name.includes('association')) return 16;
+    if (name.includes('cable')) return 17;
+    if (name.includes('hospital')) return 19;
+    if (name.includes('insurance')) return 20;
+    if (name.includes('loan') || name.includes('emi')) return 21;
     if (name.includes('fastag')) return 22;
-    if (name.includes('loan') || name.includes('emi')) return 23;
-    if (name.includes('education')) return 29;
-    if (name.includes('municipal') || name.includes('tax')) return 30;
+    if (name.includes('municipal serv')) return 23;
+    if (name.includes('rental')) return 24;
+    if (name.includes('tax')) return 6;
+    if (name.includes('challan')) return 27;
+    if (name.includes('ev recharge')) return 30;
     return 5; // Default: Mobile Prepaid
 };
 
@@ -283,7 +295,7 @@ export const getPlans = async (req: Request, res: Response) => {
  * Handle recharge triggered after Razorpay payment verification
  */
 export const handleUtilityRecharge = async (userId: string, metadata: any) => {
-    const { mobile, amount, operatorCode } = metadata;
+    const { mobile, amount, operatorCode, circleid, planDescription, razorpayOrderId, razorpayPaymentId, operatorName } = metadata;
     
     if (!mobile || !amount || !operatorCode || !userId) {
         throw new Error('Missing required fields');
@@ -294,10 +306,15 @@ export const handleUtilityRecharge = async (userId: string, metadata: any) => {
     const transaction = new UtilityTransaction({
         userId,
         type: 'Mobile Recharge',
-        amount,
-        operator: operatorCode,
+        amount: parseFloat(amount),
+        operator: operatorName || operatorCode,
         mobileOrAccountNumber: mobile,
-        status: 'Pending'
+        clientRefId,
+        razorpayOrderId,
+        razorpayPaymentId,
+        planDescription,
+        status: 'Pending',
+        metadata: { circleid, operatorCode, operatorName }
     });
     await transaction.save();
 
@@ -352,6 +369,8 @@ export const handleBBPSPayment = async (userId: string, metadata: any) => {
         utilitycustomername,
         client_ref_id,
         amount,
+        razorpayOrderId,
+        razorpayPaymentId,
         formValues
     } = metadata;
 
@@ -367,7 +386,11 @@ export const handleBBPSPayment = async (userId: string, metadata: any) => {
         amount: parseFloat(amount),
         operator: operatorName || operatorCode,
         mobileOrAccountNumber: utility_acc_no,
-        status: 'Pending'
+        clientRefId: refId,
+        razorpayOrderId,
+        razorpayPaymentId,
+        status: 'Pending',
+        metadata: { ...formValues, category, utilitycustomername }
     });
     await transaction.save();
 

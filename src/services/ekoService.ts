@@ -221,6 +221,14 @@ export const payBBPSBill = async (params: {
         ...params
     };
 
-    const response = await axios.post(url, payload, { headers });
-    return response.data;
+    console.log(`[EKO Pay] Calling Eko POST /customer/payment/bbps for account: ${params.utility_acc_no}, amount: ₹${params.amount}, operator: ${params.phone_operator_code}, category: ${params.category}, client_ref_id: ${params.client_ref_id}`);
+    
+    try {
+        const response = await axios.post(url, payload, { headers });
+        console.log(`[EKO Pay] Response received: Status ${response.status}`, JSON.stringify(response.data));
+        return response.data;
+    } catch (error: any) {
+        console.error(`[EKO Pay] Error from Eko API:`, error.response?.status, JSON.stringify(error.response?.data || error.message));
+        throw error;
+    }
 };

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import Transaction from '../models/Transaction';
-import User from '../models/User';
+import { fulfillOrder } from '../services/fulfillmentService';
 
 export const handleRazorpayWebhook = async (req: Request, res: Response) => {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
@@ -37,7 +37,7 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
       const razorpayPaymentId = paymentEntity.id;
       
       // Idempotency check: Find pending transaction and complete it
-      const transaction = await Transaction.findOneAndUpdate(
+      let transaction = await Transaction.findOneAndUpdate(
         { razorpayOrderId: razorpayOrderId, status: 'pending' },
         { 
           status: 'completed',
@@ -48,14 +48,16 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
         { new: true }
       );
 
+      if (!transaction) {
+        transaction = await Transaction.findOne({ razorpayOrderId: razorpayOrderId });
+      }
+
       if (transaction) {
-        // Credit the wallet
-        await User.findByIdAndUpdate(transaction.user, {
-          $inc: { walletBalance: transaction.amount }
-        });
-        console.log(`Webhook: Successfully credited wallet for order ${razorpayOrderId}`);
+        // Execute centralized fulfillment for this category
+        await fulfillOrder(transaction, req.app.get('io'));
+        console.log(`Webhook: Successfully processed fulfillment for order ${razorpayOrderId} (${transaction.category})`);
       } else {
-        console.log(`Webhook: Transaction for order ${razorpayOrderId} not found or already completed`);
+        console.log(`Webhook: Transaction for order ${razorpayOrderId} not found`);
       }
     } else if (event === 'payment.failed') {
       const paymentEntity = payload.payment.entity;
