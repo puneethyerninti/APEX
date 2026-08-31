@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academy | APEX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: { colors: { apex: { purple: '#6C3FC5', purplelight: '#EDE9FF', green: '#16a34a' } }, fontFamily: { sans: ['Inter', 'sans-serif'] } }
+            }
+        }
+    </script>
+</head>
+<body class="font-sans antialiased bg-slate-900 flex justify-center">
+<div class="w-full max-w-md bg-[#F4F6FB] min-h-screen relative shadow-2xl border-x border-slate-800 pb-20 overflow-x-clip">
+    
+    <!-- HEADER -->
+    <div class="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <h1 class="font-black text-lg text-gray-900">APEX Academy</h1>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="showToast('Search courses overlay coming soon!')" class="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+            <button onclick="showToast('Your saved courses')" class="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
+                <i class="fa-solid fa-bookmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- HERO DASHBOARD -->
+    <div class="p-4">
+        <h2 class="text-sm font-black text-gray-800 mb-2">Continue Learning</h2>
+        <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex gap-3 items-center">
+            <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 text-xl flex-shrink-0">
+                <i class="fa-brands fa-python"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="font-bold text-gray-900 text-xs mb-1">Advanced Python Masterclass</h3>
+                <p class="text-[9px] text-gray-500 mb-2">Instructor: Dr. Sarah Jenkins</p>
+                <div class="w-full bg-gray-100 rounded-full h-1.5 mb-1">
+                    <div class="bg-purple-600 h-1.5 rounded-full" style="width: 65%"></div>
+                </div>
+                <p class="text-[8px] font-bold text-gray-400 text-right">65% Completed</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- COURSES SECTION -->
+    <div class="mb-6">
+        <div class="px-4 flex justify-between items-end mb-3">
+            <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider">Courses</h3>
+            <a href="#" class="text-[9px] font-bold text-purple-600">View All</a>
+        </div>
+        <div class="flex gap-3 overflow-x-auto px-4 scrollbar-none flex-nowrap pb-2">
+            
+            <!-- Spoken English -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 w-36 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                <div class="h-24 bg-purple-50 relative flex items-center justify-center text-purple-500 text-3xl">
+                    <i class="fa-solid fa-comments"></i>
+                </div>
+                <div class="p-3">
+                    <h4 class="font-black text-[10px] text-gray-900 truncate mb-1">Spoken English</h4>
+                    <p class="text-[9px] text-gray-500 mb-2 truncate">Fluency & Grammar</p>
+                    <span class="text-purple-600 font-black text-xs">&#8377;999</span>
+                </div>
+            </div>
+
+            <!-- Spoken Hindi -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 w-36 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                <div class="h-24 bg-orange-50 relative flex items-center justify-center text-orange-500 text-3xl">
+                    <i class="fa-solid fa-language"></i>
+                </div>
+                <div class="p-3">
+                    <h4 class="font-black text-[10px] text-gray-900 truncate mb-1">Spoken Hindi</h4>
+                    <p class="text-[9px] text-gray-500 mb-2 truncate">Conversational Skills</p>
+                    <span class="text-purple-600 font-black text-xs">&#8377;799</span>
+                </div>
+            </div>
+
+            <!-- Computer Courses -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 w-36 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                <div class="h-24 bg-blue-50 relative flex items-center justify-center text-blue-500 text-3xl">
+                    <i class="fa-solid fa-desktop"></i>
+                </div>
+                <div class="p-3">
+                    <h4 class="font-black text-[10px] text-gray-900 truncate mb-1">Computer Courses</h4>
+                    <p class="text-[9px] text-gray-500 mb-2 truncate">MS Office, Tally, Basics</p>
+                    <span class="text-purple-600 font-black text-xs">&#8377;1200</span>
+                </div>
+            </div>
+            
+            <!-- Competitive Exam Courses -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 w-36 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                <div class="h-24 bg-green-50 relative flex items-center justify-center text-green-500 text-3xl">
+                    <i class="fa-solid fa-book-open-reader"></i>
+                </div>
+                <div class="p-3">
+                    <h4 class="font-black text-[10px] text-gray-900 truncate mb-1">Competitive Exams</h4>
+                    <p class="text-[9px] text-gray-500 mb-2 truncate">SSC, Bank, Railways</p>
+                    <span class="text-purple-600 font-black text-xs">&#8377;1500</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- JOB ORIENTED COURSES -->
+    <div class="mb-8">
+        <div class="px-4 flex justify-between items-end mb-3">
+            <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider">Job Oriented Courses</h3>
+            <a href="#" class="text-[9px] font-bold text-purple-600">View All</a>
+        </div>
+        <div class="flex gap-3 overflow-x-auto px-4 scrollbar-none flex-nowrap pb-2">
+            
+            <!-- Full Stack -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 w-56 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                <div class="h-32 relative bg-gray-200">
+                    <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80" alt="Coding" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/30"></div>
+                    <div class="absolute top-2 right-2 bg-red-500 text-white text-[8px] font-bold px-2 py-0.5 rounded">HOT</div>
+                    <div class="absolute inset-0 flex items-center justify-center text-white/80 text-4xl">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <h4 class="font-black text-xs text-gray-900 truncate mb-1">Full-Stack Web Development</h4>
+                    <p class="text-[10px] text-gray-500 mb-3">HTML, CSS, JS, React, Node.js & More. 100% Placement Assistance.</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-purple-600 font-black text-sm">&#8377;9,999</span>
+                        <button class="bg-purple-100 text-purple-700 text-[9px] font-bold px-3 py-1.5 rounded-lg hover:bg-purple-200 transition-colors">Enroll Now</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Data Science -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 w-56 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                <div class="h-32 relative bg-gray-200">
+                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80" alt="Data Science" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/30"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-white/80 text-4xl">
+                        <i class="fa-solid fa-database"></i>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <h4 class="font-black text-xs text-gray-900 truncate mb-1">Data Science & AI/ML</h4>
+                    <p class="text-[10px] text-gray-500 mb-3">Python, Pandas, Machine Learning. Build your career in AI.</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-purple-600 font-black text-sm">&#8377;12,499</span>
+                        <button class="bg-purple-100 text-purple-700 text-[9px] font-bold px-3 py-1.5 rounded-lg hover:bg-purple-200 transition-colors">Enroll Now</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mobile App Dev -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 w-56 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                <div class="h-32 relative bg-gray-200">
+                    <img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&q=80" alt="Mobile App" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/30"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-white/80 text-4xl">
+                        <i class="fa-brands fa-app-store-ios"></i>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <h4 class="font-black text-xs text-gray-900 truncate mb-1">Mobile App Development</h4>
+                    <p class="text-[10px] text-gray-500 mb-3">Learn Flutter & React Native. Build iOS and Android apps.</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-purple-600 font-black text-sm">&#8377;8,999</span>
+                        <button class="bg-purple-100 text-purple-700 text-[9px] font-bold px-3 py-1.5 rounded-lg hover:bg-purple-200 transition-colors">Enroll Now</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Digital Marketing -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 w-56 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+                <div class="h-32 relative bg-gray-200">
+                    <img src="https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&fit=crop&q=80" alt="Digital Marketing" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/30"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-white/80 text-4xl">
+                        <i class="fa-solid fa-bullhorn"></i>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <h4 class="font-black text-xs text-gray-900 truncate mb-1">Digital Marketing Masterclass</h4>
+                    <p class="text-[10px] text-gray-500 mb-3">SEO, SEM, Social Media, Analytics. Become an expert marketer.</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-purple-600 font-black text-sm">&#8377;7,999</span>
+                        <button class="bg-purple-100 text-purple-700 text-[9px] font-bold px-3 py-1.5 rounded-lg hover:bg-purple-200 transition-colors">Enroll Now</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- STICKY BOTTOM ACTION -->
+    <div class="fixed bottom-0 w-full max-w-md bg-white border-t border-gray-100 p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40">
+        <button onclick="showToast('Opening course catalog...')" class="w-full bg-purple-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-purple-700 transition-colors text-sm">
+            Browse All Courses
+        </button>
+    </div>
+
+</div>
+
+<script>
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg z-[100] transform transition-all duration-300 opacity-0 translate-y-[-20px]';
+        toast.innerHTML = `<i class="fa-solid fa-check-circle mr-2 text-purple-400"></i>${message}`;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.remove('opacity-0', 'translate-y-[-20px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+        }, 10);
+        
+        setTimeout(() => {
+            toast.classList.remove('opacity-100', 'translate-y-0');
+            toast.classList.add('opacity-0', 'translate-y-[-20px]');
+            setTimeout(() => toast.remove(), 300);
+        }, 2500);
+    }
+
+    // Attach enrollCourse to all Enroll Now buttons
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('button').forEach(btn => {
+            if(btn.innerText.includes('Enroll Now')) {
+                btn.onclick = function() {
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                    this.disabled = true;
+                    
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Enrolled';
+                        this.classList.add('bg-green-100', 'text-green-700');
+                        this.classList.remove('bg-purple-100', 'text-purple-700');
+                        showToast("Successfully enrolled in course!");
+                        
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                            this.disabled = false;
+                            this.classList.remove('bg-green-100', 'text-green-700');
+                            this.classList.add('bg-purple-100', 'text-purple-700');
+                        }, 3000);
+                    }, 1500);
+                };
+            }
+        });
+    });
+</script>
+</body>
+</html>

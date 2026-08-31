@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charity | APEX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: { colors: { apex: { purple: '#6C3FC5', purplelight: '#EDE9FF', green: '#16a34a' } }, fontFamily: { sans: ['Inter', 'sans-serif'] } }
+            }
+        }
+    </script>
+</head>
+<body class="font-sans antialiased bg-slate-900 flex justify-center">
+<div class="w-full max-w-md bg-[#F4F6FB] min-h-screen relative shadow-2xl overflow-x-hidden border-x border-slate-800 pb-20">
+    
+    <!-- HEADER -->
+    <div class="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <h1 class="font-black text-lg text-gray-900">APEX Foundation</h1>
+        </div>
+        <button class="w-8 h-8 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center">
+            <i class="fa-solid fa-share-nodes"></i>
+        </button>
+    </div>
+
+    <!-- HERO DASHBOARD -->
+    <div class="p-4">
+        <div class="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden text-center">
+            <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+            <div class="relative z-10">
+                <p class="text-orange-100 text-[10px] font-bold uppercase tracking-widest mb-2">APEX Community Impact</p>
+                <h2 class="text-4xl font-black mb-1">2.4M+</h2>
+                <p class="text-[11px] font-bold text-white mb-4">Lives touched this year.</p>
+                <p class="text-[9px] text-orange-100 px-4">100% of your donations go directly to the causes you care about. We cover all platform fees.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CATEGORY GRID -->
+    <div class="px-4 mb-5">
+        <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Support a Cause</h3>
+        <div class="grid grid-cols-4 gap-3">
+            <button class="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-blue-500 text-lg"><i class="fa-solid fa-book-open"></i></div>
+                <span class="text-[9px] font-bold text-gray-600">Education</span>
+            </button>
+            <button class="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-rose-500 text-lg"><i class="fa-solid fa-notes-medical"></i></div>
+                <span class="text-[9px] font-bold text-gray-600">Healthcare</span>
+            </button>
+            <button class="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-green-500 text-lg"><i class="fa-solid fa-tree"></i></div>
+                <span class="text-[9px] font-bold text-gray-600">Environment</span>
+            </button>
+            <button class="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
+                <div class="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-orange-500 text-lg"><i class="fa-solid fa-bowl-food"></i></div>
+                <span class="text-[9px] font-bold text-gray-600">Hunger</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- DONATE NOW SECTION -->
+    <div class="px-4 mb-8">
+        <div class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 text-center relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-orange-50 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-red-50 rounded-full blur-2xl"></div>
+            
+            <div class="relative z-10">
+                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-xl mx-auto mb-3 shadow-sm">
+                    <i class="fa-solid fa-hand-holding-heart"></i>
+                </div>
+                <h3 class="font-black text-xl text-gray-900 mb-1">Donate Now</h3>
+                <p class="text-[10px] font-bold text-gray-500 mb-5">Scan this QR code with any UPI app to donate.</p>
+                
+                <div class="inline-block p-3 bg-white border-2 border-dashed border-gray-300 rounded-2xl mb-4 shadow-sm">
+                    <img src="apex_payment_qr.png" alt="Donate QR Code" class="w-48 h-48 object-contain rounded-xl">
+                </div>
+                
+                <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-2">APEX Foundation Trust</p>
+                <p class="text-[8px] text-gray-400 mt-1">100% Tax Deductible under Section 80G</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- HORIZONTAL TRACK -->
+    <div class="mb-5">
+        <div class="px-4 flex justify-between items-end mb-3">
+            <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider">Urgent Campaigns</h3>
+            <a href="#" class="text-[9px] font-bold text-orange-600">View All</a>
+        </div>
+        <div class="flex gap-3 overflow-x-auto px-4 scrollbar-none flex-nowrap pb-2">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 w-[220px] flex-shrink-0 overflow-hidden cursor-pointer">
+                <div class="h-28 bg-gray-200 relative">
+                    <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80" alt="Charity" class="w-full h-full object-cover">
+                    <span class="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-bold px-2 py-0.5 rounded uppercase tracking-wider shadow">Urgent</span>
+                </div>
+                <div class="p-3">
+                    <h4 class="font-black text-xs text-gray-900 truncate mb-1">Help Build a Rural School</h4>
+                    <p class="text-[9px] text-gray-500 mb-3 truncate">APEX Education Initiative</p>
+                    <div class="w-full bg-gray-100 rounded-full h-1.5 mb-2">
+                        <div class="bg-orange-500 h-1.5 rounded-full" style="width: 75%"></div>
+                    </div>
+                    <div class="flex items-end justify-between">
+                        <span class="text-gray-900 font-bold text-[10px]">&#8377;7.5L <span class="font-normal text-gray-400">raised</span></span>
+                        <span class="text-[9px] text-gray-400 font-bold">75%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 w-[220px] flex-shrink-0 overflow-hidden cursor-pointer">
+                <div class="h-28 bg-gray-200 relative">
+                    <img src="https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&q=80" alt="Charity" class="w-full h-full object-cover">
+                </div>
+                <div class="p-3">
+                    <h4 class="font-black text-xs text-gray-900 truncate mb-1">Assam Flood Relief Fund</h4>
+                    <p class="text-[9px] text-gray-500 mb-3 truncate">Disaster Management Team</p>
+                    <div class="w-full bg-gray-100 rounded-full h-1.5 mb-2">
+                        <div class="bg-orange-500 h-1.5 rounded-full" style="width: 40%"></div>
+                    </div>
+                    <div class="flex items-end justify-between">
+                        <span class="text-gray-900 font-bold text-[10px]">&#8377;4.0L <span class="font-normal text-gray-400">raised</span></span>
+                        <span class="text-[9px] text-gray-400 font-bold">40%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

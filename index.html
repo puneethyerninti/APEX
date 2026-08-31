@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APEX | Your Life. Simplified.</title>
+    <meta name="description" content="APEX – One App, Unlimited Possibilities. Financial Services, Real Estate, Academy, Store, Matrimony, Utility Services and more.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        apex: {
+                            brown: '#A0684A', brownhover: '#87563c',
+                            green: '#25D366', dark: '#222222',
+                            lightbg: '#FFFFFF', graybg: '#F9FAFB',
+                            purple: '#6C3FC5', purplelight: '#EDE9FF',
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #0f172a; color: #222; overflow-x: hidden; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #6C3FC5; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #5a34a8; }
+
+        /* Hide scrollbars for sliders */
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .backdrop-blur-xs { backdrop-filter: blur(2px); }
+
+        #loader {
+            position: fixed; inset: 0; margin: 0 auto; max-width: 28rem; background: #fff; z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Promo Carousel */
+        #promo-track { display: flex; transition: transform 600ms cubic-bezier(0.22,1,0.36,1); }
+        .promo-slide { flex: 0 0 100%; border-radius: 16px; overflow: hidden; min-height: 140px; }
+        .promo-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.3s; border: none; }
+        .promo-dot.active { width: 16px; border-radius: 3px; background: #fff; }
+
+        /* Realty Carousel */
+        .carousel-viewport { overflow: hidden; }
+        .carousel-track { display: flex; flex-wrap: nowrap; gap: 1rem; }
+        .carousel-card { flex: 0 0 85%; }
+
+        /* Quick actions */
+        .quick-action { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; }
+        .quick-action-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; transition:transform .2s, box-shadow .2s; }
+        .quick-action:hover .quick-action-icon { transform:translateY(-2px); box-shadow:0 6px 14px rgba(0,0,0,.1); }
+        .quick-action span { font-size:9px; font-weight:700; color:#555; text-align:center; line-height:1.2; }
+
+        /* Explore cards */
+        .explore-card { background:#fff; border-radius:16px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; border:1px solid rgba(0,0,0,.04); box-shadow:0 2px 6px rgba(0,0,0,.02); transition:all .2s; text-decoration:none; cursor:pointer; }
+        .explore-card:hover { transform:translateY(-2px); box-shadow:0 8px 16px rgba(0,0,0,.08); }
+        .explore-icon { width:42px; height:42px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff; transition:transform .2s; }
+        .explore-card:hover .explore-icon { transform:scale(1.05); }
+        .explore-card h3 { font-size:10px; font-weight:700; color:#222; line-height:1.3; }
+
+        /* Hero */
+        .hero-gradient { background: linear-gradient(135deg,#1E0E4B 0%,#3B1E8E 45%,#6C3FC5 100%); }
+
+        /* Cards */
+        .section-card { background:#fff; border-radius:16px; box-shadow:0 2px 10px rgba(0,0,0,.03); }
+
+        /* Plan card */
+        .plan-card { border-radius:14px; border:2px solid transparent; transition:border-color .2s, box-shadow .2s; }
+        .plan-card.popular { border-color:#6C3FC5; box-shadow:0 6px 24px rgba(108,63,197,.12); }
+        .plan-card:hover { box-shadow:0 6px 20px rgba(0,0,0,.08); }
+
+        /* Badges */
+        .prime-badge { background:linear-gradient(135deg,#F59E0B,#F97316); font-size:9px; font-weight:800; color:#fff; padding:1.5px 6px; border-radius:4px; letter-spacing:.5px; }
+        .new-badge { background:#EF4444; color:#fff; font-size:8px; font-weight:800; padding:1px 4px; border-radius:3px; letter-spacing:.5px; vertical-align:middle; }
+
+        /* Offer card hover */
+        .offer-card { transition:transform .2s, box-shadow .2s; }
+        .offer-card:hover { transform:translateY(-2px); box-shadow:0 8px 16px rgba(0,0,0,.06); }
+
+        /* Product card */
+        .product-img-container { overflow:hidden; }
+        .product-img { transition:transform .5s ease; }
+        .product-card:hover .product-img { transform:scale(1.05); }
+
+        /* Reveal animations */
+        .reveal-up { opacity:0; transform:translateY(20px); transition:all .6s cubic-bezier(.25,1,.5,1); }
+        .reveal-left { opacity:0; transform:translateX(-20px); transition:all .6s cubic-bezier(.25,1,.5,1); }
+        .reveal-right { opacity:0; transform:translateX(20px); transition:all .6s cubic-bezier(.25,1,.5,1); }
+        .reveal-zoom { opacity:0; transform:scale(.95); transition:all .6s cubic-bezier(.25,1,.5,1); }
+        .reveal-active { opacity:1 !important; transform:translate(0) scale(1) !important; }
+        .delay-100{transition-delay:50ms} .delay-200{transition-delay:100ms} .delay-300{transition-delay:150ms}
+        .delay-400{transition-delay:200ms} .delay-500{transition-delay:250ms} .delay-600{transition-delay:300ms}
+        .delay-700{transition-delay:350ms} .delay-800{transition-delay:400ms} .delay-900{transition-delay:450ms}
+    </style>
+</head>
+<body class="font-sans antialiased bg-slate-900 flex justify-center">
+<div class="w-full max-w-md bg-[#F4F6FB] min-h-screen relative shadow-2xl overflow-x-hidden border-x border-slate-800 pb-20">
+
+<!-- Loader -->
+<div id="loader">
+    <div class="flex flex-col items-center">
+        <img src="./APEX%20logo.jpeg" alt="APEX" class="h-14 w-14 object-contain rounded-xl shadow-lg mb-3 animate-pulse">
+        <div class="font-bold text-2xl tracking-widest text-apex-purple">APEX</div>
+        <div class="text-xs text-gray-400 mt-1">Your Life. Simplified.</div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════ STICKY HEADER & SEARCH ═══════════════════════════════ -->
+<div class="sticky top-0 z-50 bg-violet-700 border-b border-violet-800 shadow-sm" id="navbar">
+    <!-- Top Row -->
+    <div class="flex items-center justify-between px-4 py-2.5">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="window.scrollTo({top:0, behavior:'smooth'})">
+            <img src="./APEX%20logo.jpeg" alt="APEX" class="h-8 w-8 object-contain rounded-lg shadow-sm border border-violet-400">
+            <div>
+                <span class="font-black text-sm tracking-wider text-white uppercase block leading-none">APEX</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3.5">
+            <a href="https://wa.me/919494273763" class="text-green-300 hover:scale-110 transition-transform text-lg" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+            
+            <!-- Wallet Button (Top Header) -->
+            <button onclick="toggleWalletDrawer()" class="text-violet-100 hover:text-white transition-colors text-lg relative" aria-label="Wallet">
+                <i class="fa-solid fa-wallet"></i>
+            </button>
+            
+            <a href="#store" class="text-violet-100 hover:text-white transition-colors text-lg relative" aria-label="Cart">
+                <i class="fa-solid fa-shopping-bag"></i>
+                <span class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">3</span>
+            </a>
+            
+            <!-- Profile Button -->
+            <button onclick="toggleProfileDrawer()" class="w-7 h-7 rounded-full bg-white text-violet-700 flex items-center justify-center text-[10px] font-bold shadow-sm" aria-label="Profile">
+                RS
+            </button>
+        </div>
+    </div>
+    
+    <!-- Search Bar Row (Flipkart-style) -->
+    <div class="px-4 pb-2.5">
+        <div class="relative flex items-center">
+            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-violet-300 text-sm"></i>
+            <input type="text" id="global-search" oninput="handleGlobalSearch(this.value)" placeholder="Search for Products, Realty, Courses..." class="w-full pl-9 pr-20 py-2 bg-violet-800/50 border border-violet-600 rounded-xl text-xs focus:outline-none focus:border-white focus:ring-1 focus:ring-white/20 transition-all text-white placeholder-violet-300 shadow-inner">
+            <div class="absolute right-2.5 flex items-center gap-2.5 text-violet-300 text-xs">
+                <i class="fa-solid fa-microphone hover:text-white cursor-pointer" onclick="showToast('Voice search not available')"></i>
+                <i class="fa-solid fa-camera hover:text-white cursor-pointer" onclick="showToast('Camera search not available')"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Flipkart-style Categories Compact Grid -->
+<div class="grid grid-cols-4 gap-y-3 gap-x-2 px-4 py-3 bg-white shadow-xs border-b border-gray-100">
+    <!-- Priority 1: Financial Services -->
+    <a href="finance.html" class="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
+            <i class="fa-solid fa-chart-line"></i>
+        </div>
+        <span class="text-[9px] font-bold text-gray-600 tracking-tight text-center leading-tight">Financial<br>Services</span>
+    </a>
+    <!-- Priority 2: Store -->
+    <a href="https://www.apextradingcompanystore.co.in/" target="_blank" class="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
+            <i class="fa-solid fa-store"></i>
+        </div>
+        <span class="text-[9px] font-bold text-gray-600 tracking-tight">Store</span>
+    </a>
+    <!-- Priority 3: Cab Booking (Travels) -->
+    <a href="travels.html" class="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
+            <i class="fa-solid fa-taxi"></i>
+        </div>
+        <span class="text-[9px] font-bold text-gray-600 tracking-tight text-center leading-tight">Cab<br>Booking</span>
+    </a>
+    <!-- 4: Realty -->
+    <a href="#realty" class="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
+            <i class="fa-solid fa-house-chimney"></i>
+        </div>
+        <span class="text-[9px] font-bold text-gray-600 tracking-tight">Realty</span>
+    </a>
+    <!-- 5: Academy -->
+    <a href="academy.html" class="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
+            <i class="fa-solid fa-user-graduate"></i>
+        </div>
+        <span class="text-[9px] font-bold text-gray-600 tracking-tight">Academy</span>
+    </a>
+    <!-- 6: Matrimony -->
+    <a href="matrimony.html" class="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
+            <i class="fa-solid fa-ring"></i>
+        </div>
+        <span class="text-[9px] font-bold text-gray-600 tracking-tight">Matrimony</span>
+    </a>
+    <!-- 7: Jobs -->
+    <a href="jobs.html" class="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
+            <i class="fa-solid fa-briefcase"></i>
+        </div>
+        <span class="text-[9px] font-bold text-gray-600 tracking-tight">Jobs</span>
+    </a>
+    <!-- 8: Utility -->
+    <a href="utility.html" class="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
+            <i class="fa-solid fa-bolt"></i>
+        </div>
+        <span class="text-[9px] font-bold text-gray-600 tracking-tight">Utility</span>
+    </a>
+</div>
+
+<!-- ═══ 1. HERO — Welcome + Wallet + Promo Carousel ═══ -->
+<section id="home" class="hero-gradient pt-5 pb-5 px-4">
+    <!-- Welcome Row -->
+    <div class="flex items-center justify-between mb-4 reveal-up">
+        <div>
+            <p class="text-purple-200 text-[10px] font-bold uppercase tracking-wider">Welcome back,</p>
+            <div class="flex items-center gap-2 mt-0.5">
+                <h1 class="text-white text-lg font-black">Rohit Sharma</h1>
+                <span class="prime-badge">★ PRIME</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleWalletDrawer()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs shadow-sm transition-all" aria-label="QR">
+                <i class="fa-solid fa-qrcode"></i>
+            </button>
+            <button onclick="toggleProfileDrawer()" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs shadow-sm transition-all" aria-label="Account">
+                <i class="fa-solid fa-user-gear"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Payments (Flipkart Deck Style Compact) -->
+    <div onclick="toggleWalletDrawer()" class="bg-white rounded-2xl p-3 mb-4 shadow-md reveal-up delay-100 cursor-pointer hover:scale-[1.01] transition-transform">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-purple-50 text-apex-purple flex items-center justify-center shadow-inner flex-shrink-0">
+                    <i class="fa-solid fa-indian-rupee-sign text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-[8px] text-gray-400 font-bold uppercase tracking-wider block">Payments</span>
+                    <span class="text-sm font-black text-gray-900">Scan &amp; Pay</span>
+                </div>
+            </div>
+            
+            <div class="w-px h-6 bg-gray-100"></div>
+            
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center shadow-inner flex-shrink-0">
+                    <i class="fa-solid fa-coins text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-[8px] text-gray-400 font-bold uppercase tracking-wider block">APEX Coins</span>
+                    <span class="text-sm font-black text-gray-900 flex items-center gap-0.5">2,560</span>
+                </div>
+            </div>
+            
+            <i class="fa-solid fa-chevron-right text-gray-300 text-xs pl-1"></i>
+        </div>
+    </div>
+
+    <!-- Promo Carousel (Compact & Premium) -->
+    <div class="reveal-up delay-200">
+        <div id="promo-viewport" class="rounded-2xl overflow-hidden shadow-md">
+            <div id="promo-track">
+                <!-- Slide 1: Build Wealth -->
+                <div class="promo-slide relative flex items-center overflow-hidden bg-gray-900">
+                    <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&q=80&auto=format&fit=crop" alt="" class="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay">
+                    <div class="absolute inset-0 bg-gradient-to-r from-[#1E0E4B] via-[#6C3FC5]/75 to-transparent"></div>
+                    <div class="relative p-5 z-10 flex-1 flex flex-col justify-between h-full reveal-up">
+                        <div class="flex flex-col items-start border-l-4 border-yellow-400 pl-3.5 mb-3 shadow-sm">
+                            <h1 class="text-white text-xl sm:text-2xl font-black uppercase tracking-[0.15em] drop-shadow-xl leading-tight">
+                                APEX <span class="text-yellow-400">Trading Company</span>
+                            </h1>
+                            <p class="text-white/90 text-[9px] font-bold tracking-[0.2em] mt-1.5 bg-black/30 px-2.5 py-1 rounded shadow-inner backdrop-blur-sm">AMFI - ARN NO - 327302</p>
+                        </div>
+                        
+                        <div class="mt-auto">
+                            <h2 class="text-white text-sm font-bold leading-tight mb-1">Build Wealth & Secures SIP</h2>
+                            <p class="text-purple-200 text-[10px] mb-3">Make smart Investments today!</p>
+                            <a href="#finance" class="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-black text-[10px] px-5 py-2.5 rounded-full hover:scale-[1.02] active:scale-95 transition-all shadow-lg">
+                                Invest Now <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Slide 2: Real Estate -->
+                <div class="promo-slide relative flex items-center overflow-hidden bg-emerald-900">
+                    <img src="./APEX%20Hero(APEX%20Store).jpeg" alt="" class="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay">
+                    <div class="absolute inset-0 bg-gradient-to-r from-[#064e3b] via-[#047857]/75 to-transparent"></div>
+                    <div class="relative p-4 z-10 flex-1">
+                        <p class="text-emerald-200 text-[8px] font-extrabold uppercase tracking-widest mb-0.5">Dream Home</p>
+                        <h2 class="text-white text-base font-black leading-tight mb-0.5">Find Your Perfect Home</h2>
+                        <p class="text-emerald-100 text-[9px] mb-2">Premium properties across India</p>
+                        <a href="#realty" class="inline-block bg-white text-emerald-700 font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-emerald-50 transition-colors shadow">Explore Now</a>
+                    </div>
+                </div>
+                <!-- Slide 3: Matrimony -->
+                <div class="promo-slide relative flex items-center overflow-hidden bg-rose-900">
+                    <img src="./Matrimony%20Hero.png" alt="" class="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay">
+                    <div class="absolute inset-0 bg-gradient-to-r from-[#7f1d1d] via-[#be123c]/75 to-transparent"></div>
+                    <div class="relative p-4 z-10 flex-1">
+                        <p class="text-rose-200 text-[8px] font-extrabold uppercase tracking-widest mb-0.5">Find Your Match</p>
+                        <h2 class="text-white text-base font-black leading-tight mb-0.5">Anand Matrimony</h2>
+                        <p class="text-rose-100 text-[9px] mb-2">Premium verified profiles</p>
+                        <a href="#matrimony" class="inline-block bg-white text-rose-600 font-black text-[9px] px-3.5 py-1.5 rounded-full hover:bg-rose-50 transition-colors shadow">View Profiles</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Dots -->
+        <div class="flex justify-center gap-1.5 mt-2" id="promo-dots">
+            <button class="promo-dot active" data-index="0" aria-label="Slide 1"></button>
+            <button class="promo-dot" data-index="1" aria-label="Slide 2"></button>
+            <button class="promo-dot" data-index="2" aria-label="Slide 3"></button>
+        </div>
+    </div>
+</section>
+
+<!-- Deals of the Day Deck -->
+<div class="mx-4 my-3 bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100 reveal-up">
+    <!-- Header with Countdown -->
+    <div class="flex items-center justify-between pb-2 border-b border-gray-50 mb-3">
+        <div class="flex items-center gap-1.5">
+            <i class="fa-solid fa-fire text-orange-500 animate-pulse text-sm"></i>
+            <span class="font-extrabold text-xs text-gray-800 uppercase tracking-wider">Deals of the Day</span>
+        </div>
+        <div class="flex items-center gap-1 bg-red-50 text-red-600 font-mono text-[9px] font-black px-2 py-0.5 rounded border border-red-100" id="countdown-timer">
+            23h : 42m : 15s left
+        </div>
+    </div>
+    
+    <!-- Swipeable Cards -->
+    <div class="flex gap-3 overflow-x-auto scrollbar-none flex-nowrap pb-1">
+        <!-- Deal 1 -->
+        <a href="#store" class="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
+            <div class="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
+                <img src="https://images.unsplash.com/photo-1589810635657-232948472d98?w=300&q=80&auto=format&fit=crop" class="w-full h-full object-cover">
+                <span class="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">50% OFF</span>
+            </div>
+            <span class="text-[9px] font-bold text-gray-700 truncate">Premium Chunni</span>
+            <span class="text-[10px] font-black text-apex-purple mt-0.5">₹100 <span class="text-[8px] text-gray-400 line-through font-normal">₹200</span></span>
+            <div class="mt-1">
+                <div class="flex justify-between text-[7px] text-gray-400 mb-0.5"><span>Remaining</span><span>12 left</span></div>
+                <div class="w-full bg-gray-200 h-0.5 rounded-full"><div class="bg-red-500 h-0.5 rounded-full" style="width: 30%;"></div></div>
+            </div>
+        </a>
+        <!-- Deal 2 -->
+        <a href="#store" class="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
+            <div class="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
+                <img src="https://images.unsplash.com/photo-1603487742131-4160ec999306?w=300&q=80&auto=format&fit=crop" class="w-full h-full object-cover">
+                <span class="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">40% OFF</span>
+            </div>
+            <span class="text-[9px] font-bold text-gray-700 truncate">Cotton Blouse</span>
+            <span class="text-[10px] font-black text-apex-purple mt-0.5">₹60 <span class="text-[8px] text-gray-400 line-through font-normal">₹100</span></span>
+            <div class="mt-1">
+                <div class="flex justify-between text-[7px] text-gray-400 mb-0.5"><span>Remaining</span><span>5 left</span></div>
+                <div class="w-full bg-gray-200 h-0.5 rounded-full"><div class="bg-red-500 h-0.5 rounded-full" style="width: 15%;"></div></div>
+            </div>
+        </a>
+        <!-- Deal 3 -->
+        <a href="#realty" class="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
+            <div class="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
+                <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=300&q=80&auto=format&fit=crop" class="w-full h-full object-cover">
+                <span class="absolute top-1 left-1 bg-emerald-500 text-white text-[7px] font-extrabold px-1 rounded-sm">SAVE ₹5L</span>
+            </div>
+            <span class="text-[9px] font-bold text-gray-700 truncate">Skyline Penthouse</span>
+            <span class="text-[10px] font-black text-apex-purple mt-0.5">₹8.2 Cr <span class="text-[7px] text-gray-400 font-normal">Pre-Launch</span></span>
+            <div class="mt-1">
+                <div class="flex justify-between text-[7px] text-gray-400 mb-0.5"><span>Remaining</span><span>1 unit</span></div>
+                <div class="w-full bg-gray-200 h-0.5 rounded-full"><div class="bg-emerald-500 h-0.5 rounded-full" style="width: 80%;"></div></div>
+            </div>
+        </a>
+        <!-- Deal 4 -->
+        <a href="#academy" class="w-24 flex-shrink-0 bg-gray-50 rounded-xl p-2 flex flex-col hover:scale-[1.01] transition-transform">
+            <div class="h-16 w-full rounded-lg overflow-hidden mb-1 relative bg-white">
+                <img src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=300&q=80&auto=format&fit=crop" class="w-full h-full object-cover">
+                <span class="absolute top-1 left-1 bg-red-500 text-white text-[7px] font-extrabold px-1 rounded-sm">30% OFF</span>
+            </div>
+            <span class="text-[9px] font-bold text-gray-700 truncate">React Mastery</span>
+            <span class="text-[10px] font-black text-apex-purple mt-0.5">₹1,299 <span class="text-[8px] text-gray-400 line-through font-normal">₹1,999</span></span>
+            <div class="mt-1">
+                <div class="flex justify-between text-[7px] text-gray-400 mb-0.5"><span>Remaining</span><span>24 left</span></div>
+                <div class="w-full bg-gray-200 h-0.5 rounded-full"><div class="bg-red-500 h-0.5 rounded-full" style="width: 48%;"></div></div>
+            </div>
+        </a>
+    </div>
+</div>
+
+
+
+<!-- ═══ 3. QUICK ACTIONS ═══ -->
+<section id="quick-actions" class="py-5 bg-white border-b border-gray-100">
+    <div class="px-4">
+        <h2 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-4.5 reveal-up">Quick Payments</h2>
+        <div class="grid grid-cols-5 gap-1.5 reveal-up delay-100">
+            <a href="finance.html" class="quick-action group">
+                <div class="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style="background:linear-gradient(135deg,#e0edff,#c7d9ff);color:#2563eb;">
+                    <i class="fa-solid fa-receipt"></i></div>
+                <span>Pay Bills</span>
+            </a>
+            <a href="finance.html" class="quick-action group">
+                <div class="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#059669;">
+                    <i class="fa-solid fa-mobile-screen-button"></i></div>
+                <span>Recharge</span>
+            </a>
+            <a href="finance.html" class="quick-action group">
+                <div class="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style="background:linear-gradient(135deg,#fef3c7,#fde68a);color:#d97706;">
+                    <i class="fa-solid fa-paper-plane"></i></div>
+                <span>Send</span>
+            </a>
+            <div onclick="openQRModal()" class="quick-action group cursor-pointer">
+                <div class="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style="background:linear-gradient(135deg,#ede9ff,#ddd6fe);color:#7c3aed;">
+                    <i class="fa-solid fa-qrcode"></i>
+                </div>
+                <span>Scan QR</span>
+            </div>
+            <a href="finance.html" class="quick-action group">
+                <div class="quick-action-icon hover:scale-105 active:scale-95 transition-transform" style="background:linear-gradient(135deg,#fce7f3,#fbcfe8);color:#db2777;">
+                    <i class="fa-solid fa-ellipsis"></i>
+                </div>
+                <span>More</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ TRAVELS ═══ -->
+<section id="travels" class="py-5 bg-white border-b border-gray-100">
+    <div class="px-4">
+        <h2 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-4.5 reveal-up">Travels</h2>
+        <div class="grid grid-cols-4 gap-2 reveal-up delay-100">
+            <a href="travels.html" class="quick-action group">
+                <div class="quick-action-icon hover:scale-105 active:scale-95 transition-transform shadow-sm border border-rose-50" style="background:linear-gradient(135deg,#fff1f2,#ffe4e6);color:#e11d48;">
+                    <i class="fa-solid fa-taxi text-lg"></i></div>
+                <span class="text-[9px] font-bold text-gray-700 mt-1.5">Cab</span>
+            </a>
+            <a href="travels.html" class="quick-action group">
+                <div class="quick-action-icon hover:scale-105 active:scale-95 transition-transform shadow-sm border border-indigo-50" style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);color:#4f46e5;">
+                    <i class="fa-solid fa-bus-simple text-lg"></i></div>
+                <span class="text-[9px] font-bold text-gray-700 mt-1.5">Bus</span>
+            </a>
+            <a href="travels.html" class="quick-action group">
+                <div class="quick-action-icon hover:scale-105 active:scale-95 transition-transform shadow-sm border border-emerald-50" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#16a34a;">
+                    <i class="fa-solid fa-train text-lg"></i></div>
+                <span class="text-[9px] font-bold text-gray-700 mt-1.5">Train</span>
+            </a>
+            <a href="travels.html" class="quick-action group">
+                <div class="quick-action-icon hover:scale-105 active:scale-95 transition-transform shadow-sm border border-purple-50" style="background:linear-gradient(135deg,#faf5ff,#f3e8ff);color:#9333ea;">
+                    <i class="fa-solid fa-plane-departure text-lg"></i>
+                </div>
+                <span class="text-[9px] font-bold text-gray-700 mt-1.5">Flight</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ 4. APEX PRIME SUBSCRIPTION ═══ -->
+<section id="prime" class="py-6 bg-[#F4F6FB] border-b border-gray-100">
+    <div class="px-4">
+        <div class="flex items-center justify-between mb-4.5 reveal-up">
+            <div>
+                <h2 class="text-xs font-black text-gray-400 uppercase tracking-wider">Prime Plans</h2>
+            </div>
+            <a href="#" class="text-apex-purple font-bold text-[10px] hover:underline uppercase tracking-wide">Compare</a>
+        </div>
+        
+        <!-- Swipeable Cards -->
+        <div class="flex gap-3 overflow-x-auto scrollbar-none pb-1">
+            <!-- FREE -->
+            <div class="plan-card bg-white p-4 w-48 flex-shrink-0 flex flex-col shadow-xs reveal-zoom delay-100">
+                <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Free</span>
+                <div class="text-xl font-black text-gray-900">&#8377;0 <span class="text-[9px] text-gray-400 font-normal">Forever</span></div>
+                <ul class="space-y-1.5 my-3 flex-1">
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-600"><i class="fa-solid fa-check text-green-500 w-3 text-center"></i>Basic services</li>
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-600"><i class="fa-solid fa-check text-green-500 w-3 text-center"></i>Standard Support</li>
+                </ul>
+                <button class="w-full border border-gray-200 text-gray-500 font-bold py-1.5 rounded-lg text-[10px] transition-colors bg-gray-50">Current Plan</button>
+            </div>
+            <!-- APEX PLUS -->
+            <div class="plan-card bg-white p-4 w-48 flex-shrink-0 flex flex-col shadow-xs reveal-zoom delay-200">
+                <span class="text-[9px] font-black text-apex-purple uppercase tracking-widest mb-1 block">APEX Plus</span>
+                <div class="text-xl font-black text-gray-900">&#8377;99 <span class="text-[9px] text-gray-400 font-normal">/month</span></div>
+                <ul class="space-y-1.5 my-3 flex-1">
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-600"><i class="fa-solid fa-check text-apex-purple w-3 text-center"></i>Priority Support</li>
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-600"><i class="fa-solid fa-check text-apex-purple w-3 text-center"></i>Exclusive Offers</li>
+                </ul>
+                <button class="w-full bg-apex-purple text-white font-bold py-1.5 rounded-lg text-[10px] hover:bg-purple-700 transition-colors shadow-xs">Upgrade</button>
+            </div>
+            <!-- APEX PRIME -->
+            <div class="plan-card popular p-4 w-48 flex-shrink-0 flex flex-col text-white reveal-zoom delay-300" style="background:linear-gradient(135deg,#1E0E4B,#3B1E8E);">
+                <div class="flex justify-between items-start mb-0.5">
+                    <div>
+                        <span class="text-[9px] font-black text-yellow-300 uppercase tracking-widest block">APEX Prime</span>
+                        <div class="text-xl font-black text-white">&#8377;299 <span class="text-[9px] text-purple-300 font-normal">/month</span></div>
+                    </div>
+                    <i class="fa-solid fa-crown text-yellow-400 text-base"></i>
+                </div>
+                <ul class="space-y-1.5 my-3 flex-1">
+                    <li class="flex items-center gap-1.5 text-[10px] text-white/95"><i class="fa-solid fa-check text-yellow-300 w-3 text-center"></i>VIP Support</li>
+                    <li class="flex items-center gap-1.5 text-[10px] text-white/95"><i class="fa-solid fa-check text-yellow-300 w-3 text-center"></i>Highest Rewards</li>
+                </ul>
+                <button class="w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 font-black py-1.5 rounded-lg text-[10px] hover:from-yellow-300 hover:to-orange-300 transition-colors shadow-xs">Get Prime</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ 7. REAL ESTATE CAROUSEL ═══ -->
+<section id="realty" class="py-6 bg-white border-b border-gray-100">
+    <div class="px-4">
+        <div class="flex items-center justify-between mb-4.5 reveal-up">
+            <div>
+                <h2 class="text-xs font-black text-gray-400 uppercase tracking-wider">Premium Real Estate</h2>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <button id="realty-prev" type="button" class="w-7 h-7 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:border-apex-purple hover:text-apex-purple transition-colors" aria-label="Prev"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                <button id="realty-next" type="button" class="w-7 h-7 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:border-apex-purple hover:text-apex-purple transition-colors" aria-label="Next"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+            </div>
+        </div>
+        <div class="carousel-viewport reveal-zoom delay-100">
+            <div class="carousel-track scrollbar-none overflow-x-auto flex flex-nowrap pb-1" id="realty-carousel-track">
+
+                <div class="carousel-card flex-shrink-0 group cursor-pointer w-64 mr-3">
+                    <div class="relative overflow-hidden rounded-xl mb-2 h-36">
+                        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80&auto=format&fit=crop" alt="The Crown Villas" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                        <div class="absolute top-2 left-2 bg-black text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">For Sale</div>
+                    </div>
+                    <div class="p-1">
+                        <h3 class="text-xs font-bold text-gray-800 mb-0.5">The Crown Villas</h3>
+                        <p class="text-gray-400 text-[10px] mb-2 flex items-center gap-1"><i class="fa-solid fa-location-dot text-apex-purple"></i>Banjara Hills, Hyderabad</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-apex-purple font-black text-sm">&#8377;15.5 Cr</span>
+                            <span class="text-[9px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded"><i class="fa-solid fa-vector-square mr-1 text-[8px]"></i>8500 sqft</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="carousel-card flex-shrink-0 group cursor-pointer w-64 mr-3">
+                    <div class="relative overflow-hidden rounded-xl mb-2 h-36">
+                        <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80&auto=format&fit=crop" alt="Skyline Penthouses" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                        <div class="absolute top-2 left-2 bg-emerald-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">Pre-Launch</div>
+                    </div>
+                    <div class="p-1">
+                        <h3 class="text-xs font-bold text-gray-800 mb-0.5">Skyline Penthouses</h3>
+                        <p class="text-gray-400 text-[10px] mb-2 flex items-center gap-1"><i class="fa-solid fa-location-dot text-apex-purple"></i>Worli Sea Face, Mumbai</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-apex-purple font-black text-sm">&#8377;8.2 Cr</span>
+                            <span class="text-[9px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded"><i class="fa-solid fa-vector-square mr-1 text-[8px]"></i>4200 sqft</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="carousel-card flex-shrink-0 group cursor-pointer w-64 mr-3">
+                    <div class="relative overflow-hidden rounded-xl mb-2 h-36">
+                        <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80&auto=format&fit=crop" alt="APEX Tech Park" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                        <div class="absolute top-2 left-2 bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">Commercial</div>
+                    </div>
+                    <div class="p-1">
+                        <h3 class="text-xs font-bold text-gray-800 mb-0.5">APEX Tech Park</h3>
+                        <p class="text-gray-400 text-[10px] mb-2 flex items-center gap-1"><i class="fa-solid fa-location-dot text-apex-purple"></i>Whitefield, Bangalore</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-apex-purple font-black text-sm">Lease</span>
+                            <span class="text-[9px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded"><i class="fa-solid fa-vector-square mr-1 text-[8px]"></i>1M+ sqft</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ 8. APEX ACADEMY ═══ -->
+<section id="academy" class="py-6 bg-[#F4F6FB] border-b border-gray-100">
+    <div class="px-4">
+        <div class="flex items-center justify-between mb-4.5 reveal-up">
+            <div>
+            </div>
+            <a href="#" class="text-apex-purple font-bold text-[10px] hover:underline uppercase tracking-wide">View All</a>
+        </div>
+        
+        <!-- Horizontal Scroll Academy Deck -->
+        <div class="flex gap-3 overflow-x-auto scrollbar-none flex-nowrap pb-1">
+            <div class="section-card p-4 flex flex-col w-56 flex-shrink-0 hover:scale-[1.01] transition-transform reveal-zoom delay-100">
+                <div class="flex items-center gap-2.5 mb-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-base flex-shrink-0"><i class="fa-solid fa-chalkboard-user"></i></div>
+                    <h3 class="font-extrabold text-gray-900 text-xs truncate">Academic Courses</h3>
+                </div>
+                <p class="text-[10px] text-gray-500 mb-3 leading-relaxed flex-1">Access premium classes from certified international instructors.</p>
+                <div class="flex items-center justify-between mt-auto">
+                    <span class="inline-block text-[8px] font-black text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">50+ Open</span>
+                    <i class="fa-solid fa-arrow-right text-gray-300 text-xs"></i>
+                </div>
+            </div>
+            
+            <div class="section-card p-4 flex flex-col w-56 flex-shrink-0 hover:scale-[1.01] transition-transform reveal-zoom delay-200">
+                <div class="flex items-center gap-2.5 mb-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center text-white text-base flex-shrink-0"><i class="fa-solid fa-medal"></i></div>
+                    <h3 class="font-extrabold text-gray-900 text-xs truncate">Skill Certifications</h3>
+                </div>
+                <p class="text-[10px] text-gray-500 mb-3 leading-relaxed flex-1">Get government-recognized certifications for job applications.</p>
+                <div class="flex items-center justify-between mt-auto">
+                    <span class="inline-block text-[8px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Certified</span>
+                    <i class="fa-solid fa-arrow-right text-gray-300 text-xs"></i>
+                </div>
+            </div>
+            
+            <div class="section-card p-4 flex flex-col w-56 flex-shrink-0 hover:scale-[1.01] transition-transform reveal-zoom delay-300">
+                <div class="flex items-center gap-2.5 mb-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-base flex-shrink-0"><i class="fa-solid fa-briefcase"></i></div>
+                    <h3 class="font-extrabold text-gray-900 text-xs truncate">Jobs &amp; Placement</h3>
+                </div>
+                <p class="text-[10px] text-gray-500 mb-3 leading-relaxed flex-1">Apply for direct placement opportunities with partner companies.</p>
+                <div class="flex items-center justify-between mt-auto">
+                    <span class="inline-block text-[8px] font-black text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-full">120+ Openings</span>
+                    <i class="fa-solid fa-arrow-right text-gray-300 text-xs"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ 5. TOP OFFERS FOR YOU ═══ -->
+<section id="offers" class="py-6 bg-white border-b border-gray-100">
+    <div class="px-4">
+        <div class="flex items-center justify-between mb-4.5 reveal-up">
+            <div>
+                <h2 class="text-xs font-black text-gray-400 uppercase tracking-wider">Top Offers For You</h2>
+            </div>
+            <a href="#" class="text-apex-purple font-bold text-[10px] hover:underline uppercase tracking-wide">View All</a>
+        </div>
+        
+        <div class="flex gap-3 overflow-x-auto scrollbar-none pb-1">
+            <div class="offer-card w-44 flex-shrink-0 bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 rounded-xl p-3 flex items-center gap-3 reveal-zoom delay-100">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-base shadow-sm flex-shrink-0"><i class="fa-solid fa-store text-xs"></i></div>
+                <div class="min-w-0">
+                    <span class="text-[8px] font-bold text-orange-600 uppercase tracking-wider block">APEX Store</span>
+                    <h3 class="font-extrabold text-gray-900 text-xs truncate">Flat ₹200 Off</h3>
+                    <p class="text-[9px] text-gray-400 truncate">Min ₹999 order</p>
+                </div>
+            </div>
+            <div class="offer-card w-44 flex-shrink-0 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-3 flex items-center gap-3 reveal-zoom delay-200">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-base shadow-sm flex-shrink-0"><i class="fa-solid fa-chart-line text-xs"></i></div>
+                <div class="min-w-0">
+                    <span class="text-[8px] font-bold text-blue-600 uppercase tracking-wider block">Finance</span>
+                    <h3 class="font-extrabold text-gray-900 text-xs truncate">Zero Brokerage</h3>
+                    <p class="text-[9px] text-gray-400 truncate">On Investments</p>
+                </div>
+            </div>
+            <div class="offer-card w-44 flex-shrink-0 bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 rounded-xl p-3 flex items-center gap-3 reveal-zoom delay-300">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-base shadow-sm flex-shrink-0"><i class="fa-solid fa-user-graduate text-xs"></i></div>
+                <div class="min-w-0">
+                    <span class="text-[8px] font-bold text-violet-600 uppercase tracking-wider block">Academy</span>
+                    <h3 class="font-extrabold text-gray-900 text-xs truncate">Upto 30% Off</h3>
+                    <p class="text-[9px] text-gray-400 truncate">Selected Courses</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+
+
+
+<!-- ═══ 10. MATRIMONY ═══ -->
+<section id="matrimony" class="py-4 px-4">
+    <div class="relative rounded-2xl overflow-hidden shadow-lg border border-rose-100 group">
+        <div class="h-48 relative">
+            <img src="./Matrimony%20Hero.png" alt="Matrimony" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+            <div class="absolute inset-0 bg-gradient-to-t from-rose-900/90 via-rose-900/30 to-transparent"></div>
+        </div>
+        
+        <div class="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between z-10 reveal-up">
+            <div class="flex flex-col">
+                <div class="bg-white/20 backdrop-blur-md p-1.5 rounded-lg inline-block mb-2 border border-white/30 shadow-sm self-start">
+                    <img src="Anand%20Matrimony%20logo.jpeg" alt="Anand Matrimony" class="h-8 object-contain rounded-md">
+                </div>
+                <h3 class="text-white font-black text-sm tracking-wide leading-tight drop-shadow-md">Find Your<br/>Perfect Match</h3>
+            </div>
+            
+            <a href="matrimony.html" class="bg-rose-500 hover:bg-rose-600 text-white font-bold text-[10px] py-2 px-4 rounded-full shadow-md transition-colors flex items-center gap-1.5 mb-1 shrink-0 backdrop-blur-md">
+                Explore <i class="fa-solid fa-arrow-right text-[8px]"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ FOOTER / FOUNDATION ═══ -->
+<footer id="foundation" class="bg-white border-t border-gray-100 pt-14 pb-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- Foundation CTA -->
+        <div class="bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl p-5 sm:p-6 mb-12 flex flex-col sm:flex-row items-center justify-between gap-4 reveal-up">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white text-2xl"><i class="fa-solid fa-seedling"></i></div>
+                <div>
+                    <h3 class="text-white font-bold text-lg">APEX Foundation</h3>
+                    <p class="text-orange-100 text-sm">Donate, Sponsor Education, Medical Help, Volunteer, CSR Activities</p>
+                </div>
+            </div>
+            <a href="charity.html" class="bg-white text-red-600 font-bold text-sm px-6 py-2.5 rounded-full hover:bg-red-50 transition-colors shadow-md whitespace-nowrap">Get Involved</a>
+        </div>
+
+        <div class="grid grid-cols-2 gap-x-6 gap-y-8 mb-10">
+            <!-- Brand -->
+            <div class="col-span-2 reveal-up">
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="./APEX%20logo.jpeg" alt="APEX" class="h-9 w-9 object-contain rounded-lg">
+                    <div>
+                        <span class="font-black text-gray-900 uppercase tracking-wider block text-xs">APEX</span>
+                    </div>
+                </div>
+                <p class="text-gray-400 text-xs leading-relaxed mb-4">One App, Unlimited Possibilities. Your Life. Simplified.</p>
+                <div class="flex gap-3">
+                    <a href="https://wa.me/919494273763" class="text-apex-green text-lg hover:scale-110 transition-transform" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+                    <a href="#" class="text-blue-600 text-lg hover:scale-110 transition-transform" aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+                    <a href="#" class="text-pink-600 text-lg hover:scale-110 transition-transform" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" class="text-sky-400 text-lg hover:scale-110 transition-transform" aria-label="Twitter"><i class="fa-brands fa-twitter"></i></a>
+                </div>
+            </div>
+            <!-- Ecosystem -->
+            <div class="reveal-up delay-100">
+                <h4 class="font-black text-gray-900 mb-3 uppercase text-[10px] tracking-wider">Ecosystem</h4>
+                <ul class="space-y-2">
+                    <li><a href="#finance" class="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i class="fa-solid fa-chart-line text-[10px] text-apex-purple"></i>Finance</a></li>
+                    <li><a href="#realty" class="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i class="fa-solid fa-house-chimney text-[10px] text-apex-purple"></i>Realty</a></li>
+                    <li><a href="#academy" class="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i class="fa-solid fa-user-graduate text-[10px] text-apex-purple"></i>Academy</a></li>
+                    <li><a href="#store" class="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i class="fa-solid fa-store text-[10px] text-apex-purple"></i>Store</a></li>
+                    <li><a href="#matrimony" class="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i class="fa-solid fa-ring text-[10px] text-apex-purple"></i>Matrimony</a></li>
+                    <li><a href="#utility" class="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i class="fa-solid fa-bolt text-[10px] text-apex-purple"></i>Utility</a></li>
+                </ul>
+            </div>
+            <!-- Foundation -->
+            <div class="reveal-up delay-200">
+                <h4 class="font-black text-gray-900 mb-3 uppercase text-[10px] tracking-wider">Foundation</h4>
+                <ul class="space-y-2">
+                    <li><a href="#" class="text-gray-500 hover:text-apex-purple text-xs transition-colors">Our Mission</a></li>
+                    <li><a href="#" class="text-gray-500 hover:text-apex-purple text-xs transition-colors">Project Vidya</a></li>
+                    <li><a href="#" class="text-gray-500 hover:text-apex-purple text-xs transition-colors">Volunteer</a></li>
+                    <li><a href="#" class="text-gray-500 hover:text-apex-purple text-xs transition-colors">Donate</a></li>
+                    <li><a href="#" class="text-gray-500 hover:text-apex-purple text-xs transition-colors">CSR Activities</a></li>
+                </ul>
+            </div>
+            <!-- Contact -->
+            <div class="col-span-2 reveal-up delay-300 border-t border-gray-50 pt-4">
+                <h4 class="font-black text-gray-900 mb-3 uppercase text-[10px] tracking-wider">Contact &amp; Legal</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <a href="tel:9494273763" class="col-span-2 text-apex-purple font-black text-sm bg-apex-purplelight p-2 rounded-lg flex items-center justify-center mb-1 hover:bg-purple-100 transition-colors">
+                        <i class="fa-solid fa-headset mr-2"></i>9494273763 
+                        <span class="text-[9px] text-apex-purple ml-1 font-bold uppercase tracking-widest">(24/7 Support)</span>
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-apex-purple text-xs transition-colors mt-1">Terms of Service</a>
+                    <a href="#" class="text-gray-500 hover:text-apex-purple text-xs transition-colors mt-1">Privacy Policy</a>
+                    <a href="#" class="text-gray-500 hover:text-apex-purple text-xs transition-colors">Refund Policy</a>
+                    <a href="#" class="text-gray-500 hover:text-apex-purple text-xs transition-colors">Help Center</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t border-gray-100 pt-5 flex flex-col items-center gap-2.5 text-center text-xs text-gray-400">
+            <div class="flex items-center gap-1.5 justify-center">
+                <i class="fa-solid fa-shield-halved text-apex-purple text-xs"></i>
+                <span class="font-bold">APEX &middot; Simplified.</span>
+            </div>
+            <p class="leading-relaxed">&copy; 2026 APEX Group of Companies.<br>All rights reserved.</p>
+            <a href="admin-dashboard.html" class="hover:text-apex-purple transition-colors flex items-center gap-1 font-bold text-xs bg-gray-50 px-3 py-1 rounded-full border border-gray-100 mt-1">
+                <i class="fa-solid fa-lock text-[10px]"></i>Admin Portal
+            </a>
+        </div>
+    </div>
+</footer>
+
+<!-- ═══ JAVASCRIPT ═══ -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Loader
+    setTimeout(() => {
+        const loader = document.getElementById('loader');
+        loader.style.opacity = '0';
+        setTimeout(() => loader.style.display = 'none', 500);
+    }, 800);
+
+    // Drawer Toggles
+    window.toggleProfileDrawer = () => {
+        const overlay = document.getElementById('profile-drawer-overlay');
+        const drawer = document.getElementById('profile-drawer');
+        if (overlay.classList.contains('hidden')) {
+            overlay.classList.remove('hidden');
+            setTimeout(() => drawer.classList.remove('translate-y-full'), 10);
+        } else {
+            drawer.classList.add('translate-y-full');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+    };
+
+    window.toggleWalletDrawer = () => {
+        const overlay = document.getElementById('wallet-drawer-overlay');
+        const drawer = document.getElementById('wallet-drawer');
+        if (overlay.classList.contains('hidden')) {
+            overlay.classList.remove('hidden');
+            setTimeout(() => drawer.classList.remove('translate-y-full'), 10);
+        } else {
+            drawer.classList.add('translate-y-full');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+    };
+
+    // Cart Quantity Counter
+    window.addToCart = (btn) => {
+        const container = btn.parentElement;
+        container.innerHTML = `
+            <div class="flex items-center bg-apex-purple text-white text-[9px] font-black rounded overflow-hidden border border-apex-purple">
+                <button onclick="changeQty(this, -1)" class="px-2 py-0.5 hover:bg-purple-700 active:scale-90 transition-all font-black text-xs leading-none">-</button>
+                <span class="px-1.5 text-[10px]">1</span>
+                <button onclick="changeQty(this, 1)" class="px-2 py-0.5 hover:bg-purple-700 active:scale-90 transition-all font-black text-xs leading-none">+</button>
+            </div>
+        `;
+        updateCartCount(1);
+    };
+
+    window.changeQty = (btn, delta) => {
+        const qtySpan = btn.parentElement.querySelector('span');
+        let qty = parseInt(qtySpan.innerText, 10) + delta;
+        if (qty <= 0) {
+            const container = btn.parentElement.parentElement;
+            container.innerHTML = `
+                <button onclick="addToCart(this)" class="bg-apex-purple text-white text-[9px] font-black px-2.5 py-1 rounded hover:bg-purple-700 active:scale-95 transition-all">ADD</button>
+            `;
+            updateCartCount(-1);
+        } else {
+            qtySpan.innerText = qty;
+            updateCartCount(delta);
+        }
+    };
+
+    window.updateCartCount = (delta) => {
+        const badges = document.querySelectorAll('.fa-shopping-bag + span, .fa-shopping-cart + span');
+        badges.forEach(badge => {
+            let current = parseInt(badge.innerText, 10) || 0;
+            let newCount = Math.max(0, current + delta);
+            badge.innerText = newCount;
+            if (newCount === 0) {
+                badge.classList.add('hidden');
+            } else {
+                badge.classList.remove('hidden');
+            }
+        });
+    };
+
+    // Deals of the day Countdown Timer
+    const countdownEl = document.getElementById('countdown-timer');
+    if (countdownEl) {
+        let timeLeft = 23 * 3600 + 42 * 60 + 15;
+        setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) timeLeft = 24 * 3600;
+            const h = Math.floor(timeLeft / 3600);
+            const m = Math.floor((timeLeft % 3600) / 60);
+            const s = timeLeft % 60;
+            countdownEl.innerText = `${String(h).padStart(2, '0')}h : ${String(m).padStart(2, '0')}m : ${String(s).padStart(2, '0')}s left`;
+        }, 1000);
+    }
+
+    // Promo Carousel
+    const promoTrack = document.getElementById('promo-track');
+    const promoDots = document.querySelectorAll('.promo-dot');
+    let promoIndex = 0;
+    let promoTimer = null;
+    const totalPromo = 3;
+
+    const goPromo = (idx) => {
+        if (!promoTrack) return;
+        promoIndex = ((idx % totalPromo) + totalPromo) % totalPromo;
+        promoTrack.style.transform = `translateX(-${promoIndex * 100}%)`;
+        promoDots.forEach((d, i) => d.classList.toggle('active', i === promoIndex));
+    };
+    const startPromo = () => { stopPromo(); promoTimer = setInterval(() => goPromo(promoIndex + 1), 4200); };
+    const stopPromo = () => { if (promoTimer) clearInterval(promoTimer); };
+
+    if (promoDots.length > 0) {
+        promoDots.forEach(dot => {
+            dot.addEventListener('click', () => { stopPromo(); goPromo(parseInt(dot.dataset.index, 10)); startPromo(); });
+        });
+        const promoViewport = document.getElementById('promo-viewport');
+        if (promoViewport) {
+            promoViewport.addEventListener('mouseenter', stopPromo);
+            promoViewport.addEventListener('mouseleave', startPromo);
+        }
+        startPromo();
+    }
+
+    // Realty Carousel (Robust native scroll controller)
+    const realtyTrack = document.getElementById('realty-carousel-track');
+    const realtyPrev = document.getElementById('realty-prev');
+    const realtyNext = document.getElementById('realty-next');
+
+    if (realtyTrack && realtyPrev && realtyNext) {
+        realtyPrev.addEventListener('click', () => {
+            const card = realtyTrack.querySelector('.carousel-card');
+            if (card) {
+                const cardWidth = card.getBoundingClientRect().width + 12; // width + mr-3 gap
+                realtyTrack.scrollBy({ left: -cardWidth, behavior: 'smooth' });
+            }
+        });
+        realtyNext.addEventListener('click', () => {
+            const card = realtyTrack.querySelector('.carousel-card');
+            if (card) {
+                const cardWidth = card.getBoundingClientRect().width + 12; // width + mr-3 gap
+                realtyTrack.scrollBy({ left: cardWidth, behavior: 'smooth' });
+            }
+        });
+    }
+
+    // Scroll Reveal
+    const revealEls = document.querySelectorAll('.reveal-up, .reveal-left, .reveal-right, .reveal-zoom');
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) { entry.target.classList.add('reveal-active'); obs.unobserve(entry.target); }
+        });
+    }, { threshold: 0.07, rootMargin: '0px 0px -30px 0px' });
+    revealEls.forEach(el => observer.observe(el));
+
+    // Navbar shadow on scroll
+    window.addEventListener('scroll', () => {
+        const navbar = document.getElementById('navbar');
+        if (navbar) navbar.style.boxShadow = window.scrollY > 20 ? '0 4px 20px rgba(0,0,0,0.08)' : '';
+    });
+});
+</script>
+
+<!-- Sticky Bottom Navigation (Centered inside parent max-w-md container) -->
+<div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-100 h-14 flex justify-around items-center z-45 px-2 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+    <a href="#" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;" class="flex flex-col items-center gap-0.5 text-apex-purple font-black text-[9px] transition-colors">
+        <i class="fa-solid fa-house-chimney text-base"></i>
+        <span>Home</span>
+    </a>
+    <a href="charity.html" class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-apex-purple font-bold text-[9px] transition-colors">
+        <i class="fa-solid fa-hand-holding-heart text-base"></i>
+        <span>Donate</span>
+    </a>
+    <button onclick="toggleWalletDrawer()" class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-apex-purple font-bold text-[9px] transition-colors border-none bg-none outline-none">
+        <i class="fa-solid fa-indian-rupee-sign text-base"></i>
+        <span>Payments</span>
+    </button>
+    <a href="#matrimony" class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-apex-purple font-bold text-[9px] transition-colors">
+        <i class="fa-solid fa-heart text-base"></i>
+        <span>Matches</span>
+    </a>
+    <button onclick="toggleProfileDrawer()" class="flex flex-col items-center gap-0.5 text-gray-400 hover:text-apex-purple font-bold text-[9px] transition-colors border-none bg-none outline-none">
+        <i class="fa-solid fa-user-gear text-base"></i>
+        <span>Account</span>
+    </button>
+</div>
+
+<!-- Profile Drawer Overlay -->
+<div id="profile-drawer-overlay" class="fixed inset-0 bg-black/40 z-50 hidden backdrop-blur-xs flex justify-center items-end" onclick="toggleProfileDrawer()">
+    <!-- Drawer Panel -->
+    <div id="profile-drawer" class="w-full max-w-md bg-white rounded-t-2xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out" onclick="event.stopPropagation()">
+        <!-- Handle -->
+        <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto my-3 cursor-pointer" onclick="toggleProfileDrawer()"></div>
+        
+        <!-- Header -->
+        <div class="px-5 pb-3.5 border-b border-gray-100 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-apex-purple text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                RS
+            </div>
+            <div>
+                <div class="flex items-center gap-1.5">
+                    <h3 class="font-black text-gray-900 text-sm">Rohit Sharma</h3>
+                    <span class="prime-badge">★ PRIME</span>
+                </div>
+                <p class="text-[10px] text-gray-400 font-bold">rohit.sharma@apex.com</p>
+            </div>
+            <button onclick="toggleProfileDrawer()" class="ml-auto w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors"><i class="fa-solid fa-xmark text-xs"></i></button>
+        </div>
+        
+        <!-- Options List -->
+        <div class="py-1">
+            <a href="#" class="flex items-center gap-3.5 px-5 py-2.5 hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-user text-apex-purple w-4 text-center text-xs"></i>
+                <span class="text-xs font-bold text-gray-700">My Profile</span>
+                <i class="fa-solid fa-chevron-right text-gray-300 ml-auto text-[10px]"></i>
+            </a>
+            <a href="#store" onclick="toggleProfileDrawer()" class="flex items-center gap-3.5 px-5 py-2.5 hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-box text-apex-purple w-4 text-center text-xs"></i>
+                <span class="text-xs font-bold text-gray-700">My Orders</span>
+                <i class="fa-solid fa-chevron-right text-gray-300 ml-auto text-[10px]"></i>
+            </a>
+            <a href="#" class="flex items-center gap-3.5 px-5 py-2.5 hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-heart text-apex-purple w-4 text-center text-xs"></i>
+                <span class="text-xs font-bold text-gray-700">Wishlist</span>
+                <i class="fa-solid fa-chevron-right text-gray-300 ml-auto text-[10px]"></i>
+            </a>
+            <a href="#" class="flex items-center gap-3.5 px-5 py-2.5 hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-coins text-yellow-500 w-4 text-center text-xs"></i>
+                <span class="text-xs font-bold text-gray-700">APEX Coins (2,560)</span>
+                <i class="fa-solid fa-chevron-right text-gray-300 ml-auto text-[10px]"></i>
+            </a>
+            <a href="admin-dashboard.html" class="flex items-center gap-3.5 px-5 py-2.5 hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-lock text-apex-purple w-4 text-center text-xs"></i>
+                <span class="text-xs font-bold text-gray-700">Admin Portal</span>
+                <i class="fa-solid fa-chevron-right text-gray-300 ml-auto text-[10px]"></i>
+            </a>
+        </div>
+        
+        <!-- Footer -->
+        <div class="p-4 bg-gray-50 text-center border-t border-gray-100 rounded-b-t-2xl">
+            <button class="w-full bg-red-50 text-red-600 font-bold py-2 rounded-xl text-xs hover:bg-red-100 transition-colors">Log Out</button>
+        </div>
+    </div>
+</div>
+
+<!-- Wallet Drawer Overlay -->
+<div id="wallet-drawer-overlay" class="fixed inset-0 bg-black/40 z-50 hidden backdrop-blur-xs flex justify-center items-end" onclick="toggleWalletDrawer()">
+    <!-- Drawer Panel -->
+    <div id="wallet-drawer" class="w-full max-w-md bg-white rounded-t-2xl shadow-2xl transform translate-y-full transition-transform duration-300 ease-out" onclick="event.stopPropagation()">
+        <!-- Handle -->
+        <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto my-3 cursor-pointer" onclick="toggleWalletDrawer()"></div>
+        
+        <!-- Header -->
+        <div class="px-5 pb-3.5 border-b border-gray-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-indian-rupee-sign text-apex-purple text-base"></i>
+                <h3 class="font-black text-gray-900 text-sm">Payments</h3>
+            </div>
+            <button onclick="toggleWalletDrawer()" class="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors"><i class="fa-solid fa-xmark text-xs"></i></button>
+        </div>
+        
+        <!-- Balance Info -->
+        <div class="p-4 flex flex-col items-center justify-center bg-gradient-to-br from-purple-50 to-white">
+            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Available Balance</span>
+            <div class="text-2xl font-black text-gray-900">₹12,450.00</div>
+            
+            <div class="flex gap-2.5 w-full mt-4">
+                <button class="flex-1 bg-apex-purple text-white font-bold py-2 rounded-lg text-[10px] shadow-sm hover:bg-purple-700 transition-all flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-plus text-[9px]"></i> Add Money
+                </button>
+                <button class="flex-1 border border-gray-200 text-gray-600 font-bold py-2 rounded-lg text-[10px] hover:border-gray-400 transition-all flex items-center justify-center gap-1.5 bg-white">
+                    <i class="fa-solid fa-arrow-up-from-bracket text-[9px]"></i> Send to Bank
+                </button>
+            </div>
+        </div>
+        
+        <!-- Transactions List -->
+        <div class="px-5 py-4 border-t border-gray-50">
+            <h4 class="font-black text-[9px] text-gray-400 uppercase tracking-wider mb-2.5 block">Recent Transactions</h4>
+            <div class="space-y-3 overflow-y-auto max-h-36 scrollbar-none">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded bg-green-50 text-green-600 flex items-center justify-center"><i class="fa-solid fa-arrow-down-long text-[10px]"></i></div>
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-700 block">Refund Received</span>
+                            <span class="text-[8px] text-gray-400">Today, 2:30 PM</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-black text-green-600">+₹400.00</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded bg-red-50 text-red-600 flex items-center justify-center"><i class="fa-solid fa-arrow-up-long text-[10px]"></i></div>
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-700 block">Saree Purchased</span>
+                            <span class="text-[8px] text-gray-400">Yesterday, 6:15 PM</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-black text-gray-800">-₹1,500.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Code Modal -->
+<div id="qr-modal" class="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div id="qr-modal-content" class="bg-white w-full max-w-sm rounded-3xl shadow-2xl transform scale-95 transition-transform duration-300 overflow-hidden mx-4">
+        <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div>
+                <h2 class="text-lg font-black text-gray-900">Scan and Pay</h2>
+                <p class="text-[10px] text-gray-500 font-bold">APEX Quick Payments</p>
+            </div>
+            <button onclick="closeQRModal()" class="w-8 h-8 bg-white border border-gray-200 rounded-full text-gray-500 flex items-center justify-center hover:bg-gray-100 transition-colors">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 text-center">
+            <div class="inline-block p-3 bg-white border-2 border-dashed border-gray-300 rounded-2xl mb-4">
+                <img src="apex_payment_qr.png" alt="Scan QR Code" class="w-56 h-56 object-contain rounded-xl">
+            </div>
+            <p class="text-[11px] font-bold text-gray-600">Scan this QR code with any UPI app</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openQRModal() {
+        const modal = document.getElementById('qr-modal');
+        const content = document.getElementById('qr-modal-content');
+        modal.classList.remove('hidden');
+        void modal.offsetWidth;
+        modal.classList.remove('opacity-0');
+        content.classList.remove('scale-95');
+        content.classList.add('scale-100');
+    }
+
+    function closeQRModal() {
+        const modal = document.getElementById('qr-modal');
+        const content = document.getElementById('qr-modal-content');
+        modal.classList.add('opacity-0');
+        content.classList.remove('scale-100');
+        content.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    function showToast(message) {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg z-[100] transform transition-all duration-300 opacity-0 translate-y-[-20px]';
+        toast.innerHTML = `<i class="fa-solid fa-circle-info mr-2 text-apex-purple"></i>${message}`;
+        document.body.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => {
+            toast.classList.remove('opacity-0', 'translate-y-[-20px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+        }, 10);
+        
+        // Animate out
+        setTimeout(() => {
+            toast.classList.remove('opacity-100', 'translate-y-0');
+            toast.classList.add('opacity-0', 'translate-y-[-20px]');
+            setTimeout(() => toast.remove(), 300);
+        }, 2500);
+    }
+
+    function handleGlobalSearch(query) {
+        query = query.toLowerCase();
+        // Just a simple simulation of filtering modules on homepage
+        const sections = [
+            { id: 'quick-payments', keywords: ['pay', 'bill', 'recharge', 'send', 'money'] },
+            { id: 'prime-plans', keywords: ['matrimony', 'prime', 'plan', 'marriage'] },
+            { id: 'real-estate-carousel', keywords: ['realty', 'house', 'plot', 'real estate', 'property'] },
+            { id: 'academy-courses', keywords: ['course', 'academy', 'learn', 'education'] },
+            { id: 'business-modules', keywords: ['business', 'store', 'shop', 'travel', 'cab', 'flight', 'job', 'finance'] },
+            { id: 'foundation', keywords: ['charity', 'donate', 'foundation', 'help'] }
+        ];
+
+        // Find all section elements by iterating through the DOM or wrapping them if they don't have IDs
+        // For this frontend demo, we will show a toast if they search for something
+        if(query.length > 3) {
+            let found = sections.find(s => s.keywords.some(k => query.includes(k)));
+            if(found) {
+                showToast("Found results for '" + query + "'. Scroll down!");
+            }
+        }
+    }
+
+    // Attach toast to all generic "View All" and "Compare" buttons for the demo
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('button:not([onclick]), a[href="#"]').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if(el.tagName === 'A') e.preventDefault();
+                showToast("Feature coming soon!");
+            });
+        });
+    });
+</script>
+
+</div>
+</body>
+</html>

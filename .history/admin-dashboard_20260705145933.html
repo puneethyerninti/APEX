@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APEX Admin Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        apex: {
+                            brown: '#A0684A',
+                            brownhover: '#87563c',
+                            green: '#25D366',
+                            dark: '#222222',
+                            lightbg: '#FFFFFF',
+                            graybg: '#F9FAFB'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background:
+                radial-gradient(circle at top left, rgba(160, 104, 74, 0.18), transparent 26%),
+                radial-gradient(circle at top right, rgba(37, 211, 102, 0.12), transparent 22%),
+                linear-gradient(180deg, #0b1220 0%, #111827 100%);
+            color: #e5e7eb;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); }
+        ::-webkit-scrollbar-thumb { background: #A0684A; border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #87563c; }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+        }
+
+        .glass-card-soft {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .track-bar {
+            background: rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+    <header class="sticky top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="h-16 flex items-center justify-between gap-4">
+                <a href="index.html" class="flex items-center gap-3 group">
+                    <img src="./APEX%20logo.jpeg" alt="APEX logo" class="h-10 w-10 object-contain rounded shadow-sm bg-white/90 p-1">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.35em] text-gray-400">Admin Portal</p>
+                        <h1 class="font-bold text-white text-lg tracking-wide group-hover:text-apex-brown transition-colors">Apex Super App</h1>
+                    </div>
+                </a>
+
+                <div class="hidden md:flex items-center gap-3 text-sm text-gray-300">
+                    <span class="px-3 py-2 rounded-full glass-card-soft">Live Tracking</span>
+                    <span class="px-3 py-2 rounded-full glass-card-soft">All Services</span>
+                </div>
+
+                <a href="index.html" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-slate-900 text-sm font-semibold hover:bg-gray-100 transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Back to App
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+        <section class="grid grid-cols-1 xl:grid-cols-[1.45fr_0.85fr] gap-6 mb-6">
+            <div class="glass-card rounded-[2rem] p-6 sm:p-8 relative overflow-hidden">
+                <div class="absolute -right-16 -top-14 w-48 h-48 rounded-full bg-apex-brown/20 blur-3xl"></div>
+                <div class="relative z-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+                    <div>
+                        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card-soft text-xs uppercase tracking-[0.3em] text-gray-300 mb-4">
+                            <span class="w-2 h-2 rounded-full bg-apex-green"></span>
+                            Operations Control Center
+                        </span>
+                        <h2 class="text-3xl md:text-5xl font-bold tracking-tight text-white mb-3">Premium service intelligence across every APEX vertical</h2>
+                        <p class="text-gray-300 max-w-2xl leading-relaxed">
+                            Monitor orders, leads, approvals, matches, and donations from one command surface built with the same visual language as the app.
+                        </p>
+                    </div>
+
+                    <div class="glass-card-soft rounded-2xl p-5 min-w-[260px]">
+                        <div class="flex items-center justify-between text-sm text-gray-300 mb-2">
+                            <span>System health</span>
+                            <span class="text-apex-green font-semibold">98.4%</span>
+                        </div>
+                        <div class="h-2 rounded-full track-bar overflow-hidden">
+                            <div class="h-full w-[98%] rounded-full bg-gradient-to-r from-apex-green to-emerald-400"></div>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-3">SLA within target on all active services.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass-card rounded-[1.75rem] p-5">
+                    <p class="text-gray-300 text-sm">Today's orders</p>
+                    <div class="flex items-end justify-between mt-4">
+                        <h3 class="text-3xl font-bold text-white">128</h3>
+                        <div class="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center text-apex-green">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-3">Store fulfillment +18%</p>
+                </div>
+
+                <div class="glass-card rounded-[1.75rem] p-5">
+                    <p class="text-gray-300 text-sm">Finance leads</p>
+                    <div class="flex items-end justify-between mt-4">
+                        <h3 class="text-3xl font-bold text-white">42</h3>
+                        <div class="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center text-apex-brown">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-3">Conversion rate 11.2%</p>
+                </div>
+
+                <div class="glass-card rounded-[1.75rem] p-5">
+                    <p class="text-gray-300 text-sm">Property inquiries</p>
+                    <div class="flex items-end justify-between mt-4">
+                        <h3 class="text-3xl font-bold text-white">19</h3>
+                        <div class="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center text-cyan-300">
+                            <i class="fa-solid fa-building"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-3">7 site visits scheduled</p>
+                </div>
+
+                <div class="glass-card rounded-[1.75rem] p-5">
+                    <p class="text-gray-300 text-sm">Pending approvals</p>
+                    <div class="flex items-end justify-between mt-4">
+                        <h3 class="text-3xl font-bold text-white">11</h3>
+                        <div class="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center text-amber-300">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-3">Matches and donations queue</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 xl:grid-cols-[1.25fr_0.75fr] gap-6 mb-6">
+            <div class="glass-card rounded-[2rem] p-6 sm:p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-2xl font-bold text-white">Service Tracking</h3>
+                        <p class="text-gray-300 text-sm mt-1">Live queues across every service line in the app.</p>
+                    </div>
+                    <span class="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold uppercase tracking-[0.2em] text-gray-200">Live</span>
+                </div>
+
+                <div class="space-y-5">
+                    <div>
+                        <div class="flex items-center justify-between mb-2 text-sm">
+                            <span class="font-medium text-white">APEX Store</span>
+                            <span class="text-gray-300">128 orders • 94% dispatched</span>
+                        </div>
+                        <div class="h-2 rounded-full track-bar overflow-hidden">
+                            <div class="h-full w-[94%] rounded-full bg-gradient-to-r from-apex-green to-emerald-400"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2 text-sm">
+                            <span class="font-medium text-white">Financial Services</span>
+                            <span class="text-gray-300">42 leads • 78% processed</span>
+                        </div>
+                        <div class="h-2 rounded-full track-bar overflow-hidden">
+                            <div class="h-full w-[78%] rounded-full bg-gradient-to-r from-apex-brown to-amber-400"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2 text-sm">
+                            <span class="font-medium text-white">APEX Realty</span>
+                            <span class="text-gray-300">19 inquiries • 63% converted</span>
+                        </div>
+                        <div class="h-2 rounded-full track-bar overflow-hidden">
+                            <div class="h-full w-[63%] rounded-full bg-gradient-to-r from-cyan-400 to-sky-500"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2 text-sm">
+                            <span class="font-medium text-white">Anand Matrimony</span>
+                            <span class="text-gray-300">11 matches • 8 verified profiles</span>
+                        </div>
+                        <div class="h-2 rounded-full track-bar overflow-hidden">
+                            <div class="h-full w-[72%] rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2 text-sm">
+                            <span class="font-medium text-white">Foundation</span>
+                            <span class="text-gray-300">24 donations • 91% acknowledged</span>
+                        </div>
+                        <div class="h-2 rounded-full track-bar overflow-hidden">
+                            <div class="h-full w-[91%] rounded-full bg-gradient-to-r from-emerald-300 to-teal-400"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="glass-card rounded-[2rem] p-6">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-xl font-bold text-white">Service Mix</h3>
+                        <span class="text-xs uppercase tracking-[0.2em] text-gray-400">Today</span>
+                    </div>
+
+                    <div class="space-y-4 text-sm">
+                        <div class="flex items-center justify-between"><span>Store</span><span class="text-apex-green font-semibold">46%</span></div>
+                        <div class="flex items-center justify-between"><span>Finance</span><span class="text-apex-brown font-semibold">21%</span></div>
+                        <div class="flex items-center justify-between"><span>Realty</span><span class="text-cyan-300 font-semibold">13%</span></div>
+                        <div class="flex items-center justify-between"><span>Matrimony</span><span class="text-pink-300 font-semibold">10%</span></div>
+                        <div class="flex items-center justify-between"><span>Foundation</span><span class="text-emerald-300 font-semibold">10%</span></div>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-[2rem] p-6">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-xl font-bold text-white">Recent Activity</h3>
+                        <i class="fa-solid fa-rotate text-gray-400"></i>
+                    </div>
+
+                    <div class="space-y-4 text-sm">
+                        <div class="glass-card-soft rounded-2xl p-4">
+                            <p class="font-semibold text-white">New store order placed</p>
+                            <p class="text-gray-400 mt-1">Cotton Blouse • prepaid • 2 min ago</p>
+                        </div>
+                        <div class="glass-card-soft rounded-2xl p-4">
+                            <p class="font-semibold text-white">Loan lead submitted</p>
+                            <p class="text-gray-400 mt-1">Home loan enquiry • 9 min ago</p>
+                        </div>
+                        <div class="glass-card-soft rounded-2xl p-4">
+                            <p class="font-semibold text-white">Property visit scheduled</p>
+                            <p class="text-gray-400 mt-1">Skyline Penthouses • tomorrow 11:00 AM</p>
+                        </div>
+                        <div class="glass-card-soft rounded-2xl p-4">
+                            <p class="font-semibold text-white">Donation verified</p>
+                            <p class="text-gray-400 mt-1">Project Vidya • receipt sent</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="glass-card rounded-[2rem] p-6 sm:p-8 mb-6">
+            <div class="flex items-center justify-between mb-6 gap-4">
+                <div>
+                    <h3 class="text-2xl font-bold text-white">Operations Ledger</h3>
+                    <p class="text-gray-300 text-sm mt-1">One table for every queue, status, owner, and SLA.</p>
+                </div>
+                <button type="button" class="px-4 py-2 rounded-full bg-white text-gray-900 text-sm font-semibold hover:bg-gray-100 transition-colors">Export Report</button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-left text-sm">
+                    <thead>
+                        <tr class="text-gray-400 border-b border-white/10">
+                            <th class="pb-4 font-medium">Service</th>
+                            <th class="pb-4 font-medium">Queue</th>
+                            <th class="pb-4 font-medium">Status</th>
+                            <th class="pb-4 font-medium">Owner</th>
+                            <th class="pb-4 font-medium">SLA</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-100">
+                        <tr class="border-b border-white/5">
+                            <td class="py-4 font-medium">APEX Store</td>
+                            <td class="py-4">128 orders</td>
+                            <td class="py-4 text-apex-green font-semibold">On track</td>
+                            <td class="py-4">Merch Ops</td>
+                            <td class="py-4">94%</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="py-4 font-medium">Financial Services</td>
+                            <td class="py-4">42 leads</td>
+                            <td class="py-4 text-apex-brown font-semibold">Reviewing</td>
+                            <td class="py-4">Finance Desk</td>
+                            <td class="py-4">78%</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="py-4 font-medium">APEX Realty</td>
+                            <td class="py-4">19 inquiries</td>
+                            <td class="py-4 text-cyan-300 font-semibold">Site visit scheduled</td>
+                            <td class="py-4">Property Ops</td>
+                            <td class="py-4">63%</td>
+                        </tr>
+                        <tr class="border-b border-white/5">
+                            <td class="py-4 font-medium">Anand Matrimony</td>
+                            <td class="py-4">11 matches</td>
+                            <td class="py-4 text-pink-300 font-semibold">Profile review</td>
+                            <td class="py-4">Match Desk</td>
+                            <td class="py-4">72%</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 font-medium">Foundation</td>
+                            <td class="py-4">24 donations</td>
+                            <td class="py-4 text-emerald-300 font-semibold">Acknowledged</td>
+                            <td class="py-4">Impact Team</td>
+                            <td class="py-4">91%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="glass-card rounded-[2rem] p-6">
+                <h3 class="text-xl font-bold text-white mb-4">Store Ops</h3>
+                <ul class="space-y-3 text-sm text-gray-300">
+                    <li class="flex justify-between"><span>Pending packing</span><span class="text-apex-green font-semibold">12</span></li>
+                    <li class="flex justify-between"><span>Return requests</span><span class="text-amber-300 font-semibold">3</span></li>
+                    <li class="flex justify-between"><span>Today revenue</span><span class="text-white font-semibold">₹18,400</span></li>
+                    <li class="flex justify-between"><span>Top SKU</span><span class="text-white font-semibold">Cotton Blouse</span></li>
+                </ul>
+            </div>
+
+            <div class="glass-card rounded-[2rem] p-6">
+                <h3 class="text-xl font-bold text-white mb-4">Finance Ops</h3>
+                <ul class="space-y-3 text-sm text-gray-300">
+                    <li class="flex justify-between"><span>Loan applications</span><span class="text-apex-brown font-semibold">15</span></li>
+                    <li class="flex justify-between"><span>Insurance quotes</span><span class="text-cyan-300 font-semibold">9</span></li>
+                    <li class="flex justify-between"><span>SIP activations</span><span class="text-white font-semibold">8</span></li>
+                    <li class="flex justify-between"><span>Credit cards issued</span><span class="text-white font-semibold">6</span></li>
+                </ul>
+            </div>
+
+            <div class="glass-card rounded-[2rem] p-6">
+                <h3 class="text-xl font-bold text-white mb-4">Foundation Ops</h3>
+                <ul class="space-y-3 text-sm text-gray-300">
+                    <li class="flex justify-between"><span>Verified donations</span><span class="text-emerald-300 font-semibold">24</span></li>
+                    <li class="flex justify-between"><span>Volunteer signups</span><span class="text-apex-green font-semibold">14</span></li>
+                    <li class="flex justify-between"><span>Projects active</span><span class="text-white font-semibold">3</span></li>
+                    <li class="flex justify-between"><span>Receipts sent</span><span class="text-white font-semibold">100%</span></li>
+                </ul>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

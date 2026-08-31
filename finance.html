@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Services | APEX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: { colors: { apex: { purple: '#6C3FC5', purplelight: '#EDE9FF', green: '#16a34a' } }, fontFamily: { sans: ['Inter', 'sans-serif'] } }
+            }
+        }
+    </script>
+</head>
+<body class="font-sans antialiased bg-slate-900 flex justify-center">
+<div class="w-full max-w-md bg-[#F4F6FB] min-h-screen relative shadow-2xl overflow-x-hidden border-x border-slate-800 pb-20">
+    
+    <!-- HEADER -->
+    <div class="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <h1 class="font-black text-lg text-gray-900">Financial Services</h1>
+        </div>
+        <button class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+            <i class="fa-solid fa-bell"></i>
+        </button>
+    </div>
+
+    <!-- HERO DASHBOARD -->
+    <div class="p-4">
+        <div class="bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-800 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+            <p class="text-blue-100 text-[10px] font-bold uppercase tracking-wider mb-1">Total Portfolio Value</p>
+            <div class="flex items-end gap-2 mb-3">
+                <h2 class="text-3xl font-black tracking-tight">&#8377;12,45,600</h2>
+                <span class="text-green-300 text-xs font-bold mb-1 flex items-center gap-1"><i class="fa-solid fa-arrow-trend-up"></i> +4.2%</span>
+            </div>
+            <div class="flex gap-4 border-t border-white/20 pt-3 mt-1">
+                <div>
+                    <p class="text-blue-100 text-[9px] uppercase">Invested</p>
+                    <p class="font-bold text-sm">&#8377;10,00,000</p>
+                </div>
+                <div>
+                    <p class="text-blue-100 text-[9px] uppercase">Returns</p>
+                    <p class="font-bold text-sm text-green-300">&#8377;2,45,600</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUICK ACTIONS GRID -->
+    <div class="px-4 mb-5">
+        <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Wealth & Planning</h3>
+        <div class="grid grid-cols-2 gap-3">
+            <div class="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 text-lg"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                    <span class="text-sm font-bold text-gray-800">Loans</span>
+                </div>
+                <ul class="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-rose-100">
+                    <li><a href="https://apextradingcompany.banksupport.in/" target="_blank" rel="noopener noreferrer" class="hover:text-rose-600 font-medium block">Personal Loan</a></li>
+                    <li><a href="#" class="hover:text-rose-600 font-medium block">Home Loan</a></li>
+                    <li><a href="#" class="hover:text-rose-600 font-medium block">Business Loan</a></li>
+                </ul>
+            </div>
+            
+            <div class="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                    <span class="text-sm font-bold text-gray-800">Investment</span>
+                </div>
+                <ul class="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-emerald-100">
+                    <li><a href="#" class="hover:text-emerald-600 font-medium block">Mutual Funds</a></li>
+                    <li><a href="#" class="hover:text-emerald-600 font-medium block">Fixed Deposit</a></li>
+                    <li><a href="#" class="hover:text-emerald-600 font-medium block">NPS</a></li>
+                    <li><a href="#" class="hover:text-emerald-600 font-medium block">Bonds</a></li>
+                </ul>
+            </div>
+            
+            <div class="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 text-lg"><i class="fa-solid fa-shield-halved"></i></div>
+                    <span class="text-sm font-bold text-gray-800">Insurance</span>
+                </div>
+                <ul class="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-purple-100">
+                    <li><a href="#" class="hover:text-purple-600 font-medium block">Health Insurance</a></li>
+                    <li><a href="#" class="hover:text-purple-600 font-medium block">Life Insurance</a></li>
+                    <li><a href="#" class="hover:text-purple-600 font-medium block">Motor Insurance</a></li>
+                    <li><a href="#" class="hover:text-purple-600 font-medium block">Travel Insurance</a></li>
+                </ul>
+            </div>
+            
+            <div class="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all justify-start">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-lg"><i class="fa-solid fa-credit-card"></i></div>
+                    <span class="text-sm font-bold text-gray-800">Credit Cards</span>
+                </div>
+                <ul class="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-blue-100">
+                    <li><a href="https://apextradingcompany.banksupport.in/" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 font-medium block">Apply New</a></li>
+                    <li><a href="#" class="hover:text-blue-600 font-medium block">Pay Bill</a></li>
+                    <li><a href="#" class="hover:text-blue-600 font-medium block">Offers</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- HORIZONTAL TRACK -->
+    <div class="mb-5">
+        <div class="px-4 flex justify-between items-end mb-3">
+            <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider">Trending Assets</h3>
+            <a href="#" class="text-[9px] font-bold text-blue-600">View All</a>
+        </div>
+        <div class="flex gap-3 overflow-x-auto px-4 scrollbar-none flex-nowrap pb-2">
+            <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-6 h-6 rounded bg-orange-100 text-orange-600 flex items-center justify-center text-[10px]"><i class="fa-brands fa-bitcoin"></i></div>
+                    <span class="text-[10px] font-bold text-gray-800">Bitcoin</span>
+                </div>
+                <p class="font-black text-sm">&#8377;54,30,200</p>
+                <p class="text-[9px] font-bold text-green-500 mt-0.5"><i class="fa-solid fa-caret-up"></i> 5.2%</p>
+            </div>
+            <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-6 h-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-[10px]"><i class="fa-solid fa-car"></i></div>
+                    <span class="text-[10px] font-bold text-gray-800">Tata Motors</span>
+                </div>
+                <p class="font-black text-sm">&#8377;984.50</p>
+                <p class="text-[9px] font-bold text-green-500 mt-0.5"><i class="fa-solid fa-caret-up"></i> 2.1%</p>
+            </div>
+            <div class="bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-6 h-6 rounded bg-green-100 text-green-600 flex items-center justify-center text-[10px]"><i class="fa-solid fa-leaf"></i></div>
+                    <span class="text-[10px] font-bold text-gray-800">APEX Green Fund</span>
+                </div>
+                <p class="font-black text-sm">NAV &#8377;145.2</p>
+                <p class="text-[9px] font-bold text-red-500 mt-0.5"><i class="fa-solid fa-caret-down"></i> 0.8%</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- STICKY BOTTOM ACTION -->
+    <div class="fixed bottom-0 w-full max-w-md bg-white border-t border-gray-100 p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-40">
+        <button onclick="openDematModal()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-blue-700 transition-colors text-sm">
+            Open Free Demat Account
+        </button>
+    </div>
+
+</div>
+
+<!-- Demat Onboarding Modal -->
+<div id="demat-modal" class="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-end justify-center hidden opacity-0 transition-opacity duration-300">
+    <div id="demat-modal-content" class="bg-white w-full max-w-md rounded-t-3xl shadow-2xl transform translate-y-full transition-transform duration-300">
+        <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+            <div>
+                <h2 class="text-lg font-black text-gray-900">Start Your Journey</h2>
+                <p class="text-[10px] text-gray-500 font-bold">Free Demat & Trading Account</p>
+            </div>
+            <button onclick="closeDematModal()" class="w-8 h-8 bg-gray-50 border border-gray-200 rounded-full text-gray-500 flex items-center justify-center hover:bg-gray-100 transition-colors">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <div id="kyc-step-1">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black">1</div>
+                    <div class="h-1 flex-1 bg-gray-100 rounded-full"><div class="h-full bg-blue-600 w-1/3 rounded-full"></div></div>
+                    <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-black">2</div>
+                    <div class="h-1 flex-1 bg-gray-100 rounded-full"></div>
+                    <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-black">3</div>
+                </div>
+                
+                <h3 class="font-black text-gray-900 text-sm mb-4">Verify Mobile Number</h3>
+                <input type="tel" placeholder="Enter 10-digit mobile number" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm mb-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                
+                <button onclick="nextStep()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-blue-700 transition-colors text-sm">
+                    Send OTP <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+            
+            <div id="kyc-step-success" class="hidden text-center py-4">
+                <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <h3 class="font-black text-gray-900 text-lg mb-2">Verification Sent!</h3>
+                <p class="text-xs text-gray-500 mb-6">Our backend systems will securely process your KYC.</p>
+                <button onclick="closeDematModal()" class="w-full border-2 border-gray-200 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openDematModal() {
+        const modal = document.getElementById('demat-modal');
+        const content = document.getElementById('demat-modal-content');
+        document.getElementById('kyc-step-1').classList.remove('hidden');
+        document.getElementById('kyc-step-success').classList.add('hidden');
+        
+        modal.classList.remove('hidden');
+        void modal.offsetWidth;
+        modal.classList.remove('opacity-0');
+        content.classList.remove('translate-y-full');
+        content.classList.add('translate-y-0');
+    }
+
+    function closeDematModal() {
+        const modal = document.getElementById('demat-modal');
+        const content = document.getElementById('demat-modal-content');
+        modal.classList.add('opacity-0');
+        content.classList.remove('translate-y-0');
+        content.classList.add('translate-y-full');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    function nextStep() {
+        document.getElementById('kyc-step-1').classList.add('hidden');
+        document.getElementById('kyc-step-success').classList.remove('hidden');
+    }
+</script>
+</body>
+</html>
