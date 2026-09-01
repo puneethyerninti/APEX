@@ -113,6 +113,7 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
 
         const raw = await fetchBill({
             phone_operator_code,
+            confirmation_mobile_no: '9999999999', // Eko implicitly requires this for some BBPS fetch calls
             ...otherParams
         });
 
