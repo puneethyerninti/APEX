@@ -113,7 +113,6 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
 
         const raw = await fetchBill({
             phone_operator_code,
-            client_ref_id,
             ...otherParams
         });
 
