@@ -202,7 +202,6 @@ export default function UtilityPage() {
     // Build payload using exact Eko param_names as keys
     const fetchPayload: any = {
       phone_operator_code: selectedOperator.operator_id.toString(),
-      confirmation_mobile_no: user?.phone || '9999999999',
     };
     Object.entries(formValues).forEach(([key, value]) => {
       if (value.trim()) fetchPayload[key] = value.trim();
@@ -218,25 +217,8 @@ export default function UtilityPage() {
         throw new Error(res.data.message || 'Could not fetch bill');
       }
     } catch (error: any) {
-      const msg: string = error.response?.data?.message || error.message || '';
-      const isServerDown = msg.toLowerCase().includes('server is down') || 
-                           msg.toLowerCase().includes('unable to fetch') ||
-                           msg.toLowerCase().includes('biller') ||
-                           msg.toLowerCase().includes('no pending bill');
-      
-      if (isServerDown) {
-        // Eko's biller is temporarily down — let user pay with manual amount
-        setErrorMsg(`Biller's server is temporarily unavailable. You can still pay by entering the amount manually.`);
-        // Show manual amount entry fallback
-        setSupportsBillFetch(false);
-        setOperatorParams(prev => {
-          const hasAmount = prev.some(p => p.param_name === 'amount');
-          if (hasAmount) return prev;
-          return [...prev, { param_name: 'amount', param_label: 'Amount (₹)', type: 'Numeric', regex: '^[1-9][0-9]{0,5}$', error: 'Enter a valid amount' }];
-        });
-      } else {
-        setErrorMsg(msg || 'Failed to fetch bill. Please check your details and try again.');
-      }
+      const msg: string = error.response?.data?.message || error.message || 'Failed to fetch bill.';
+      setErrorMsg(msg + ' Please verify your details or try again later.');
     } finally {
       setIsFetchingBill(false);
     }
