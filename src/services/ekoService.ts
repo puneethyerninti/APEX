@@ -211,7 +211,8 @@ export const payBBPSBill = async (params: {
     source_ip: string;
     [key: string]: any; // For operator-specific extra params
 }) => {
-    const USER_CODE = '42290001';
+    // In Eko, user_code is typically the initiator_id unless explicitly provided otherwise.
+    const USER_CODE = process.env.EKO_USER_CODE || EKO_INITIATOR_ID;
     const requestHashString = `${params.utility_acc_no}${params.amount}${USER_CODE}`;
     const headers = getEkoHeaders(requestHashString);
     const url = `${EKO_BASE_URL}/customer/payment/bbps`;
