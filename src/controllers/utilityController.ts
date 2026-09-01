@@ -139,7 +139,7 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
             if (errorMsg === 'No key for Response') {
                 errorMsg = 'No pending bill found, or invalid account number.';
             } else if (errorMsg === 'Unable to fetch bill' || data.reason?.includes('server is down')) {
-                errorMsg = `Biller's server is temporarily unavailable (${data.reason || 'HGPay down'}). Please try again later or pay manually.`;
+                errorMsg = `Biller's server is temporarily unavailable. Please try again later.`;
             } else if (raw.status === 97 && raw.invalid_params) {
                 // Eko parameter validation error — pass field-level errors
                 const fields = Object.values(raw.invalid_params).join(', ');
