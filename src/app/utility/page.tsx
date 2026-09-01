@@ -202,7 +202,6 @@ export default function UtilityPage() {
     // Build payload using exact Eko param_names as keys
     const fetchPayload: any = {
       phone_operator_code: selectedOperator.operator_id.toString(),
-      confirmation_mobile_no: user?.phone || '9999999999',
     };
     Object.entries(formValues).forEach(([key, value]) => {
       if (value.trim()) fetchPayload[key] = value.trim();
