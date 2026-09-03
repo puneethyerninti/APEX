@@ -46,14 +46,20 @@ export default function Page() {
   useEffect(() => {
     if (activeRideId && socket) {
       const handleRideUpdate = (data: any) => {
-        if (data.status === 'driver_found') {
+        if (data.status === 'driver_accepted') {
           setRideStatus('driver_found');
           setDriverInfo(data.driverName);
+        } else if (data.status === 'en_route_to_pickup') {
+          setRideStatus('driver_found');
         } else if (data.status === 'en_route') {
           setRideStatus('en_route');
-          setCabLocation({ lat: data.lat, lng: data.lng });
         } else if (data.status === 'completed' || data.status === 'arrived') {
           setRideStatus('completed');
+        }
+        
+        // Handle live location updates from real driver
+        if (data.lat && data.lng) {
+          setCabLocation({ lat: data.lat, lng: data.lng });
         }
       };
       
@@ -194,14 +200,15 @@ export default function Page() {
 
                         if (type.includes('Ride') && socket) {
                             setRideStatus('searching');
-                            const rideId = `ride_${Date.now()}`;
-                            socket.emit('start_ride', {
+                            const rideId = bookingId; // Use actual DB booking ID to link
+                            socket.emit('request_ride', {
                                 rideId,
-                                bookingId,
                                 origin: pickupLocation || 'Current Location',
                                 destination: destinationLocation || 'Selected Destination',
-                                lat: userLocation?.lat,
-                                lng: userLocation?.lng
+                                fare,
+                                riderId: user._id || user.uid,
+                                riderName: user.name || "APEX User",
+                                phone: user.phone || ""
                             });
                             setActiveRideId(rideId);
                         } else {

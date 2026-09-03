@@ -62,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // First time login, create user doc in backend but KEEP local state if it exists
               const currentUser = useAppStore.getState().user;
               let dbId = firebaseUser.uid;
+              let userRole = currentUser?.role;
               try {
                 const res = await api.post('/user/profile', {
                   phone: firebaseUser.phoneNumber,
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 });
                 if (res.data?.user?._id) {
                   dbId = res.data.user._id;
+                  userRole = res.data.user.role;
                 }
                 if (res.data?.token) {
                   localStorage.setItem('apex_token', res.data.token);
@@ -84,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 email: currentUser?.email || '',
                 isPremium: currentUser?.isPremium,
                 profilePicture: currentUser?.profilePicture,
-                role: currentUser?.role,
+                role: userRole,
               });
             } else {
               console.error("Error fetching user profile:", error);

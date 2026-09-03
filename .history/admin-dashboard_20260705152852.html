@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APEX Admin Dashboard | Simple Operations View</title>
+    <meta name="description" content="Simple admin dashboard for tracking orders, leads, realty, matrimony and foundation activity across the APEX app.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        apex: {
+                            brown: '#A0684A',
+                            brownhover: '#87563c',
+                            brownlight: '#F5EDE8',
+                            green: '#25D366',
+                            dark: '#222222',
+                            graybg: '#F9FAFB'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background: #f9fafb;
+            color: #222222;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #A0684A; border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #87563c; }
+
+        .panel {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .soft-panel {
+            background: linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%);
+        }
+
+        .tab-chip {
+            transition: all 0.2s ease;
+        }
+
+        .tab-chip:hover {
+            transform: translateY(-1px);
+        }
+
+        .table-scroll {
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <a href="index.html" class="flex items-center gap-3 min-w-0">
+                <img src="./APEX%20logo.jpeg" alt="APEX logo" class="h-9 w-9 object-contain rounded shadow-sm">
+                <div class="min-w-0">
+                    <p class="text-[10px] uppercase tracking-[0.35em] text-gray-400">Admin Portal</p>
+                    <h1 class="text-sm sm:text-base font-bold text-apex-dark uppercase truncate">APEX Dashboard</h1>
+                </div>
+            </a>
+
+            <div class="hidden md:flex items-center gap-2 text-xs text-gray-500">
+                <span class="tab-chip px-3 py-1.5 rounded-full bg-green-50 text-green-700 border border-green-100">Live</span>
+                <span class="tab-chip px-3 py-1.5 rounded-full bg-gray-50 border border-gray-100">All services</span>
+                <span class="tab-chip px-3 py-1.5 rounded-full bg-apex-brownlight text-apex-brown border border-apex-brown/10">Today</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button type="button" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-apex-brown text-white text-sm font-semibold hover:bg-apex-brownhover transition-colors" id="btn-refresh">
+                    <i class="fa-solid fa-arrows-rotate text-xs"></i> Refresh
+                </button>
+                <a href="index.html" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-colors">
+                    <i class="fa-solid fa-arrow-left text-xs"></i> Back to App
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20">
+        <section class="panel soft-panel rounded-[2rem] border border-gray-100 p-6 sm:p-8 mb-6 overflow-hidden relative">
+            <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-apex-brown/10 blur-3xl pointer-events-none"></div>
+            <div class="relative z-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+                <div class="max-w-2xl">
+                    <p class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200 mb-4">
+                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                        Simple operations view
+                    </p>
+                    <h2 class="text-2xl sm:text-4xl font-bold text-apex-dark tracking-tight mb-3">Everything important in one place</h2>
+                    <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
+                        This dashboard is trimmed for fast admin work: no fake depth, no busy charts, just service health, queue counts, priorities, and recent activity across the app.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 min-w-[280px]">
+                    <div class="panel bg-white rounded-2xl border border-gray-100 p-4">
+                        <p class="text-xs text-gray-400">Open items</p>
+                        <p class="text-2xl font-bold text-apex-dark mt-1">184</p>
+                        <p class="text-xs text-green-600 mt-1"><i class="fa-solid fa-arrow-up text-[8px]"></i> 12 today</p>
+                    </div>
+                    <div class="panel bg-white rounded-2xl border border-gray-100 p-4">
+                        <p class="text-xs text-gray-400">Needs attention</p>
+                        <p class="text-2xl font-bold text-amber-600 mt-1">19</p>
+                        <p class="text-xs text-gray-500 mt-1">2 urgent</p>
+                    </div>
+                    <div class="panel bg-white rounded-2xl border border-gray-100 p-4">
+                        <p class="text-xs text-gray-400">Verified today</p>
+                        <p class="text-2xl font-bold text-green-600 mt-1">312</p>
+                        <p class="text-xs text-gray-500 mt-1">Across all services</p>
+                    </div>
+                    <div class="panel bg-white rounded-2xl border border-gray-100 p-4">
+                        <p class="text-xs text-gray-400">Revenue / value</p>
+                        <p class="text-2xl font-bold text-apex-brown mt-1">₹18.4L</p>
+                        <p class="text-xs text-gray-500 mt-1">Today</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
+            <div class="panel bg-white rounded-2xl border border-gray-100 p-5">
+                <p class="text-xs text-gray-400">System health</p>
+                <p class="text-3xl font-bold text-green-600 mt-2">98.7%</p>
+                <p class="text-xs text-gray-500 mt-2">All services reachable</p>
+            </div>
+            <div class="panel bg-white rounded-2xl border border-gray-100 p-5">
+                <p class="text-xs text-gray-400">Store orders</p>
+                <p class="text-3xl font-bold text-apex-dark mt-2">2,847</p>
+                <p class="text-xs text-gray-500 mt-2">108 returns open</p>
+            </div>
+            <div class="panel bg-white rounded-2xl border border-gray-100 p-5">
+                <p class="text-xs text-gray-400">Finance leads</p>
+                <p class="text-3xl font-bold text-apex-dark mt-2">1,263</p>
+                <p class="text-xs text-gray-500 mt-2">140 pending review</p>
+            </div>
+            <div class="panel bg-white rounded-2xl border border-gray-100 p-5">
+                <p class="text-xs text-gray-400">Realty inquiries</p>
+                <p class="text-3xl font-bold text-apex-dark mt-2">384</p>
+                <p class="text-xs text-gray-500 mt-2">38 follow-ups waiting</p>
+            </div>
+            <div class="panel bg-white rounded-2xl border border-gray-100 p-5">
+                <p class="text-xs text-gray-400">Foundation actions</p>
+                <p class="text-3xl font-bold text-apex-dark mt-2">1,284</p>
+                <p class="text-xs text-gray-500 mt-2">86 acknowledgements due</p>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
+            <div class="panel bg-white rounded-2xl border border-gray-100 p-5">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-apex-brownlight flex items-center justify-center text-apex-brown"><i class="fa-solid fa-store"></i></div>
+                    <div>
+                        <h3 class="font-bold text-apex-dark">Store</h3>
+                        <p class="text-xs text-gray-400">Orders & stock</p>
+                    </div>
+                </div>
+                <ul class="space-y-2 text-sm text-gray-600">
+                    <li class="flex justify-between"><span>Packed</span><span class="font-semibold text-apex-dark">1,924</span></li>
+                    <li class="flex justify-between"><span>Shipped</span><span class="font-semibold text-apex-dark">1,612</span></li>
+                    <li class="flex justify-between"><span>Returns</span><span class="font-semibold text-amber-600">108</span></li>
+                    <li class="flex justify-between"><span>Low stock</span><span class="font-semibold text-red-500">2 SKUs</span></li>
+                </ul>
+            </div>
+
+            <div class="panel bg-white rounded-2xl border border-gray-100 p-5">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600"><i class="fa-solid fa-chart-line"></i></div>
+                    <div>
+                        <h3 class="font-bold text-apex-dark">Finance</h3>
+                        <p class="text-xs text-gray-400">Loans & credit</p>
+                    </div>
+                </div>
+                <ul class="space-y-2 text-sm text-gray-600">
+                    <li class="flex justify-between"><span>Approved</span><span class="font-semibold text-green-600">634</span></li>
+                    <li class="flex justify-between"><span>Pending</span><span class="font-semibold text-amber-600">140</span></li>
+                    <li class="flex justify-between"><span>Rejected</span><span class="font-semibold text-red-500">89</span></li>
+                    <li class="flex justify-between"><span>Avg response</span><span class="font-semibold text-apex-dark">4.1 hrs</span></li>
+                </ul>
+            </div>
+
+            <div class="panel bg-white rounded-2xl border border-gray-100 p-5">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600"><i class="fa-solid fa-building"></i></div>
+                    <div>
+                        <h3 class="font-bold text-apex-dark">Realty</h3>
+                        <p class="text-xs text-gray-400">Properties & visits</p>
+                    </div>
+                </div>
+                <ul class="space-y-2 text-sm text-gray-600">
+                    <li class="flex justify-between"><span>Site visits</span><span class="font-semibold text-apex-dark">127</span></li>
+                    <li class="flex justify-between"><span>Closed deals</span><span class="font-semibold text-green-600">18</span></li>
+                    <li class="flex justify-between"><span>Pending follow-ups</span><span class="font-semibold text-amber-600">38</span></li>
+                    <li class="flex justify-between"><span>Avg response</span><span class="font-semibold text-apex-dark">1.8 hrs</span></li>
+                </ul>
+            </div>
+
+            <div class="panel bg-white rounded-2xl border border-gray-100 p-5">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500"><i class="fa-solid fa-heart"></i></div>
+                    <div>
+                        <h3 class="font-bold text-apex-dark">Matrimony</h3>
+                        <p class="text-xs text-gray-400">Profiles & matches</p>
+                    </div>
+                </div>
+                <ul class="space-y-2 text-sm text-gray-600">
+                    <li class="flex justify-between"><span>Verified</span><span class="font-semibold text-green-600">5,214</span></li>
+                    <li class="flex justify-between"><span>Matches</span><span class="font-semibold text-pink-600">1,847</span></li>
+                    <li class="flex justify-between"><span>Pending review</span><span class="font-semibold text-amber-600">47</span></li>
+                    <li class="flex justify-between"><span>SLA</span><span class="font-semibold text-apex-dark">3.2 hrs</span></li>
+                </ul>
+            </div>
+
+            <div class="panel bg-white rounded-2xl border border-gray-100 p-5">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600"><i class="fa-solid fa-hand-holding-heart"></i></div>
+                    <div>
+                        <h3 class="font-bold text-apex-dark">Foundation</h3>
+                        <p class="text-xs text-gray-400">Donations & projects</p>
+                    </div>
+                </div>
+                <ul class="space-y-2 text-sm text-gray-600">
+                    <li class="flex justify-between"><span>Donations</span><span class="font-semibold text-apex-dark">1,284</span></li>
+                    <li class="flex justify-between"><span>Receipts</span><span class="font-semibold text-green-600">1,198</span></li>
+                    <li class="flex justify-between"><span>Volunteer signups</span><span class="font-semibold text-apex-dark">347</span></li>
+                    <li class="flex justify-between"><span>Ack. pending</span><span class="font-semibold text-amber-600">86</span></li>
+                </ul>
+            </div>
+
+            <div class="panel bg-white rounded-2xl border border-gray-100 p-5">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div>
+                        <h3 class="font-bold text-apex-dark">Priority</h3>
+                        <p class="text-xs text-gray-400">Needs action</p>
+                    </div>
+                </div>
+                <ul class="space-y-2 text-sm text-gray-600">
+                    <li class="flex justify-between"><span>Urgent store returns</span><span class="font-semibold text-red-500">2</span></li>
+                    <li class="flex justify-between"><span>Finance escalations</span><span class="font-semibold text-red-500">4</span></li>
+                    <li class="flex justify-between"><span>Realty visits due</span><span class="font-semibold text-amber-600">6</span></li>
+                    <li class="flex justify-between"><span>Pending approvals</span><span class="font-semibold text-apex-dark">19</span></li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 xl:grid-cols-[1.35fr_0.95fr] gap-6">
+            <div class="panel bg-white rounded-[2rem] border border-gray-100 overflow-hidden">
+                <div class="px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-apex-dark">Priority Queue</h3>
+                        <p class="text-sm text-gray-500 mt-1">The only table most admins need during the day.</p>
+                    </div>
+                    <span class="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-600">7 items</span>
+                </div>
+                <div class="table-scroll overflow-x-auto">
+                    <table class="w-full min-w-[760px] text-left">
+                        <thead class="bg-gray-50/80 text-[11px] uppercase tracking-wider text-gray-400">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold">Service</th>
+                                <th class="px-6 py-3 font-semibold">Item</th>
+                                <th class="px-6 py-3 font-semibold">Status</th>
+                                <th class="px-6 py-3 font-semibold">Priority</th>
+                                <th class="px-6 py-3 font-semibold">Owner</th>
+                                <th class="px-6 py-3 font-semibold">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 text-sm">
+                            <tr>
+                                <td class="px-6 py-4 font-medium text-apex-dark">Store</td>
+                                <td class="px-6 py-4 text-gray-600">Return request #APX-2801</td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100 font-semibold">Pending</span></td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-red-50 text-red-600 border border-red-100 font-semibold">High</span></td>
+                                <td class="px-6 py-4 text-gray-600">Ramesh K.</td>
+                                <td class="px-6 py-4"><button class="text-xs px-3 py-1.5 rounded-lg bg-apex-brown text-white font-semibold hover:bg-apex-brownhover transition-colors">Review</button></td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-medium text-apex-dark">Finance</td>
+                                <td class="px-6 py-4 text-gray-600">Loan lead #FL-1092</td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100 font-semibold">In review</span></td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100 font-semibold">Medium</span></td>
+                                <td class="px-6 py-4 text-gray-600">Priya S.</td>
+                                <td class="px-6 py-4"><button class="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors">Approve</button></td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-medium text-apex-dark">Realty</td>
+                                <td class="px-6 py-4 text-gray-600">Site visit — Crown Villas</td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-100 font-semibold">Qualified</span></td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-100 font-semibold">Medium</span></td>
+                                <td class="px-6 py-4 text-gray-600">Vikram M.</td>
+                                <td class="px-6 py-4"><button class="text-xs px-3 py-1.5 rounded-lg bg-apex-brown text-white font-semibold hover:bg-apex-brownhover transition-colors">Contact</button></td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-medium text-apex-dark">Matrimony</td>
+                                <td class="px-6 py-4 text-gray-600">Profile #AM-6842</td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100 font-semibold">Pending</span></td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 font-semibold">Low</span></td>
+                                <td class="px-6 py-4 text-gray-600">Deepa R.</td>
+                                <td class="px-6 py-4"><button class="text-xs px-3 py-1.5 rounded-lg bg-apex-brown text-white font-semibold hover:bg-apex-brownhover transition-colors">Review</button></td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-medium text-apex-dark">Foundation</td>
+                                <td class="px-6 py-4 text-gray-600">Donation #FD-1284</td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100 font-semibold">Receipt due</span></td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 font-semibold">Low</span></td>
+                                <td class="px-6 py-4 text-gray-600">Sunil P.</td>
+                                <td class="px-6 py-4"><button class="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors">Issue receipt</button></td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-medium text-apex-dark">Store</td>
+                                <td class="px-6 py-4 text-gray-600">Cancellation #APX-2839</td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-red-50 text-red-600 border border-red-100 font-semibold">Urgent</span></td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-red-50 text-red-600 border border-red-100 font-semibold">High</span></td>
+                                <td class="px-6 py-4 text-gray-600">Ramesh K.</td>
+                                <td class="px-6 py-4"><button class="text-xs px-3 py-1.5 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors">Escalate</button></td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-medium text-apex-dark">Finance</td>
+                                <td class="px-6 py-4 text-gray-600">Credit card #CC-3422</td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-100 font-semibold">Approved</span></td>
+                                <td class="px-6 py-4"><span class="text-[10px] px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 font-semibold">Low</span></td>
+                                <td class="px-6 py-4 text-gray-600">Priya S.</td>
+                                <td class="px-6 py-4"><button class="text-xs px-3 py-1.5 rounded-lg bg-gray-200 text-gray-600 font-semibold hover:bg-gray-300 transition-colors">View</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
+                    <p>Showing 6 of 19 items</p>
+                    <p>Focus on high priority items first</p>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="panel bg-white rounded-[2rem] border border-gray-100 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-apex-dark">What needs attention</h3>
+                            <p class="text-sm text-gray-500 mt-1">A short, actionable summary.</p>
+                        </div>
+                        <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                    </div>
+                    <ul class="space-y-3 text-sm text-gray-600">
+                        <li class="flex items-center justify-between"><span>Store returns waiting</span><span class="font-semibold text-red-500">2 urgent</span></li>
+                        <li class="flex items-center justify-between"><span>Finance reviews waiting</span><span class="font-semibold text-amber-600">19 total</span></li>
+                        <li class="flex items-center justify-between"><span>Realty follow-ups due</span><span class="font-semibold text-amber-600">38</span></li>
+                        <li class="flex items-center justify-between"><span>Foundation receipts due</span><span class="font-semibold text-amber-600">86</span></li>
+                    </ul>
+                </div>
+
+                <div class="panel bg-white rounded-[2rem] border border-gray-100 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-apex-dark">Recent activity</h3>
+                            <p class="text-sm text-gray-500 mt-1">Latest events across the app.</p>
+                        </div>
+                        <span class="text-[10px] text-gray-400 uppercase tracking-[0.2em]">Live</span>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-apex-brownlight flex items-center justify-center text-apex-brown shrink-0"><i class="fa-solid fa-box text-sm"></i></div>
+                            <div class="min-w-0">
+                                <p class="text-sm text-gray-800 font-medium">New order placed</p>
+                                <p class="text-xs text-gray-400">Cotton Blouse × 2 · ₹3,060</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0"><i class="fa-solid fa-sack-dollar text-sm"></i></div>
+                            <div class="min-w-0">
+                                <p class="text-sm text-gray-800 font-medium">Loan lead received</p>
+                                <p class="text-xs text-gray-400">Personal loan · ₹5L</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0"><i class="fa-solid fa-building text-sm"></i></div>
+                            <div class="min-w-0">
+                                <p class="text-sm text-gray-800 font-medium">Property inquiry qualified</p>
+                                <p class="text-xs text-gray-400">Crown Villas · corporate buyer</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500 shrink-0"><i class="fa-solid fa-heart text-sm"></i></div>
+                            <div class="min-w-0">
+                                <p class="text-sm text-gray-800 font-medium">Match approved</p>
+                                <p class="text-xs text-gray-400">Aanya & Rohan · premium members</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0"><i class="fa-solid fa-hand-holding-heart text-sm"></i></div>
+                            <div class="min-w-0">
+                                <p class="text-sm text-gray-800 font-medium">Donation verified</p>
+                                <p class="text-xs text-gray-400">Project Vidya · receipt issued</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel bg-white rounded-[2rem] border border-gray-100 p-6">
+                    <h3 class="text-lg font-bold text-apex-dark mb-4">Service shortcuts</h3>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <a href="#" class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 hover:bg-gray-100 transition-colors">
+                            <p class="font-semibold text-apex-dark">Approve queue</p>
+                            <p class="text-xs text-gray-500 mt-1">For fast reviews</p>
+                        </a>
+                        <a href="#" class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 hover:bg-gray-100 transition-colors">
+                            <p class="font-semibold text-apex-dark">Contact lead</p>
+                            <p class="text-xs text-gray-500 mt-1">Call or message</p>
+                        </a>
+                        <a href="#" class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 hover:bg-gray-100 transition-colors">
+                            <p class="font-semibold text-apex-dark">Issue receipt</p>
+                            <p class="text-xs text-gray-500 mt-1">Foundation</p>
+                        </a>
+                        <a href="#" class="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 hover:bg-gray-100 transition-colors">
+                            <p class="font-semibold text-apex-dark">Open reports</p>
+                            <p class="text-xs text-gray-500 mt-1">Daily summary</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white border-t border-gray-100 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-gray-400">
+            <p>&copy; 2026 APEX Group of Companies. Admin Dashboard.</p>
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="hover:text-apex-brown transition-colors">Back to App</a>
+                <a href="#" class="hover:text-apex-brown transition-colors">Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const refreshButton = document.getElementById('btn-refresh');
+            if (refreshButton) {
+                refreshButton.addEventListener('click', () => {
+                    refreshButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> Refreshing';
+                    setTimeout(() => location.reload(), 700);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

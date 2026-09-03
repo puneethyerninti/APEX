@@ -984,6 +984,11 @@ export default function Home() {
                                     <i className="fa-solid fa-lock text-[10px]"></i>Admin Portal
                                 </Link>
                             )}
+                            {(user?.role === 'driver' || user?.role === 'admin') && (
+                                <Link href="/driver-dashboard" className="hover:text-apex-purple transition-colors flex items-center gap-1 font-bold text-xs bg-gray-50 px-3 py-1 rounded-full border border-gray-100 mt-1">
+                                    <i className="fa-solid fa-car text-[10px]"></i>Driver Portal
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </footer>

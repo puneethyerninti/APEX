@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | APEX</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for Dashboard Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        apex: {
+                            brown: '#A0684A',
+                            brownhover: '#87563c',
+                            green: '#25D366',
+                            dark: '#222222',
+                            lightbg: '#FFFFFF',
+                            graybg: '#F9FAFB',
+                            border: '#E5E7EB'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F9FAFB;
+            color: #222222;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #A0684A; }
+
+        /* Sidebar transitions */
+        #sidebar { transition: transform 0.3s ease-in-out; }
+        
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+    </style>
+</head>
+<body class="font-sans antialiased flex h-screen overflow-hidden bg-apex-graybg">
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-apex-border z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:flex-shrink-0 flex flex-col transition-transform duration-300">
+        
+        <!-- Sidebar Header / Logo -->
+        <div class="h-16 flex items-center px-6 border-b border-apex-border">
+            <img src="WhatsApp Image 2026-07-05 at 09.25.30_3.jpeg" alt="APEX Logo" class="h-8 w-8 object-cover rounded mr-3 shadow-sm">
+            <span class="font-bold text-lg tracking-wider text-apex-brown uppercase">APEX Admin</span>
+            <!-- Mobile Close Button -->
+            <button class="ml-auto lg:hidden text-gray-500 hover:text-apex-brown" onclick="toggleSidebar()">
+                <i class="fa-solid fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Sidebar Links -->
+        <div class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-3 mt-2">Main</div>
+            <a href="#" class="flex items-center px-3 py-2.5 bg-apex-brown/10 text-apex-brown rounded-lg font-medium">
+                <i class="fa-solid fa-chart-pie w-6 text-center mr-2"></i> Dashboard Overview
+            </a>
+            <a href="#" class="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 hover:text-apex-brown rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-users w-6 text-center mr-2"></i> User Management
+            </a>
+            
+            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-3 mt-6">Ecosystem</div>
+            <a href="#" class="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 hover:text-apex-brown rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-shopping-cart w-6 text-center mr-2"></i> APEX Store
+                <span class="ml-auto bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-[10px] font-bold">12 New</span>
+            </a>
+            <a href="#" class="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 hover:text-apex-brown rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-chart-line w-6 text-center mr-2"></i> Financial Services
+            </a>
+            <a href="#" class="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 hover:text-apex-brown rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-building w-6 text-center mr-2"></i> Realty Listings
+            </a>
+            <a href="#" class="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 hover:text-apex-brown rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-heart w-6 text-center mr-2"></i> Anand Matrimony
+            </a>
+            <a href="#" class="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 hover:text-apex-brown rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-handshake w-6 text-center mr-2"></i> Foundation
+            </a>
+
+            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-3 mt-6">System</div>
+            <a href="#" class="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 hover:text-apex-brown rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-cog w-6 text-center mr-2"></i> Settings
+            </a>
+            <a href="#" class="flex items-center px-3 py-2.5 text-gray-600 hover:bg-gray-50 hover:text-red-500 rounded-lg font-medium transition-colors">
+                <i class="fa-solid fa-sign-out-alt w-6 text-center mr-2"></i> Logout
+            </a>
+        </div>
+        
+        <!-- Admin Profile Mini -->
+        <div class="p-4 border-t border-apex-border flex items-center">
+            <img src="https://ui-avatars.com/api/?name=Admin+User&background=A0684A&color=fff" alt="Admin" class="w-9 h-9 rounded-full mr-3">
+            <div>
+                <div class="text-sm font-bold text-gray-800">Super Admin</div>
+                <div class="text-xs text-gray-500">System Administrator</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-w-0">
+        
+        <!-- Top Navbar -->
+        <header class="h-16 bg-white border-b border-apex-border flex items-center justify-between px-4 sm:px-6 z-10 shadow-sm">
+            
+            <div class="flex items-center">
+                <!-- Hamburger Mobile -->
+                <button class="mr-4 lg:hidden text-gray-500 hover:text-apex-brown focus:outline-none text-xl" onclick="toggleSidebar()">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                
+                <!-- Search -->
+                <div class="relative hidden sm:block">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" placeholder="Search ecosystem..." class="pl-10 pr-4 py-2 border border-gray-200 rounded-full text-sm w-64 focus:outline-none focus:border-apex-brown focus:ring-1 focus:ring-apex-brown transition-colors">
+                </div>
+            </div>
+
+            <!-- Right Nav Icons -->
+            <div class="flex items-center space-x-4">
+                <button class="text-gray-400 hover:text-apex-brown transition-colors relative">
+                    <i class="fa-solid fa-bell text-xl"></i>
+                    <span class="absolute -top-1 -right-1 flex h-4 w-4">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white text-[8px] font-bold text-white items-center justify-center">5</span>
+                    </span>
+                </button>
+                <a href="index.html" class="hidden sm:flex items-center text-sm font-medium text-gray-500 hover:text-apex-brown transition-colors">
+                    <i class="fa-solid fa-external-link-alt mr-1"></i> View App
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Scrollable Area -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+                    <p class="text-sm text-gray-500 mt-1">Welcome back. Here's what's happening across the APEX ecosystem today.</p>
+                </div>
+                <div class="hidden md:block">
+                    <button class="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 shadow-sm mr-2 transition-colors">
+                        <i class="fa-solid fa-download mr-1"></i> Export Report
+                    </button>
+                    <button class="bg-apex-brown text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-apex-brownhover shadow-sm transition-colors">
+                        <i class="fa-solid fa-plus mr-1"></i> Add Record
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Stat 1 -->
+                <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm stat-card transition-all">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Total Users</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">2.5M</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                            <i class="fa-solid fa-users text-blue-500"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="text-green-500 font-medium flex items-center"><i class="fa-solid fa-arrow-up mr-1 text-[10px]"></i> 12.5%</span>
+                        <span class="text-gray-400 ml-2">vs last month</span>
+                    </div>
+                </div>
+
+                <!-- Stat 2 -->
+                <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm stat-card transition-all">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Total Revenue</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">₹45.2 Cr</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">
+                            <i class="fa-solid fa-wallet text-green-500"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="text-green-500 font-medium flex items-center"><i class="fa-solid fa-arrow-up mr-1 text-[10px]"></i> 8.2%</span>
+                        <span class="text-gray-400 ml-2">vs last month</span>
+                    </div>
+                </div>
+
+                <!-- Stat 3 -->
+                <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm stat-card transition-all">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Store Orders</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">15,483</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
+                            <i class="fa-solid fa-box-open text-orange-500"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="text-red-500 font-medium flex items-center"><i class="fa-solid fa-arrow-down mr-1 text-[10px]"></i> 2.1%</span>
+                        <span class="text-gray-400 ml-2">vs last month</span>
+                    </div>
+                </div>
+
+                <!-- Stat 4 -->
+                <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm stat-card transition-all">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">New Matches (Matrimony)</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1">1,204</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+                            <i class="fa-solid fa-heart text-red-500"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="text-green-500 font-medium flex items-center"><i class="fa-solid fa-arrow-up mr-1 text-[10px]"></i> 18.4%</span>
+                        <span class="text-gray-400 ml-2">vs last month</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                
+                <!-- Main Chart -->
+                <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm lg:col-span-2">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-gray-900">Revenue Overview</h2>
+                        <select class="bg-gray-50 border border-gray-200 text-gray-700 text-xs rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-apex-brown">
+                            <option>Last 6 Months</option>
+                            <option>This Year</option>
+                        </select>
+                    </div>
+                    <div class="relative h-72 w-full">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Secondary Chart -->
+                <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4">Ecosystem Distribution</h2>
+                    <div class="relative h-64 w-full flex justify-center">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                    <div class="mt-4 flex flex-col space-y-2">
+                        <div class="flex justify-between text-xs text-gray-500"><span class="flex items-center"><span class="w-2 h-2 rounded-full bg-[#A0684A] mr-2"></span>Store</span><span>45%</span></div>
+                        <div class="flex justify-between text-xs text-gray-500"><span class="flex items-center"><span class="w-2 h-2 rounded-full bg-[#25D366] mr-2"></span>Finance</span><span>30%</span></div>
+                        <div class="flex justify-between text-xs text-gray-500"><span class="flex items-center"><span class="w-2 h-2 rounded-full bg-[#3B82F6] mr-2"></span>Realty</span><span>15%</span></div>
+                        <div class="flex justify-between text-xs text-gray-500"><span class="flex items-center"><span class="w-2 h-2 rounded-full bg-[#EF4444] mr-2"></span>Matrimony</span><span>10%</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Table -->
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-8">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-gray-900">Recent Transactions & Activity</h2>
+                    <a href="#" class="text-apex-brown text-sm font-medium hover:underline">View All</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                                <th class="px-6 py-4 font-semibold">User / Client</th>
+                                <th class="px-6 py-4 font-semibold">Service Sector</th>
+                                <th class="px-6 py-4 font-semibold">Amount / Value</th>
+                                <th class="px-6 py-4 font-semibold">Status</th>
+                                <th class="px-6 py-4 font-semibold">Date</th>
+                                <th class="px-6 py-4 text-right font-semibold">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 text-sm">
+                            
+                            <!-- Row 1 -->
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 flex items-center">
+                                    <img src="https://randomuser.me/api/portraits/men/1.jpg" alt="User" class="w-8 h-8 rounded-full mr-3">
+                                    <div>
+                                        <div class="font-bold text-gray-900">Rahul Sharma</div>
+                                        <div class="text-xs text-gray-500">rahul@example.com</div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-medium">
+                                        <i class="fa-solid fa-building mr-1"></i> Realty
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 font-semibold text-gray-900">₹2.5 Cr (Booking)</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                                        Completed
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-500">Today, 10:45 AM</td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="text-gray-400 hover:text-apex-brown transition-colors"><i class="fa-solid fa-ellipsis-v"></i></button>
+                                </td>
+                            </tr>
+
+                            <!-- Row 2 -->
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 flex items-center">
+                                    <img src="https://randomuser.me/api/portraits/women/2.jpg" alt="User" class="w-8 h-8 rounded-full mr-3">
+                                    <div>
+                                        <div class="font-bold text-gray-900">Sneha Patel</div>
+                                        <div class="text-xs text-gray-500">sneha.p@example.com</div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-md bg-orange-50 text-orange-700 text-xs font-medium">
+                                        <i class="fa-solid fa-shopping-cart mr-1"></i> Store
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 font-semibold text-gray-900">₹12,499</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">
+                                        Processing
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-500">Today, 09:12 AM</td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="text-gray-400 hover:text-apex-brown transition-colors"><i class="fa-solid fa-ellipsis-v"></i></button>
+                                </td>
+                            </tr>
+
+                            <!-- Row 3 -->
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3 text-gray-500 font-bold">
+                                        AK
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-gray-900">Amit Kumar</div>
+                                        <div class="text-xs text-gray-500">amitk@example.com</div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs font-medium">
+                                        <i class="fa-solid fa-chart-line mr-1"></i> Finance
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 font-semibold text-gray-900">₹50,000 (SIP)</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                                        Completed
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-500">Yesterday, 04:30 PM</td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="text-gray-400 hover:text-apex-brown transition-colors"><i class="fa-solid fa-ellipsis-v"></i></button>
+                                </td>
+                            </tr>
+
+                            <!-- Row 4 -->
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 flex items-center">
+                                    <img src="https://randomuser.me/api/portraits/women/4.jpg" alt="User" class="w-8 h-8 rounded-full mr-3">
+                                    <div>
+                                        <div class="font-bold text-gray-900">Priya Singh</div>
+                                        <div class="text-xs text-gray-500">priya.s@example.com</div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium">
+                                        <i class="fa-solid fa-heart mr-1"></i> Matrimony
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Premium Plan</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                                        Completed
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-500">Yesterday, 11:20 AM</td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="text-gray-400 hover:text-apex-brown transition-colors"><i class="fa-solid fa-ellipsis-v"></i></button>
+                                </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="mt-auto py-4 border-t border-gray-200 text-center text-sm text-gray-500">
+                &copy; 2026 APEX Group of Companies. Internal Admin Portal.
+            </footer>
+
+        </main>
+    </div>
+
+    <script>
+        // Sidebar Toggle Logic
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // Initialize Charts when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Shared Chart Options
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = '#6b7280';
+            Chart.defaults.scale.grid.color = '#f3f4f6';
+
+            // 1. Revenue Line Chart
+            const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+            
+            // Create a gradient for the line chart fill
+            const gradient = ctxRevenue.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(160, 104, 74, 0.5)'); // APEX Brown semi-transparent
+            gradient.addColorStop(1, 'rgba(160, 104, 74, 0.0)');
+
+            new Chart(ctxRevenue, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Revenue (in Crores)',
+                        data: [28, 32, 30, 36, 42, 45.2],
+                        borderColor: '#A0684A',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#A0684A',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4 // Smooth curves
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#222222',
+                            padding: 12,
+                            titleFont: { size: 13 },
+                            bodyFont: { size: 14, weight: 'bold' },
+                            callbacks: {
+                                label: function(context) {
+                                    return '₹' + context.parsed.y + ' Cr';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            border: { display: false },
+                            ticks: {
+                                callback: function(value) { return '₹' + value + 'Cr'; }
+                            }
+                        },
+                        x: {
+                            border: { display: false },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // 2. Ecosystem Distribution Doughnut Chart
+            const ctxDist = document.getElementById('distributionChart').getContext('2d');
+            new Chart(ctxDist, {
+                type: 'doughnut',
+                data: {
+                    labels: ['APEX Store', 'Financial Services', 'APEX Realty', 'Anand Matrimony'],
+                    datasets: [{
+                        data: [45, 30, 15, 10],
+                        backgroundColor: [
+                            '#A0684A', // Brown
+                            '#25D366', // Green
+                            '#3B82F6', // Blue
+                            '#EF4444'  // Red
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#222222',
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.label + ': ' + context.parsed + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

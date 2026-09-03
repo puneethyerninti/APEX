@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useAppStore } from '@/store/useAppStore';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -13,6 +14,7 @@ export const SocketContext = createContext<SocketContextType | undefined>(undefi
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const user = useAppStore(state => state.user);
 
   useEffect(() => {
     // Only connect if we have a real backend URL, otherwise stay disconnected gracefully
@@ -45,6 +47,14 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       socketInstance.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (socket && isConnected && user?._id) {
+      socket.emit('join_user', user._id);
+    } else if (socket && isConnected && user?.uid) { // Fallback for firebase uid
+      socket.emit('join_user', user.uid);
+    }
+  }, [socket, isConnected, user]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>
