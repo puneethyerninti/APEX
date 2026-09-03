@@ -35,12 +35,17 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
 const UtilityTransactionSchema = new mongoose_1.Schema({
-    userId: { type: String, required: true },
+    userId: { type: String, required: true, index: true },
     type: { type: String, required: true },
     amount: { type: Number, required: true },
     operator: { type: String, required: true },
     mobileOrAccountNumber: { type: String, required: true },
-    ekoTxId: { type: String },
-    status: { type: String, enum: ['Pending', 'Success', 'Failed'], default: 'Pending' },
+    ekoTxId: { type: String, index: true, sparse: true },
+    clientRefId: { type: String, index: true, sparse: true },
+    razorpayOrderId: { type: String, index: true, sparse: true },
+    razorpayPaymentId: { type: String, index: true, sparse: true },
+    planDescription: { type: String },
+    status: { type: String, enum: ['Pending', 'Success', 'Failed'], default: 'Pending', index: true },
+    metadata: { type: mongoose_1.Schema.Types.Mixed }
 }, { timestamps: true });
 exports.default = mongoose_1.default.models.UtilityTransaction || mongoose_1.default.model('UtilityTransaction', UtilityTransactionSchema);

@@ -14,13 +14,7 @@ const resend = process.env.RESEND_API_KEY ? new resend_1.Resend(process.env.RESE
 const sendEmailNotification = async (req, res) => {
     const { to, subject, html } = req.body;
     if (!resend) {
-        console.warn("⚠️ RESEND API KEY MISSING: Simulating Email send.");
-        // Simulate delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return res.json({
-            message: "Email sent successfully (Simulated)",
-            id: `sim_email_${Date.now()}`
-        });
+        return res.status(500).json({ error: "Email service configuration missing" });
     }
     try {
         const data = await resend.emails.send({

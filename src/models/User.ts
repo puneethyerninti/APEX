@@ -5,7 +5,7 @@ export interface IUser extends Document {
   password?: string;
   name: string;
   phone?: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'driver';
   walletBalance: number;
   profilePicture?: string;
   fcmTokens?: string[];
@@ -18,7 +18,7 @@ const UserSchema = new Schema<IUser>(
     password: { type: String },
     name: { type: String, required: true },
     phone: { type: String },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    role: { type: String, enum: ['user', 'admin', 'driver'], default: 'user' },
     walletBalance: { type: Number, default: 0 },
     profilePicture: { type: String },
     fcmTokens: [{ type: String }],

@@ -5,10 +5,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const matrimonyController_1 = require("../controllers/matrimonyController");
+const s3Upload_1 = require("../services/s3Upload");
 const router = express_1.default.Router();
+const upload = s3Upload_1.uploadToS3;
 router.get('/profiles', matrimonyController_1.getProfiles);
 router.get('/profiles/me', matrimonyController_1.getMyProfile);
-router.post('/profile', matrimonyController_1.createProfile);
+router.post('/profile', upload.array('images', 5), matrimonyController_1.createProfile);
 router.get('/messages/:roomId', matrimonyController_1.getMessages);
 router.put('/messages/:roomId/read', matrimonyController_1.markMessagesAsRead);
 router.get('/inbox/:userId', matrimonyController_1.getInbox);

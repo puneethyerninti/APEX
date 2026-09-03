@@ -4,10 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const multer_1 = __importDefault(require("multer"));
+const s3Upload_1 = require("../services/s3Upload");
 const jobsController_1 = require("../controllers/jobsController");
 const router = express_1.default.Router();
-const upload = (0, multer_1.default)({ dest: 'uploads/' });
+const upload = s3Upload_1.uploadToS3;
 router.get('/', jobsController_1.getJobs);
 router.post('/', jobsController_1.createJob);
 router.post('/apply', upload.single('resume'), jobsController_1.applyJob);

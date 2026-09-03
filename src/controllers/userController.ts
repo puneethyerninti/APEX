@@ -22,8 +22,12 @@ export const getUserProfile = async (req: Request, res: Response) => {
     }
 
     const isAdminPhone = phone === '8247885289' || phone === '+918247885289';
+    const isDriverPhone = phone === '7032709656' || phone === '+917032709656';
     if (isAdminPhone && user.role !== 'admin') {
         user.role = 'admin';
+        await user.save();
+    } else if (isDriverPhone && user.role !== 'driver') {
+        user.role = 'driver';
         await user.save();
     }
 
@@ -60,6 +64,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
     let user = await User.findOne({ phone });
     
     const isAdminPhone = phone === '8247885289' || phone === '+918247885289';
+    const isDriverPhone = phone === '7032709656' || phone === '+917032709656';
     
     if (user) {
       // Update existing user
@@ -68,6 +73,8 @@ export const updateUserProfile = async (req: Request, res: Response) => {
       if (profilePicture !== undefined) user.profilePicture = profilePicture;
       if (isAdminPhone && user.role !== 'admin') {
           user.role = 'admin'; // Auto-upgrade to admin
+      } else if (isDriverPhone && user.role !== 'driver') {
+          user.role = 'driver'; // Auto-upgrade to driver
       }
       await user.save();
       
@@ -82,10 +89,10 @@ export const updateUserProfile = async (req: Request, res: Response) => {
       // Create user if not found (fallback)
       user = await User.create({
         phone,
-        name: name || (isAdminPhone ? 'APEX Admin' : 'User'),
+        name: name || (isAdminPhone ? 'APEX Admin' : isDriverPhone ? 'APEX Driver' : 'User'),
         email: email || `${phone}@apex.local`,
         walletBalance: 0,
-        role: isAdminPhone ? 'admin' : 'user'
+        role: isAdminPhone ? 'admin' : isDriverPhone ? 'driver' : 'user'
       });
       
       // Emit live event to admin dashboard

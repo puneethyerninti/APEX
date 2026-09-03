@@ -3,21 +3,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyRazorpayPayment = exports.createRazorpayOrder = exports.addMoney = exports.deductMoney = exports.getWalletBalance = void 0;
+exports.verifyRazorpayPayment = exports.createRazorpayOrder = exports.addMoney = exports.deductMoney = exports.getWalletBalance = exports.getRazorpay = void 0;
 const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const razorpay_1 = __importDefault(require("razorpay"));
 const crypto_1 = __importDefault(require("crypto"));
 const notificationController_1 = require("./notificationController");
-const userController_1 = require("./userController");
-const matrimonyController_1 = require("./matrimonyController");
-const travelsController_1 = require("./travelsController");
-const utilityController_1 = require("./utilityController");
-const academyController_1 = require("./academyController");
-const razorpay = new razorpay_1.default({
-    key_id: process.env.RAZORPAY_KEY_ID || 'mock_key',
-    key_secret: process.env.RAZORPAY_KEY_SECRET || 'mock_secret',
-});
+const fulfillmentService_1 = require("../services/fulfillmentService");
+// Razorpay will be instantiated dynamically to avoid crashing the server on startup if keys are missing
+let razorpayInstance = null;
+const getRazorpay = () => {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+        throw new Error("Razorpay keys missing");
+    }
+    if (!razorpayInstance) {
+        razorpayInstance = new razorpay_1.default({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
+        });
+    }
+    return razorpayInstance;
+};
+exports.getRazorpay = getRazorpay;
 // Note: In a real app, you would have middleware extracting user ID from JWT
 // For this stage, we simulate passing userId in the body or finding the first user
 const getWalletBalance = async (req, res) => {
@@ -120,7 +127,7 @@ const createRazorpayOrder = async (req, res) => {
             currency: "INR",
             receipt: `receipt_${Date.now()}`
         };
-        const order = await razorpay.orders.create(options);
+        const order = await (0, exports.getRazorpay)().orders.create(options);
         // Create pending transaction
         await Transaction_1.default.create({
             user: userId,
@@ -161,50 +168,31 @@ const verifyRazorpayPayment = async (req, res) => {
                 razorpaySignature: razorpay_signature
             }, { new: true });
             if (transaction) {
-                let fulfillmentResult = null;
-                const metadata = transaction.metadata || {};
-                // Secure Server-Side Fulfillment
                 try {
-                    switch (transaction.category) {
-                        case 'add_money':
-                            await User_1.default.findByIdAndUpdate(transaction.user, { $inc: { walletBalance: transaction.amount } });
-                            break;
-                        case 'matrimony':
-                            fulfillmentResult = await (0, matrimonyController_1.handleMatrimonyUpgrade)(transaction.user.toString(), metadata.plan || transaction.referenceId?.replace('Matrimony ', '').replace(' Plan', ''));
-                            break;
-                        case 'subscription':
-                            fulfillmentResult = await (0, userController_1.handleAPEXPlanUpgrade)(transaction.user.toString(), metadata.plan || transaction.referenceId);
-                            break;
-                        case 'travel_booking':
-                            fulfillmentResult = await (0, travelsController_1.handleTravelBooking)(transaction.user.toString(), metadata);
-                            break;
-                        case 'mobile_recharge':
-                            fulfillmentResult = await (0, utilityController_1.handleUtilityRecharge)(transaction.user.toString(), metadata);
-                            break;
-                        case 'academy_enrollment':
-                            fulfillmentResult = await (0, academyController_1.handleAcademyEnrollment)(transaction.user.toString(), metadata);
-                            break;
-                        case 'charity':
-                            // Charity just takes money, no fulfillment required
-                            break;
-                    }
-                    // Global success notification
-                    await (0, notificationController_1.createNotification)(transaction.user.toString(), 'Payment Successful', `Your payment of ₹${transaction.amount} for ${transaction.referenceId || transaction.category} was successful.`, 'success');
-                    const io = req.app.get('io');
-                    if (io) {
-                        io.to('admin_room').emit('admin_data_refresh', { type: 'new_transaction', data: transaction });
-                    }
-                    return res.json({ success: true, message: "Payment verified successfully", fulfillmentData: fulfillmentResult, category: transaction.category });
+                    const fulfillmentResult = await (0, fulfillmentService_1.fulfillOrder)(transaction, req.app.get('io'));
+                    return res.json({
+                        success: true,
+                        message: "Payment verified and fulfilled successfully",
+                        fulfillmentData: fulfillmentResult,
+                        category: transaction.category
+                    });
                 }
                 catch (fulfillmentError) {
                     console.error("Fulfillment failed after successful payment:", fulfillmentError);
-                    // NOTE: In a robust production system, if fulfillment fails after payment, you would either queue it for retry or auto-refund the user.
-                    return res.status(500).json({ error: 'Payment verified, but failed to deliver service.', details: fulfillmentError.message });
+                    return res.status(500).json({
+                        error: 'Payment verified, but failed to deliver service.',
+                        details: fulfillmentError.message
+                    });
                 }
             }
             else {
-                // Transaction was already completed or not found
-                return res.json({ success: true, message: "Payment already verified" });
+                // Transaction was already completed (e.g. by webhook) - check if fulfilled
+                const existingTx = await Transaction_1.default.findOne({ razorpayOrderId: razorpay_order_id });
+                if (existingTx && !existingTx.metadata?.fulfilled) {
+                    const fulfillmentResult = await (0, fulfillmentService_1.fulfillOrder)(existingTx, req.app.get('io'));
+                    return res.json({ success: true, message: "Payment fulfilled successfully", fulfillmentData: fulfillmentResult });
+                }
+                return res.json({ success: true, message: "Payment already verified and fulfilled" });
             }
         }
         else {

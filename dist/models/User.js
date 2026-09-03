@@ -39,7 +39,7 @@ const UserSchema = new mongoose_1.Schema({
     password: { type: String },
     name: { type: String, required: true },
     phone: { type: String },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    role: { type: String, enum: ['user', 'admin', 'driver'], default: 'user' },
     walletBalance: { type: Number, default: 0 },
     profilePicture: { type: String },
     fcmTokens: [{ type: String }],

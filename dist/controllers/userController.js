@@ -20,8 +20,13 @@ const getUserProfile = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
         const isAdminPhone = phone === '8247885289' || phone === '+918247885289';
+        const isDriverPhone = phone === '7032709656' || phone === '+917032709656';
         if (isAdminPhone && user.role !== 'admin') {
             user.role = 'admin';
+            await user.save();
+        }
+        else if (isDriverPhone && user.role !== 'driver') {
+            user.role = 'driver';
             await user.save();
         }
         const token = jsonwebtoken_1.default.sign({ id: user._id, phone: user.phone, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -50,6 +55,7 @@ const updateUserProfile = async (req, res) => {
     try {
         let user = await User_1.default.findOne({ phone });
         const isAdminPhone = phone === '8247885289' || phone === '+918247885289';
+        const isDriverPhone = phone === '7032709656' || phone === '+917032709656';
         if (user) {
             // Update existing user
             if (name !== undefined)
@@ -61,6 +67,9 @@ const updateUserProfile = async (req, res) => {
             if (isAdminPhone && user.role !== 'admin') {
                 user.role = 'admin'; // Auto-upgrade to admin
             }
+            else if (isDriverPhone && user.role !== 'driver') {
+                user.role = 'driver'; // Auto-upgrade to driver
+            }
             await user.save();
             // Send real-time push notification for manual testing!
             await (0, notificationController_1.createNotification)(user._id.toString(), "Profile Updated ✅", "Your profile details were updated successfully. Push notifications are working!", "success");
@@ -69,10 +78,10 @@ const updateUserProfile = async (req, res) => {
             // Create user if not found (fallback)
             user = await User_1.default.create({
                 phone,
-                name: name || (isAdminPhone ? 'APEX Admin' : 'User'),
+                name: name || (isAdminPhone ? 'APEX Admin' : isDriverPhone ? 'APEX Driver' : 'User'),
                 email: email || `${phone}@apex.local`,
                 walletBalance: 0,
-                role: isAdminPhone ? 'admin' : 'user'
+                role: isAdminPhone ? 'admin' : isDriverPhone ? 'driver' : 'user'
             });
             // Emit live event to admin dashboard
             const io = req.app.get('io');
@@ -107,18 +116,8 @@ const sendEmailNotification = async (req, res) => {
     if (!to || !subject || !html) {
         return res.status(400).json({ error: "Missing email parameters" });
     }
-    // MOCK BYPASS
-    if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'mock_key') {
-        console.log("=== MOCK EMAIL DISPATCHED ===");
-        console.log(`To: ${to}`);
-        console.log(`Subject: ${subject}`);
-        console.log(`HTML Length: ${html.length} chars`);
-        console.log("=============================");
-        return res.json({
-            success: true,
-            mockMode: true,
-            message: "Email dispatched via Mock Service"
-        });
+    if (!process.env.RESEND_API_KEY) {
+        return res.status(500).json({ error: "Email service configuration missing" });
     }
     // REAL RESEND DISPATCH
     try {

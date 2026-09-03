@@ -36,7 +36,7 @@ const travelBookingSchema = new mongoose_1.default.Schema({
     },
     status: {
         type: String,
-        enum: ['searching', 'en_route', 'completed', 'cancelled'],
+        enum: ['searching', 'driver_accepted', 'en_route_to_pickup', 'arrived', 'en_route', 'completed', 'cancelled'],
         default: 'searching'
     }
 }, {

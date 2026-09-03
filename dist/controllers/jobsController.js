@@ -42,13 +42,13 @@ const createJob = async (req, res) => {
     }
 };
 exports.createJob = createJob;
-// Apply for a job (Mock File Upload)
+// Apply for a job (Real File Upload to S3)
 const applyJob = async (req, res) => {
     try {
         const { fullName, email, jobRole, userId } = req.body;
-        // In a real app, you would process req.file (from multer)
-        // and save it to S3/Cloudinary, then store the URL in the database
+        // multer-s3 attaches the S3 URL to req.file.location
         const file = req.file;
+        const resumeUrl = file ? file.location : 'No file attached';
         // The user wants these applications to appear in the Admin Dashboard under "Pending Jobs".
         // We will create a Job document for this application.
         const newJobApp = await Job_1.default.create({
@@ -57,7 +57,7 @@ const applyJob = async (req, res) => {
             location: email, // Store email in location
             type: 'Application',
             salary: 'N/A',
-            description: `Resume attached: ${file ? file.originalname : 'No file'}`,
+            description: `Resume Link: ${resumeUrl}`,
             status: 'pending'
         });
         // Notify Admin Dashboard in real-time

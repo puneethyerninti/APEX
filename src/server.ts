@@ -110,107 +110,76 @@ io.on('connection', (socket) => {
     socket.to(data.roomId).emit('typing', data);
   });
 
-  // --- TRAVELS GPS TRACKING (VIRTUAL DRIVER) ---
-  socket.on('start_ride', async (data) => {
-    const { rideId, bookingId, origin, destination, lat: startLat, lng: startLng } = data;
-    console.log(`Started tracking ride ${rideId} from ${origin} to ${destination}`);
+  // --- TRAVELS REAL-TIME CAB DRIVER SYSTEM ---
+  
+  socket.on('driver_online', (data) => {
+    socket.join('driver_room');
+    console.log(`Driver ${data.driverId} is online and ready for requests`);
+  });
+
+  socket.on('request_ride', async (data) => {
+    const { rideId, origin, destination, fare, riderId, riderName, phone } = data;
+    console.log(`Rider ${riderId} requesting ride ${rideId}`);
     
-    // Simulate finding a driver
-    setTimeout(async () => {
-      io.emit(`ride_update_${rideId}`, { status: 'driver_found', driverName: 'Rahul Kumar' });
+    // Broadcast to the driver room (pilot driver will receive this)
+    io.to('driver_room').emit('new_ride_request', {
+      rideId,
+      origin,
+      destination,
+      fare,
+      riderId,
+      riderName,
+      phone,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  socket.on('accept_ride', async (data) => {
+    const { rideId, driverId, driverName, riderId } = data;
+    
+    try {
+      await TravelBooking.findByIdAndUpdate(rideId, { 
+        status: 'driver_accepted', 
+        driverName: driverName 
+      });
+      io.to('admin_room').emit('admin_data_refresh');
       
-      setTimeout(async () => {
-        try {
-          if (bookingId) {
-            await TravelBooking.findByIdAndUpdate(bookingId, { status: 'en_route', driverName: 'Rahul Kumar' });
-            io.to('admin_room').emit('admin_data_refresh');
-          }
+      // Notify rider
+      io.to(`user_${riderId}`).emit(`ride_update_${rideId}`, { 
+        status: 'driver_accepted', 
+        driverName,
+        message: `${driverName} has accepted your ride!`
+      });
+    } catch(err) {
+      console.error(err);
+    }
+  });
 
-          const mapboxToken = process.env.MAPBOX_API_KEY || ["pk", "eyJ1IjoicHVuZWV0aHllcm5pbnRpIiwiYSI6ImNtczc5NnFoZDAxYTkzMHF5b2pza3djaXAifQ", "Vq4KPlACKh1jbeFq1Hl3Cw"].join(".");
-          if (!mapboxToken) throw new Error("No Mapbox API Key");
+  socket.on('driver_location_update', (data) => {
+    const { rideId, riderId, lat, lng, bearing } = data;
+    // Forward driver's live GPS directly to the specific rider
+    io.to(`user_${riderId}`).emit(`ride_update_${rideId}`, {
+      lat,
+      lng,
+      bearing,
+      timestamp: new Date().toISOString()
+    });
+  });
 
-          // 1. Geocode origin and destination
-          const geoOriginRes = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(origin)}.json?access_token=${mapboxToken}`);
-          const geoOriginData = await geoOriginRes.json();
-          const originCoords = geoOriginData.features?.[0]?.center;
-
-          const geoDestRes = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destination)}.json?access_token=${mapboxToken}`);
-          const geoDestData = await geoDestRes.json();
-          const destCoords = geoDestData.features?.[0]?.center;
-
-          if (!originCoords || !destCoords) throw new Error("Geocoding failed");
-
-          // 2. Get route
-          const dirRes = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${originCoords[0]},${originCoords[1]};${destCoords[0]},${destCoords[1]}?geometries=geojson&access_token=${mapboxToken}`);
-          const dirData = await dirRes.json();
-
-          if (dirData.routes && dirData.routes.length > 0) {
-            const route = dirData.routes[0];
-            const decodedPoints = route.geometry.coordinates;
-
-            // Speed up simulation: Skip every N points
-            const simulationSpeedMultiplier = 3;
-            let pointIndex = 0;
-            const totalPoints = decodedPoints.length;
-            
-            const intervalId = setInterval(async () => {
-              if (pointIndex >= totalPoints) {
-                clearInterval(intervalId);
-                
-                // Complete ride
-                if (bookingId) {
-                  await TravelBooking.findByIdAndUpdate(bookingId, { status: 'completed' });
-                  io.to('admin_room').emit('admin_data_refresh');
-                }
-                io.emit(`ride_update_${rideId}`, { status: 'completed' });
-                return;
-              }
-
-              const [lng, lat] = decodedPoints[pointIndex];
-              
-              io.emit(`ride_update_${rideId}`, {
-                lat,
-                lng,
-                status: 'en_route',
-                timestamp: new Date().toISOString()
-              });
-
-              pointIndex += simulationSpeedMultiplier;
-              if (pointIndex >= totalPoints && pointIndex < totalPoints + simulationSpeedMultiplier) {
-                  pointIndex = totalPoints - 1; // Ensure it reaches the exact end
-              }
-            }, 800);
-
-            socket.on('disconnect', () => {
-              clearInterval(intervalId);
-            });
-          }
-        } catch (err) {
-          console.error("Directions/Geocoding API error:", err);
-          // Fallback
-          let lat = startLat || 17.6868;
-          let lng = startLng || 83.2185;
-          let iterations = 0;
-          const maxIterations = 20;
-          const intervalId = setInterval(async () => {
-            if (iterations >= maxIterations) {
-               clearInterval(intervalId);
-               if (bookingId) {
-                 await TravelBooking.findByIdAndUpdate(bookingId, { status: 'completed' });
-                 io.to('admin_room').emit('admin_data_refresh');
-               }
-               io.emit(`ride_update_${rideId}`, { status: 'completed' });
-               return;
-            }
-            lat += 0.001;
-            lng += 0.001;
-            io.emit(`ride_update_${rideId}`, { lat, lng, status: 'en_route', timestamp: new Date().toISOString() });
-            iterations++;
-          }, 1000);
-          socket.on('disconnect', () => clearInterval(intervalId));
-        }
-      }, 2000);
-    }, 2500);
+  socket.on('update_ride_status', async (data) => {
+    const { rideId, riderId, status } = data; // status: 'en_route_to_pickup', 'arrived', 'en_route', 'completed'
+    
+    try {
+      await TravelBooking.findByIdAndUpdate(rideId, { status });
+      io.to('admin_room').emit('admin_data_refresh');
+      
+      io.to(`user_${riderId}`).emit(`ride_update_${rideId}`, { 
+        status,
+        timestamp: new Date().toISOString()
+      });
+    } catch(err) {
+      console.error(err);
+    }
   });
 
   socket.on('disconnect', () => {

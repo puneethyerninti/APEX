@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleRazorpayWebhook = void 0;
 const crypto_1 = __importDefault(require("crypto"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
-const User_1 = __importDefault(require("../models/User"));
+const fulfillmentService_1 = require("../services/fulfillmentService");
 const handleRazorpayWebhook = async (req, res) => {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     if (!secret) {
@@ -34,21 +34,22 @@ const handleRazorpayWebhook = async (req, res) => {
             const razorpayOrderId = paymentEntity.order_id;
             const razorpayPaymentId = paymentEntity.id;
             // Idempotency check: Find pending transaction and complete it
-            const transaction = await Transaction_1.default.findOneAndUpdate({ razorpayOrderId: razorpayOrderId, status: 'pending' }, {
+            let transaction = await Transaction_1.default.findOneAndUpdate({ razorpayOrderId: razorpayOrderId, status: 'pending' }, {
                 status: 'completed',
                 razorpayPaymentId: razorpayPaymentId,
                 referenceId: razorpayPaymentId,
                 webhookPayload: req.body
             }, { new: true });
+            if (!transaction) {
+                transaction = await Transaction_1.default.findOne({ razorpayOrderId: razorpayOrderId });
+            }
             if (transaction) {
-                // Credit the wallet
-                await User_1.default.findByIdAndUpdate(transaction.user, {
-                    $inc: { walletBalance: transaction.amount }
-                });
-                console.log(`Webhook: Successfully credited wallet for order ${razorpayOrderId}`);
+                // Execute centralized fulfillment for this category
+                await (0, fulfillmentService_1.fulfillOrder)(transaction, req.app.get('io'));
+                console.log(`Webhook: Successfully processed fulfillment for order ${razorpayOrderId} (${transaction.category})`);
             }
             else {
-                console.log(`Webhook: Transaction for order ${razorpayOrderId} not found or already completed`);
+                console.log(`Webhook: Transaction for order ${razorpayOrderId} not found`);
             }
         }
         else if (event === 'payment.failed') {

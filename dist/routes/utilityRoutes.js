@@ -6,15 +6,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const utilityController_1 = require("../controllers/utilityController");
 const router = express_1.default.Router();
-// Mock endpoints kept for backward compatibility if needed by frontend initially
-router.get('/operators', utilityController_1.getOperators);
-router.get('/plans', utilityController_1.getPlans);
-// Real BBPS Endpoints
+// BBPS Discovery Endpoints
 router.get('/bbps/categories', utilityController_1.getCategories);
 router.get('/bbps/locations', utilityController_1.getLocations);
 router.get('/bbps/operators', utilityController_1.getBBPSOperatorsList);
 router.get('/bbps/operator/:id/parameters', utilityController_1.getOperatorParams);
+// BBPS Bill Fetch & Pay
 router.post('/bbps/fetch-bill', utilityController_1.fetchBBPSBill);
-router.post('/bbps/activate', utilityController_1.activateServiceEndpoint);
 router.post('/pay', utilityController_1.payBill);
+// Recharge Plans (Mobile Prepaid / DTH)
+router.get('/plans', utilityController_1.getPlans);
 exports.default = router;

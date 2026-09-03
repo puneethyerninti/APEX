@@ -3,66 +3,107 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.activateServiceEndpoint = exports.payBill = exports.handleUtilityRecharge = exports.getPlans = exports.fetchBBPSBill = exports.getOperatorParams = exports.getBBPSOperatorsList = exports.getLocations = exports.getCategories = exports.getOperators = void 0;
+exports.handleBBPSPayment = exports.handleUtilityRecharge = exports.getPlans = exports.payBill = exports.fetchBBPSBill = exports.getOperatorParams = exports.getBBPSOperatorsList = exports.getLocations = exports.getCategories = void 0;
 const notificationController_1 = require("./notificationController");
 const UtilityTransaction_1 = __importDefault(require("../models/UtilityTransaction"));
 const ekoService_1 = require("../services/ekoService");
 const crypto_1 = __importDefault(require("crypto"));
-const getOperators = async (req, res) => {
-    try {
-        const operators = await (0, ekoService_1.getUtilityOperators)();
-        res.status(200).json({ success: true, data: operators });
-    }
-    catch (error) {
-        console.error('Error in getOperators', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch operators' });
-    }
+/**
+ * Maps Eko BBPS category name OR integer to the correct integer category code for the Pay API.
+ * Reference: Eko BBPS API documentation — operator_category_id values.
+ */
+const getCategoryNumber = (categoryNameOrId) => {
+    if (typeof categoryNameOrId === 'number' && categoryNameOrId > 0)
+        return categoryNameOrId;
+    const name = String(categoryNameOrId || '').toLowerCase();
+    if (name.includes('broadband'))
+        return 1;
+    if (name.includes('lpg') || name.includes('cylinder'))
+        return 18;
+    if (name.includes('gas'))
+        return 2;
+    if (name.includes('dth') || name.includes('cable tv'))
+        return 4;
+    if (name.includes('prepaid'))
+        return 5;
+    if (name.includes('credit card'))
+        return 7;
+    if (name.includes('electric'))
+        return 8;
+    if (name.includes('landline'))
+        return 9;
+    if (name.includes('postpaid'))
+        return 10;
+    if (name.includes('water'))
+        return 11;
+    if (name.includes('housing'))
+        return 12;
+    if (name.includes('subscription'))
+        return 13;
+    if (name.includes('education'))
+        return 14;
+    if (name.includes('municipal tax'))
+        return 15;
+    if (name.includes('club') || name.includes('association'))
+        return 16;
+    if (name.includes('cable'))
+        return 17;
+    if (name.includes('hospital'))
+        return 19;
+    if (name.includes('insurance'))
+        return 20;
+    if (name.includes('loan') || name.includes('emi'))
+        return 21;
+    if (name.includes('fastag'))
+        return 22;
+    if (name.includes('municipal serv'))
+        return 23;
+    if (name.includes('rental'))
+        return 24;
+    if (name.includes('tax'))
+        return 6;
+    if (name.includes('challan'))
+        return 27;
+    if (name.includes('ev recharge'))
+        return 30;
+    return 5; // Default: Mobile Prepaid
 };
-exports.getOperators = getOperators;
+// ─── Discovery Endpoints ───────────────────────────────────────────────
 const getCategories = async (req, res) => {
     try {
-        const categories = await (0, ekoService_1.fetchCategories)();
+        const raw = await (0, ekoService_1.fetchCategories)();
+        // Normalize: extract the list_elements array for the frontend
+        const categories = raw?.param_attributes?.list_elements || [];
         res.status(200).json({ success: true, data: categories });
     }
     catch (error) {
-        console.log('Falling back to mock Categories due to upstream API error');
-        const mockCategories = [
-            { category_id: "1", category_name: "Electricity" },
-            { category_id: "2", category_name: "Water" },
-            { category_id: "3", category_name: "DTH" },
-            { category_id: "4", category_name: "Mobile Postpaid" },
-            { category_id: "5", category_name: "Broadband" }
-        ];
-        res.status(200).json({ success: true, data: mockCategories });
+        console.error('Error in getCategories:', error.response?.data || error.message);
+        res.status(500).json({ success: false, message: 'Failed to fetch categories' });
     }
 };
 exports.getCategories = getCategories;
 const getLocations = async (req, res) => {
     try {
-        const locations = await (0, ekoService_1.fetchLocations)();
+        const raw = await (0, ekoService_1.fetchLocations)();
+        const locations = raw?.param_attributes?.list_elements || [];
         res.status(200).json({ success: true, data: locations });
     }
     catch (error) {
-        console.log('Falling back to mock Locations');
-        res.status(200).json({ success: true, data: [{ location_id: "1", location_name: "National" }, { location_id: "2", location_name: "Delhi" }] });
+        console.error('Error in getLocations:', error.response?.data || error.message);
+        res.status(500).json({ success: false, message: 'Failed to fetch locations' });
     }
 };
 exports.getLocations = getLocations;
 const getBBPSOperatorsList = async (req, res) => {
     try {
         const { category, location } = req.query;
-        const operators = await (0, ekoService_1.fetchBBPSOperators)(category, location);
+        const raw = await (0, ekoService_1.fetchBBPSOperators)(category, location);
+        const operators = raw?.param_attributes?.list_elements || [];
         res.status(200).json({ success: true, data: operators });
     }
     catch (error) {
-        console.log('Falling back to mock BBPS Operators');
-        const mockOperators = [
-            { operator_id: "101", operator_name: "BSES Rajdhani", category: "Electricity", location: "Delhi" },
-            { operator_id: "102", operator_name: "Tata Power", category: "Electricity", location: "Delhi" },
-            { operator_id: "103", operator_name: "Airtel Postpaid", category: "Mobile Postpaid", location: "National" },
-            { operator_id: "104", operator_name: "Tata Sky", category: "DTH", location: "National" }
-        ];
-        res.status(200).json({ success: true, data: mockOperators });
+        console.error('Error in getBBPSOperatorsList:', error.response?.data || error.message);
+        res.status(500).json({ success: false, message: 'Failed to fetch operators' });
     }
 };
 exports.getBBPSOperatorsList = getBBPSOperatorsList;
@@ -71,95 +112,213 @@ const getOperatorParams = async (req, res) => {
         const { id } = req.params;
         if (!id)
             return res.status(400).json({ success: false, message: 'Operator ID is required' });
-        const params = await (0, ekoService_1.fetchOperatorParameters)(id);
-        res.status(200).json({ success: true, data: params });
+        const raw = await (0, ekoService_1.fetchOperatorParameters)(id);
+        // Return the full param_attributes so frontend can use list_elements + fetchBill flag
+        const paramData = raw?.param_attributes || {};
+        res.status(200).json({ success: true, data: paramData });
     }
     catch (error) {
-        console.log('Falling back to mock Operator Params');
-        const mockParams = {
-            parameters: [
-                { name: "Consumer Number", param_type: "ALPHANUMERIC", min_length: 9, max_length: 12, is_mandatory: true }
-            ]
-        };
-        res.status(200).json({ success: true, data: mockParams });
+        console.error('Error in getOperatorParams:', error.response?.data || error.message);
+        res.status(500).json({ success: false, message: 'Failed to fetch operator parameters' });
     }
 };
 exports.getOperatorParams = getOperatorParams;
+// ─── Bill Fetch ──────────────────────────────────────────────────────
 const fetchBBPSBill = async (req, res) => {
     try {
-        // req.body will contain the dynamic parameters needed by the operator
-        const bill = await (0, ekoService_1.fetchBill)(req.body);
-        res.status(200).json({ success: true, data: bill });
+        const { phone_operator_code, ...otherParams } = req.body;
+        if (!phone_operator_code) {
+            return res.status(400).json({ success: false, message: 'phone_operator_code is required' });
+        }
+        const client_ref_id = `ref_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 20);
+        const raw = await (0, ekoService_1.fetchBill)({
+            phone_operator_code,
+            confirmation_mobile_no: '9999999999', // Eko implicitly requires this for some BBPS fetch calls
+            ...otherParams
+        });
+        console.log('[fetchBBPSBill] Eko response:', JSON.stringify(raw));
+        if (raw.status === 0 && raw.data) {
+            res.status(200).json({
+                success: true,
+                data: {
+                    amount: raw.data.amount,
+                    utilitycustomername: raw.data.utilitycustomername || '',
+                    billDueDate: raw.data.billDueDate || '',
+                    customer_id: raw.data.customer_id || '',
+                    bbpstrxnrefid: raw.data.bbpstrxnrefid || '',
+                    client_ref_id
+                }
+            });
+        }
+        else {
+            // Map Eko error codes to user-friendly messages
+            let errorMsg = raw.message || 'Could not fetch bill';
+            const data = raw.data || {};
+            if (errorMsg === 'No key for Response') {
+                errorMsg = 'No pending bill found, or invalid account number.';
+            }
+            else if (errorMsg === 'Unable to fetch bill' || data.reason?.includes('server is down')) {
+                errorMsg = `Biller's server is temporarily unavailable. Please try again later.`;
+            }
+            else if (raw.status === 97 && raw.invalid_params) {
+                // Eko parameter validation error — pass field-level errors
+                const fields = Object.values(raw.invalid_params).join(', ');
+                errorMsg = `Invalid input: ${fields}`;
+            }
+            res.status(400).json({
+                success: false,
+                message: errorMsg,
+                ekoStatus: raw.status,
+                data: raw.data
+            });
+        }
     }
     catch (error) {
-        console.log('Falling back to mock BBPS Bill');
-        const mockBill = {
-            amount: 1540.00,
-            bill_date: new Date().toISOString().split('T')[0],
-            due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
-            customer_name: "John Doe",
-            bill_number: "BILL" + Math.floor(Math.random() * 100000)
-        };
-        res.status(200).json({ success: true, data: mockBill });
+        console.error('Error in fetchBBPSBill:', error.response?.data || error.message);
+        const ekoData = error.response?.data || {};
+        let ekoMsg = ekoData.message || error.message;
+        if (ekoMsg === 'No key for Response') {
+            ekoMsg = 'No pending bill found, or invalid account number.';
+        }
+        res.status(500).json({ success: false, message: ekoMsg || 'Failed to fetch bill' });
     }
 };
 exports.fetchBBPSBill = fetchBBPSBill;
+// ─── Pay Bill ──────────────────────────────────────────────────────────
+const payBill = async (req, res) => {
+    try {
+        const { userId, operatorCode, operatorName, amount, utility_acc_no, confirmation_mobile_no, sender_name, category, utilitycustomername, client_ref_id, ...extraParams } = req.body;
+        if (!userId || !operatorCode || !amount || !utility_acc_no) {
+            return res.status(400).json({ success: false, message: 'Missing required fields' });
+        }
+        // Generate client_ref_id if not provided (e.g., direct recharge without fetch-bill)
+        const refId = client_ref_id || `ref_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 20);
+        // 1. Create Pending Transaction in DB
+        const transaction = new UtilityTransaction_1.default({
+            userId,
+            type: category ? 'Bill Payment' : 'Mobile Recharge',
+            amount: parseFloat(amount),
+            operator: operatorName || operatorCode,
+            mobileOrAccountNumber: utility_acc_no,
+            status: 'Pending'
+        });
+        await transaction.save();
+        try {
+            // 2. Call Eko Pay Bill API (Section 6 of PDF)
+            const ekoResult = await (0, ekoService_1.payBBPSBill)({
+                phone_operator_code: operatorCode.toString(),
+                utility_acc_no,
+                confirmation_mobile_no: confirmation_mobile_no || utility_acc_no,
+                sender_name: sender_name || 'Customer',
+                category: getCategoryNumber(category || operatorName || ''),
+                amount: parseFloat(amount),
+                utilitycustomername: utilitycustomername || sender_name || 'Customer',
+                client_ref_id: refId,
+                source_ip: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || '1.1.1.1',
+                ...extraParams
+            });
+            // 3. Check result
+            if (ekoResult.status === 0 || ekoResult.response_type_id === 333) {
+                transaction.status = 'Success';
+                transaction.ekoTxId = ekoResult.data?.tid || refId;
+                await transaction.save();
+                await (0, notificationController_1.createNotification)(userId, 'Payment Successful', `Your payment of ₹${amount} for ${operatorName || operatorCode} was successful. (TxID: ${transaction.ekoTxId})`, 'success');
+                return res.status(200).json({
+                    success: true,
+                    data: {
+                        transaction,
+                        ekoData: ekoResult.data
+                    }
+                });
+            }
+            else {
+                transaction.status = 'Failed';
+                await transaction.save();
+                return res.status(400).json({
+                    success: false,
+                    message: ekoResult.message || 'Payment failed at biller end',
+                    data: ekoResult
+                });
+            }
+        }
+        catch (error) {
+            console.error('Eko Pay Bill failed:', error.response?.data || error.message);
+            transaction.status = 'Failed';
+            await transaction.save();
+            await (0, notificationController_1.createNotification)(userId, 'Payment Failed', `Your payment of ₹${amount} for ${operatorName || operatorCode} failed. Please try again.`, 'error');
+            return res.status(500).json({
+                success: false,
+                message: error.response?.data?.message || 'Payment failed'
+            });
+        }
+    }
+    catch (error) {
+        console.error('Error in payBill:', error);
+        res.status(500).json({ success: false, message: error.message || 'Payment failed' });
+    }
+};
+exports.payBill = payBill;
+// ─── Recharge Flow (Mobile Prepaid / DTH) ──────────────────────────────
 const getPlans = async (req, res) => {
     try {
         const { mobile } = req.query;
         if (!mobile) {
             return res.status(400).json({ success: false, message: 'Mobile number is required' });
         }
-        // 1. Get Operator Code and Circle from Eko
         const { phone_operator_code, circleid } = await (0, ekoService_1.getOperatorCodeAndCircle)(mobile);
-        // 2. Fetch Plans
         const plans = await (0, ekoService_1.fetchRechargePlans)(mobile, phone_operator_code, circleid);
         res.status(200).json({
             success: true,
             data: plans,
-            meta: { phone_operator_code, circleid } // Pass meta back to frontend so it can use it for recharge
+            meta: { phone_operator_code, circleid }
         });
     }
     catch (error) {
-        console.log('Falling back to mock Plans');
-        const mockPlans = [
-            { plan_id: "1", amount: 299, validity: "28 Days", description: "1.5GB/Day, Unlimited Calls" },
-            { plan_id: "2", amount: 699, validity: "56 Days", description: "2GB/Day, Unlimited Calls" }
-        ];
-        res.status(200).json({
-            success: true,
-            data: mockPlans,
-            meta: { phone_operator_code: "1", circleid: "1" }
-        });
+        console.error('Error in getPlans:', error.response?.data || error.message);
+        res.status(500).json({ success: false, message: 'Failed to fetch recharge plans' });
     }
 };
 exports.getPlans = getPlans;
+/**
+ * Handle recharge triggered after Razorpay payment verification
+ */
 const handleUtilityRecharge = async (userId, metadata) => {
-    const { mobile, amount, operatorCode } = metadata;
+    const { mobile, amount, operatorCode, circleid, planDescription, razorpayOrderId, razorpayPaymentId, operatorName } = metadata;
     if (!mobile || !amount || !operatorCode || !userId) {
         throw new Error('Missing required fields');
     }
-    const clientRefId = `req_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 20); // max 20 chars
-    // 1. Create Pending Transaction
+    const clientRefId = `req_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 20);
     const transaction = new UtilityTransaction_1.default({
         userId,
         type: 'Mobile Recharge',
-        amount,
-        operator: operatorCode,
+        amount: parseFloat(amount),
+        operator: operatorName || operatorCode,
         mobileOrAccountNumber: mobile,
-        status: 'Pending'
+        clientRefId,
+        razorpayOrderId,
+        razorpayPaymentId,
+        planDescription,
+        status: 'Pending',
+        metadata: { circleid, operatorCode, operatorName }
     });
     await transaction.save();
     try {
-        // 2. Call Eko Service
-        const ekoResult = await (0, ekoService_1.processRecharge)(mobile, amount, operatorCode, clientRefId);
-        // 3. Update Transaction
-        if (ekoResult.status === 0) {
+        const ekoResult = await (0, ekoService_1.payBBPSBill)({
+            phone_operator_code: operatorCode,
+            utility_acc_no: mobile,
+            confirmation_mobile_no: mobile,
+            sender_name: 'Customer',
+            category: 5, // Mobile Prepaid
+            amount: amount,
+            utilitycustomername: 'Customer',
+            client_ref_id: clientRefId,
+            source_ip: '1.1.1.1'
+        });
+        if (ekoResult.status === 0 || ekoResult.response_type_id === 333) {
             transaction.status = 'Success';
-            transaction.ekoTxId = ekoResult.txid;
+            transaction.ekoTxId = ekoResult.data?.tid || clientRefId;
             await transaction.save();
-            // Send Notification
-            await (0, notificationController_1.createNotification)(userId, 'Recharge Successful', `Your recharge of ₹${amount} for ${mobile} was successful. (TxID: ${ekoResult.txid})`, 'success');
+            await (0, notificationController_1.createNotification)(userId, 'Recharge Successful', `Your recharge of ₹${amount} for ${mobile} was successful. (TxID: ${transaction.ekoTxId})`, 'success');
             return transaction;
         }
         else {
@@ -167,73 +326,67 @@ const handleUtilityRecharge = async (userId, metadata) => {
         }
     }
     catch (error) {
-        console.log('Falling back to mock Recharge Success');
-        transaction.status = 'Success';
-        transaction.ekoTxId = "MOCK_TX_" + Math.floor(Math.random() * 1000000);
+        console.error('Recharge failed:', error.message);
+        transaction.status = 'Failed';
         await transaction.save();
-        await (0, notificationController_1.createNotification)(userId, 'Recharge Successful (Mock)', `Your recharge of ₹${amount} for ${mobile} was successful. (TxID: ${transaction.ekoTxId})`, 'success');
-        return transaction;
+        throw error;
     }
 };
 exports.handleUtilityRecharge = handleUtilityRecharge;
-const payBill = async (req, res) => {
+/**
+ * handleBBPSPayment - Called by financeController after Razorpay payment is verified
+ * for BBPS bill payments (Electricity, Water, Gas, Postpaid, DTH, Credit Card, etc.)
+ */
+const handleBBPSPayment = async (userId, metadata) => {
+    const { operatorCode, operatorName, utility_acc_no, confirmation_mobile_no, category, utilitycustomername, client_ref_id, amount, razorpayOrderId, razorpayPaymentId, formValues } = metadata;
+    if (!operatorCode || !utility_acc_no || !amount) {
+        throw new Error('Missing required BBPS payment fields in metadata');
+    }
+    const refId = client_ref_id || `ref_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 20);
+    const transaction = new UtilityTransaction_1.default({
+        userId,
+        type: 'Bill Payment',
+        amount: parseFloat(amount),
+        operator: operatorName || operatorCode,
+        mobileOrAccountNumber: utility_acc_no,
+        clientRefId: refId,
+        razorpayOrderId,
+        razorpayPaymentId,
+        status: 'Pending',
+        metadata: { ...formValues, category, utilitycustomername }
+    });
+    await transaction.save();
     try {
-        const { userId, operatorCode, amount, utility_acc_no, ...otherParams } = req.body;
-        if (!userId || !operatorCode || !amount || !utility_acc_no) {
-            return res.status(400).json({ success: false, message: 'Missing required fields' });
-        }
-        // We call processRecharge, which maps to Eko BBPS POST endpoint
-        // We pass utility_acc_no as the primary account/mobile field
-        const clientRefId = `req_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 20);
-        const transaction = new UtilityTransaction_1.default({
-            userId,
-            type: 'Bill Payment',
-            amount,
-            operator: operatorCode,
-            mobileOrAccountNumber: utility_acc_no,
-            status: 'Pending'
+        const ekoResult = await (0, ekoService_1.payBBPSBill)({
+            phone_operator_code: operatorCode.toString(),
+            utility_acc_no,
+            confirmation_mobile_no: confirmation_mobile_no || utility_acc_no,
+            sender_name: 'Customer',
+            category: getCategoryNumber(category || operatorName || ''),
+            amount: parseFloat(amount),
+            utilitycustomername: utilitycustomername || 'Customer',
+            client_ref_id: refId,
+            source_ip: '1.1.1.1',
+            ...(formValues || {})
         });
-        await transaction.save();
-        try {
-            const ekoResult = await (0, ekoService_1.processRecharge)(utility_acc_no, amount, operatorCode, clientRefId);
-            if (ekoResult.status === 0) {
-                transaction.status = 'Success';
-                transaction.ekoTxId = ekoResult.txid;
-                await transaction.save();
-                await (0, notificationController_1.createNotification)(userId, 'Bill Payment Successful', `Your bill payment of ₹${amount} was successful. (TxID: ${ekoResult.txid})`, 'success');
-                return res.status(200).json({ success: true, data: transaction });
-            }
-            else {
-                throw new Error(ekoResult.message || 'Payment failed');
-            }
-        }
-        catch (error) {
-            console.log('Falling back to mock Bill Payment Success');
+        if (ekoResult.status === 0 || ekoResult.response_type_id === 333) {
             transaction.status = 'Success';
-            transaction.ekoTxId = "MOCK_BILL_" + Math.floor(Math.random() * 1000000);
+            transaction.ekoTxId = ekoResult.data?.tid || refId;
             await transaction.save();
-            await (0, notificationController_1.createNotification)(userId, 'Bill Payment Successful (Mock)', `Your bill payment of ₹${amount} was successful. (TxID: ${transaction.ekoTxId})`, 'success');
-            return res.status(200).json({ success: true, data: transaction });
+            await (0, notificationController_1.createNotification)(userId, 'Bill Payment Successful', `Your bill payment of ₹${amount} for ${operatorName || operatorCode} was successful. TxID: ${transaction.ekoTxId}`, 'success');
+            return transaction;
+        }
+        else {
+            transaction.status = 'Failed';
+            await transaction.save();
+            throw new Error(ekoResult.message || 'Bill payment failed at biller end');
         }
     }
     catch (error) {
-        console.error('Error in payBill', error);
-        res.status(500).json({ success: false, message: error.message || 'Payment failed' });
+        console.error('handleBBPSPayment failed:', error.response?.data || error.message);
+        transaction.status = 'Failed';
+        await transaction.save();
+        throw error;
     }
 };
-exports.payBill = payBill;
-const activateServiceEndpoint = async (req, res) => {
-    try {
-        const { serviceCode } = req.body;
-        if (!serviceCode) {
-            return res.status(400).json({ success: false, message: 'Service code is required' });
-        }
-        const response = await (0, ekoService_1.activateService)(serviceCode);
-        res.status(200).json({ success: true, data: response });
-    }
-    catch (error) {
-        console.error('Error activating service', error);
-        res.status(500).json({ success: false, message: error.message || 'Failed to activate service' });
-    }
-};
-exports.activateServiceEndpoint = activateServiceEndpoint;
+exports.handleBBPSPayment = handleBBPSPayment;
