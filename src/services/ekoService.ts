@@ -15,21 +15,20 @@ if (!EKO_DEV_KEY || !EKO_ACCESS_KEY || !EKO_INITIATOR_ID) {
  * Generates Eko Authentication headers (HMAC-SHA256)
  */
 export const getEkoHeaders = (requestHashString?: string) => {
-    const timestamp = Date.now().toString();
-    
-    // Base64-encode the access key, then use that base64 STRING 
-    // directly as the HMAC key (as UTF-8 bytes). Do NOT decode it back.
+    // Eko requires the plain text key to be base64 encoded BEFORE being used for HMAC
     const encodedKey = Buffer.from(EKO_ACCESS_KEY).toString('base64');
-    
+    const timestamp = Date.now().toString();
+    const concatenatedStringKey = timestamp;
     const hmac = crypto.createHmac('sha256', encodedKey);
-    hmac.update(timestamp);
+    hmac.update(concatenatedStringKey);
     const signature = hmac.digest('base64');
 
-    const headers: any = {
+    let headers: Record<string, string> = {
         'developer_key': EKO_DEV_KEY,
         'secret-key-timestamp': timestamp,
         'secret-key': signature,
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
     };
 
     if (requestHashString) {
