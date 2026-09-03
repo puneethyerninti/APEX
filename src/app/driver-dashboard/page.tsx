@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useSocket } from '@/context/SocketContext';
 import { useAppStore } from '@/store/useAppStore';
 import { Geolocation } from '@capacitor/geolocation';
-import api from '@/services/api';
+import { api } from '@/services/api';
 import Header from '@/components/Header';
 import { motion, AnimatePresence } from 'framer-motion';
 
