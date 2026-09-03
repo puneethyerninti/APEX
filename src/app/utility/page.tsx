@@ -18,18 +18,7 @@ const getCategoryBehavior = (catName: string) => {
     };
   }
   
-  if (name.includes('dth') || name.includes('cable')) {
-    return {
-      type: 'direct_pay',
-      supportsBillFetch: false,
-      inputs: [
-        { param_name: 'utility_acc_no', param_label: 'Subscriber ID / Account Number', type: 'AlphaNumeric', regex: '^.{3,30}$', error: 'Enter a valid Subscriber ID' },
-        { param_name: 'amount', param_label: 'Amount (₹)', type: 'Numeric', regex: '^[1-9][0-9]{0,4}$', error: 'Enter a valid amount' }
-      ]
-    };
-  }
-  
-  // Default for Electricity, Gas, Water, Postpaid, Broadband, FASTag, etc.
+  // Default for Electricity, Gas, Water, Postpaid, Broadband, FASTag, DTH, etc.
   return {
     type: 'fetch_bill',
     supportsBillFetch: true,
