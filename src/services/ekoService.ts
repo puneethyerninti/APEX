@@ -161,6 +161,15 @@ export const fetchRechargePlans = async (mobile: string, phone_operator_code: st
             description: plan.plan_description || plan.desc || 'Recharge Plan'
         }));
 
+    mappedPlans.unshift({
+        id: 'test_1_rupee',
+        category: 'Test Plans',
+        price: 1,
+        data: 'N/A',
+        validity: '1 Day',
+        description: 'TEST PLAN: ₹1 (Will likely be rejected by operator, but tests the full flow)'
+    });
+
     return mappedPlans;
 };
 
