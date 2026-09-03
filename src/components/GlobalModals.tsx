@@ -280,6 +280,12 @@ export default function GlobalModals() {
                                         <span className="text-[10px] font-bold text-violet-700">Admin Portal</span>
                                     </button>
                                 )}
+                                {(user?.role === 'driver' || user?.role === 'admin') && (
+                                    <button onClick={() => { setModal(null); window.location.href = '/driver-dashboard'; }} className="flex flex-col items-center justify-center gap-2 bg-green-50 border border-green-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
+                                        <i className="fa-solid fa-car text-green-600 text-xl"></i>
+                                        <span className="text-[10px] font-bold text-green-700">Driver Mode</span>
+                                    </button>
+                                )}
                             </div>
                             
                             <button onClick={() => { logout(); setModal(null); }} className="w-full mt-2 py-3 bg-red-50 text-red-600 font-bold text-sm rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
