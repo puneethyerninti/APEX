@@ -123,7 +123,7 @@ export default function DriverDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header title="Driver Dashboard" backUrl="/" />
+      <Header />
       
       <div className="flex-1 p-4 flex flex-col items-center mt-20">
         
