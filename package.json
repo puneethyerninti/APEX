@@ -9,7 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@capacitor/core": "^8.5.0",
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/geolocation": "^8.2.2",
     "@capacitor/push-notifications": "^8.1.2",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@hookform/resolvers": "^5.4.0",
@@ -19,6 +20,7 @@
     "chart.js": "^4.5.1",
     "cheerio": "^1.2.0",
     "firebase": "^12.16.0",
+    "framer-motion": "^13.2.0",
     "html5-qrcode": "^2.3.8",
     "js-cookie": "^3.0.8",
     "leaflet": "^1.9.4",
