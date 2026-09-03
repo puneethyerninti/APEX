@@ -92,7 +92,7 @@ export const getOperatorParams = async (req: Request, res: Response) => {
         
         const raw = await fetchOperatorParameters(id as string);
         // Return the full param_attributes so frontend can use list_elements + fetchBill flag
-        const paramData = raw?.param_attributes || {};
+        const paramData = raw?.data?.param_attributes || {};
         res.status(200).json({ success: true, data: paramData });
     } catch (error: any) {
         console.error('Error in getOperatorParams:', error.response?.data || error.message);

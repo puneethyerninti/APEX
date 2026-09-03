@@ -6,30 +6,35 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.payBBPSBill = exports.fetchBill = exports.fetchRechargePlans = exports.getOperatorCodeAndCircle = exports.fetchOperatorParameters = exports.fetchBBPSOperators = exports.fetchLocations = exports.fetchCategories = exports.getEkoHeaders = void 0;
 const crypto_1 = __importDefault(require("crypto"));
 const axios_1 = __importDefault(require("axios"));
-// ─── Eko Configuration (all from env vars — no hardcoded fallbacks) ─────────
-const EKO_DEV_KEY = process.env.EKO_DEV_KEY;
-const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY;
-const EKO_INITIATOR_ID = process.env.EKO_INITIATOR_ID;
-const EKO_BASE_URL = (process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici/v3').replace(/\/$/, '');
-if (!EKO_DEV_KEY || !EKO_ACCESS_KEY || !EKO_INITIATOR_ID) {
-    console.error('CRITICAL: Eko API credentials missing! Set EKO_DEV_KEY, EKO_ACCESS_KEY, EKO_INITIATOR_ID on Render.');
-}
+// ─── Eko Configuration (Dynamic getters to support dotenv loading late) ─────────
+const getEkoConfig = () => {
+    const EKO_DEV_KEY = process.env.EKO_DEV_KEY;
+    const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY;
+    const EKO_INITIATOR_ID = process.env.EKO_INITIATOR_ID;
+    const EKO_BASE_URL = (process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici/v3').replace(/\/$/, '');
+    if (!EKO_DEV_KEY || !EKO_ACCESS_KEY || !EKO_INITIATOR_ID) {
+        console.error('CRITICAL: Eko API credentials missing! Set EKO_DEV_KEY, EKO_ACCESS_KEY, EKO_INITIATOR_ID on Render.');
+    }
+    return { EKO_DEV_KEY, EKO_ACCESS_KEY: EKO_ACCESS_KEY || '', EKO_INITIATOR_ID, EKO_BASE_URL };
+};
 /**
  * Generates Eko Authentication headers (HMAC-SHA256)
  */
 const getEkoHeaders = (requestHashString) => {
-    const timestamp = Date.now().toString();
-    // Base64-encode the access key, then use that base64 STRING 
-    // directly as the HMAC key (as UTF-8 bytes). Do NOT decode it back.
+    const { EKO_DEV_KEY, EKO_ACCESS_KEY } = getEkoConfig();
+    // Eko requires the plain text key to be base64 encoded BEFORE being used for HMAC
     const encodedKey = Buffer.from(EKO_ACCESS_KEY).toString('base64');
+    const timestamp = Date.now().toString();
+    const concatenatedStringKey = timestamp;
     const hmac = crypto_1.default.createHmac('sha256', encodedKey);
-    hmac.update(timestamp);
+    hmac.update(concatenatedStringKey);
     const signature = hmac.digest('base64');
-    const headers = {
-        'developer_key': EKO_DEV_KEY,
+    let headers = {
+        'developer_key': EKO_DEV_KEY || '',
         'secret-key-timestamp': timestamp,
         'secret-key': signature,
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
     };
     if (requestHashString) {
         const concatenatedString = timestamp + requestHashString;
@@ -45,6 +50,7 @@ exports.getEkoHeaders = getEkoHeaders;
  * BBPS: Fetch Categories (Section 2.1)
  */
 const fetchCategories = async () => {
+    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
     const headers = (0, exports.getEkoHeaders)();
     const url = `${EKO_BASE_URL}/customer/payment/bbps/categories?initiator_id=${EKO_INITIATOR_ID}`;
     const response = await axios_1.default.get(url, { headers });
@@ -55,6 +61,7 @@ exports.fetchCategories = fetchCategories;
  * BBPS: Fetch Locations (Section 2.2)
  */
 const fetchLocations = async () => {
+    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
     const headers = (0, exports.getEkoHeaders)();
     const url = `${EKO_BASE_URL}/customer/payment/bbps/locations?initiator_id=${EKO_INITIATOR_ID}`;
     const response = await axios_1.default.get(url, { headers });
@@ -65,6 +72,7 @@ exports.fetchLocations = fetchLocations;
  * BBPS: Fetch Operators (Section 2.3)
  */
 const fetchBBPSOperators = async (categoryId, locationId) => {
+    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
     const headers = (0, exports.getEkoHeaders)();
     let url = `${EKO_BASE_URL}/customer/payment/bbps/operators?initiator_id=${EKO_INITIATOR_ID}`;
     if (categoryId)
@@ -79,6 +87,7 @@ exports.fetchBBPSOperators = fetchBBPSOperators;
  * BBPS: Fetch Operator Parameters (Section 2.4)
  */
 const fetchOperatorParameters = async (operatorId) => {
+    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
     const headers = (0, exports.getEkoHeaders)();
     const url = `${EKO_BASE_URL}/customer/payment/bbps/operator/${operatorId}/parameters?initiator_id=${EKO_INITIATOR_ID}`;
     const response = await axios_1.default.get(url, { headers });
@@ -90,6 +99,7 @@ exports.fetchOperatorParameters = fetchOperatorParameters;
  * Get Operator Code and Circle for a Mobile Number (Recharge flow)
  */
 const getOperatorCodeAndCircle = async (mobile) => {
+    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
     const headers = (0, exports.getEkoHeaders)();
     const url = `${EKO_BASE_URL}/customer/payment/bbps/recharge/${mobile}/operator?initiator_id=${EKO_INITIATOR_ID}`;
     const response = await axios_1.default.get(url, { headers });
@@ -112,6 +122,7 @@ exports.getOperatorCodeAndCircle = getOperatorCodeAndCircle;
  * Fetch Mobile Recharge Plans — returns all plan categories, filters out zero-price entries
  */
 const fetchRechargePlans = async (mobile, phone_operator_code, circleid) => {
+    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
     const headers = (0, exports.getEkoHeaders)();
     const url = `${EKO_BASE_URL}/customer/payment/bbps/recharge/${mobile}/operator/plans?initiator_id=${EKO_INITIATOR_ID}&phone_operator_code=${phone_operator_code}&circleid=${circleid}`;
     const response = await axios_1.default.get(url, { headers });
@@ -167,9 +178,10 @@ const extractDataText = (desc) => {
  * Uses clean query string encoding — source_ip NOT needed for GET fetch.
  */
 const fetchBill = async (params) => {
+    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
     const headers = (0, exports.getEkoHeaders)();
     // Build clean query string — skip empty/null values, don't send source_ip in GET
-    const queryParts = [`initiator_id=${encodeURIComponent(EKO_INITIATOR_ID)}`];
+    const queryParts = [`initiator_id=${encodeURIComponent(EKO_INITIATOR_ID || '')}`];
     Object.entries(params).forEach(([key, val]) => {
         if (key === 'source_ip')
             return; // Not needed for GET bill fetch
@@ -189,6 +201,7 @@ exports.fetchBill = fetchBill;
  * POST endpoint. Requires request_hash for financial transactions.
  */
 const payBBPSBill = async (params) => {
+    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
     // In Eko, user_code is typically the initiator_id unless explicitly provided otherwise.
     const USER_CODE = process.env.EKO_USER_CODE || EKO_INITIATOR_ID;
     const requestHashString = `${params.utility_acc_no}${params.amount}${USER_CODE}`;
