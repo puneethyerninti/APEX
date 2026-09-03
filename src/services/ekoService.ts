@@ -29,7 +29,7 @@ export const getEkoHeaders = (requestHashString?: string) => {
     const signature = hmac.digest('base64');
 
     let headers: Record<string, string> = {
-        'developer_key': EKO_DEV_KEY,
+        'developer_key': EKO_DEV_KEY || '',
         'secret-key-timestamp': timestamp,
         'secret-key': signature,
         'Accept': 'application/json',
@@ -187,10 +187,11 @@ const extractDataText = (desc: string) => {
  * Uses clean query string encoding — source_ip NOT needed for GET fetch.
  */
 export const fetchBill = async (params: any) => {
+    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
     const headers = getEkoHeaders();
 
     // Build clean query string — skip empty/null values, don't send source_ip in GET
-    const queryParts: string[] = [`initiator_id=${encodeURIComponent(EKO_INITIATOR_ID)}`];
+    const queryParts: string[] = [`initiator_id=${encodeURIComponent(EKO_INITIATOR_ID || '')}`];
     Object.entries(params).forEach(([key, val]) => {
         if (key === 'source_ip') return; // Not needed for GET bill fetch
         if (val !== undefined && val !== null && val !== '') {
@@ -221,6 +222,7 @@ export const payBBPSBill = async (params: {
     source_ip: string;
     [key: string]: any; // For operator-specific extra params
 }) => {
+    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
     // In Eko, user_code is typically the initiator_id unless explicitly provided otherwise.
     const USER_CODE = process.env.EKO_USER_CODE || EKO_INITIATOR_ID;
     const requestHashString = `${params.utility_acc_no}${params.amount}${USER_CODE}`;
