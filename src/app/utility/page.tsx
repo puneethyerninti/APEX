@@ -57,6 +57,8 @@ export default function UtilityPage() {
   const [searchQuery, setSearchQuery] = useState('');
   // Stores phone_operator_code + circleid returned by Eko when fetching plans
   const [detectedMeta, setDetectedMeta] = useState<{ phone_operator_code: string; circleid: string } | null>(null);
+  
+  const [showDirectPayWarning, setShowDirectPayWarning] = useState(false);
 
   // 1. Fetch Categories on Mount
   useEffect(() => {
@@ -440,10 +442,26 @@ export default function UtilityPage() {
     const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
     const accountNo = formValues[primaryParamName] || '';
 
+    // FASTag is basically a wallet recharge, so random amounts are fine
+    const isFASTag = selectedCategory?.operator_category_name?.toLowerCase().includes('fastag');
+    
+    if (!isMobileRecharge && !isFASTag) {
+        setShowDirectPayWarning(true);
+        return;
+    }
+
+    confirmDirectPay();
+  };
+
+  const confirmDirectPay = () => {
+    setShowDirectPayWarning(false);
+    const amountStr = formValues['amount'] || '';
+    const numAmount = parseFloat(amountStr);
+    
     // Set fake bill info so Pay Bill flow works
     const fakeBill = {
         amount: numAmount.toString(),
-        utilitycustomername: user.name || 'Customer',
+        utilitycustomername: user?.name || 'Customer',
         client_ref_id: `ref_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`
     };
     setBillInfo(fakeBill);
@@ -810,6 +828,45 @@ export default function UtilityPage() {
         )}
 
       </div>
+      
+      {/* Warning Modal for Custom Amount Direct Pay */}
+      {showDirectPayWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white mx-4 p-6 rounded-2xl max-w-sm w-full shadow-2xl relative overflow-hidden animate-[slideUp_0.3s_ease-out]">
+            <div className="absolute top-0 left-0 w-full h-2 bg-amber-400"></div>
+            
+            <div className="flex flex-col items-center text-center mt-2">
+              <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center text-3xl mb-4">
+                <i className="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              
+              <h3 className="text-xl font-black text-gray-900 mb-2">Verify Your Amount</h3>
+              
+              <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+                You are about to pay a custom amount of <span className="font-bold text-gray-900">₹{formValues['amount'] || '0'}</span>. 
+                Please ensure this exactly matches your monthly plan or desired recharge amount. 
+                <br/><br/>
+                <span className="text-xs text-red-500 font-bold">Incorrect amounts may be added to your wallet balance without activating your plan benefits.</span>
+              </p>
+              
+              <div className="flex w-full gap-3">
+                <button 
+                  onClick={() => setShowDirectPayWarning(false)}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmDirectPay}
+                  className="flex-1 py-3 bg-[#2D1B69] text-white font-bold rounded-xl hover:bg-[#3D2587] transition-colors"
+                >
+                  Yes, Proceed
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
