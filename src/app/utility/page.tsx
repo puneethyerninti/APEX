@@ -20,8 +20,8 @@ const getCategoryBehavior = (catName: string) => {
   
   if (name.includes('dth') || name.includes('fastag')) {
     return {
-      type: 'recharge',
-      supportsBillFetch: false,
+      type: 'fetch_bill',
+      supportsBillFetch: true,
       inputs: [
         { param_name: 'utility_acc_no', param_label: 'Customer ID / Vehicle Number', type: 'AlphaNumeric', regex: '^.{3,30}$', error: 'Enter a valid ID' }
       ]
