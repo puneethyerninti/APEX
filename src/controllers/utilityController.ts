@@ -111,9 +111,14 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
 
         const client_ref_id = `ref_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`.substring(0, 20);
 
+        // Eko requires confirmation_mobile_no but it MUST be a real number.
+        // The frontend sends it via otherParams. Fallback to the initiator_id (which is a real mobile).
+        const confirmation_mobile_no = otherParams.confirmation_mobile_no || process.env.EKO_INITIATOR_ID || '';
+        delete otherParams.confirmation_mobile_no;
+
         const raw = await fetchBill({
             phone_operator_code,
-            confirmation_mobile_no: '9999999999', // Eko implicitly requires this for some BBPS fetch calls
+            confirmation_mobile_no,
             ...otherParams
         });
 

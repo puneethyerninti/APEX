@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 
-const uri = "mongodb+srv://puneethyerninti_db_user:marvelvada123@cluster0.p4n9amd.mongodb.net/apex?retryWrites=true&w=majority";
+const uri = process.env.MONGO_URI;
 
 mongoose.connect(uri)
 .then(async () => {

@@ -6,7 +6,7 @@ const getEkoConfig = () => {
     const EKO_DEV_KEY = process.env.EKO_DEV_KEY;
     const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY;
     const EKO_INITIATOR_ID = process.env.EKO_INITIATOR_ID;
-    const EKO_BASE_URL = (process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici/v3').replace(/\/$/, '');
+    const EKO_BASE_URL = (process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici/v1').replace(/\/$/, '');
     
     if (!EKO_DEV_KEY || !EKO_ACCESS_KEY || !EKO_INITIATOR_ID) {
         console.error('CRITICAL: Eko API credentials missing! Set EKO_DEV_KEY, EKO_ACCESS_KEY, EKO_INITIATOR_ID on Render.');
@@ -190,10 +190,12 @@ export const fetchBill = async (params: any) => {
     const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
     const headers = getEkoHeaders();
 
-    // Build clean query string — skip empty/null values, don't send source_ip in GET
+    // Eko support: confirmation_mobile_no IS required but must be a real phone number.
+    // Only skip source_ip which is not needed for GET bill fetch.
+    const SKIP_KEYS = ['source_ip'];
     const queryParts: string[] = [`initiator_id=${encodeURIComponent(EKO_INITIATOR_ID || '')}`];
     Object.entries(params).forEach(([key, val]) => {
-        if (key === 'source_ip') return; // Not needed for GET bill fetch
+        if (SKIP_KEYS.includes(key)) return;
         if (val !== undefined && val !== null && val !== '') {
             queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(val))}`);
         }
