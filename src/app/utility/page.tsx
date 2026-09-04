@@ -58,6 +58,7 @@ export default function UtilityPage() {
   // Stores phone_operator_code + circleid returned by Eko when fetching plans
   const [detectedMeta, setDetectedMeta] = useState<{ phone_operator_code: string; circleid: string } | null>(null);
   
+  // Warning Modal State for blind payments
   const [showDirectPayWarning, setShowDirectPayWarning] = useState(false);
 
   // 1. Fetch Categories on Mount
@@ -442,18 +443,11 @@ export default function UtilityPage() {
     const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
     const accountNo = formValues[primaryParamName] || '';
 
-    // FASTag is basically a wallet recharge, so random amounts are fine
-    const isFASTag = selectedCategory?.operator_category_name?.toLowerCase().includes('fastag');
-    
-    if (!isMobileRecharge && !isFASTag) {
-        setShowDirectPayWarning(true);
-        return;
-    }
-
-    confirmDirectPay();
+    // Show warning modal instead of paying directly
+    setShowDirectPayWarning(true);
   };
 
-  const confirmDirectPay = () => {
+  const proceedWithDirectPay = () => {
     setShowDirectPayWarning(false);
     const amountStr = formValues['amount'] || '';
     const numAmount = parseFloat(amountStr);
@@ -829,44 +823,39 @@ export default function UtilityPage() {
 
       </div>
       
-      {/* Warning Modal for Custom Amount Direct Pay */}
+      {/* Warning Modal for Blind Payments */}
       {showDirectPayWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white mx-4 p-6 rounded-2xl max-w-sm w-full shadow-2xl relative overflow-hidden animate-[slideUp_0.3s_ease-out]">
-            <div className="absolute top-0 left-0 w-full h-2 bg-amber-400"></div>
-            
-            <div className="flex flex-col items-center text-center mt-2">
-              <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center text-3xl mb-4">
-                <i className="fa-solid fa-triangle-exclamation"></i>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-[slideUp_0.3s_ease-out]">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4 mx-auto">
+                <i className="fa-solid fa-triangle-exclamation text-red-500 text-xl"></i>
               </div>
-              
-              <h3 className="text-xl font-black text-gray-900 mb-2">Verify Your Amount</h3>
-              
-              <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-                You are about to pay a custom amount of <span className="font-bold text-gray-900">₹{formValues['amount'] || '0'}</span>. 
-                Please ensure this exactly matches your monthly plan or desired recharge amount. 
+              <h3 className="text-xl font-black text-center text-gray-900 mb-2">Verify Your Amount</h3>
+              <p className="text-sm text-center text-gray-600 mb-6 leading-relaxed">
+                You are about to make a custom payment of <span className="font-bold text-gray-900">₹{formValues['amount']}</span>. 
                 <br/><br/>
-                <span className="text-xs text-red-500 font-bold">Incorrect amounts may be added to your wallet balance without activating your plan benefits.</span>
+                Please ensure this exactly matches your monthly plan or desired recharge amount. Incorrect amounts may be added to your wallet balance without activating your plan benefits.
               </p>
-              
-              <div className="flex w-full gap-3">
-                <button 
+              <div className="space-y-3">
+                <button
+                  onClick={proceedWithDirectPay}
+                  className="w-full py-3 bg-[#2D1B69] hover:bg-[#3D2587] text-white font-bold rounded-xl transition-colors"
+                >
+                  Yes, Proceed to Pay
+                </button>
+                <button
                   onClick={() => setShowDirectPayWarning(false)}
-                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                  className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-colors"
                 >
                   Cancel
-                </button>
-                <button 
-                  onClick={confirmDirectPay}
-                  className="flex-1 py-3 bg-[#2D1B69] text-white font-bold rounded-xl hover:bg-[#3D2587] transition-colors"
-                >
-                  Yes, Proceed
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
     </>
   );
 }
