@@ -369,30 +369,10 @@ export default function UtilityPage() {
                     });
                     
                     if (verifyRes.data.success) {
-                        // Get the primary account number from form
-                        const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
-                        const accountNo = formValues[primaryParamName] || 'UNKNOWN';
-
-                        const payRes = await api.post('/utility/pay', {
-                            userId: user.uid,
-                            operatorCode: selectedOperator.operator_id,
-                            operatorName: selectedOperator.name,
-                            amount: numAmount,
-                            utility_acc_no: accountNo,
-                            confirmation_mobile_no: user.phone || accountNo,
-                            sender_name: user.name || 'Customer',
-                            category: selectedCategory?.operator_category_id || 0,
-                            utilitycustomername: currentBill.utilitycustomername || user.name || 'Customer',
-                            client_ref_id: currentBill.client_ref_id,
-                            ...formValues
-                        });
-
-                        if (payRes.data.success) {
-                            setPaySuccess(payRes.data.data);
-                            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Payment successful!`, type: 'success' } }));
-                        } else {
-                            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: payRes.data.message || 'Payment failed at biller', type: 'error' } }));
-                        }
+                        setPaySuccess(verifyRes.data.fulfillmentData || verifyRes.data);
+                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Payment successful!`, type: 'success' } }));
+                    } else {
+                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Payment verification failed', type: 'error' } }));
                     }
                 } catch (e: any) {
                     console.error("Payment failed", e);
