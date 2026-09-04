@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/services/api';
@@ -39,7 +39,7 @@ interface UtilityTransactionView {
 
 const finalStatuses = new Set<UtilityStatus>(['eko_success', 'eko_failed', 'refunded', 'manual_review', 'Success', 'Failed']);
 
-export default function UtilityTransactionStatusPage() {
+function UtilityTransactionStatusContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { socket } = useSocket();
@@ -188,5 +188,28 @@ export default function UtilityTransactionStatusPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function UtilityTransactionStatusPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#F4F6FB]">
+        <div className="bg-[#2D1B69] text-white p-4 py-3 flex items-center justify-center sticky top-0 z-50 shadow-md">
+          <h1 className="text-[17px] font-bold">Utility Status</h1>
+        </div>
+        <div className="p-4">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-indigo-100 text-[#2D1B69]">
+              <i className="fa-solid fa-spinner fa-spin text-2xl"></i>
+            </div>
+            <h2 className="text-xl font-black text-gray-900 mb-2">Processing Service</h2>
+            <p className="text-sm text-gray-500 mb-6">Loading transaction status...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <UtilityTransactionStatusContent />
+    </Suspense>
   );
 }
