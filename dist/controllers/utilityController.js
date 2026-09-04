@@ -17,6 +17,19 @@ const getPrimaryAccountNumber = (params) => {
     const firstValue = Object.entries(params).find(([key, value]) => !ignored.has(key) && value !== undefined && value !== null && value !== '');
     return firstValue ? String(firstValue[1]) : '';
 };
+const allowedUtilityCategoryIds = new Set([2, 4, 5, 8, 10, 18, 22]);
+const isAllowedUtilityCategory = (category) => {
+    const id = Number(category?.operator_category_id ?? category?.category_id ?? category?.id ?? category);
+    const name = String(category?.operator_category_name ?? category?.name ?? '').toLowerCase();
+    return allowedUtilityCategoryIds.has(id)
+        || (name.includes('mobile') && name.includes('prepaid'))
+        || (name.includes('mobile') && name.includes('postpaid'))
+        || name.includes('dth')
+        || name.includes('electric')
+        || name.includes('fastag')
+        || name.includes('gas')
+        || name.includes('lpg');
+};
 const emitUtilityStatus = (io, transaction) => {
     if (!io || !transaction)
         return;
@@ -129,7 +142,7 @@ const getCategories = async (req, res) => {
     try {
         const raw = await (0, ekoService_1.fetchCategories)();
         // Normalize: extract the list_elements array for the frontend
-        const categories = raw?.param_attributes?.list_elements || [];
+        const categories = (raw?.param_attributes?.list_elements || []).filter(isAllowedUtilityCategory);
         res.status(200).json({ success: true, data: categories });
     }
     catch (error) {
@@ -153,6 +166,9 @@ exports.getLocations = getLocations;
 const getBBPSOperatorsList = async (req, res) => {
     try {
         const { category, location } = req.query;
+        if (!isAllowedUtilityCategory(category)) {
+            return res.status(400).json({ success: false, message: 'This utility category is not supported.' });
+        }
         const raw = await (0, ekoService_1.fetchBBPSOperators)(category, location);
         const operators = raw?.param_attributes?.list_elements || [];
         res.status(200).json({ success: true, data: operators });
@@ -185,6 +201,9 @@ const fetchBBPSBill = async (req, res) => {
         const { phone_operator_code, confirmation_mobile_no: providedConfirmationMobile, sender_name: providedSenderName, category, client_ref_id: providedClientRefId, operatorName, operator_name, providerName, ...operatorParams } = req.body;
         if (!phone_operator_code) {
             return res.status(400).json({ success: false, message: 'phone_operator_code is required' });
+        }
+        if (!isAllowedUtilityCategory(category)) {
+            return res.status(400).json({ success: false, message: 'This utility category is not supported.' });
         }
         const client_ref_id = providedClientRefId || makeClientRefId('bill');
         // Eko requires confirmation_mobile_no but it MUST be a real number.
@@ -269,6 +288,9 @@ const payBill = async (req, res) => {
         const { userId, operatorCode, operatorName, amount, utility_acc_no, confirmation_mobile_no, sender_name, category, utilitycustomername, client_ref_id, ...extraParams } = req.body;
         if (!userId || !operatorCode || !amount || !utility_acc_no) {
             return res.status(400).json({ success: false, message: 'Missing required fields' });
+        }
+        if (!isAllowedUtilityCategory(category || operatorName)) {
+            return res.status(400).json({ success: false, message: 'This utility category is not supported.' });
         }
         // Generate client_ref_id if not provided (e.g., direct recharge without fetch-bill)
         const refId = client_ref_id || `ref_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 20);
@@ -432,6 +454,9 @@ const handleBBPSPayment = async (userId, metadata) => {
     const { operatorCode, operatorName, utility_acc_no, confirmation_mobile_no, category, utilitycustomername, client_ref_id, amount, razorpayOrderId, razorpayPaymentId, formValues, utilityTransactionId, billfetchresponse, ekoFetchResponse } = metadata;
     if (!operatorCode || !utility_acc_no || !amount) {
         throw new Error('Missing required BBPS payment fields in metadata');
+    }
+    if (!isAllowedUtilityCategory(category || operatorName)) {
+        throw new Error('This utility category is not supported.');
     }
     const existing = utilityTransactionId ? await UtilityTransaction_1.default.findById(utilityTransactionId) : null;
     if (existing && utilityFinalStatuses.includes(existing.status)) {
