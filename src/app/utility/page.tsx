@@ -113,10 +113,20 @@ export default function UtilityPage() {
     setErrorMsg(null);
     
     const behavior = getCategoryBehavior(selectedCategory?.operator_category_name);
-    setSupportsBillFetch(behavior.supportsBillFetch);
+    // Use Eko's billFetchResponse from the operator list data if available
+    // billFetchResponse === 0 means this operator does NOT support bill fetch (e.g., DTH, some Postpaid)
+    const operatorSupportsBillFetch = operator.billFetchResponse !== 0;
+    setSupportsBillFetch(behavior.supportsBillFetch && operatorSupportsBillFetch);
     
     // Start with base fallback inputs
     const baseInputs = JSON.parse(JSON.stringify(behavior.inputs));
+    // If this operator doesn't support bill fetch (e.g., DTH), add an amount input
+    if (!operatorSupportsBillFetch && behavior.type !== 'recharge') {
+      const hasAmount = baseInputs.some((i: any) => i.param_name === 'amount');
+      if (!hasAmount) {
+        baseInputs.push({ param_name: 'amount', param_label: 'Amount (₹)', type: 'Numeric', regex: '^[1-9][0-9]{0,4}$', error: 'Enter a valid amount' });
+      }
+    }
     setOperatorParams(baseInputs);
     
     // For recharge type (prepaid), no need to fetch Eko params — use base inputs
@@ -191,6 +201,7 @@ export default function UtilityPage() {
     // Build payload using exact Eko param_names as keys
     const fetchPayload: any = {
       phone_operator_code: selectedOperator.operator_id.toString(),
+      confirmation_mobile_no: user?.phone || '',  // Eko requires a REAL phone number here
     };
     Object.entries(formValues).forEach(([key, value]) => {
       if (value.trim()) fetchPayload[key] = value.trim();
