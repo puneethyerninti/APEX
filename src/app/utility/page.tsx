@@ -18,7 +18,17 @@ const getCategoryBehavior = (catName: string) => {
     };
   }
   
-  // Default for Electricity, Gas, Water, Postpaid, Broadband, FASTag, DTH, etc.
+  if (name.includes('dth') || name.includes('fastag')) {
+    return {
+      type: 'recharge',
+      supportsBillFetch: false,
+      inputs: [
+        { param_name: 'utility_acc_no', param_label: 'Customer ID / Vehicle Number', type: 'AlphaNumeric', regex: '^.{3,30}$', error: 'Enter a valid ID' }
+      ]
+    };
+  }
+  
+  // Default for Electricity, Gas, Water, Postpaid, Broadband, etc.
   return {
     type: 'fetch_bill',
     supportsBillFetch: true,
@@ -116,15 +126,12 @@ export default function UtilityPage() {
     setErrorMsg(null);
     
     const behavior = getCategoryBehavior(selectedCategory?.operator_category_name);
-    // Use Eko's billFetchResponse from the operator list data if available
-    // billFetchResponse === 0 means this operator does NOT support bill fetch (e.g., DTH, some Postpaid)
-    const operatorSupportsBillFetch = operator.billFetchResponse !== 0;
-    setSupportsBillFetch(behavior.supportsBillFetch && operatorSupportsBillFetch);
+    setSupportsBillFetch(behavior.supportsBillFetch);
     
     // Start with base fallback inputs
     const baseInputs = JSON.parse(JSON.stringify(behavior.inputs));
     // If this operator doesn't support bill fetch (e.g., DTH), add an amount input
-    if (!operatorSupportsBillFetch && behavior.type !== 'recharge') {
+    if (!behavior.supportsBillFetch && behavior.type !== 'recharge') {
       const hasAmount = baseInputs.some((i: any) => i.param_name === 'amount');
       if (!hasAmount) {
         baseInputs.push({ param_name: 'amount', param_label: 'Amount (₹)', type: 'Numeric', regex: '^[1-9][0-9]{0,4}$', error: 'Enter a valid amount' });
@@ -432,13 +439,13 @@ export default function UtilityPage() {
     const amountStr = formValues['amount'] || '';
     const numAmount = parseFloat(amountStr);
     
-    // Set fake bill info so Pay Bill flow works
+    // Set fake bill info so Pay Bill flow works, but DO NOT call setBillInfo 
+    // so the user never sees a "fake bill" rendered on the screen.
     const fakeBill = {
         amount: numAmount.toString(),
         utilitycustomername: user?.name || 'Customer',
         client_ref_id: `ref_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`
     };
-    setBillInfo(fakeBill);
     handlePayBill(fakeBill);
   };
 
