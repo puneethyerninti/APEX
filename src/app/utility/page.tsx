@@ -317,7 +317,7 @@ export default function UtilityPage() {
             });
             if (verifyRes.data.success) {
               if (verifyRes.data.utilityTransactionId) {
-                router.push(`/utility/transactions/${verifyRes.data.utilityTransactionId}`);
+                router.push(`/utility/transactions?id=${verifyRes.data.utilityTransactionId}`);
               } else {
                 setPaySuccess(verifyRes.data);
               }
@@ -397,7 +397,7 @@ export default function UtilityPage() {
                     
                     if (verifyRes.data.success) {
                         if (verifyRes.data.utilityTransactionId) {
-                            router.push(`/utility/transactions/${verifyRes.data.utilityTransactionId}`);
+                            router.push(`/utility/transactions?id=${verifyRes.data.utilityTransactionId}`);
                         } else {
                             setPaySuccess(verifyRes.data.fulfillmentData || verifyRes.data);
                         }

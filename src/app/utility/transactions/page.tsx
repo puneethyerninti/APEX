@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/services/api';
 import { useSocket } from '@/context/SocketContext';
 
@@ -40,15 +40,18 @@ interface UtilityTransactionView {
 const finalStatuses = new Set<UtilityStatus>(['eko_success', 'eko_failed', 'refunded', 'manual_review', 'Success', 'Failed']);
 
 export default function UtilityTransactionStatusPage() {
-  const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { socket } = useSocket();
-  const transactionId = String(params.id || '');
+  const transactionId = searchParams.get('id') || '';
   const [transaction, setTransaction] = useState<UtilityTransactionView | null>(null);
   const [error, setError] = useState('');
 
   const loadStatus = async () => {
-    if (!transactionId) return;
+    if (!transactionId) {
+      setError('Missing utility transaction id.');
+      return;
+    }
     try {
       const res = await api.get(`/utility/transactions/${transactionId}/status`);
       if (res.data.success) {

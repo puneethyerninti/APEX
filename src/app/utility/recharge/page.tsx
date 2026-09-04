@@ -118,7 +118,7 @@ export default function MobileRechargePage() {
                     if (verifyRes.data.success) {
                         window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Payment received. Processing recharge...`, type: 'success' } }));
                         if (verifyRes.data.utilityTransactionId) {
-                            router.push(`/utility/transactions/${verifyRes.data.utilityTransactionId}`);
+                            router.push(`/utility/transactions?id=${verifyRes.data.utilityTransactionId}`);
                         } else {
                             router.push('/utility');
                         }
