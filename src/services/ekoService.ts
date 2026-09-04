@@ -101,7 +101,7 @@ export const getEkoHeaders = (requestHashString?: string) => {
  * BBPS: Fetch Categories (Section 2.1)
  */
 export const fetchCategories = async () => {
-    return withCache('bbps:categories', async () => {
+    return withCache('bbps:v1:categories', async () => {
         const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
         const headers = getEkoHeaders();
         const url = `${getBbpsReadBaseUrl(EKO_BASE_URL)}/customer/payment/bbps/categories?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
@@ -114,7 +114,7 @@ export const fetchCategories = async () => {
  * BBPS: Fetch Locations (Section 2.2)
  */
 export const fetchLocations = async () => {
-    return withCache('bbps:locations', async () => {
+    return withCache('bbps:v1:locations', async () => {
         const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
         const headers = getEkoHeaders();
         const url = `${getBbpsReadBaseUrl(EKO_BASE_URL)}/customer/payment/bbps/locations?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
@@ -127,7 +127,7 @@ export const fetchLocations = async () => {
  * BBPS: Fetch Operators (Section 2.3)
  */
 export const fetchBBPSOperators = async (categoryId?: string, locationId?: string) => {
-    return withCache(`bbps:operators:${categoryId || 'all'}:${locationId || 'all'}`, async () => {
+    return withCache(`bbps:v1:operators:${categoryId || 'all'}:${locationId || 'all'}`, async () => {
         const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
         const headers = getEkoHeaders();
         const url = `${getBbpsReadBaseUrl(EKO_BASE_URL)}/customer/payment/bbps/operators?${buildQuery({
@@ -145,7 +145,7 @@ export const fetchBBPSOperators = async (categoryId?: string, locationId?: strin
  * BBPS: Fetch Operator Parameters (Section 2.4)
  */
 export const fetchOperatorParameters = async (operatorId: string) => {
-    return withCache(`bbps:operator:${operatorId}:params`, async () => {
+    return withCache(`bbps:v1:operator:${operatorId}:params`, async () => {
         const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
         const headers = getEkoHeaders();
         const url = `${getBbpsReadBaseUrl(EKO_BASE_URL)}/customer/payment/bbps/operator/${operatorId}/parameters?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
