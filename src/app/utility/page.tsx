@@ -222,10 +222,14 @@ export default function UtilityPage() {
     const fetchPayload: any = {
       phone_operator_code: selectedOperator.operator_id.toString(),
       confirmation_mobile_no: user?.phone || '',  // Eko requires a REAL phone number here
+      sender_name: user?.name || 'Customer',
+      category: selectedCategory?.operator_category_id || 0,
     };
     Object.entries(formValues).forEach(([key, value]) => {
       if (value.trim()) fetchPayload[key] = value.trim();
     });
+    const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
+    fetchPayload.utility_acc_no = formValues[primaryParamName] || fetchPayload.utility_acc_no || '';
 
     setIsFetchingBill(true);
     setErrorMsg(null);
@@ -312,8 +316,12 @@ export default function UtilityPage() {
               userId: user.uid
             });
             if (verifyRes.data.success) {
-              setPaySuccess(verifyRes.data);
-              window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Recharge of ₹${numAmount} successful! ${plan.validity} plan activated.`, type: 'success' } }));
+              if (verifyRes.data.utilityTransactionId) {
+                router.push(`/utility/transactions/${verifyRes.data.utilityTransactionId}`);
+              } else {
+                setPaySuccess(verifyRes.data);
+              }
+              window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Payment received. Processing recharge...`, type: 'success' } }));
             }
           } catch (e: any) {
             window.dispatchEvent(new CustomEvent('showToast', { detail: { message: e.response?.data?.message || 'Recharge failed', type: 'error' } }));
@@ -362,6 +370,8 @@ export default function UtilityPage() {
                 category: selectedCategory?.operator_category_id || 0,
                 utilitycustomername: currentBill.utilitycustomername || user.name || 'Customer',
                 client_ref_id: currentBill.client_ref_id || '',
+                billfetchresponse: currentBill.billfetchresponse,
+                ekoFetchResponse: currentBill.ekoFetchResponse,
                 formValues: formValues
             }
         });
@@ -386,8 +396,12 @@ export default function UtilityPage() {
                     });
                     
                     if (verifyRes.data.success) {
-                        setPaySuccess(verifyRes.data.fulfillmentData || verifyRes.data);
-                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Payment successful!`, type: 'success' } }));
+                        if (verifyRes.data.utilityTransactionId) {
+                            router.push(`/utility/transactions/${verifyRes.data.utilityTransactionId}`);
+                        } else {
+                            setPaySuccess(verifyRes.data.fulfillmentData || verifyRes.data);
+                        }
+                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Payment received. Processing utility service...`, type: 'success' } }));
                     } else {
                         window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Payment verification failed', type: 'error' } }));
                     }

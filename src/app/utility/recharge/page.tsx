@@ -21,6 +21,7 @@ export default function MobileRechargePage() {
   const [mobileNumber, setMobileNumber] = useState('');
   const [operator, setOperator] = useState('');
   const [operatorCode, setOperatorCode] = useState('');
+  const [circleId, setCircleId] = useState('');
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All Plans');
@@ -35,6 +36,7 @@ export default function MobileRechargePage() {
               setPlans([]);
               setOperator('');
               setOperatorCode('');
+              setCircleId('');
               return;
           }
           setLoadingPlans(true);
@@ -42,8 +44,10 @@ export default function MobileRechargePage() {
               const res = await api.get(`/utility/plans?mobile=${mobileNumber}`);
               if (res.data.success) {
                   setPlans(res.data.data);
+                  setActiveCategory('All Plans');
                   if (res.data.meta) {
                       setOperatorCode(res.data.meta.phone_operator_code);
+                      setCircleId(res.data.meta.circleid || '');
                       // Fallback name mapping since Eko doesn't always return the operator name in plan response
                       const code = String(res.data.meta.phone_operator_code);
                       if (code === '1') setOperator('Airtel');
@@ -67,7 +71,7 @@ export default function MobileRechargePage() {
   }, [mobileNumber]);
 
   const categories = plans.length > 0 ? Array.from(new Set(plans.map(p => p.category))) : ['All Plans'];
-  const displayedPlans = plans.filter(p => p.category === activeCategory);
+  const displayedPlans = activeCategory === 'All Plans' ? plans : plans.filter(p => p.category === activeCategory);
 
   const handleRecharge = async () => {
     if (!user?.uid || !selectedPlan || mobileNumber.length !== 10 || !operatorCode) {
@@ -85,7 +89,10 @@ export default function MobileRechargePage() {
             metadata: {
                 mobile: mobileNumber,
                 amount: selectedPlan.price,
-                operatorCode: operatorCode
+                operatorCode,
+                circleid: circleId,
+                planDescription: selectedPlan.description,
+                operatorName: operator
             }
         });
         
@@ -109,8 +116,12 @@ export default function MobileRechargePage() {
                     });
                     
                     if (verifyRes.data.success) {
-                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Successfully recharged ₹${selectedPlan.price}!`, type: 'success' } }));
-                        router.push('/utility');
+                        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Payment received. Processing recharge...`, type: 'success' } }));
+                        if (verifyRes.data.utilityTransactionId) {
+                            router.push(`/utility/transactions/${verifyRes.data.utilityTransactionId}`);
+                        } else {
+                            router.push('/utility');
+                        }
                     }
                 } catch (e: any) {
                     console.error("Verification/Recharge failed", e);
