@@ -34,17 +34,12 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const TransactionSchema = new mongoose_1.Schema({
-    user: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    amount: { type: Number, required: true },
-    type: { type: String, enum: ['credit', 'debit'], required: true },
-    category: { type: String, required: true }, // e.g. 'recharge', 'add_money', 'cab_ride'
-    status: { type: String, enum: ['pending', 'completed', 'failed', 'refunded'], default: 'completed', index: true },
-    referenceId: { type: String },
-    razorpayOrderId: { type: String, index: true, sparse: true },
-    razorpayPaymentId: { type: String, index: true, sparse: true },
-    razorpaySignature: { type: String },
-    webhookPayload: { type: mongoose_1.Schema.Types.Mixed },
-    metadata: { type: mongoose_1.Schema.Types.Mixed }
+const WebhookEventSchema = new mongoose_1.Schema({
+    provider: { type: String, enum: ['razorpay'], required: true },
+    eventId: { type: String, required: true },
+    event: { type: String, required: true },
+    processedAt: { type: Date, default: Date.now },
+    payload: { type: mongoose_1.Schema.Types.Mixed }
 }, { timestamps: true });
-exports.default = mongoose_1.default.model('Transaction', TransactionSchema);
+WebhookEventSchema.index({ provider: 1, eventId: 1 }, { unique: true });
+exports.default = mongoose_1.default.models.WebhookEvent || mongoose_1.default.model('WebhookEvent', WebhookEventSchema);

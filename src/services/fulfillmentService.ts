@@ -3,7 +3,7 @@ import Transaction from '../models/Transaction';
 import { handleAPEXPlanUpgrade } from '../controllers/userController';
 import { handleMatrimonyUpgrade } from '../controllers/matrimonyController';
 import { handleTravelBooking } from '../controllers/travelsController';
-import { handleUtilityRecharge, handleBBPSPayment } from '../controllers/utilityController';
+import { handleUtilityRecharge, handleBBPSPayment, updateUtilityTransactionStatus } from '../controllers/utilityController';
 import { handleAcademyEnrollment } from '../controllers/academyController';
 import { createNotification } from '../controllers/notificationController';
 import { getRazorpay } from '../controllers/financeController';
@@ -46,7 +46,8 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
           ...metadata,
           amount: transaction.amount,
           razorpayOrderId: transaction.razorpayOrderId,
-          razorpayPaymentId: transaction.razorpayPaymentId
+          razorpayPaymentId: transaction.razorpayPaymentId,
+          appIo
         });
         break;
 
@@ -56,7 +57,8 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
           ...metadata,
           amount: transaction.amount,
           razorpayOrderId: transaction.razorpayOrderId,
-          razorpayPaymentId: transaction.razorpayPaymentId
+          razorpayPaymentId: transaction.razorpayPaymentId,
+          appIo
         });
         break;
 
@@ -117,6 +119,15 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
     console.error(`[Fulfillment] Error fulfilling transaction ${transaction._id}:`, error);
     
     let refundInfo: any = null;
+    if (metadata.utilityTransactionId) {
+      await updateUtilityTransactionStatus(
+        metadata.utilityTransactionId,
+        'refund_pending',
+        error.message || 'Service delivery failed after payment',
+        {},
+        appIo
+      );
+    }
 
     // Auto-Refund Mechanism
     if (transaction.razorpayPaymentId) {
@@ -163,6 +174,21 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
         ...(refundInfo && { 'metadata.refundInfo': refundInfo })
       }
     });
+
+    if (metadata.utilityTransactionId) {
+      await updateUtilityTransactionStatus(
+        metadata.utilityTransactionId,
+        refundInfo?.status === 'Refunded' ? 'refunded' : 'manual_review',
+        refundInfo?.status === 'Refunded'
+          ? 'Payment refunded because service delivery failed'
+          : 'Service delivery failed and needs manual review',
+        {
+          refundStatus: refundInfo?.status,
+          ...(refundInfo && { 'metadata.refundInfo': refundInfo })
+        },
+        appIo
+      );
+    }
 
     throw error;
   }

@@ -3,11 +3,67 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleBBPSPayment = exports.handleUtilityRecharge = exports.getPlans = exports.payBill = exports.fetchBBPSBill = exports.getOperatorParams = exports.getBBPSOperatorsList = exports.getLocations = exports.getCategories = void 0;
+exports.getUtilityTransactionStatus = exports.handleBBPSPayment = exports.handleUtilityRecharge = exports.getPlans = exports.payBill = exports.fetchBBPSBill = exports.getOperatorParams = exports.getBBPSOperatorsList = exports.getLocations = exports.getCategories = exports.createPendingUtilityTransaction = exports.updateUtilityTransactionStatus = void 0;
 const notificationController_1 = require("./notificationController");
 const UtilityTransaction_1 = __importDefault(require("../models/UtilityTransaction"));
 const ekoService_1 = require("../services/ekoService");
 const crypto_1 = __importDefault(require("crypto"));
+const utilityFinalStatuses = ['eko_success', 'eko_failed', 'refunded', 'manual_review', 'Success', 'Failed'];
+const makeClientRefId = (prefix = 'utl') => `${prefix}_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 32);
+const getPrimaryAccountNumber = (params) => {
+    if (params.utility_acc_no)
+        return String(params.utility_acc_no);
+    const ignored = new Set(['confirmation_mobile_no', 'sender_name', 'category', 'client_ref_id', 'source_ip', 'latlong', 'amount']);
+    const firstValue = Object.entries(params).find(([key, value]) => !ignored.has(key) && value !== undefined && value !== null && value !== '');
+    return firstValue ? String(firstValue[1]) : '';
+};
+const emitUtilityStatus = (io, transaction) => {
+    if (!io || !transaction)
+        return;
+    io.to(`user_${transaction.userId}`).emit('utility_status_updated', {
+        transactionId: transaction._id.toString(),
+        status: transaction.status,
+        message: transaction.failureReason || undefined,
+        amount: transaction.amount,
+        operator: transaction.operator,
+        ekoTid: transaction.ekoTxId,
+        bbpsTxnRefId: transaction.bbpsTxnRefId
+    });
+};
+const updateUtilityTransactionStatus = async (id, status, message, patch = {}, io) => {
+    const transaction = await UtilityTransaction_1.default.findByIdAndUpdate(id, {
+        $set: { status, ...(message ? { failureReason: message } : {}), ...patch },
+        $push: { statusHistory: { status, message, at: new Date() } }
+    }, { new: true });
+    emitUtilityStatus(io, transaction);
+    return transaction;
+};
+exports.updateUtilityTransactionStatus = updateUtilityTransactionStatus;
+const createPendingUtilityTransaction = async (userId, category, amount, metadata, razorpayOrderId) => {
+    if (!['mobile_recharge', 'bbps_payment'].includes(category))
+        return null;
+    const isRecharge = category === 'mobile_recharge';
+    const utility_acc_no = metadata?.utility_acc_no || metadata?.mobile || '';
+    const clientRefId = metadata?.client_ref_id || makeClientRefId(isRecharge ? 'rch' : 'bbps');
+    const transaction = await UtilityTransaction_1.default.findOneAndUpdate({ clientRefId }, {
+        $setOnInsert: {
+            userId,
+            type: isRecharge ? 'Mobile Recharge' : 'Bill Payment',
+            amount,
+            operator: metadata?.operatorName || metadata?.operatorCode || 'Utility',
+            mobileOrAccountNumber: utility_acc_no,
+            clientRefId,
+            razorpayOrderId,
+            planDescription: metadata?.planDescription,
+            status: 'payment_pending',
+            metadata: { ...metadata, client_ref_id: clientRefId },
+            requestPayload: metadata,
+            statusHistory: [{ status: 'payment_pending', message: 'Waiting for payment confirmation', at: new Date() }]
+        }
+    }, { upsert: true, new: true });
+    return transaction;
+};
+exports.createPendingUtilityTransaction = createPendingUtilityTransaction;
 /**
  * Maps Eko BBPS category name OR integer to the correct integer category code for the Pay API.
  * Reference: Eko BBPS API documentation — operator_category_id values.
@@ -114,7 +170,7 @@ const getOperatorParams = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Operator ID is required' });
         const raw = await (0, ekoService_1.fetchOperatorParameters)(id);
         // Return the full param_attributes so frontend can use list_elements + fetchBill flag
-        const paramData = raw?.param_attributes || {};
+        const paramData = raw?.data?.param_attributes || raw?.param_attributes || {};
         res.status(200).json({ success: true, data: paramData });
     }
     catch (error) {
@@ -130,10 +186,20 @@ const fetchBBPSBill = async (req, res) => {
         if (!phone_operator_code) {
             return res.status(400).json({ success: false, message: 'phone_operator_code is required' });
         }
-        const client_ref_id = `ref_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 20);
+        const client_ref_id = otherParams.client_ref_id || makeClientRefId('bill');
+        // Eko requires confirmation_mobile_no but it MUST be a real number.
+        // The frontend sends it via otherParams. Fallback to the initiator_id (which is a real mobile).
+        const confirmation_mobile_no = otherParams.confirmation_mobile_no || process.env.EKO_INITIATOR_ID || '';
+        delete otherParams.confirmation_mobile_no;
+        const utility_acc_no = getPrimaryAccountNumber(otherParams);
         const raw = await (0, ekoService_1.fetchBill)({
             phone_operator_code,
-            confirmation_mobile_no: '9999999999', // Eko implicitly requires this for some BBPS fetch calls
+            utility_acc_no,
+            client_ref_id,
+            confirmation_mobile_no,
+            sender_name: otherParams.sender_name || 'Customer',
+            source_ip: (0, ekoService_1.getClientIp)(req),
+            category: otherParams.category,
             ...otherParams
         });
         console.log('[fetchBBPSBill] Eko response:', JSON.stringify(raw));
@@ -146,7 +212,9 @@ const fetchBBPSBill = async (req, res) => {
                     billDueDate: raw.data.billDueDate || '',
                     customer_id: raw.data.customer_id || '',
                     bbpstrxnrefid: raw.data.bbpstrxnrefid || '',
-                    client_ref_id
+                    client_ref_id,
+                    billfetchresponse: raw.data.billfetchresponse || raw.data.billFetchResponse || raw.data,
+                    ekoFetchResponse: raw
                 }
             });
         }
@@ -283,12 +351,16 @@ exports.getPlans = getPlans;
  * Handle recharge triggered after Razorpay payment verification
  */
 const handleUtilityRecharge = async (userId, metadata) => {
-    const { mobile, amount, operatorCode, circleid, planDescription, razorpayOrderId, razorpayPaymentId, operatorName } = metadata;
+    const { mobile, amount, operatorCode, circleid, planDescription, razorpayOrderId, razorpayPaymentId, operatorName, utilityTransactionId } = metadata;
     if (!mobile || !amount || !operatorCode || !userId) {
         throw new Error('Missing required fields');
     }
-    const clientRefId = `req_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 20);
-    const transaction = new UtilityTransaction_1.default({
+    const existing = utilityTransactionId ? await UtilityTransaction_1.default.findById(utilityTransactionId) : null;
+    if (existing && utilityFinalStatuses.includes(existing.status)) {
+        return existing;
+    }
+    const clientRefId = existing?.clientRefId || metadata.client_ref_id || makeClientRefId('rch');
+    const transaction = existing || await UtilityTransaction_1.default.create({
         userId,
         type: 'Mobile Recharge',
         amount: parseFloat(amount),
@@ -298,10 +370,15 @@ const handleUtilityRecharge = async (userId, metadata) => {
         razorpayOrderId,
         razorpayPaymentId,
         planDescription,
-        status: 'Pending',
-        metadata: { circleid, operatorCode, operatorName }
+        status: 'fulfillment_pending',
+        metadata: { circleid, operatorCode, operatorName },
+        statusHistory: [{ status: 'fulfillment_pending', message: 'Recharge queued after payment', at: new Date() }]
     });
-    await transaction.save();
+    await (0, exports.updateUtilityTransactionStatus)(transaction._id.toString(), 'eko_processing', 'Recharge request sent to operator', {
+        razorpayOrderId,
+        razorpayPaymentId,
+        requestPayload: metadata
+    }, metadata.appIo);
     try {
         const ekoResult = await (0, ekoService_1.payBBPSBill)({
             phone_operator_code: operatorCode,
@@ -312,14 +389,16 @@ const handleUtilityRecharge = async (userId, metadata) => {
             amount: amount,
             utilitycustomername: 'Customer',
             client_ref_id: clientRefId,
-            source_ip: '1.1.1.1'
+            source_ip: metadata.source_ip || '127.0.0.1'
         });
         if (ekoResult.status === 0 || ekoResult.response_type_id === 333) {
-            transaction.status = 'Success';
-            transaction.ekoTxId = ekoResult.data?.tid || clientRefId;
-            await transaction.save();
-            await (0, notificationController_1.createNotification)(userId, 'Recharge Successful', `Your recharge of ₹${amount} for ${mobile} was successful. (TxID: ${transaction.ekoTxId})`, 'success');
-            return transaction;
+            const updated = await (0, exports.updateUtilityTransactionStatus)(transaction._id.toString(), 'eko_success', undefined, {
+                ekoTxId: ekoResult.data?.tid || ekoResult.tid || clientRefId,
+                bbpsTxnRefId: ekoResult.data?.bbpstrxnrefid || ekoResult.bbpstrxnrefid,
+                ekoPayResponse: ekoResult
+            }, metadata.appIo);
+            await (0, notificationController_1.createNotification)(userId, 'Recharge Successful', `Your recharge of ₹${amount} for ${mobile} was successful. (TxID: ${updated?.ekoTxId || clientRefId})`, 'success');
+            return updated;
         }
         else {
             throw new Error(ekoResult.message || 'Recharge failed.');
@@ -327,8 +406,9 @@ const handleUtilityRecharge = async (userId, metadata) => {
     }
     catch (error) {
         console.error('Recharge failed:', error.message);
-        transaction.status = 'Failed';
-        await transaction.save();
+        await (0, exports.updateUtilityTransactionStatus)(transaction._id.toString(), 'eko_failed', error.response?.data?.message || error.message, {
+            ekoPayResponse: error.response?.data
+        }, metadata.appIo);
         throw error;
     }
 };
@@ -338,12 +418,16 @@ exports.handleUtilityRecharge = handleUtilityRecharge;
  * for BBPS bill payments (Electricity, Water, Gas, Postpaid, DTH, Credit Card, etc.)
  */
 const handleBBPSPayment = async (userId, metadata) => {
-    const { operatorCode, operatorName, utility_acc_no, confirmation_mobile_no, category, utilitycustomername, client_ref_id, amount, razorpayOrderId, razorpayPaymentId, formValues } = metadata;
+    const { operatorCode, operatorName, utility_acc_no, confirmation_mobile_no, category, utilitycustomername, client_ref_id, amount, razorpayOrderId, razorpayPaymentId, formValues, utilityTransactionId, billfetchresponse, ekoFetchResponse } = metadata;
     if (!operatorCode || !utility_acc_no || !amount) {
         throw new Error('Missing required BBPS payment fields in metadata');
     }
-    const refId = client_ref_id || `ref_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 20);
-    const transaction = new UtilityTransaction_1.default({
+    const existing = utilityTransactionId ? await UtilityTransaction_1.default.findById(utilityTransactionId) : null;
+    if (existing && utilityFinalStatuses.includes(existing.status)) {
+        return existing;
+    }
+    const refId = existing?.clientRefId || client_ref_id || makeClientRefId('bbps');
+    const transaction = existing || await UtilityTransaction_1.default.create({
         userId,
         type: 'Bill Payment',
         amount: parseFloat(amount),
@@ -352,10 +436,17 @@ const handleBBPSPayment = async (userId, metadata) => {
         clientRefId: refId,
         razorpayOrderId,
         razorpayPaymentId,
-        status: 'Pending',
-        metadata: { ...formValues, category, utilitycustomername }
+        status: 'fulfillment_pending',
+        metadata: { ...formValues, category, utilitycustomername },
+        ekoFetchResponse,
+        statusHistory: [{ status: 'fulfillment_pending', message: 'Bill payment queued after payment', at: new Date() }]
     });
-    await transaction.save();
+    await (0, exports.updateUtilityTransactionStatus)(transaction._id.toString(), 'eko_processing', 'Bill payment request sent to biller', {
+        razorpayOrderId,
+        razorpayPaymentId,
+        requestPayload: metadata,
+        ekoFetchResponse
+    }, metadata.appIo);
     try {
         const ekoResult = await (0, ekoService_1.payBBPSBill)({
             phone_operator_code: operatorCode.toString(),
@@ -366,27 +457,57 @@ const handleBBPSPayment = async (userId, metadata) => {
             amount: parseFloat(amount),
             utilitycustomername: utilitycustomername || 'Customer',
             client_ref_id: refId,
-            source_ip: '1.1.1.1',
+            source_ip: metadata.source_ip || '127.0.0.1',
+            ...(billfetchresponse ? { billfetchresponse } : {}),
             ...(formValues || {})
         });
         if (ekoResult.status === 0 || ekoResult.response_type_id === 333) {
-            transaction.status = 'Success';
-            transaction.ekoTxId = ekoResult.data?.tid || refId;
-            await transaction.save();
-            await (0, notificationController_1.createNotification)(userId, 'Bill Payment Successful', `Your bill payment of ₹${amount} for ${operatorName || operatorCode} was successful. TxID: ${transaction.ekoTxId}`, 'success');
-            return transaction;
+            const updated = await (0, exports.updateUtilityTransactionStatus)(transaction._id.toString(), 'eko_success', undefined, {
+                ekoTxId: ekoResult.data?.tid || ekoResult.tid || refId,
+                bbpsTxnRefId: ekoResult.data?.bbpstrxnrefid || ekoResult.bbpstrxnrefid,
+                ekoPayResponse: ekoResult
+            }, metadata.appIo);
+            await (0, notificationController_1.createNotification)(userId, 'Bill Payment Successful', `Your bill payment of ₹${amount} for ${operatorName || operatorCode} was successful. TxID: ${updated?.ekoTxId || refId}`, 'success');
+            return updated;
         }
         else {
-            transaction.status = 'Failed';
-            await transaction.save();
             throw new Error(ekoResult.message || 'Bill payment failed at biller end');
         }
     }
     catch (error) {
         console.error('handleBBPSPayment failed:', error.response?.data || error.message);
-        transaction.status = 'Failed';
-        await transaction.save();
+        await (0, exports.updateUtilityTransactionStatus)(transaction._id.toString(), 'eko_failed', error.response?.data?.message || error.message, {
+            ekoPayResponse: error.response?.data
+        }, metadata.appIo);
         throw error;
     }
 };
 exports.handleBBPSPayment = handleBBPSPayment;
+const getUtilityTransactionStatus = async (req, res) => {
+    try {
+        const transaction = await UtilityTransaction_1.default.findById(req.params.id).lean();
+        if (!transaction) {
+            return res.status(404).json({ success: false, message: 'Utility transaction not found' });
+        }
+        res.json({
+            success: true,
+            data: {
+                id: transaction._id,
+                status: transaction.status,
+                amount: transaction.amount,
+                operator: transaction.operator,
+                mobileOrAccountNumber: transaction.mobileOrAccountNumber,
+                ekoTxId: transaction.ekoTxId,
+                bbpsTxnRefId: transaction.bbpsTxnRefId,
+                failureReason: transaction.failureReason,
+                refundStatus: transaction.refundStatus,
+                statusHistory: transaction.statusHistory || [],
+                updatedAt: transaction.updatedAt
+            }
+        });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message || 'Failed to get transaction status' });
+    }
+};
+exports.getUtilityTransactionStatus = getUtilityTransactionStatus;

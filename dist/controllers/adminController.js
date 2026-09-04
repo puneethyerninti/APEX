@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.broadcastMessage = exports.getAllLeads = exports.getAllCharityDonations = exports.updateStoreOrderStatus = exports.getAllStoreOrders = exports.completeTransaction = exports.updateUserWallet = exports.deleteEntity = exports.getAllTransactions = exports.getUsersList = exports.updateApprovalStatus = exports.getPendingApprovals = exports.getDashboardStats = void 0;
+exports.refundUtilityTransaction = exports.markUtilityManualReview = exports.retryUtilityTransaction = exports.getUtilityTransactions = exports.broadcastMessage = exports.getAllLeads = exports.getAllCharityDonations = exports.updateStoreOrderStatus = exports.getAllStoreOrders = exports.completeTransaction = exports.updateUserWallet = exports.deleteEntity = exports.getAllTransactions = exports.getUsersList = exports.updateApprovalStatus = exports.getPendingApprovals = exports.getDashboardStats = void 0;
 const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const Job_1 = __importDefault(require("../models/Job"));
@@ -14,8 +14,12 @@ const CharityDonation_1 = __importDefault(require("../models/CharityDonation"));
 const TravelBooking_1 = __importDefault(require("../models/TravelBooking"));
 const Lead_1 = __importDefault(require("../models/Lead"));
 const Notification_1 = __importDefault(require("../models/Notification"));
+const UtilityTransaction_1 = __importDefault(require("../models/UtilityTransaction"));
 const notificationController_1 = require("./notificationController");
 const firebaseAdmin_1 = require("../firebaseAdmin");
+const fulfillmentService_1 = require("../services/fulfillmentService");
+const financeController_1 = require("./financeController");
+const utilityController_1 = require("./utilityController");
 const getDashboardStats = async (req, res) => {
     try {
         const totalUsers = await User_1.default.countDocuments();
@@ -328,3 +332,111 @@ const broadcastMessage = async (req, res) => {
     }
 };
 exports.broadcastMessage = broadcastMessage;
+const getUtilityTransactions = async (req, res) => {
+    try {
+        const status = req.query.status;
+        const filter = status ? { status } : {};
+        const transactions = await UtilityTransaction_1.default.find(filter).sort({ createdAt: -1 }).limit(200);
+        res.json({ success: true, transactions });
+    }
+    catch (error) {
+        console.error('Error fetching utility transactions:', error);
+        res.status(500).json({ error: 'Server error fetching utility transactions' });
+    }
+};
+exports.getUtilityTransactions = getUtilityTransactions;
+const retryUtilityTransaction = async (req, res) => {
+    const id = String(req.params.id);
+    try {
+        const utilityTx = await UtilityTransaction_1.default.findById(id);
+        if (!utilityTx)
+            return res.status(404).json({ error: 'Utility transaction not found' });
+        if (['eko_success', 'refunded'].includes(utilityTx.status)) {
+            return res.status(400).json({ error: 'Transaction is already final' });
+        }
+        const paymentTx = await Transaction_1.default.findOne({ razorpayOrderId: utilityTx.razorpayOrderId });
+        if (!paymentTx || paymentTx.status !== 'completed') {
+            return res.status(400).json({ error: 'Payment transaction is not completed' });
+        }
+        await Transaction_1.default.findByIdAndUpdate(paymentTx._id, {
+            $unset: {
+                'metadata.fulfillmentQueued': '',
+                'metadata.fulfillmentQueuedAt': '',
+                'metadata.fulfillmentError': '',
+                'metadata.fulfillmentFailedAt': ''
+            }
+        });
+        const refreshed = await Transaction_1.default.findById(paymentTx._id);
+        setImmediate(async () => {
+            try {
+                await (0, fulfillmentService_1.fulfillOrder)(refreshed, req.app.get('io'));
+            }
+            catch (error) {
+                console.error(`Admin retry failed for utility transaction ${id}:`, error);
+            }
+        });
+        await (0, utilityController_1.updateUtilityTransactionStatus)(id, 'fulfillment_pending', 'Admin retry queued', {}, req.app.get('io'));
+        res.json({ success: true, message: 'Utility fulfillment retry queued' });
+    }
+    catch (error) {
+        console.error('Error retrying utility transaction:', error);
+        res.status(500).json({ error: 'Server error retrying utility transaction' });
+    }
+};
+exports.retryUtilityTransaction = retryUtilityTransaction;
+const markUtilityManualReview = async (req, res) => {
+    const id = String(req.params.id);
+    const { reason } = req.body;
+    try {
+        const transaction = await (0, utilityController_1.updateUtilityTransactionStatus)(id, 'manual_review', reason || 'Marked for manual review by admin', {}, req.app.get('io'));
+        if (!transaction)
+            return res.status(404).json({ error: 'Utility transaction not found' });
+        res.json({ success: true, transaction });
+    }
+    catch (error) {
+        console.error('Error marking utility manual review:', error);
+        res.status(500).json({ error: 'Server error updating utility transaction' });
+    }
+};
+exports.markUtilityManualReview = markUtilityManualReview;
+const refundUtilityTransaction = async (req, res) => {
+    const id = String(req.params.id);
+    try {
+        const utilityTx = await UtilityTransaction_1.default.findById(id);
+        if (!utilityTx)
+            return res.status(404).json({ error: 'Utility transaction not found' });
+        const paymentTx = await Transaction_1.default.findOne({ razorpayOrderId: utilityTx.razorpayOrderId });
+        if (!paymentTx?.razorpayPaymentId) {
+            return res.status(400).json({ error: 'Razorpay payment id not found' });
+        }
+        await (0, utilityController_1.updateUtilityTransactionStatus)(id, 'refund_pending', 'Admin refund initiated', {}, req.app.get('io'));
+        const refund = await (0, financeController_1.getRazorpay)().payments.refund(paymentTx.razorpayPaymentId, {
+            amount: Math.round(paymentTx.amount * 100),
+            notes: {
+                reason: 'Utility service failed',
+                utilityTransactionId: id
+            }
+        });
+        await Transaction_1.default.findByIdAndUpdate(paymentTx._id, {
+            $set: {
+                status: 'refunded',
+                'metadata.refundInfo': {
+                    refundId: refund.id,
+                    status: refund.status || 'processed',
+                    refundedAt: new Date()
+                }
+            }
+        });
+        const transaction = await (0, utilityController_1.updateUtilityTransactionStatus)(id, 'refunded', 'Payment refunded', {
+            refundStatus: refund.status || 'processed',
+            'metadata.refundInfo': refund
+        }, req.app.get('io'));
+        res.json({ success: true, transaction, refund });
+    }
+    catch (error) {
+        console.error('Error refunding utility transaction:', error);
+        await (0, utilityController_1.updateUtilityTransactionStatus)(id, 'manual_review', error.message || 'Refund failed and needs review', {}, req.app.get('io'));
+        res.status(500).json({ error: error.message || 'Server error refunding utility transaction' });
+    }
+};
+exports.refundUtilityTransaction = refundUtilityTransaction;

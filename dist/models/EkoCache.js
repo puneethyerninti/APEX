@@ -34,17 +34,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const TransactionSchema = new mongoose_1.Schema({
-    user: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    amount: { type: Number, required: true },
-    type: { type: String, enum: ['credit', 'debit'], required: true },
-    category: { type: String, required: true }, // e.g. 'recharge', 'add_money', 'cab_ride'
-    status: { type: String, enum: ['pending', 'completed', 'failed', 'refunded'], default: 'completed', index: true },
-    referenceId: { type: String },
-    razorpayOrderId: { type: String, index: true, sparse: true },
-    razorpayPaymentId: { type: String, index: true, sparse: true },
-    razorpaySignature: { type: String },
-    webhookPayload: { type: mongoose_1.Schema.Types.Mixed },
-    metadata: { type: mongoose_1.Schema.Types.Mixed }
+const EkoCacheSchema = new mongoose_1.Schema({
+    key: { type: String, required: true, unique: true, index: true },
+    data: { type: mongoose_1.Schema.Types.Mixed, required: true },
+    expiresAt: { type: Date, required: true, index: true }
 }, { timestamps: true });
-exports.default = mongoose_1.default.model('Transaction', TransactionSchema);
+EkoCacheSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+exports.default = mongoose_1.default.models.EkoCache || mongoose_1.default.model('EkoCache', EkoCacheSchema);

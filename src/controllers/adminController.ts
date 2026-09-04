@@ -9,8 +9,12 @@ import CharityDonation from '../models/CharityDonation';
 import TravelBooking from '../models/TravelBooking';
 import Lead from '../models/Lead';
 import Notification from '../models/Notification';
+import UtilityTransaction from '../models/UtilityTransaction';
 import { createNotification } from './notificationController';
 import { sendPushNotification } from '../firebaseAdmin';
+import { fulfillOrder } from '../services/fulfillmentService';
+import { getRazorpay } from './financeController';
+import { updateUtilityTransactionStatus } from './utilityController';
 
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
@@ -338,5 +342,129 @@ export const broadcastMessage = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error broadcasting message:', error);
     res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const getUtilityTransactions = async (req: Request, res: Response) => {
+  try {
+    const status = req.query.status as string | undefined;
+    const filter = status ? { status } : {};
+    const transactions = await UtilityTransaction.find(filter).sort({ createdAt: -1 }).limit(200);
+    res.json({ success: true, transactions });
+  } catch (error) {
+    console.error('Error fetching utility transactions:', error);
+    res.status(500).json({ error: 'Server error fetching utility transactions' });
+  }
+};
+
+export const retryUtilityTransaction = async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+
+  try {
+    const utilityTx = await UtilityTransaction.findById(id);
+    if (!utilityTx) return res.status(404).json({ error: 'Utility transaction not found' });
+    if (['eko_success', 'refunded'].includes(utilityTx.status)) {
+      return res.status(400).json({ error: 'Transaction is already final' });
+    }
+
+    const paymentTx = await Transaction.findOne({ razorpayOrderId: utilityTx.razorpayOrderId });
+    if (!paymentTx || paymentTx.status !== 'completed') {
+      return res.status(400).json({ error: 'Payment transaction is not completed' });
+    }
+
+    await Transaction.findByIdAndUpdate(paymentTx._id, {
+      $unset: {
+        'metadata.fulfillmentQueued': '',
+        'metadata.fulfillmentQueuedAt': '',
+        'metadata.fulfillmentError': '',
+        'metadata.fulfillmentFailedAt': ''
+      }
+    });
+
+    const refreshed = await Transaction.findById(paymentTx._id);
+    setImmediate(async () => {
+      try {
+        await fulfillOrder(refreshed, req.app.get('io'));
+      } catch (error) {
+        console.error(`Admin retry failed for utility transaction ${id}:`, error);
+      }
+    });
+
+    await updateUtilityTransactionStatus(id, 'fulfillment_pending', 'Admin retry queued', {}, req.app.get('io'));
+    res.json({ success: true, message: 'Utility fulfillment retry queued' });
+  } catch (error) {
+    console.error('Error retrying utility transaction:', error);
+    res.status(500).json({ error: 'Server error retrying utility transaction' });
+  }
+};
+
+export const markUtilityManualReview = async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  const { reason } = req.body;
+
+  try {
+    const transaction = await updateUtilityTransactionStatus(
+      id,
+      'manual_review',
+      reason || 'Marked for manual review by admin',
+      {},
+      req.app.get('io')
+    );
+    if (!transaction) return res.status(404).json({ error: 'Utility transaction not found' });
+    res.json({ success: true, transaction });
+  } catch (error) {
+    console.error('Error marking utility manual review:', error);
+    res.status(500).json({ error: 'Server error updating utility transaction' });
+  }
+};
+
+export const refundUtilityTransaction = async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+
+  try {
+    const utilityTx = await UtilityTransaction.findById(id);
+    if (!utilityTx) return res.status(404).json({ error: 'Utility transaction not found' });
+
+    const paymentTx = await Transaction.findOne({ razorpayOrderId: utilityTx.razorpayOrderId });
+    if (!paymentTx?.razorpayPaymentId) {
+      return res.status(400).json({ error: 'Razorpay payment id not found' });
+    }
+
+    await updateUtilityTransactionStatus(id, 'refund_pending', 'Admin refund initiated', {}, req.app.get('io'));
+    const refund = await getRazorpay().payments.refund(paymentTx.razorpayPaymentId, {
+      amount: Math.round(paymentTx.amount * 100),
+      notes: {
+        reason: 'Utility service failed',
+        utilityTransactionId: id
+      }
+    });
+
+    await Transaction.findByIdAndUpdate(paymentTx._id, {
+      $set: {
+        status: 'refunded',
+        'metadata.refundInfo': {
+          refundId: refund.id,
+          status: refund.status || 'processed',
+          refundedAt: new Date()
+        }
+      }
+    });
+
+    const transaction = await updateUtilityTransactionStatus(
+      id,
+      'refunded',
+      'Payment refunded',
+      {
+        refundStatus: refund.status || 'processed',
+        'metadata.refundInfo': refund
+      },
+      req.app.get('io')
+    );
+
+    res.json({ success: true, transaction, refund });
+  } catch (error: any) {
+    console.error('Error refunding utility transaction:', error);
+    await updateUtilityTransactionStatus(id, 'manual_review', error.message || 'Refund failed and needs review', {}, req.app.get('io'));
+    res.status(500).json({ error: error.message || 'Server error refunding utility transaction' });
   }
 };

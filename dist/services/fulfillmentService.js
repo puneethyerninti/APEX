@@ -46,7 +46,8 @@ const fulfillOrder = async (transaction, appIo) => {
                     ...metadata,
                     amount: transaction.amount,
                     razorpayOrderId: transaction.razorpayOrderId,
-                    razorpayPaymentId: transaction.razorpayPaymentId
+                    razorpayPaymentId: transaction.razorpayPaymentId,
+                    appIo
                 });
                 break;
             case 'bbps_payment':
@@ -55,7 +56,8 @@ const fulfillOrder = async (transaction, appIo) => {
                     ...metadata,
                     amount: transaction.amount,
                     razorpayOrderId: transaction.razorpayOrderId,
-                    razorpayPaymentId: transaction.razorpayPaymentId
+                    razorpayPaymentId: transaction.razorpayPaymentId,
+                    appIo
                 });
                 break;
             case 'matrimony':
@@ -95,6 +97,9 @@ const fulfillOrder = async (transaction, appIo) => {
     catch (error) {
         console.error(`[Fulfillment] Error fulfilling transaction ${transaction._id}:`, error);
         let refundInfo = null;
+        if (metadata.utilityTransactionId) {
+            await (0, utilityController_1.updateUtilityTransactionStatus)(metadata.utilityTransactionId, 'refund_pending', error.message || 'Service delivery failed after payment', {}, appIo);
+        }
         // Auto-Refund Mechanism
         if (transaction.razorpayPaymentId) {
             console.log(`[Fulfillment] Auto-refunding payment ${transaction.razorpayPaymentId} due to fulfillment failure.`);
@@ -133,6 +138,14 @@ const fulfillOrder = async (transaction, appIo) => {
                 ...(refundInfo && { 'metadata.refundInfo': refundInfo })
             }
         });
+        if (metadata.utilityTransactionId) {
+            await (0, utilityController_1.updateUtilityTransactionStatus)(metadata.utilityTransactionId, refundInfo?.status === 'Refunded' ? 'refunded' : 'manual_review', refundInfo?.status === 'Refunded'
+                ? 'Payment refunded because service delivery failed'
+                : 'Service delivery failed and needs manual review', {
+                refundStatus: refundInfo?.status,
+                ...(refundInfo && { 'metadata.refundInfo': refundInfo })
+            }, appIo);
+        }
         throw error;
     }
 };

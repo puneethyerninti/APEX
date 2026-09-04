@@ -22,4 +22,8 @@ router.put('/store-orders/:id/status', adminController_1.updateStoreOrderStatus)
 router.get('/charity-donations', adminController_1.getAllCharityDonations);
 router.post('/broadcast', adminController_1.broadcastMessage);
 router.get('/leads', adminController_1.getAllLeads);
+router.get('/utility-transactions', adminController_1.getUtilityTransactions);
+router.post('/utility-transactions/:id/retry', adminController_1.retryUtilityTransaction);
+router.post('/utility-transactions/:id/manual-review', adminController_1.markUtilityManualReview);
+router.post('/utility-transactions/:id/refund', adminController_1.refundUtilityTransaction);
 exports.default = router;

@@ -14,6 +14,7 @@ router.get('/bbps/operator/:id/parameters', utilityController_1.getOperatorParam
 // BBPS Bill Fetch & Pay
 router.post('/bbps/fetch-bill', utilityController_1.fetchBBPSBill);
 router.post('/pay', utilityController_1.payBill);
+router.get('/transactions/:id/status', utilityController_1.getUtilityTransactionStatus);
 // Recharge Plans (Mobile Prepaid / DTH)
 router.get('/plans', utilityController_1.getPlans);
 exports.default = router;

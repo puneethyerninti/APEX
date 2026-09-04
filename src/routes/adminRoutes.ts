@@ -12,7 +12,11 @@ import {
   updateStoreOrderStatus,
   getAllCharityDonations,
   broadcastMessage,
-  getAllLeads
+  getAllLeads,
+  getUtilityTransactions,
+  retryUtilityTransaction,
+  markUtilityManualReview,
+  refundUtilityTransaction
 } from '../controllers/adminController';
 import { requireAdmin } from '../middleware/authMiddleware';
 
@@ -35,5 +39,9 @@ router.put('/store-orders/:id/status', updateStoreOrderStatus);
 router.get('/charity-donations', getAllCharityDonations);
 router.post('/broadcast', broadcastMessage);
 router.get('/leads', getAllLeads);
+router.get('/utility-transactions', getUtilityTransactions);
+router.post('/utility-transactions/:id/retry', retryUtilityTransaction);
+router.post('/utility-transactions/:id/manual-review', markUtilityManualReview);
+router.post('/utility-transactions/:id/refund', refundUtilityTransaction);
 
 export default router;

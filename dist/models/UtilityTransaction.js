@@ -34,6 +34,24 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
+const statusValues = [
+    'created',
+    'details_validated',
+    'bill_fetched',
+    'payment_pending',
+    'payment_success',
+    'fulfillment_pending',
+    'eko_processing',
+    'eko_success',
+    'eko_failed',
+    'refund_pending',
+    'refunded',
+    'manual_review',
+    // Legacy statuses kept so old documents still hydrate safely.
+    'Pending',
+    'Success',
+    'Failed'
+];
 const UtilityTransactionSchema = new mongoose_1.Schema({
     userId: { type: String, required: true, index: true },
     type: { type: String, required: true },
@@ -41,11 +59,25 @@ const UtilityTransactionSchema = new mongoose_1.Schema({
     operator: { type: String, required: true },
     mobileOrAccountNumber: { type: String, required: true },
     ekoTxId: { type: String, index: true, sparse: true },
+    bbpsTxnRefId: { type: String, index: true, sparse: true },
     clientRefId: { type: String, index: true, sparse: true },
     razorpayOrderId: { type: String, index: true, sparse: true },
     razorpayPaymentId: { type: String, index: true, sparse: true },
     planDescription: { type: String },
-    status: { type: String, enum: ['Pending', 'Success', 'Failed'], default: 'Pending', index: true },
+    status: { type: String, enum: statusValues, default: 'created', index: true },
+    failureReason: { type: String },
+    refundStatus: { type: String },
+    requestPayload: { type: mongoose_1.Schema.Types.Mixed },
+    ekoFetchResponse: { type: mongoose_1.Schema.Types.Mixed },
+    ekoPayResponse: { type: mongoose_1.Schema.Types.Mixed },
+    statusHistory: [{
+            status: { type: String, enum: statusValues, required: true },
+            message: { type: String },
+            at: { type: Date, default: Date.now }
+        }],
     metadata: { type: mongoose_1.Schema.Types.Mixed }
 }, { timestamps: true });
+UtilityTransactionSchema.index({ clientRefId: 1 }, { unique: true, sparse: true });
+UtilityTransactionSchema.index({ razorpayOrderId: 1 }, { sparse: true });
+UtilityTransactionSchema.index({ status: 1, updatedAt: 1 });
 exports.default = mongoose_1.default.models.UtilityTransaction || mongoose_1.default.model('UtilityTransaction', UtilityTransactionSchema);

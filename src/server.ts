@@ -37,7 +37,14 @@ const server = http.createServer(app);
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  verify: (req: any, _res, buf) => {
+    if (req.originalUrl?.includes('/api/finance/razorpay/webhook')) {
+      req.rawBody = buf;
+    }
+  }
+}));
 
 // Socket.io setup
 const io = initSocket(server);

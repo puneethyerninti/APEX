@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import axios from 'axios';
+import EkoCache from '../models/EkoCache';
 
 // ─── Eko Configuration (Dynamic getters to support dotenv loading late) ─────────
 const getEkoConfig = () => {
@@ -7,12 +8,58 @@ const getEkoConfig = () => {
     const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY;
     const EKO_INITIATOR_ID = process.env.EKO_INITIATOR_ID;
     const EKO_BASE_URL = (process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici/v1').replace(/\/$/, '');
+    const EKO_USER_CODE = process.env.EKO_USER_CODE || EKO_INITIATOR_ID;
+    const EKO_LATLONG = process.env.EKO_LATLONG || '';
     
-    if (!EKO_DEV_KEY || !EKO_ACCESS_KEY || !EKO_INITIATOR_ID) {
-        console.error('CRITICAL: Eko API credentials missing! Set EKO_DEV_KEY, EKO_ACCESS_KEY, EKO_INITIATOR_ID on Render.');
+    if (!EKO_DEV_KEY || !EKO_ACCESS_KEY || !EKO_INITIATOR_ID || !EKO_USER_CODE || !EKO_LATLONG) {
+        console.error('CRITICAL: Eko API config missing! Set EKO_DEV_KEY, EKO_ACCESS_KEY, EKO_INITIATOR_ID, EKO_USER_CODE, and EKO_LATLONG on Render.');
     }
     
-    return { EKO_DEV_KEY, EKO_ACCESS_KEY: EKO_ACCESS_KEY || '', EKO_INITIATOR_ID, EKO_BASE_URL };
+    return { EKO_DEV_KEY, EKO_ACCESS_KEY: EKO_ACCESS_KEY || '', EKO_INITIATOR_ID, EKO_BASE_URL, EKO_USER_CODE, EKO_LATLONG };
+};
+
+const requireEkoConfig = () => {
+    const config = getEkoConfig();
+    if (!config.EKO_DEV_KEY || !config.EKO_ACCESS_KEY || !config.EKO_INITIATOR_ID || !config.EKO_USER_CODE) {
+        throw new Error('Eko API credentials are not configured');
+    }
+    return config;
+};
+
+const cacheGet = async (key: string) => {
+    const cached = await EkoCache.findOne({ key, expiresAt: { $gt: new Date() } }).lean();
+    return cached?.data || null;
+};
+
+const cacheSet = async (key: string, data: any, ttlMs = 12 * 60 * 60 * 1000) => {
+    await EkoCache.findOneAndUpdate(
+        { key },
+        { key, data, expiresAt: new Date(Date.now() + ttlMs) },
+        { upsert: true, new: true }
+    );
+};
+
+const withCache = async (key: string, producer: () => Promise<any>, ttlMs?: number) => {
+    const cached = await cacheGet(key);
+    if (cached) return cached;
+
+    const data = await producer();
+    await cacheSet(key, data, ttlMs);
+    return data;
+};
+
+const buildQuery = (params: Record<string, any>) => {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+            query.append(key, String(value));
+        }
+    });
+    return query.toString();
+};
+
+export const getClientIp = (req: any) => {
+    return (req.headers?.['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || req.socket?.remoteAddress || '127.0.0.1';
 };
 
 /**
@@ -52,46 +99,57 @@ export const getEkoHeaders = (requestHashString?: string) => {
  * BBPS: Fetch Categories (Section 2.1)
  */
 export const fetchCategories = async () => {
-    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
-    const headers = getEkoHeaders();
-    const url = `${EKO_BASE_URL}/customer/payment/bbps/categories?initiator_id=${EKO_INITIATOR_ID}`;
-    const response = await axios.get(url, { headers });
-    return response.data;
+    return withCache('bbps:categories', async () => {
+        const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
+        const headers = getEkoHeaders();
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/categories?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
+        const response = await axios.get(url, { headers });
+        return response.data;
+    });
 };
 
 /**
  * BBPS: Fetch Locations (Section 2.2)
  */
 export const fetchLocations = async () => {
-    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
-    const headers = getEkoHeaders();
-    const url = `${EKO_BASE_URL}/customer/payment/bbps/locations?initiator_id=${EKO_INITIATOR_ID}`;
-    const response = await axios.get(url, { headers });
-    return response.data;
+    return withCache('bbps:locations', async () => {
+        const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
+        const headers = getEkoHeaders();
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/locations?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
+        const response = await axios.get(url, { headers });
+        return response.data;
+    });
 };
 
 /**
  * BBPS: Fetch Operators (Section 2.3)
  */
 export const fetchBBPSOperators = async (categoryId?: string, locationId?: string) => {
-    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
-    const headers = getEkoHeaders();
-    let url = `${EKO_BASE_URL}/customer/payment/bbps/operators?initiator_id=${EKO_INITIATOR_ID}`;
-    if (categoryId) url += `&category=${categoryId}`;
-    if (locationId) url += `&location=${locationId}`;
-    const response = await axios.get(url, { headers });
-    return response.data;
+    return withCache(`bbps:operators:${categoryId || 'all'}:${locationId || 'all'}`, async () => {
+        const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
+        const headers = getEkoHeaders();
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/operators?${buildQuery({
+            initiator_id: EKO_INITIATOR_ID,
+            user_code: EKO_USER_CODE,
+            category: categoryId,
+            location: locationId
+        })}`;
+        const response = await axios.get(url, { headers });
+        return response.data;
+    }, 60 * 60 * 1000);
 };
 
 /**
  * BBPS: Fetch Operator Parameters (Section 2.4)
  */
 export const fetchOperatorParameters = async (operatorId: string) => {
-    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
-    const headers = getEkoHeaders();
-    const url = `${EKO_BASE_URL}/customer/payment/bbps/operator/${operatorId}/parameters?initiator_id=${EKO_INITIATOR_ID}`;
-    const response = await axios.get(url, { headers });
-    return response.data;
+    return withCache(`bbps:operator:${operatorId}:params`, async () => {
+        const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
+        const headers = getEkoHeaders();
+        const url = `${EKO_BASE_URL}/customer/payment/bbps/operator/${operatorId}/parameters?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
+        const response = await axios.get(url, { headers });
+        return response.data;
+    });
 };
 
 // ─── Recharge Flow ─────────────────────────────────────────────────────
@@ -100,9 +158,9 @@ export const fetchOperatorParameters = async (operatorId: string) => {
  * Get Operator Code and Circle for a Mobile Number (Recharge flow)
  */
 export const getOperatorCodeAndCircle = async (mobile: string) => {
-    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
+    const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
     const headers = getEkoHeaders();
-    const url = `${EKO_BASE_URL}/customer/payment/bbps/recharge/${mobile}/operator?initiator_id=${EKO_INITIATOR_ID}`;
+    const url = `${EKO_BASE_URL}/customer/payment/bbps/recharge/${mobile}/operator?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
     const response = await axios.get(url, { headers });
     const resData = response.data;
 
@@ -125,9 +183,14 @@ export const getOperatorCodeAndCircle = async (mobile: string) => {
  * Fetch Mobile Recharge Plans — returns all plan categories, filters out zero-price entries
  */
 export const fetchRechargePlans = async (mobile: string, phone_operator_code: string, circleid: string) => {
-    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
+    const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
     const headers = getEkoHeaders();
-    const url = `${EKO_BASE_URL}/customer/payment/bbps/recharge/${mobile}/operator/plans?initiator_id=${EKO_INITIATOR_ID}&phone_operator_code=${phone_operator_code}&circleid=${circleid}`;
+    const url = `${EKO_BASE_URL}/customer/payment/bbps/recharge/${mobile}/operator/plans?${buildQuery({
+        initiator_id: EKO_INITIATOR_ID,
+        user_code: EKO_USER_CODE,
+        phone_operator_code,
+        circleid
+    })}`;
     const response = await axios.get(url, { headers });
     const resData = response.data;
 
@@ -187,21 +250,18 @@ const extractDataText = (desc: string) => {
  * Uses clean query string encoding — source_ip NOT needed for GET fetch.
  */
 export const fetchBill = async (params: any) => {
-    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
+    const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE, EKO_LATLONG } = requireEkoConfig();
     const headers = getEkoHeaders();
 
-    // Eko support: confirmation_mobile_no IS required but must be a real phone number.
-    // Only skip source_ip which is not needed for GET bill fetch.
-    const SKIP_KEYS = ['source_ip'];
-    const queryParts: string[] = [`initiator_id=${encodeURIComponent(EKO_INITIATOR_ID || '')}`];
-    Object.entries(params).forEach(([key, val]) => {
-        if (SKIP_KEYS.includes(key)) return;
-        if (val !== undefined && val !== null && val !== '') {
-            queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(val))}`);
-        }
+    const query = buildQuery({
+        initiator_id: EKO_INITIATOR_ID,
+        user_code: EKO_USER_CODE,
+        latlong: EKO_LATLONG,
+        sender_name: params.sender_name || 'Customer',
+        ...params
     });
 
-    const url = `${EKO_BASE_URL}/customer/payment/bbps/bill?${queryParts.join('&')}`;
+    const url = `${EKO_BASE_URL}/customer/payment/bbps/bill?${query}`;
     console.log('[EKO] fetchBill URL:', url);
     const response = await axios.get(url, { headers });
     console.log('[EKO] fetchBill response:', JSON.stringify(response.data));
@@ -224,17 +284,21 @@ export const payBBPSBill = async (params: {
     source_ip: string;
     [key: string]: any; // For operator-specific extra params
 }) => {
-    const { EKO_BASE_URL, EKO_INITIATOR_ID } = getEkoConfig();
-    // In Eko, user_code is typically the initiator_id unless explicitly provided otherwise.
-    const USER_CODE = process.env.EKO_USER_CODE || EKO_INITIATOR_ID;
-    const requestHashString = `${params.utility_acc_no}${params.amount}${USER_CODE}`;
+    const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE, EKO_LATLONG } = requireEkoConfig();
+    const requestHashString = `${params.utility_acc_no}${params.amount}${EKO_USER_CODE}`;
     const headers = getEkoHeaders(requestHashString);
     const url = `${EKO_BASE_URL}/customer/payment/bbps`;
 
-    const payload = {
+    const payload: Record<string, any> = {
         initiator_id: EKO_INITIATOR_ID,
+        user_code: EKO_USER_CODE,
+        latlong: params.latlong || EKO_LATLONG,
         ...params
     };
+
+    if (payload.billfetchresponse && typeof payload.billfetchresponse !== 'string') {
+        payload.billfetchresponse = JSON.stringify(payload.billfetchresponse);
+    }
 
     console.log(`[EKO Pay] Calling Eko POST /customer/payment/bbps for account: ${params.utility_acc_no}, amount: ₹${params.amount}, operator: ${params.phone_operator_code}, category: ${params.category}, client_ref_id: ${params.client_ref_id}`);
     

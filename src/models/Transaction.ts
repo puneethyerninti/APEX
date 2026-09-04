@@ -5,7 +5,7 @@ export interface ITransaction extends Document {
   amount: number;
   type: 'credit' | 'debit';
   category: string;
-  status: 'pending' | 'completed' | 'failed';
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
   referenceId?: string;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
@@ -20,7 +20,7 @@ const TransactionSchema = new Schema<ITransaction>(
     amount: { type: Number, required: true },
     type: { type: String, enum: ['credit', 'debit'], required: true },
     category: { type: String, required: true }, // e.g. 'recharge', 'add_money', 'cab_ride'
-    status: { type: String, enum: ['pending', 'completed', 'failed'], default: 'completed', index: true },
+    status: { type: String, enum: ['pending', 'completed', 'failed', 'refunded'], default: 'completed', index: true },
     referenceId: { type: String },
     razorpayOrderId: { type: String, index: true, sparse: true },
     razorpayPaymentId: { type: String, index: true, sparse: true },

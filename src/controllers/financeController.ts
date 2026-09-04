@@ -5,6 +5,7 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { createNotification } from './notificationController';
 import { fulfillOrder } from '../services/fulfillmentService';
+import { createPendingUtilityTransaction, updateUtilityTransactionStatus } from './utilityController';
 // Razorpay will be instantiated dynamically to avoid crashing the server on startup if keys are missing
 let razorpayInstance: any = null;
 
@@ -112,6 +113,48 @@ const COURSE_PRICES: Record<string, number> = {
   'Digital Marketing Masterclass': 7999,
 };
 
+const isUtilityCategory = (category: string) => ['mobile_recharge', 'bbps_payment'].includes(category);
+
+const scheduleUtilityFulfillment = async (transaction: any, io: any) => {
+  const metadata = transaction.metadata || {};
+  const queued = await Transaction.findOneAndUpdate(
+    { _id: transaction._id, 'metadata.fulfillmentQueued': { $ne: true }, 'metadata.fulfilled': { $ne: true } },
+    {
+      $set: {
+        'metadata.fulfillmentQueued': true,
+        'metadata.fulfillmentQueuedAt': new Date()
+      }
+    },
+    { new: true }
+  );
+
+  if (!queued) {
+    return;
+  }
+
+  const utilityTransactionId = metadata.utilityTransactionId;
+  if (utilityTransactionId) {
+    await updateUtilityTransactionStatus(
+      utilityTransactionId,
+      'fulfillment_pending',
+      'Payment received. Utility service is processing.',
+      {
+        razorpayPaymentId: transaction.razorpayPaymentId,
+        razorpayOrderId: transaction.razorpayOrderId
+      },
+      io
+    );
+  }
+
+  setImmediate(async () => {
+    try {
+      await fulfillOrder(queued, io);
+    } catch (error) {
+      console.error(`[Utility Fulfillment] Async fulfillment failed for ${queued._id}:`, error);
+    }
+  });
+};
+
 // Razorpay Order Creation (Strict)
 export const createRazorpayOrder = async (req: Request, res: Response) => {
   let { amount, userId, category = 'add_money', serviceName, metadata } = req.body; 
@@ -145,6 +188,7 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
       receipt: `receipt_${Date.now()}`
     };
     const order = await getRazorpay().orders.create(options);
+    const utilityTransaction = await createPendingUtilityTransaction(userId, category, amount, metadata || {}, order.id);
     
     // Create pending transaction
     await Transaction.create({
@@ -155,10 +199,20 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
       referenceId: serviceName || 'wallet_topup',
       status: 'pending',
       razorpayOrderId: order.id,
-      metadata: metadata || {}
+      metadata: {
+        ...(metadata || {}),
+        ...(utilityTransaction ? {
+          utilityTransactionId: utilityTransaction._id.toString(),
+          client_ref_id: utilityTransaction.clientRefId
+        } : {})
+      }
     });
 
-    res.json({ order, keyId: process.env.RAZORPAY_KEY_ID });
+    res.json({
+      order,
+      keyId: process.env.RAZORPAY_KEY_ID,
+      utilityTransactionId: utilityTransaction?._id
+    });
   } catch (error) {
     console.error("Razorpay Error:", error);
     res.status(500).json({ error: 'Failed to create order' });
@@ -196,6 +250,17 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
       );
 
       if (transaction) {
+        if (isUtilityCategory(transaction.category)) {
+          await scheduleUtilityFulfillment(transaction, req.app.get('io'));
+          return res.json({
+            success: true,
+            message: 'Payment verified. Utility service is processing.',
+            category: transaction.category,
+            utilityTransactionId: transaction.metadata?.utilityTransactionId,
+            status: 'fulfillment_pending'
+          });
+        }
+
         try {
           const fulfillmentResult = await fulfillOrder(transaction, req.app.get('io'));
           return res.json({ 
@@ -214,6 +279,16 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
       } else {
         // Transaction was already completed (e.g. by webhook) - check if fulfilled
         const existingTx = await Transaction.findOne({ razorpayOrderId: razorpay_order_id });
+        if (existingTx && isUtilityCategory(existingTx.category)) {
+          await scheduleUtilityFulfillment(existingTx, req.app.get('io'));
+          return res.json({
+            success: true,
+            message: 'Payment already verified. Utility service is processing.',
+            category: existingTx.category,
+            utilityTransactionId: existingTx.metadata?.utilityTransactionId,
+            status: existingTx.metadata?.fulfilled ? 'eko_success' : 'fulfillment_pending'
+          });
+        }
         if (existingTx && !existingTx.metadata?.fulfilled) {
           const fulfillmentResult = await fulfillOrder(existingTx, req.app.get('io'));
           return res.json({ success: true, message: "Payment fulfilled successfully", fulfillmentData: fulfillmentResult });
