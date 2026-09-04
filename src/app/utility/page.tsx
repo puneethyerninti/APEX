@@ -670,6 +670,11 @@ export default function UtilityPage() {
         {!isLoading && selectedOperator && !paySuccess && (
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 animate-[slideUp_0.3s_ease-out]">
             <h3 className="text-sm font-bold text-gray-800 mb-4">Enter Details</h3>
+            {selectedCategory?.operator_category_name?.toLowerCase().includes('postpaid') && (
+              <div className="mb-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
+                Enter only an active postpaid mobile number. Prepaid numbers and postpaid numbers with no outstanding bill will not return bill details.
+              </div>
+            )}
             
             <div className="space-y-4">
               {operatorParams.map((param: any, idx) => (
