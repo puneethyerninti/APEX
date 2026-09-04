@@ -28,6 +28,16 @@ const getCategoryBehavior = (catName: string) => {
     };
   }
   
+  if (name.includes('postpaid')) {
+    return {
+      type: 'fetch_bill',
+      supportsBillFetch: true,
+      inputs: [
+        { param_name: 'utility_acc_no', param_label: 'Mobile Number', type: 'Numeric', regex: '^[6-9][0-9]{9}$', error: 'Enter a valid 10-digit mobile number' }
+      ]
+    };
+  }
+  
   // Default for Electricity, Gas, Water, Postpaid, Broadband, etc.
   return {
     type: 'fetch_bill',
