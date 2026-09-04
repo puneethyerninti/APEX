@@ -20,7 +20,7 @@ const makeClientRefId = (prefix = 'utl') => `${prefix}_${Date.now()}_${crypto.ra
 
 const getPrimaryAccountNumber = (params: Record<string, any>) => {
     if (params.utility_acc_no) return String(params.utility_acc_no);
-    const ignored = new Set(['confirmation_mobile_no', 'sender_name', 'category', 'client_ref_id', 'source_ip', 'latlong', 'amount']);
+    const ignored = new Set(['confirmation_mobile_no', 'sender_name', 'category', 'client_ref_id', 'source_ip', 'latlong', 'amount', 'operatorName', 'operator_name', 'providerName']);
     const firstValue = Object.entries(params).find(([key, value]) => !ignored.has(key) && value !== undefined && value !== null && value !== '');
     return firstValue ? String(firstValue[1]) : '';
 };
@@ -185,28 +185,37 @@ export const getOperatorParams = async (req: Request, res: Response) => {
 
 export const fetchBBPSBill = async (req: Request, res: Response) => {
     try {
-        const { phone_operator_code, ...otherParams } = req.body;
+        const {
+            phone_operator_code,
+            confirmation_mobile_no: providedConfirmationMobile,
+            sender_name: providedSenderName,
+            category,
+            client_ref_id: providedClientRefId,
+            operatorName,
+            operator_name,
+            providerName,
+            ...operatorParams
+        } = req.body;
         if (!phone_operator_code) {
             return res.status(400).json({ success: false, message: 'phone_operator_code is required' });
         }
 
-        const client_ref_id = otherParams.client_ref_id || makeClientRefId('bill');
+        const client_ref_id = providedClientRefId || makeClientRefId('bill');
 
         // Eko requires confirmation_mobile_no but it MUST be a real number.
-        // The frontend sends it via otherParams. Fallback to the initiator_id (which is a real mobile).
-        const confirmation_mobile_no = otherParams.confirmation_mobile_no || process.env.EKO_INITIATOR_ID || '';
-        delete otherParams.confirmation_mobile_no;
-        const utility_acc_no = getPrimaryAccountNumber(otherParams);
+        // The frontend sends it from the signed-in user. Fallback to initiator_id.
+        const confirmation_mobile_no = providedConfirmationMobile || process.env.EKO_INITIATOR_ID || '';
+        const utility_acc_no = getPrimaryAccountNumber(operatorParams);
 
         const raw = await fetchBill({
             phone_operator_code,
             utility_acc_no,
             client_ref_id,
             confirmation_mobile_no,
-            sender_name: otherParams.sender_name || 'Customer',
+            sender_name: providedSenderName || 'Customer',
             source_ip: getClientIp(req),
-            category: otherParams.category,
-            ...otherParams
+            category,
+            ...operatorParams
         });
 
         console.log('[fetchBBPSBill] Eko response:', JSON.stringify(raw));
@@ -216,7 +225,7 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
                 success: true, 
                 data: {
                     amount: raw.data.amount,
-                    operatorName: otherParams.operatorName || otherParams.operator_name || otherParams.providerName || '',
+                    operatorName: operatorName || operator_name || providerName || '',
                     utility_acc_no,
                     utilitycustomername: raw.data.utilitycustomername || '',
                     billDueDate: raw.data.billDueDate || '',
@@ -253,7 +262,7 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
                 requestFields: {
                     phone_operator_code,
                     utility_acc_no,
-                    category: otherParams.category
+                    category
                 }
             });
         }
