@@ -221,6 +221,7 @@ export default function UtilityPage() {
     // Build payload using exact Eko param_names as keys
     const fetchPayload: any = {
       phone_operator_code: selectedOperator.operator_id.toString(),
+      operatorName: selectedOperator.name,
       confirmation_mobile_no: user?.phone || '',  // Eko requires a REAL phone number here
       sender_name: user?.name || 'Customer',
       category: selectedCategory?.operator_category_id || 0,
@@ -241,7 +242,10 @@ export default function UtilityPage() {
         throw new Error(res.data.message || 'Could not fetch bill');
       }
     } catch (error: any) {
-      const msg: string = error.response?.data?.message || error.message || 'Failed to fetch bill.';
+      const invalidFields = error.response?.data?.invalidParams
+        ? ` (${Object.values(error.response.data.invalidParams).join(', ')})`
+        : '';
+      const msg: string = `${error.response?.data?.message || error.message || 'Failed to fetch bill.'}${invalidFields}`;
       setErrorMsg(msg + ' Please verify your details or try again later.');
     } finally {
       setIsFetchingBill(false);
@@ -792,10 +796,31 @@ export default function UtilityPage() {
                      </div>
 
                      <div className="space-y-4 border-t border-dashed border-gray-200 pt-5">
+                       {(billInfo.operatorName || selectedOperator?.name) && (
+                         <div className="flex justify-between items-start">
+                           <span className="text-sm text-gray-500 font-medium">Provider</span>
+                           <span className="text-sm font-bold text-gray-900 text-right max-w-[180px]">{billInfo.operatorName || selectedOperator?.name}</span>
+                         </div>
+                       )}
+
+                       {(billInfo.utility_acc_no || formValues[operatorParams[0]?.param_name]) && (
+                         <div className="flex justify-between items-start">
+                           <span className="text-sm text-gray-500 font-medium">Consumer ID</span>
+                           <span className="text-sm font-bold text-gray-900 text-right max-w-[180px]">{billInfo.utility_acc_no || formValues[operatorParams[0]?.param_name]}</span>
+                         </div>
+                       )}
+
                        {billInfo.utilitycustomername && (
                          <div className="flex justify-between items-start">
                            <span className="text-sm text-gray-500 font-medium">Biller Name</span>
                            <span className="text-sm font-bold text-gray-900 text-right max-w-[180px]">{billInfo.utilitycustomername}</span>
+                         </div>
+                       )}
+
+                       {billInfo.billNumber && (
+                         <div className="flex justify-between items-start">
+                           <span className="text-sm text-gray-500 font-medium">Bill Number</span>
+                           <span className="text-sm font-bold text-gray-900 text-right max-w-[180px]">{billInfo.billNumber}</span>
                          </div>
                        )}
                        
@@ -805,6 +830,13 @@ export default function UtilityPage() {
                            <span className="text-[11px] font-bold bg-red-50 text-red-600 px-2.5 py-1 rounded-md border border-red-100 flex items-center">
                              <i className="fa-regular fa-calendar mr-1.5"></i> {formatDueDate(billInfo.billDueDate)}
                            </span>
+                         </div>
+                       )}
+
+                       {billInfo.bbpstrxnrefid && (
+                         <div className="flex justify-between items-start">
+                           <span className="text-sm text-gray-500 font-medium">BBPS Ref</span>
+                           <span className="text-xs font-bold text-gray-900 text-right max-w-[180px]">{billInfo.bbpstrxnrefid}</span>
                          </div>
                        )}
                      </div>
