@@ -226,7 +226,9 @@ const fetchBBPSBill = async (req, res) => {
             let errorMsg = raw.message || 'Could not fetch bill';
             const data = raw.data || {};
             if (errorMsg === 'No key for Response') {
-                errorMsg = 'No pending bill found, or invalid account number.';
+                errorMsg = Number(category) === 10
+                    ? 'No postpaid bill found for this number. Please confirm it is an active postpaid connection with an outstanding bill.'
+                    : 'No pending bill found, or invalid account number.';
             }
             else if (errorMsg === 'Unable to fetch bill' || data.reason?.includes('server is down')) {
                 errorMsg = `Biller's server is temporarily unavailable. Please try again later.`;
