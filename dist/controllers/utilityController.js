@@ -208,8 +208,12 @@ const fetchBBPSBill = async (req, res) => {
                 success: true,
                 data: {
                     amount: raw.data.amount,
+                    operatorName: otherParams.operatorName || otherParams.operator_name || otherParams.providerName || '',
+                    utility_acc_no,
                     utilitycustomername: raw.data.utilitycustomername || '',
                     billDueDate: raw.data.billDueDate || '',
+                    billNumber: raw.data.billNumber || raw.data.billnumber || raw.data.bill_no || '',
+                    billDate: raw.data.billDate || raw.data.billdate || '',
                     customer_id: raw.data.customer_id || '',
                     bbpstrxnrefid: raw.data.bbpstrxnrefid || '',
                     client_ref_id,
@@ -237,7 +241,13 @@ const fetchBBPSBill = async (req, res) => {
                 success: false,
                 message: errorMsg,
                 ekoStatus: raw.status,
-                data: raw.data
+                data: raw.data,
+                invalidParams: raw.invalid_params,
+                requestFields: {
+                    phone_operator_code,
+                    utility_acc_no,
+                    category: otherParams.category
+                }
             });
         }
     }

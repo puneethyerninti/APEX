@@ -51,6 +51,7 @@ const buildQuery = (params) => {
     });
     return query.toString();
 };
+const getBbpsReadBaseUrl = (baseUrl) => baseUrl.replace(/\/v\d+$/i, '/v1');
 const getClientIp = (req) => {
     return req.headers?.['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.socket?.remoteAddress || '127.0.0.1';
 };
@@ -91,7 +92,7 @@ const fetchCategories = async () => {
     return withCache('bbps:categories', async () => {
         const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
         const headers = (0, exports.getEkoHeaders)();
-        const url = `${EKO_BASE_URL}/customer/payment/bbps/categories?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
+        const url = `${getBbpsReadBaseUrl(EKO_BASE_URL)}/customer/payment/bbps/categories?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
         const response = await axios_1.default.get(url, { headers });
         return response.data;
     });
@@ -104,7 +105,7 @@ const fetchLocations = async () => {
     return withCache('bbps:locations', async () => {
         const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
         const headers = (0, exports.getEkoHeaders)();
-        const url = `${EKO_BASE_URL}/customer/payment/bbps/locations?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
+        const url = `${getBbpsReadBaseUrl(EKO_BASE_URL)}/customer/payment/bbps/locations?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
         const response = await axios_1.default.get(url, { headers });
         return response.data;
     });
@@ -117,7 +118,7 @@ const fetchBBPSOperators = async (categoryId, locationId) => {
     return withCache(`bbps:operators:${categoryId || 'all'}:${locationId || 'all'}`, async () => {
         const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
         const headers = (0, exports.getEkoHeaders)();
-        const url = `${EKO_BASE_URL}/customer/payment/bbps/operators?${buildQuery({
+        const url = `${getBbpsReadBaseUrl(EKO_BASE_URL)}/customer/payment/bbps/operators?${buildQuery({
             initiator_id: EKO_INITIATOR_ID,
             user_code: EKO_USER_CODE,
             category: categoryId,
@@ -135,7 +136,7 @@ const fetchOperatorParameters = async (operatorId) => {
     return withCache(`bbps:operator:${operatorId}:params`, async () => {
         const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE } = requireEkoConfig();
         const headers = (0, exports.getEkoHeaders)();
-        const url = `${EKO_BASE_URL}/customer/payment/bbps/operator/${operatorId}/parameters?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
+        const url = `${getBbpsReadBaseUrl(EKO_BASE_URL)}/customer/payment/bbps/operator/${operatorId}/parameters?${buildQuery({ initiator_id: EKO_INITIATOR_ID, user_code: EKO_USER_CODE })}`;
         const response = await axios_1.default.get(url, { headers });
         return response.data;
     });
@@ -239,7 +240,7 @@ const fetchBill = async (params) => {
         sender_name: params.sender_name || 'Customer',
         ...params
     });
-    const url = `${EKO_BASE_URL}/customer/payment/bbps/bill?${query}`;
+    const url = `${getBbpsReadBaseUrl(EKO_BASE_URL)}/customer/payment/bbps/bill?${query}`;
     console.log('[EKO] fetchBill URL:', url);
     const response = await axios_1.default.get(url, { headers });
     console.log('[EKO] fetchBill response:', JSON.stringify(response.data));
