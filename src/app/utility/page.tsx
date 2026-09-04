@@ -5,6 +5,29 @@ import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/services/api';
 
+const allowedUtilityCategoryIds = new Set([2, 4, 5, 8, 10, 18, 22]);
+const categoryOrder = ['prepaid', 'postpaid', 'dth', 'electricity', 'fastag', 'gas', 'lpg'];
+
+const isAllowedUtilityCategory = (category: any) => {
+  const id = Number(category?.operator_category_id ?? category?.category_id ?? category?.id ?? category);
+  const name = String(category?.operator_category_name ?? category?.name ?? '').toLowerCase();
+
+  return allowedUtilityCategoryIds.has(id)
+    || (name.includes('mobile') && name.includes('prepaid'))
+    || (name.includes('mobile') && name.includes('postpaid'))
+    || name.includes('dth')
+    || name.includes('electric')
+    || name.includes('fastag')
+    || name.includes('gas')
+    || name.includes('lpg');
+};
+
+const getCategorySortIndex = (category: any) => {
+  const name = String(category?.operator_category_name ?? category?.name ?? '').toLowerCase();
+  const index = categoryOrder.findIndex((key) => name.includes(key));
+  return index === -1 ? categoryOrder.length : index;
+};
+
 const getCategoryBehavior = (catName: string) => {
   const name = (catName || '').toLowerCase();
   
@@ -89,7 +112,10 @@ export default function UtilityPage() {
       try {
         const res = await api.get('/utility/bbps/categories');
         if (res.data.success) {
-          setCategories(res.data.data);
+          const allowedCategories = (res.data.data || [])
+            .filter(isAllowedUtilityCategory)
+            .sort((a: any, b: any) => getCategorySortIndex(a) - getCategorySortIndex(b));
+          setCategories(allowedCategories);
         } else {
           throw new Error(res.data.message || 'Failed to load categories');
         }
