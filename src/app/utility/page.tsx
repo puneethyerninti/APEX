@@ -507,7 +507,6 @@ export default function UtilityPage() {
     const n = catName.toLowerCase();
     if (n.includes('electric')) return 'fa-solid fa-bolt text-yellow-500';
     if (n.includes('water')) return 'fa-solid fa-droplet text-blue-500';
-    if (n.includes('gas') || n.includes('lpg')) return 'fa-solid fa-fire-flame-simple text-red-500';
     if (n.includes('dth') || n.includes('cable tv')) return 'fa-solid fa-satellite-dish text-purple-500';
     if (n.includes('mobile') && n.includes('prepaid')) return 'fa-solid fa-mobile-screen text-green-500';
     if (n.includes('mobile') && n.includes('postpaid')) return 'fa-solid fa-mobile-screen-button text-teal-500';
@@ -577,9 +576,14 @@ export default function UtilityPage() {
         <h1 className="text-[17px] font-bold truncate px-4 max-w-[200px]">
           {getHeaderTitle()}
         </h1>
-        <Link href="/" className="text-white hover:text-gray-200 transition-colors p-2 -mr-2 flex items-center justify-center">
-          <i className="fa-solid fa-house text-[17px]"></i>
-        </Link>
+        <div className="flex items-center gap-1 -mr-2">
+            <Link href="/utility/history" className="text-white hover:text-gray-200 transition-colors p-2 flex items-center justify-center">
+              <i className="fa-solid fa-clock-rotate-left text-[17px]"></i>
+            </Link>
+            <Link href="/" className="text-white hover:text-gray-200 transition-colors p-2 flex items-center justify-center">
+              <i className="fa-solid fa-house text-[17px]"></i>
+            </Link>
+        </div>
       </div>
 
       <div className="p-4 space-y-6 animate-[fadeIn_0.3s_ease-out] mb-10">
