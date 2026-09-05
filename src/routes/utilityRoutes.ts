@@ -8,6 +8,7 @@ import {
     getOperatorParams,
     fetchBBPSBill,
     getUtilityTransactionStatus,
+    getUserUtilityHistory
 } from '../controllers/utilityController';
 
 const router = express.Router();
@@ -22,6 +23,7 @@ router.get('/bbps/operator/:id/parameters', getOperatorParams);
 router.post('/bbps/fetch-bill', fetchBBPSBill);
 router.post('/pay', payBill);
 router.get('/transactions/:id/status', getUtilityTransactionStatus);
+router.get('/history/:userId', getUserUtilityHistory);
 
 // Recharge Plans (Mobile Prepaid / DTH)
 router.get('/plans', getPlans);

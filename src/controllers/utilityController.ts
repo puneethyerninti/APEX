@@ -36,9 +36,7 @@ const isAllowedUtilityCategory = (category: any) => {
         || (name.includes('mobile') && name.includes('postpaid'))
         || name.includes('dth')
         || name.includes('electric')
-        || name.includes('fastag')
-        || name.includes('gas')
-        || name.includes('lpg');
+        || name.includes('fastag');
 };
 
 const emitUtilityStatus = (io: any, transaction: any) => {
@@ -470,13 +468,15 @@ export const handleUtilityRecharge = async (userId: string, metadata: any) => {
     }, metadata.appIo);
 
     try {
+        const parsedAmount = parseFloat(amount);
+        const parsedOperator = operatorCode ? operatorCode.toString() : '5';
         const ekoResult = await payBBPSBill({
-            phone_operator_code: operatorCode,
+            phone_operator_code: parsedOperator,
             utility_acc_no: mobile,
             confirmation_mobile_no: mobile,
             sender_name: 'Customer',
             category: 5, // Mobile Prepaid
-            amount: amount,
+            amount: parsedAmount,
             utilitycustomername: 'Customer',
             client_ref_id: clientRefId,
             source_ip: metadata.source_ip || '127.0.0.1'
@@ -568,13 +568,15 @@ export const handleBBPSPayment = async (userId: string, metadata: any) => {
     }, metadata.appIo);
 
     try {
+        const parsedAmount = parseFloat(amount);
+        const parsedOperator = operatorCode ? operatorCode.toString() : '';
         const ekoResult = await payBBPSBill({
-            phone_operator_code: operatorCode.toString(),
+            phone_operator_code: parsedOperator,
             utility_acc_no,
             confirmation_mobile_no: confirmation_mobile_no || utility_acc_no,
             sender_name: 'Customer',
             category: getCategoryNumber(category || operatorName || ''),
-            amount: parseFloat(amount),
+            amount: parsedAmount,
             utilitycustomername: utilitycustomername || 'Customer',
             client_ref_id: refId,
             source_ip: metadata.source_ip || '127.0.0.1',
@@ -634,5 +636,21 @@ export const getUtilityTransactionStatus = async (req: Request, res: Response) =
         });
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message || 'Failed to get transaction status' });
+    }
+};
+
+export const getUserUtilityHistory = async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.params;
+        if (!userId) return res.status(400).json({ success: false, message: 'User ID required' });
+        
+        const history = await UtilityTransaction.find({ userId })
+            .sort({ createdAt: -1 })
+            .limit(50);
+            
+        res.status(200).json({ success: true, data: history });
+    } catch (error: any) {
+        console.error('Error fetching utility history:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch history' });
     }
 };
