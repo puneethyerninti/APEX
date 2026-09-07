@@ -25,7 +25,7 @@ const getPrimaryAccountNumber = (params: Record<string, any>) => {
     return firstValue ? String(firstValue[1]) : '';
 };
 
-const allowedUtilityCategoryIds = new Set([4, 5, 8, 10, 22]);
+const allowedUtilityCategoryIds = new Set([4, 5, 8, 10, 18, 22]);
 
 const isAllowedUtilityCategory = (category: any) => {
     const id = Number(category?.operator_category_id ?? category?.category_id ?? category?.id ?? category);
@@ -36,7 +36,8 @@ const isAllowedUtilityCategory = (category: any) => {
         || (name.includes('mobile') && name.includes('postpaid'))
         || name.includes('dth')
         || name.includes('electric')
-        || name.includes('fastag');
+        || name.includes('fastag')
+        || name.includes('lpg');
 };
 
 const emitUtilityStatus = (io: any, transaction: any) => {
