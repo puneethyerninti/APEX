@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.verifyRazorpayPayment = exports.createRazorpayOrder = exports.addMoney = exports.deductMoney = exports.getWalletBalance = exports.getRazorpay = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const razorpay_1 = __importDefault(require("razorpay"));
@@ -42,50 +43,71 @@ const getWalletBalance = async (req, res) => {
 exports.getWalletBalance = getWalletBalance;
 const deductMoney = async (req, res) => {
     const { amount, category } = req.body;
+    const session = await mongoose_1.default.startSession();
+    session.startTransaction();
     try {
-        const user = await User_1.default.findOne();
-        if (!user)
+        const user = await User_1.default.findOne().session(session);
+        if (!user) {
+            await session.abortTransaction();
             return res.status(404).json({ error: 'User not found' });
+        }
         if (user.walletBalance < amount) {
+            await session.abortTransaction();
             return res.status(400).json({ error: 'Insufficient balance' });
         }
         user.walletBalance -= amount;
-        await user.save();
-        const transaction = await Transaction_1.default.create({
-            user: user._id,
-            amount,
-            type: 'debit',
-            category: category || 'payment',
-            status: 'completed',
-        });
+        await user.save({ session });
+        const transaction = await Transaction_1.default.create([{
+                user: user._id,
+                amount,
+                type: 'debit',
+                category: category || 'payment',
+                status: 'completed',
+            }], { session });
+        await session.commitTransaction();
         await (0, notificationController_1.createNotification)(user._id.toString(), 'Payment Successful', `₹${amount} has been deducted from your wallet for ${category || 'payment'}.`, 'success');
-        res.json({ message: 'Payment successful', balance: user.walletBalance, transaction });
+        res.json({ message: 'Payment successful', balance: user.walletBalance, transaction: transaction[0] });
     }
     catch (error) {
+        await session.abortTransaction();
+        console.error('deductMoney Error:', error);
         res.status(500).json({ error: 'Server error' });
+    }
+    finally {
+        session.endSession();
     }
 };
 exports.deductMoney = deductMoney;
 const addMoney = async (req, res) => {
     const { amount } = req.body;
+    const session = await mongoose_1.default.startSession();
+    session.startTransaction();
     try {
-        const user = await User_1.default.findOne();
-        if (!user)
+        const user = await User_1.default.findOne().session(session);
+        if (!user) {
+            await session.abortTransaction();
             return res.status(404).json({ error: 'User not found' });
+        }
         user.walletBalance += amount;
-        await user.save();
-        const transaction = await Transaction_1.default.create({
-            user: user._id,
-            amount,
-            type: 'credit',
-            category: 'add_money',
-            status: 'completed',
-        });
+        await user.save({ session });
+        const transaction = await Transaction_1.default.create([{
+                user: user._id,
+                amount,
+                type: 'credit',
+                category: 'add_money',
+                status: 'completed',
+            }], { session });
+        await session.commitTransaction();
         await (0, notificationController_1.createNotification)(user._id.toString(), 'Wallet Recharged', `₹${amount} has been added to your wallet.`, 'success');
-        res.json({ message: 'Money added successfully', balance: user.walletBalance, transaction });
+        res.json({ message: 'Money added successfully', balance: user.walletBalance, transaction: transaction[0] });
     }
     catch (error) {
+        await session.abortTransaction();
+        console.error('addMoney Error:', error);
         res.status(500).json({ error: 'Server error' });
+    }
+    finally {
+        session.endSession();
     }
 };
 exports.addMoney = addMoney;

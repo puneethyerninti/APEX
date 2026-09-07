@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import User from '../models/User';
 import Transaction from '../models/Transaction';
 import { handleAPEXPlanUpgrade } from '../controllers/userController';
@@ -33,12 +34,30 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
     switch (transaction.category) {
       case 'add_money':
         // ONLY add_money category should credit the user's wallet
-        await User.findByIdAndUpdate(transaction.user, { 
-          $inc: { walletBalance: transaction.amount } 
-        });
-        fulfillmentResult = { credited: true, amount: transaction.amount };
-        console.log(`[Fulfillment] Credited ₹${transaction.amount} to user wallet.`);
-        break;
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        try {
+          await User.findByIdAndUpdate(transaction.user, { 
+            $inc: { walletBalance: transaction.amount } 
+          }, { session });
+          
+          await Transaction.findByIdAndUpdate(transaction._id, {
+            $set: {
+              'metadata.fulfilled': true,
+              'metadata.fulfilledAt': new Date(),
+              'metadata.fulfillmentResult': { credited: true, amount: transaction.amount }
+            }
+          }, { session });
+          
+          await session.commitTransaction();
+          console.log(`[Fulfillment] Credited ₹${transaction.amount} to user wallet.`);
+          return { credited: true, amount: transaction.amount }; // Return early
+        } catch (error) {
+          await session.abortTransaction();
+          throw error;
+        } finally {
+          session.endSession();
+        }
 
       case 'mobile_recharge':
         // Execute Eko recharge API

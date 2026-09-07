@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUtilityTransactionStatus = exports.handleBBPSPayment = exports.handleUtilityRecharge = exports.getPlans = exports.payBill = exports.fetchBBPSBill = exports.getOperatorParams = exports.getBBPSOperatorsList = exports.getLocations = exports.getCategories = exports.createPendingUtilityTransaction = exports.updateUtilityTransactionStatus = void 0;
+exports.getUserUtilityHistory = exports.getUtilityTransactionStatus = exports.handleBBPSPayment = exports.handleUtilityRecharge = exports.getPlans = exports.payBill = exports.fetchBBPSBill = exports.getOperatorParams = exports.getBBPSOperatorsList = exports.getLocations = exports.getCategories = exports.createPendingUtilityTransaction = exports.updateUtilityTransactionStatus = void 0;
 const notificationController_1 = require("./notificationController");
 const UtilityTransaction_1 = __importDefault(require("../models/UtilityTransaction"));
 const ekoService_1 = require("../services/ekoService");
@@ -17,7 +17,7 @@ const getPrimaryAccountNumber = (params) => {
     const firstValue = Object.entries(params).find(([key, value]) => !ignored.has(key) && value !== undefined && value !== null && value !== '');
     return firstValue ? String(firstValue[1]) : '';
 };
-const allowedUtilityCategoryIds = new Set([2, 4, 5, 8, 10, 18, 22]);
+const allowedUtilityCategoryIds = new Set([4, 5, 8, 10, 18, 22]);
 const isAllowedUtilityCategory = (category) => {
     const id = Number(category?.operator_category_id ?? category?.category_id ?? category?.id ?? category);
     const name = String(category?.operator_category_name ?? category?.name ?? '').toLowerCase();
@@ -27,7 +27,6 @@ const isAllowedUtilityCategory = (category) => {
         || name.includes('dth')
         || name.includes('electric')
         || name.includes('fastag')
-        || name.includes('gas')
         || name.includes('lpg');
 };
 const emitUtilityStatus = (io, transaction) => {
@@ -413,13 +412,15 @@ const handleUtilityRecharge = async (userId, metadata) => {
         requestPayload: metadata
     }, metadata.appIo);
     try {
+        const parsedAmount = parseFloat(amount);
+        const parsedOperator = operatorCode ? operatorCode.toString() : '5';
         const ekoResult = await (0, ekoService_1.payBBPSBill)({
-            phone_operator_code: operatorCode,
+            phone_operator_code: parsedOperator,
             utility_acc_no: mobile,
             confirmation_mobile_no: mobile,
             sender_name: 'Customer',
             category: 5, // Mobile Prepaid
-            amount: amount,
+            amount: parsedAmount,
             utilitycustomername: 'Customer',
             client_ref_id: clientRefId,
             source_ip: metadata.source_ip || '127.0.0.1'
@@ -484,13 +485,15 @@ const handleBBPSPayment = async (userId, metadata) => {
         ekoFetchResponse
     }, metadata.appIo);
     try {
+        const parsedAmount = parseFloat(amount);
+        const parsedOperator = operatorCode ? operatorCode.toString() : '';
         const ekoResult = await (0, ekoService_1.payBBPSBill)({
-            phone_operator_code: operatorCode.toString(),
+            phone_operator_code: parsedOperator,
             utility_acc_no,
             confirmation_mobile_no: confirmation_mobile_no || utility_acc_no,
             sender_name: 'Customer',
             category: getCategoryNumber(category || operatorName || ''),
-            amount: parseFloat(amount),
+            amount: parsedAmount,
             utilitycustomername: utilitycustomername || 'Customer',
             client_ref_id: refId,
             source_ip: metadata.source_ip || '127.0.0.1',
@@ -547,3 +550,19 @@ const getUtilityTransactionStatus = async (req, res) => {
     }
 };
 exports.getUtilityTransactionStatus = getUtilityTransactionStatus;
+const getUserUtilityHistory = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (!userId)
+            return res.status(400).json({ success: false, message: 'User ID required' });
+        const history = await UtilityTransaction_1.default.find({ userId })
+            .sort({ createdAt: -1 })
+            .limit(50);
+        res.status(200).json({ success: true, data: history });
+    }
+    catch (error) {
+        console.error('Error fetching utility history:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch history' });
+    }
+};
+exports.getUserUtilityHistory = getUserUtilityHistory;

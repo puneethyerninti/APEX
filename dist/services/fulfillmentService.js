@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fulfillOrder = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const userController_1 = require("../controllers/userController");
@@ -34,12 +35,30 @@ const fulfillOrder = async (transaction, appIo) => {
         switch (transaction.category) {
             case 'add_money':
                 // ONLY add_money category should credit the user's wallet
-                await User_1.default.findByIdAndUpdate(transaction.user, {
-                    $inc: { walletBalance: transaction.amount }
-                });
-                fulfillmentResult = { credited: true, amount: transaction.amount };
-                console.log(`[Fulfillment] Credited ₹${transaction.amount} to user wallet.`);
-                break;
+                const session = await mongoose_1.default.startSession();
+                session.startTransaction();
+                try {
+                    await User_1.default.findByIdAndUpdate(transaction.user, {
+                        $inc: { walletBalance: transaction.amount }
+                    }, { session });
+                    await Transaction_1.default.findByIdAndUpdate(transaction._id, {
+                        $set: {
+                            'metadata.fulfilled': true,
+                            'metadata.fulfilledAt': new Date(),
+                            'metadata.fulfillmentResult': { credited: true, amount: transaction.amount }
+                        }
+                    }, { session });
+                    await session.commitTransaction();
+                    console.log(`[Fulfillment] Credited ₹${transaction.amount} to user wallet.`);
+                    return { credited: true, amount: transaction.amount }; // Return early
+                }
+                catch (error) {
+                    await session.abortTransaction();
+                    throw error;
+                }
+                finally {
+                    session.endSession();
+                }
             case 'mobile_recharge':
                 // Execute Eko recharge API
                 fulfillmentResult = await (0, utilityController_1.handleUtilityRecharge)(userIdStr, {
