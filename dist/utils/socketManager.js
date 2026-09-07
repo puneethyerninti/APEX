@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getIO = exports.initSocket = void 0;
 const socket_io_1 = require("socket.io");
-const auth_1 = require("firebase-admin/auth");
 const User_1 = __importDefault(require("../models/User"));
 let io;
 const initSocket = (server) => {
@@ -34,18 +33,19 @@ const initSocket = (server) => {
         try {
             const token = socket.handshake.auth?.token;
             if (!token) {
-                return next(new Error('Authentication Error: Missing Firebase Token'));
+                return next(new Error('Authentication Error: Missing Token'));
             }
-            // Verify token
-            const decodedToken = await (0, auth_1.getAuth)().verifyIdToken(token);
+            // Verify custom JWT token
+            const jwt = require('jsonwebtoken');
+            const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
             // Fetch user from DB to get the MongoDB _id and roles
-            const dbUser = await User_1.default.findOne({ firebaseUid: decodedToken.uid });
+            const dbUser = await User_1.default.findById(decodedToken.id);
             if (!dbUser) {
                 return next(new Error('Authentication Error: User not found in database'));
             }
             // Attach secure user payload to the socket object
             socket.user = {
-                uid: decodedToken.uid,
+                uid: dbUser.email, // Custom backend doesn't use firebaseUid, use email or id
                 dbId: dbUser._id.toString(),
                 isAdmin: dbUser.role === 'admin'
             };
@@ -57,8 +57,8 @@ const initSocket = (server) => {
             }
             next();
         }
-        catch (error) {
-            console.error('[Socket Auth] Error:', error);
+        catch (err) {
+            console.error('Socket Auth Error:', err.message);
             next(new Error('Authentication Error: Invalid Token'));
         }
     });

@@ -40,21 +40,22 @@ export const initSocket = (server: http.Server) => {
     try {
       const token = socket.handshake.auth?.token;
       if (!token) {
-        return next(new Error('Authentication Error: Missing Firebase Token'));
+        return next(new Error('Authentication Error: Missing Token'));
       }
 
-      // Verify token
-      const decodedToken = await getAuth().verifyIdToken(token);
+      // Verify custom JWT token
+      const jwt = require('jsonwebtoken');
+      const decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as any;
       
       // Fetch user from DB to get the MongoDB _id and roles
-      const dbUser = await User.findOne({ firebaseUid: decodedToken.uid });
+      const dbUser = await User.findById(decodedToken.id);
       if (!dbUser) {
         return next(new Error('Authentication Error: User not found in database'));
       }
 
       // Attach secure user payload to the socket object
       socket.user = {
-        uid: decodedToken.uid,
+        uid: dbUser.email, // Custom backend doesn't use firebaseUid, use email or id
         dbId: dbUser._id.toString(),
         isAdmin: dbUser.role === 'admin'
       };
@@ -67,8 +68,8 @@ export const initSocket = (server: http.Server) => {
       }
 
       next();
-    } catch (error) {
-      console.error('[Socket Auth] Error:', error);
+    } catch (err: any) {
+      console.error('Socket Auth Error:', err.message);
       next(new Error('Authentication Error: Invalid Token'));
     }
   });
