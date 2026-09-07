@@ -244,11 +244,14 @@ export default function UtilityPage() {
        }
     }
     
+    // Extract the 10-digit mobile number for EKO validation
+    const pureMobile = user?.phone ? user.phone.replace(/\D/g, '').slice(-10) : '';
+    
     // Build payload using exact Eko param_names as keys
     const fetchPayload: any = {
       phone_operator_code: selectedOperator.operator_id.toString(),
       operatorName: selectedOperator.name,
-      confirmation_mobile_no: user?.phone || '',  // Eko requires a REAL phone number here
+      confirmation_mobile_no: pureMobile || '9999999999',  // Eko requires a STRICT 10 digit phone number
       sender_name: user?.name || 'Customer',
       category: selectedCategory?.operator_category_id || 0,
     };
