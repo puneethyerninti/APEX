@@ -57,44 +57,37 @@ app.use(express_1.default.json({
 const io = (0, socketManager_1.initSocket)(server);
 app.set('io', io); // Bind io to express app
 io.on('connection', (socket) => {
-    console.log(`User connected: ${socket.id}`);
-    // --- USER ROOM ---
-    socket.on('join_user', (userId) => {
-        socket.join(`user_${userId}`);
-        console.log(`User ${userId} joined their personal room`);
-    });
+    console.log(`User connected: ${socket.id}, Authenticated DB ID: ${socket.user?.dbId}`);
+    // Note: 'join_user' and 'join_admin_room' are now handled server-side in the authentication middleware!
+    // Any legacy client emits of these events will simply be ignored.
     // --- MATRIMONY CHAT ---
     socket.on('join_room', (roomId) => {
         socket.join(roomId);
-        console.log(`User ${socket.id} joined room ${roomId}`);
-    });
-    // --- ADMIN ROOM ---
-    socket.on('join_admin_room', () => {
-        socket.join('admin_room');
-        console.log(`Admin ${socket.id} joined admin_room`);
+        console.log(`User ${socket.user?.dbId} joined room ${roomId}`);
     });
     socket.on('send_message', async (data) => {
-        // data should contain { roomId, senderId, receiverId, text, timestamp }
+        // SECURITY: Enforce senderId to be the authenticated socket user
+        const senderId = socket.user?.dbId;
+        if (!senderId)
+            return;
         try {
             const newMessage = new Message_1.default({
                 roomId: data.roomId,
-                senderId: data.senderId,
+                senderId: senderId, // Server authoritative!
                 receiverId: data.receiverId,
                 text: data.text,
                 timestamp: data.timestamp || new Date()
             });
             await newMessage.save();
-            io.to(data.roomId).emit('receive_message', data);
+            io.to(data.roomId).emit('receive_message', { ...data, senderId });
             // Send global toast notification to receiver
             try {
-                const sender = await User_1.default.findById(data.senderId);
+                const sender = await User_1.default.findById(senderId);
                 const receiver = await User_1.default.findById(data.receiverId);
                 if (sender && receiver) {
-                    // System Notice for temporary socket toasts
                     io.to(`user_${receiver._id}`).emit('system_notice', {
                         message: `New message from ${sender.name}: ${data.text.length > 20 ? data.text.substring(0, 20) + '...' : data.text}`
                     });
-                    // Persistent Notification in DB
                     await (0, notificationController_1.createNotification)(receiver._id.toString(), `Message from ${sender.name}`, data.text.length > 30 ? data.text.substring(0, 30) + '...' : data.text, 'info');
                 }
             }
@@ -111,11 +104,15 @@ io.on('connection', (socket) => {
     });
     // --- TRAVELS REAL-TIME CAB DRIVER SYSTEM ---
     socket.on('driver_online', (data) => {
+        // SECURITY: Ideally, we should verify the user is a registered driver in DB.
         socket.join('driver_room');
-        console.log(`Driver ${data.driverId} is online and ready for requests`);
+        console.log(`Driver ${socket.user?.dbId} is online`);
     });
     socket.on('request_ride', async (data) => {
-        const { rideId, origin, destination, fare, riderId, riderName, phone } = data;
+        const riderId = socket.user?.dbId;
+        if (!riderId)
+            return;
+        const { rideId, origin, destination, fare, riderName, phone } = data;
         console.log(`Rider ${riderId} requesting ride ${rideId}`);
         // Broadcast to the driver room (pilot driver will receive this)
         io.to('driver_room').emit('new_ride_request', {

@@ -1,15 +1,78 @@
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import http from 'http';
+import { getAuth } from 'firebase-admin/auth';
+import User from '../models/User';
+
+export interface AuthenticatedSocket extends Socket {
+  user?: {
+    uid: string;
+    dbId: string;
+    isAdmin: boolean;
+  };
+}
 
 let io: Server;
 
 export const initSocket = (server: http.Server) => {
+  // Strict CORS for Production Fintech App
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://apextc.shop',
+    'https://www.apextc.shop'
+  ];
+
   io = new Server(server, {
     cors: {
-      origin: '*',
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      credentials: true
     },
   });
+
+  // Strict Authentication Middleware
+  io.use(async (socket: AuthenticatedSocket, next) => {
+    try {
+      const token = socket.handshake.auth?.token;
+      if (!token) {
+        return next(new Error('Authentication Error: Missing Firebase Token'));
+      }
+
+      // Verify token
+      const decodedToken = await getAuth().verifyIdToken(token);
+      
+      // Fetch user from DB to get the MongoDB _id and roles
+      const dbUser = await User.findOne({ firebaseUid: decodedToken.uid });
+      if (!dbUser) {
+        return next(new Error('Authentication Error: User not found in database'));
+      }
+
+      // Attach secure user payload to the socket object
+      socket.user = {
+        uid: decodedToken.uid,
+        dbId: dbUser._id.toString(),
+        isAdmin: dbUser.role === 'admin'
+      };
+
+      // SERVER-AUTHORITATIVE ROOM JOINING
+      // Prevent client spoofing by forcing room joins here
+      socket.join(`user_${socket.user.dbId}`);
+      if (socket.user.isAdmin) {
+        socket.join('admin_room');
+      }
+
+      next();
+    } catch (error) {
+      console.error('[Socket Auth] Error:', error);
+      next(new Error('Authentication Error: Invalid Token'));
+    }
+  });
+
   return io;
 };
 
