@@ -507,6 +507,7 @@ export default function UtilityPage() {
     const n = catName.toLowerCase();
     if (n.includes('electric')) return 'fa-solid fa-bolt text-yellow-500';
     if (n.includes('water')) return 'fa-solid fa-droplet text-blue-500';
+    if (n.includes('gas') || n.includes('lpg')) return 'fa-solid fa-fire-flame-simple text-red-500';
     if (n.includes('dth') || n.includes('cable tv')) return 'fa-solid fa-satellite-dish text-purple-500';
     if (n.includes('mobile') && n.includes('prepaid')) return 'fa-solid fa-mobile-screen text-green-500';
     if (n.includes('mobile') && n.includes('postpaid')) return 'fa-solid fa-mobile-screen-button text-teal-500';
