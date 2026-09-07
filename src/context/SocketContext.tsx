@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAppStore } from '@/store/useAppStore';
+import { auth } from '@/firebase.config';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -17,44 +18,62 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const user = useAppStore(state => state.user);
 
   useEffect(() => {
-    // Only connect if we have a real backend URL, otherwise stay disconnected gracefully
-    // Use Socket URL if provided, otherwise derive from API URL, otherwise fallback
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
-    
-    if (!socketUrl) {
-      console.warn('Socket URL not provided. Real-time features disabled.');
-      return;
-    }
+    let socketInstance: Socket | null = null;
 
-    const socketInstance = io(socketUrl, {
-      transports: ['websocket'],
-      autoConnect: true,
-    });
+    const connectWithAuth = async () => {
+      if (!user) return; // Don't connect if not logged in
 
-    socketInstance.on('connect', () => {
-      console.log('Connected to APEX Real-time Server');
-      setIsConnected(true);
-    });
+      const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+      if (!socketUrl) {
+        console.warn('Socket URL not provided. Real-time features disabled.');
+        return;
+      }
 
-    socketInstance.on('disconnect', () => {
-      console.log('Disconnected from APEX Real-time Server');
-      setIsConnected(false);
-    });
+      try {
+        // Wait for firebase to settle and get the token
+        await auth.authStateReady();
+        const token = await auth.currentUser?.getIdToken(true);
 
-    setSocket(socketInstance);
+        if (!token) {
+          console.warn('No Firebase token found for Socket.io connection.');
+          return;
+        }
+
+        socketInstance = io(socketUrl, {
+          transports: ['websocket'],
+          autoConnect: true,
+          auth: { token } // Transmit token for backend verification
+        });
+
+        socketInstance.on('connect', () => {
+          console.log('Connected to APEX Real-time Server (Authenticated)');
+          setIsConnected(true);
+        });
+
+        socketInstance.on('connect_error', (err) => {
+          console.error('Socket Connection Error:', err.message);
+          setIsConnected(false);
+        });
+
+        socketInstance.on('disconnect', () => {
+          console.log('Disconnected from APEX Real-time Server');
+          setIsConnected(false);
+        });
+
+        setSocket(socketInstance);
+      } catch (error) {
+        console.error('Error initializing authenticated socket:', error);
+      }
+    };
+
+    connectWithAuth();
 
     return () => {
-      socketInstance.disconnect();
+      if (socketInstance) {
+        socketInstance.disconnect();
+      }
     };
-  }, []);
-
-  useEffect(() => {
-    if (socket && isConnected && user?._id) {
-      socket.emit('join_user', user._id);
-    } else if (socket && isConnected && user?.uid) { // Fallback for firebase uid
-      socket.emit('join_user', user.uid);
-    }
-  }, [socket, isConnected, user]);
+  }, [user]); // Re-run connection logic if the user logs in or out
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>
