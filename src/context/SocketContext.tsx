@@ -30,12 +30,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        // Wait for firebase to settle and get the token
-        await auth.authStateReady();
-        const token = await auth.currentUser?.getIdToken(true);
+        // Get custom backend JWT token
+        const token = localStorage.getItem('token');
 
         if (!token) {
-          console.warn('No Firebase token found for Socket.io connection.');
+          console.warn('No authentication token found for Socket.io connection.');
           return;
         }
 
