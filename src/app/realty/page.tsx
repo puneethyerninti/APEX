@@ -71,8 +71,8 @@ export default function Page() {
             <div className="bg-white p-2 rounded-2xl shadow-lg">
                 <div className="flex border-b border-gray-100 mb-2">
                     <button className="flex-1 py-1.5 text-xs font-bold text-emerald-600 border-b-2 border-emerald-600">Buy</button>
-                    <button className="flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-emerald-600">Rent</button>
-                    <button className="flex-1 py-1.5 text-xs font-bold text-gray-400 hover:text-emerald-600">Projects</button>
+                    <Link href="/realty/post" className="flex-1 text-center py-1.5 text-xs font-bold text-gray-400 hover:text-emerald-600">Rent</Link>
+                    <Link href="/realty/post" className="flex-1 text-center py-1.5 text-xs font-bold text-gray-400 hover:text-emerald-600">Sell</Link>
                 </div>
                 <div className="relative">
                     <i className="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
