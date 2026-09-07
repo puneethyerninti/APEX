@@ -3,6 +3,8 @@ import http from 'http';
 import { initSocket } from './utils/socketManager';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { connectDB } from './config/db';
 
 import financeRoutes from './routes/financeRoutes';
@@ -34,6 +36,15 @@ initFirebaseAdmin();
 
 const app = express();
 const server = http.createServer(app);
+
+// Global Security Middleware
+app.use(helmet());
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Limit each IP to 1000 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.'
+});
+app.use(globalLimiter);
 
 // Middleware
 app.use(cors());

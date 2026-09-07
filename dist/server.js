@@ -8,6 +8,8 @@ const http_1 = __importDefault(require("http"));
 const socketManager_1 = require("./utils/socketManager");
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const helmet_1 = __importDefault(require("helmet"));
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const db_1 = require("./config/db");
 const financeRoutes_1 = __importDefault(require("./routes/financeRoutes"));
 const jobsRoutes_1 = __importDefault(require("./routes/jobsRoutes"));
@@ -33,6 +35,14 @@ dotenv_1.default.config();
 (0, firebaseAdmin_1.initFirebaseAdmin)();
 const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
+// Global Security Middleware
+app.use((0, helmet_1.default)());
+const globalLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // Limit each IP to 1000 requests per windowMs
+    message: 'Too many requests from this IP, please try again later.'
+});
+app.use(globalLimiter);
 // Middleware
 app.use((0, cors_1.default)());
 app.use(express_1.default.json({
