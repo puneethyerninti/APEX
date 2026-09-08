@@ -117,13 +117,9 @@ function PaymentContent() {
             await html5QrCode.start(
                 { facingMode: "environment" },
                 {
-                    fps: 20, // Increased for faster detection
-                    qrbox: (viewfinderWidth, viewfinderHeight) => {
-                        const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-                        const qrboxSize = Math.floor(minEdgeSize * 0.7); // 70% of the screen width
-                        return { width: qrboxSize, height: qrboxSize };
-                    },
-                    aspectRatio: 1.0, // Prevent zoomed-in camera issues
+                    fps: 10, // Moderate fps
+                    // Remove qrbox to make it full screen and handle UI ourselves
+                    aspectRatio: 1.0,
                 },
                 (decodedText) => {
                     // Success callback
@@ -221,18 +217,36 @@ function PaymentContent() {
             {/* FULL SCREEN SCANNER MODAL */}
             {isScannerOpen && (
                 <div className="fixed inset-0 bg-black z-[100] flex flex-col animate-[fadeIn_0.2s_ease-out]">
-                    <div className="p-4 flex justify-between items-center bg-black/50 absolute top-0 w-full z-10">
+                    <div className="p-4 flex justify-between items-center bg-black/40 absolute top-0 w-full z-50">
                         <button onClick={() => stopScanner()} className="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center backdrop-blur-md">
                             <i className="fa-solid fa-xmark text-xl"></i>
                         </button>
-                        <h2 className="text-white font-bold tracking-widest text-sm uppercase">Scan QR Code</h2>
-                        <div className="w-10"></div>
+                        <h2 className="text-white font-bold tracking-widest text-sm uppercase">Scan any QR</h2>
+                        <button className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center backdrop-blur-md">
+                            <i className="fa-solid fa-bolt"></i>
+                        </button>
                     </div>
 
                     {!scanResult ? (
                         <div className="flex-1 relative flex items-center justify-center overflow-hidden bg-black">
                             {/* The DOM element html5-qrcode attaches to */}
-                            <div id="reader" className="w-full h-full max-w-full"></div>
+                            <div id="reader" className="absolute inset-0 w-full h-full object-cover"></div>
+                            
+                            {/* PhonePe Style Overlay Cutout */}
+                            <div className="relative w-64 h-64 z-40">
+                                <div className="qr-overlay"></div>
+                                {/* Corner brackets for target */}
+                                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-xl"></div>
+                                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-xl"></div>
+                                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-xl"></div>
+                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-xl"></div>
+                                {/* Animated scan line */}
+                                <div className="qr-scan-line"></div>
+                            </div>
+                            
+                            <p className="absolute bottom-12 text-white/80 font-medium text-sm z-50 bg-black/40 px-4 py-2 rounded-full backdrop-blur-md">
+                                Align QR code within the frame to scan
+                            </p>
                         </div>
                     ) : (
                         <div className="flex-1 bg-white p-6 flex flex-col items-center justify-center animate-[slideUp_0.3s_ease-out] rounded-t-3xl mt-16">

@@ -2,15 +2,47 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 
-export default function PostPropertyPage() {
-    const [isSuccess, setIsSuccess] = useState(false);
+import { api } from '@/services/api';
+import { useAppStore } from '@/store/useAppStore';
 
-    const handleSubmit = (e: React.FormEvent) => {
+export default function PostPropertyPage() {
+    const { user } = useAppStore();
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState({
+        listingType: 'sell',
+        propertyType: '',
+        title: '',
+        price: '',
+        description: '',
+        phone: ''
+    });
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSuccess(true);
-        setTimeout(() => {
-            window.location.href = '/realty';
-        }, 3000);
+        
+        if (!user?.uid) {
+            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please login to post a property', type: 'error' } }));
+            return;
+        }
+
+        setLoading(true);
+        try {
+            await api.post('/realty/property', {
+                userId: user.uid,
+                ...formData,
+                price: Number(formData.price)
+            });
+            setIsSuccess(true);
+            setTimeout(() => {
+                window.location.href = '/realty';
+            }, 3000);
+        } catch (error) {
+            console.error('Error posting property:', error);
+            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Failed to post property. Try again.', type: 'error' } }));
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -45,11 +77,11 @@ export default function PostPropertyPage() {
                                 <label className="block text-xs font-bold text-gray-700 mb-1">Listing Type</label>
                                 <div className="grid grid-cols-2 gap-3">
                                     <label className="flex items-center justify-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition-colors">
-                                        <input type="radio" name="listing_type" value="sell" className="mr-2 accent-emerald-600" required defaultChecked />
+                                        <input type="radio" name="listing_type" value="sell" onChange={(e) => setFormData({...formData, listingType: e.target.value})} checked={formData.listingType === 'sell'} className="mr-2 accent-emerald-600" required />
                                         <span className="text-sm font-bold text-gray-800">For Sale</span>
                                     </label>
                                     <label className="flex items-center justify-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition-colors">
-                                        <input type="radio" name="listing_type" value="rent" className="mr-2 accent-emerald-600" required />
+                                        <input type="radio" name="listing_type" value="rent" onChange={(e) => setFormData({...formData, listingType: e.target.value})} checked={formData.listingType === 'rent'} className="mr-2 accent-emerald-600" required />
                                         <span className="text-sm font-bold text-gray-800">For Rent</span>
                                     </label>
                                 </div>
@@ -57,7 +89,7 @@ export default function PostPropertyPage() {
                             
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1">Property Type</label>
-                                <select required className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-gray-800 font-medium">
+                                <select required value={formData.propertyType} onChange={(e) => setFormData({...formData, propertyType: e.target.value})} className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-gray-800 font-medium">
                                     <option value="">Select Type</option>
                                     <option value="apartment">Apartment</option>
                                     <option value="villa">Villa / Independent House</option>
@@ -68,26 +100,26 @@ export default function PostPropertyPage() {
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1">Property Title</label>
-                                <input type="text" required placeholder="e.g. 2 BHK Fully Furnished in Madhapur" className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-medium text-gray-900" />
+                                <input type="text" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="e.g. 2 BHK Fully Furnished in Madhapur" className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-medium text-gray-900" />
                             </div>
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1">Price / Rent (₹)</label>
-                                <input type="number" required placeholder="Enter amount" className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-medium text-gray-900" />
+                                <input type="number" required value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="Enter amount" className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-medium text-gray-900" />
                             </div>
                             
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1">Description</label>
-                                <textarea required rows={4} placeholder="Describe the key features, amenities, and location advantages..." className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-medium text-gray-900 resize-none"></textarea>
+                                <textarea required rows={4} value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="Describe the key features, amenities, and location advantages..." className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-medium text-gray-900 resize-none"></textarea>
                             </div>
                             
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1">Your Contact Number</label>
-                                <input type="tel" required pattern="[0-9]{10}" placeholder="10-digit mobile number" className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-medium text-gray-900" />
+                                <input type="tel" required pattern="[0-9]{10}" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="10-digit mobile number" className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-medium text-gray-900" />
                             </div>
 
-                            <button type="submit" className="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all mt-4 text-sm">
-                                Post Classified
+                            <button type="submit" disabled={loading} className="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all mt-4 text-sm flex justify-center items-center gap-2">
+                                {loading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Posting...</> : 'Post Classified'}
                             </button>
                         </form>
                     </div>

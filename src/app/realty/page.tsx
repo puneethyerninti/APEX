@@ -10,18 +10,39 @@ export default function Page() {
   const [selectedProperty, setSelectedProperty] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [properties, setProperties] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     message: ''
   });
 
-  const openInquiry = (property: string) => {
-    setSelectedProperty(property);
+  React.useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const fetchProperties = async () => {
+    try {
+      const res = await api.get('/realty');
+      setProperties(res.data.properties || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openInquiry = (propertyId: string, propertyTitle: string) => {
+    setSelectedPropertyId(propertyId);
+    setSelectedProperty(propertyTitle);
     setIsSuccess(false);
   };
 
   const closeForm = () => {
+    setSelectedPropertyId(null);
     setSelectedProperty(null);
     setIsSuccess(false);
   };
@@ -31,6 +52,7 @@ export default function Page() {
     setIsSubmitting(true);
     try {
       await api.post('/realty/inquire', {
+        propertyId: selectedPropertyId,
         propertyTitle: selectedProperty,
         userId: user?.uid || 'guest',
         contactData: formData
@@ -112,49 +134,33 @@ export default function Page() {
             <Link href="#" className="text-[9px] font-bold text-emerald-600">View All</Link>
         </div>
         <div className="px-4 mb-2">
-            <AutoCarousel interval={4000}>
-                <div className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" data-category="simplex 2bhk" onClick={() => openInquiry('Simplex Property (₹46 Lakhs)')}>
-                    <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
-                        <img src="/property.jpeg" alt="Simplex" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                        <span className="absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-3 py-1 rounded uppercase tracking-wider">Premium</span>
-                    </div>
-                    <div className="p-4">
-                        <h4 className="font-black text-sm text-gray-900 truncate mb-1">Simplex Property</h4>
-                        <p className="text-xs text-gray-500 mb-3 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>Prime Location</p>
-                        <div className="flex items-end justify-between">
-                            <span className="text-emerald-600 font-black text-lg">₹46 Lakhs</span>
-                            <span className="text-xs text-gray-400 font-bold">2 BHK</span>
-                        </div>
-                    </div>
+            {loading ? (
+                <div className="h-48 flex items-center justify-center bg-gray-50 rounded-2xl">
+                    <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-                <div className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" data-category="villas hyderabad skyline" onClick={() => openInquiry('Skyline Penthouses (₹12.5 Cr)')}>
-                    <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
-                        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&amp;fit=crop&amp;q=80" alt="Villa" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                        <span className="absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-3 py-1 rounded uppercase tracking-wider">Verified</span>
-                    </div>
-                    <div className="p-4">
-                        <h4 className="font-black text-sm text-gray-900 truncate mb-1">Skyline Penthouses</h4>
-                        <p className="text-xs text-gray-500 mb-3 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>Banjara Hills, Hyderabad</p>
-                        <div className="flex items-end justify-between">
-                            <span className="text-emerald-600 font-black text-lg">₹12.5 Cr</span>
-                            <span className="text-xs text-gray-400 font-bold">4 BHK</span>
-                        </div>
-                    </div>
+            ) : properties.length === 0 ? (
+                <div className="h-48 flex items-center justify-center bg-gray-50 rounded-2xl text-gray-400 text-sm font-medium">
+                    No properties available right now.
                 </div>
-                <div className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" data-category="apartments bangalore prestige" onClick={() => openInquiry('Prestige Oasis (₹4.2 Cr)')}>
-                    <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
-                        <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&amp;fit=crop&amp;q=80" alt="Apartment" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                    </div>
-                    <div className="p-4">
-                        <h4 className="font-black text-sm text-gray-900 truncate mb-1">Prestige Oasis</h4>
-                        <p className="text-xs text-gray-500 mb-3 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>Whitefield, Bangalore</p>
-                        <div className="flex items-end justify-between">
-                            <span className="text-emerald-600 font-black text-lg">₹4.2 Cr</span>
-                            <span className="text-xs text-gray-400 font-bold">3 BHK</span>
+            ) : (
+                <AutoCarousel interval={4000}>
+                    {properties.map((prop) => (
+                        <div key={prop._id} className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" onClick={() => openInquiry(prop._id, `${prop.title} (₹${prop.price})`)}>
+                            <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
+                                <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80" alt={prop.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                <span className="absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-3 py-1 rounded uppercase tracking-wider">{prop.listingType}</span>
+                            </div>
+                            <div className="p-4">
+                                <h4 className="font-black text-sm text-gray-900 truncate mb-1">{prop.title}</h4>
+                                <p className="text-xs text-gray-500 mb-3 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>{prop.propertyType}</p>
+                                <div className="flex items-end justify-between">
+                                    <span className="text-emerald-600 font-black text-lg">₹{prop.price.toLocaleString()}</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            </AutoCarousel>
+                    ))}
+                </AutoCarousel>
+            )}
         </div>
     </div>
 
