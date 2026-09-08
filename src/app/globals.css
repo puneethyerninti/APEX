@@ -206,4 +206,12 @@ img {
   background: #25D366; box-shadow: 0 0 15px 3px rgba(37, 211, 102, 0.6);
   animation: scan-animation 2.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
 }
-#reader video { object-fit: cover !important; }
+#reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+#reader > div {
+  width: 100% !important;
+  height: 100% !important;
+}

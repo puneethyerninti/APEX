@@ -119,7 +119,6 @@ function PaymentContent() {
                 {
                     fps: 10, // Moderate fps
                     // Remove qrbox to make it full screen and handle UI ourselves
-                    aspectRatio: 1.0,
                 },
                 (decodedText) => {
                     // Success callback
