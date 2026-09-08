@@ -11,8 +11,11 @@ function PaymentContent() {
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(false);
     
+    const searchParams = useSearchParams();
+    const autoScan = searchParams.get('scan') === 'true';
+
     // QR Scanner State
-    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [isScannerOpen, setIsScannerOpen] = useState(autoScan);
     const [scanResult, setScanResult] = useState<string | null>(null);
     const scannerRef = useRef<any>(null);
 
@@ -101,9 +104,6 @@ function PaymentContent() {
             setLoading(false);
         }
     };
-    const searchParams = useSearchParams();
-    const autoScan = searchParams.get('scan');
-
     // Moved useEffect below startScanner
 
     const startScanner = async () => {
@@ -166,11 +166,9 @@ function PaymentContent() {
     };
 
     useEffect(() => {
-        if (autoScan === 'true') {
-            // Add a small delay to ensure DOM is fully ready
-            setTimeout(() => {
-                startScanner();
-            }, 500);
+        if (autoScan) {
+            // Start the camera without delay since the UI is already showing
+            startScanner();
         }
     }, [autoScan]);
 
