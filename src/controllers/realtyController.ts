@@ -4,36 +4,39 @@ import { createNotification } from './notificationController';
 
 export const submitInquiry = async (req: Request, res: Response) => {
   try {
-    const { propertyTitle, userId } = req.body;
+    const { propertyId, propertyTitle, userId, contactData } = req.body;
     
-    // In a real app we might create a specific "Inquiry" model, 
-    // but the user wants to use RealEstate model to populate the admin dashboard
-    // so we'll create a RealEstate document representing their interest/lead.
+    // Find the property to get the owner
+    let ownerId = null;
+    if (propertyId) {
+        const property = await Property.findById(propertyId);
+        if (property) ownerId = property.user;
+    }
     
-    const newPropertyLead = await RealEstate.create({
-      title: `Inquiry: ${propertyTitle}`,
-      price: 0,
-      location: 'Website Inquiry',
-      description: `User is inquiring about ${propertyTitle}`,
-      ownerId: userId // The user making the inquiry
-    });
-
-    // Notify Admin Dashboard in real-time
     const io = req.app.get('io');
-    if (io) {
-      io.to('admin_room').emit('admin_data_refresh');
+
+    // Notify the Property Owner
+    if (ownerId) {
+      const ownerNotification = await createNotification(
+        ownerId.toString(),
+        'New Property Inquiry',
+        `${contactData?.name || 'Someone'} is interested in your property: ${propertyTitle}. Phone: ${contactData?.phone || 'N/A'}. Message: ${contactData?.message || 'N/A'}`,
+        'success'
+      );
+      if (io) io.to(`user_${ownerId}`).emit('new_notification', ownerNotification);
     }
 
-    if (userId) {
+    // Notify the User who inquired
+    if (userId && userId !== 'guest') {
       await createNotification(
         userId,
         'Inquiry Submitted',
-        `Your inquiry regarding ${propertyTitle} has been received.`,
+        `Your inquiry regarding ${propertyTitle} has been received. The owner will contact you soon.`,
         'info'
       );
     }
 
-    res.status(201).json({ success: true, message: 'Inquiry submitted', data: newPropertyLead });
+    res.status(201).json({ success: true, message: 'Inquiry submitted' });
   } catch (error) {
     console.error('Realty inquiry error:', error);
     res.status(500).json({ error: 'Server error during inquiry' });

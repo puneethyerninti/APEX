@@ -3,7 +3,7 @@ import User from '../models/User';
 import Transaction from '../models/Transaction';
 import Job from '../models/Job';
 import MatrimonyProfile from '../models/MatrimonyProfile';
-import RealEstate from '../models/RealEstate';
+import Property from '../models/Property';
 import StoreOrder from '../models/StoreOrder';
 import CharityDonation from '../models/CharityDonation';
 import TravelBooking from '../models/TravelBooking';
@@ -22,7 +22,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     const totalTransactions = await Transaction.countDocuments();
     const pendingJobs = await Job.countDocuments({ status: 'pending' });
     const pendingProfiles = await MatrimonyProfile.countDocuments({ status: 'pending' });
-    const pendingRealty = await RealEstate.countDocuments({ status: 'pending' });
+    const pendingRealty = await Property.countDocuments({ status: 'pending' });
     const totalTravelBookings = await TravelBooking.countDocuments();
 
     // Calculate revenue (sum of all credit transactions, or just an example logic)
@@ -93,7 +93,7 @@ export const getPendingApprovals = async (req: Request, res: Response) => {
   try {
     const jobs = await Job.find({ status: 'pending' }).populate('postedBy', 'name phone');
     const profiles = await MatrimonyProfile.find({ status: 'pending' }).populate('user', 'name phone');
-    const realty = await RealEstate.find({ status: 'pending' }).populate('ownerId', 'name phone');
+    const realty = await Property.find({ status: 'pending' }).populate('user', 'name phone');
     
     res.json({ jobs, profiles, realty });
   } catch (error) {
@@ -122,8 +122,8 @@ export const updateApprovalStatus = async (req: Request, res: Response) => {
       if (doc) userIdToNotify = doc.user;
       title = `Matrimony Profile ${status === 'approved' ? 'Approved' : 'Rejected'}`;
     } else if (type === 'realty') {
-      const doc = await RealEstate.findByIdAndUpdate(id, { status });
-      if (doc) userIdToNotify = doc.ownerId;
+      const doc = await Property.findByIdAndUpdate(id, { status: status === 'approved' ? 'active' : 'rejected' });
+      if (doc) userIdToNotify = doc.user;
       title = `Realty Listing ${status === 'approved' ? 'Approved' : 'Rejected'}`;
     }
 
@@ -175,7 +175,7 @@ export const deleteEntity = async (req: Request, res: Response) => {
   try {
     if (type === 'job') await Job.findByIdAndDelete(id);
     else if (type === 'profile') await MatrimonyProfile.findByIdAndDelete(id);
-    else if (type === 'realty') await RealEstate.findByIdAndDelete(id);
+    else if (type === 'realty') await Property.findByIdAndDelete(id);
     else if (type === 'user') await User.findByIdAndDelete(id);
     else return res.status(400).json({ error: 'Invalid entity type' });
 
