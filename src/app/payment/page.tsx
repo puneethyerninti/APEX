@@ -121,10 +121,8 @@ function PaymentContent() {
                     { 
                         facingMode: "environment",
                         // Request high res to ensure it fills the screen
-                        videoConstraints: {
-                            width: { ideal: 1280 },
-                            height: { ideal: 720 }
-                        }
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
                     },
                     {
                         fps: 10, 
