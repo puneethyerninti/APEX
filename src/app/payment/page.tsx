@@ -119,10 +119,7 @@ function PaymentContent() {
 
                 await html5QrCode.start(
                     { 
-                        facingMode: "environment",
-                        // Request high res to ensure it fills the screen
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
+                        facingMode: "environment"
                     },
                     {
                         fps: 10, 
