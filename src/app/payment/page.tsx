@@ -109,31 +109,50 @@ function PaymentContent() {
     const startScanner = async () => {
         setIsScannerOpen(true);
         setScanResult(null);
-        try {
-            const { Html5Qrcode } = await import('html5-qrcode');
-            const html5QrCode = new Html5Qrcode("reader");
-            scannerRef.current = html5QrCode;
+        
+        // Wait for React to render the #reader div into the DOM with full dimensions
+        setTimeout(async () => {
+            try {
+                const { Html5Qrcode } = await import('html5-qrcode');
+                const html5QrCode = new Html5Qrcode("reader");
+                scannerRef.current = html5QrCode;
 
-            await html5QrCode.start(
-                { facingMode: "environment" },
-                {
-                    fps: 10, // Moderate fps
-                    // Remove qrbox to make it full screen and handle UI ourselves
-                },
-                (decodedText) => {
-                    // Success callback
-                    setScanResult(decodedText);
-                    stopScanner(html5QrCode);
-                },
-                (errorMessage) => {
-                    // Ignore errors (happens constantly while scanning)
+                await html5QrCode.start(
+                    { 
+                        facingMode: "environment",
+                        // Request high res to ensure it fills the screen
+                        videoConstraints: {
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        }
+                    },
+                    {
+                        fps: 10, 
+                        // No qrbox or aspectRatio limits so it fills the parent
+                    },
+                    (decodedText) => {
+                        setScanResult(decodedText);
+                        stopScanner(html5QrCode);
+                    },
+                    (errorMessage) => {}
+                );
+                
+                // Force video to cover the container
+                const videoEl = document.querySelector('#reader video') as HTMLVideoElement;
+                if (videoEl) {
+                    videoEl.style.objectFit = 'cover';
+                    videoEl.style.width = '100%';
+                    videoEl.style.height = '100%';
+                    videoEl.style.position = 'absolute';
+                    videoEl.style.top = '0';
+                    videoEl.style.left = '0';
                 }
-            );
-        } catch (err) {
-            console.error(err);
-            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Failed to access camera', type: 'error' } }));
-            setIsScannerOpen(false);
-        }
+            } catch (err) {
+                console.error(err);
+                window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Failed to access camera', type: 'error' } }));
+                setIsScannerOpen(false);
+            }
+        }, 100);
     };
 
     const stopScanner = async (instance?: any) => {
@@ -227,24 +246,27 @@ function PaymentContent() {
                     </div>
 
                     {!scanResult ? (
-                        <div className="flex-1 relative flex items-center justify-center overflow-hidden bg-black">
+                        <div className="flex-1 w-full h-full relative flex items-center justify-center overflow-hidden bg-black">
                             {/* The DOM element html5-qrcode attaches to */}
-                            <div id="reader" className="absolute inset-0 w-full h-full object-cover"></div>
+                            <div id="reader" className="absolute inset-0 w-full h-full flex items-center justify-center [&>div]:hidden bg-black"></div>
                             
                             {/* PhonePe Style Overlay Cutout */}
-                            <div className="relative w-64 h-64 z-40">
+                            <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center">
                                 <div className="qr-overlay"></div>
-                                {/* Corner brackets for target */}
-                                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-xl"></div>
-                                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-xl"></div>
-                                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-xl"></div>
-                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-xl"></div>
-                                {/* Animated scan line */}
-                                <div className="qr-scan-line"></div>
+                                {/* The clear target box */}
+                                <div className="relative w-64 h-64 border border-white/20 rounded-xl overflow-hidden shadow-[0_0_0_4000px_rgba(0,0,0,0.6)]">
+                                    {/* Corner brackets */}
+                                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-xl"></div>
+                                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-xl"></div>
+                                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-xl"></div>
+                                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-xl"></div>
+                                    {/* Animated scan line */}
+                                    <div className="qr-scan-line"></div>
+                                </div>
                             </div>
                             
-                            <p className="absolute bottom-12 text-white/80 font-medium text-sm z-50 bg-black/40 px-4 py-2 rounded-full backdrop-blur-md">
-                                Align QR code within the frame to scan
+                            <p className="absolute bottom-12 left-1/2 -translate-x-1/2 w-max text-white/80 font-medium text-sm z-50 bg-black/40 px-6 py-2 rounded-full backdrop-blur-md">
+                                Align QR code within frame
                             </p>
                         </div>
                     ) : (
