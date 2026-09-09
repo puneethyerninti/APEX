@@ -36,34 +36,9 @@ export default function Page() {
   };
 
   const openInquiry = (propertyId: string, propertyTitle: string) => {
-    setSelectedPropertyId(propertyId);
-    setSelectedProperty(propertyTitle);
-    setIsSuccess(false);
-  };
-
-  const closeForm = () => {
-    setSelectedPropertyId(null);
-    setSelectedProperty(null);
-    setIsSuccess(false);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      await api.post('/realty/inquire', {
-        propertyId: selectedPropertyId,
-        propertyTitle: selectedProperty,
-        userId: user?.uid || 'guest',
-        contactData: formData
-      });
-      setIsSuccess(true);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to submit inquiry');
-    } finally {
-      setIsSubmitting(false);
-    }
+    const encodedMessage = encodeURIComponent(`Hi APEX Team, I am interested in the property: ${propertyTitle}. Please provide more details.`);
+    const whatsappUrl = `https://wa.me/919494273763?text=${encodedMessage}`;
+    window.location.href = whatsappUrl;
   };
 
   return (
@@ -164,65 +139,7 @@ export default function Page() {
         </div>
     </div>
 
-    {/* MODAL / FORM UI OVERLAY */}
-    {selectedProperty && (
-        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 pb-0 sm:pb-4 transition-all">
-            <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-[slideUp_0.3s_ease-out]">
-                {/* Modal Header */}
-                <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
-                    <div>
-                        <h2 className="text-lg font-black text-gray-900">Inquire Property</h2>
-                        <p className="text-[10px] text-gray-500 truncate max-w-[200px]">{selectedProperty}</p>
-                    </div>
-                    <button onClick={closeForm} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200">
-                        <i className="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
 
-                {/* Modal Body */}
-                <div className="p-5 overflow-y-auto custom-scrollbar">
-                    {isSuccess ? (
-                        <div className="py-10 flex flex-col items-center text-center animate-[fadeIn_0.5s_ease-out]">
-                            <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-4xl mb-4 shadow-sm">
-                                <i className="fa-solid fa-check"></i>
-                            </div>
-                            <h3 className="text-xl font-black text-gray-900 mb-2">Inquiry Sent!</h3>
-                            <p className="text-sm text-gray-500 max-w-[250px] mx-auto mb-6">
-                                An APEX Realty agent will contact you shortly regarding &apos;{selectedProperty}&apos;.
-                            </p>
-                            <button onClick={closeForm} className="w-full py-3 bg-gray-900 text-white font-bold rounded-xl shadow-md">
-                                Done
-                            </button>
-                        </div>
-                    ) : (
-                        <form onSubmit={handleSubmit} className="flex flex-col gap-4 pb-6">
-                            {/* Inputs */}
-                            <div>
-                                <label className="block text-[11px] font-bold text-gray-700 mb-1">Full Name</label>
-                                <input required type="text" placeholder="Enter your name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
-                            </div>
-                            <div>
-                                <label className="block text-[11px] font-bold text-gray-700 mb-1">Phone Number</label>
-                                <input required type="tel" placeholder="Enter mobile number" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" />
-                            </div>
-                            <div>
-                                <label className="block text-[11px] font-bold text-gray-700 mb-1">Message (Optional)</label>
-                                <textarea placeholder="I am interested in this property..." value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none h-20" />
-                            </div>
-
-                            <button type="submit" disabled={isSubmitting} className="mt-4 w-full py-3.5 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 hover:bg-emerald-700 active:scale-[0.98] transition-all flex justify-center items-center gap-2">
-                                {isSubmitting ? (
-                                    <><i className="fa-solid fa-circle-notch fa-spin"></i> Sending...</>
-                                ) : (
-                                    'Contact Agent'
-                                )}
-                            </button>
-                        </form>
-                    )}
-                </div>
-            </div>
-        </div>
-    )}
     </>
   );
 }
