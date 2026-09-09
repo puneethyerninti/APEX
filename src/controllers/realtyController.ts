@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import RealEstate from '../models/RealEstate';
 import { createNotification } from './notificationController';
 
+import Lead from '../models/Lead';
+
 export const submitInquiry = async (req: Request, res: Response) => {
   try {
     const { propertyId, propertyTitle, userId, contactData } = req.body;
@@ -14,6 +16,15 @@ export const submitInquiry = async (req: Request, res: Response) => {
     }
     
     const io = req.app.get('io');
+
+    // Save as a Lead for the Admin Dashboard
+    const newLead = new Lead({
+        name: contactData?.name || 'Unknown',
+        mobile: contactData?.phone || 'Unknown',
+        serviceType: `Realty Inquiry: ${propertyTitle}`,
+        notes: contactData?.message || '',
+    });
+    await newLead.save();
 
     // Notify the Property Owner
     if (ownerId) {
