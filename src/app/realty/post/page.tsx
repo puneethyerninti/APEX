@@ -21,7 +21,7 @@ export default function PostPropertyPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (!user?.uid) {
+        if (!user?.uid && !user?._id) {
             window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please login to post a property', type: 'error' } }));
             return;
         }
@@ -29,7 +29,7 @@ export default function PostPropertyPage() {
         setLoading(true);
         try {
             await api.post('/realty/property', {
-                userId: user.uid,
+                userId: user._id || user.uid,
                 ...formData,
                 price: Number(formData.price)
             });
