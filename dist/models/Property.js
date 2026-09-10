@@ -43,10 +43,10 @@ const PropertySchema = new mongoose_1.Schema({
     description: { type: String, required: true },
     phone: { type: String, required: true },
     location: {
-        type: { type: String, enum: ['Point'], default: 'Point' },
+        type: { type: String, enum: ['Point'] },
         coordinates: { type: [Number], required: false } // [longitude, latitude]
     },
-    status: { type: String, enum: ['active', 'sold', 'rented', 'inactive'], default: 'active' }
+    status: { type: String, enum: ['pending', 'active', 'sold', 'rented', 'inactive'], default: 'pending' }
 }, { timestamps: true });
 // GEOSPATIAL INDEX
 PropertySchema.index({ location: '2dsphere' });

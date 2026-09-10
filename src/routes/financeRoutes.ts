@@ -1,25 +1,32 @@
 import express from 'express';
-import { getWalletBalance, deductMoney, addMoney, createRazorpayOrder, verifyRazorpayPayment } from '../controllers/financeController';
+import { 
+  getWalletBalance, 
+  deductMoney, 
+  addMoney, 
+  transferMoney, 
+  payMerchantWithWallet, 
+  getUserTransactions, 
+  getMyQrPayload, 
+  createRazorpayOrder, 
+  verifyRazorpayPayment 
+} from '../controllers/financeController';
 
 import { handleRazorpayWebhook } from '../controllers/webhookController';
 
 const router = express.Router();
 
-import { z } from 'zod';
-import { validate } from '../middleware/validate';
-
-const moneySchema = z.object({
-  body: z.object({
-    amount: z.number().positive('Amount must be a positive number'),
-    category: z.string().optional()
-  })
-});
-
+// Real-Time Wallet & Payment Routes
 router.get('/wallet', getWalletBalance);
-router.post('/wallet/deduct', validate(moneySchema), deductMoney);
-router.post('/wallet/add', validate(moneySchema), addMoney);
+router.post('/wallet/deduct', deductMoney);
+router.post('/wallet/add', addMoney);
+router.post('/wallet/transfer', transferMoney);
+router.post('/wallet/pay-merchant', payMerchantWithWallet);
 
-// Razorpay Routes
+// Passbook & Receive QR
+router.get('/transactions', getUserTransactions);
+router.get('/my-qr', getMyQrPayload);
+
+// Razorpay Gateway Routes
 router.post('/razorpay/order', createRazorpayOrder);
 router.post('/razorpay/verify', verifyRazorpayPayment);
 router.post('/razorpay/webhook', handleRazorpayWebhook);

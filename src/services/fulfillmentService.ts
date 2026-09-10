@@ -33,13 +33,14 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
   try {
     switch (transaction.category) {
       case 'add_money':
-        // ONLY add_money category should credit the user's wallet
+      case 'wallet_recharge':
+        // Both add_money and wallet_recharge credit the user's wallet
         const session = await mongoose.startSession();
         session.startTransaction();
         try {
-          await User.findByIdAndUpdate(transaction.user, { 
+          const updatedUser = await User.findByIdAndUpdate(transaction.user, { 
             $inc: { walletBalance: transaction.amount } 
-          }, { session });
+          }, { session, new: true });
           
           await Transaction.findByIdAndUpdate(transaction._id, {
             $set: {
@@ -50,8 +51,18 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
           }, { session });
           
           await session.commitTransaction();
-          console.log(`[Fulfillment] Credited ₹${transaction.amount} to user wallet.`);
-          return { credited: true, amount: transaction.amount }; // Return early
+          console.log(`[Fulfillment] Credited ₹${transaction.amount} to user wallet. New balance: ₹${updatedUser?.walletBalance}`);
+
+          if (appIo && updatedUser) {
+            appIo.to(`user_${updatedUser._id}`).emit('wallet_update', {
+              amount: transaction.amount,
+              type: 'credit',
+              message: `₹${transaction.amount} added to wallet successfully`,
+              newBalance: updatedUser.walletBalance
+            });
+          }
+
+          return { credited: true, amount: transaction.amount, newBalance: updatedUser?.walletBalance };
         } catch (error) {
           await session.abortTransaction();
           throw error;
@@ -105,6 +116,13 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
 
       case 'charity':
         fulfillmentResult = { status: 'donated' };
+        break;
+
+      case 'qr_payment':
+        fulfillmentResult = {
+          status: 'paid',
+          payee: metadata.payeeName || metadata.payeeVpa || 'Merchant'
+        };
         break;
 
       default:

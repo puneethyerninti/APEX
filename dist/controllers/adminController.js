@@ -8,7 +8,7 @@ const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const Job_1 = __importDefault(require("../models/Job"));
 const MatrimonyProfile_1 = __importDefault(require("../models/MatrimonyProfile"));
-const RealEstate_1 = __importDefault(require("../models/RealEstate"));
+const Property_1 = __importDefault(require("../models/Property"));
 const StoreOrder_1 = __importDefault(require("../models/StoreOrder"));
 const CharityDonation_1 = __importDefault(require("../models/CharityDonation"));
 const TravelBooking_1 = __importDefault(require("../models/TravelBooking"));
@@ -26,7 +26,7 @@ const getDashboardStats = async (req, res) => {
         const totalTransactions = await Transaction_1.default.countDocuments();
         const pendingJobs = await Job_1.default.countDocuments({ status: 'pending' });
         const pendingProfiles = await MatrimonyProfile_1.default.countDocuments({ status: 'pending' });
-        const pendingRealty = await RealEstate_1.default.countDocuments({ status: 'pending' });
+        const pendingRealty = await Property_1.default.countDocuments({ status: 'pending' });
         const totalTravelBookings = await TravelBooking_1.default.countDocuments();
         // Calculate revenue (sum of all credit transactions, or just an example logic)
         const revenueAgg = await Transaction_1.default.aggregate([
@@ -93,7 +93,7 @@ const getPendingApprovals = async (req, res) => {
     try {
         const jobs = await Job_1.default.find({ status: 'pending' }).populate('postedBy', 'name phone');
         const profiles = await MatrimonyProfile_1.default.find({ status: 'pending' }).populate('user', 'name phone');
-        const realty = await RealEstate_1.default.find({ status: 'pending' }).populate('ownerId', 'name phone');
+        const realty = await Property_1.default.find({ status: 'pending' }).populate('user', 'name phone');
         res.json({ jobs, profiles, realty });
     }
     catch (error) {
@@ -123,9 +123,9 @@ const updateApprovalStatus = async (req, res) => {
             title = `Matrimony Profile ${status === 'approved' ? 'Approved' : 'Rejected'}`;
         }
         else if (type === 'realty') {
-            const doc = await RealEstate_1.default.findByIdAndUpdate(id, { status });
+            const doc = await Property_1.default.findByIdAndUpdate(id, { status: status === 'approved' ? 'active' : 'rejected' });
             if (doc)
-                userIdToNotify = doc.ownerId;
+                userIdToNotify = doc.user;
             title = `Realty Listing ${status === 'approved' ? 'Approved' : 'Rejected'}`;
         }
         if (userIdToNotify) {
@@ -174,7 +174,7 @@ const deleteEntity = async (req, res) => {
         else if (type === 'profile')
             await MatrimonyProfile_1.default.findByIdAndDelete(id);
         else if (type === 'realty')
-            await RealEstate_1.default.findByIdAndDelete(id);
+            await Property_1.default.findByIdAndDelete(id);
         else if (type === 'user')
             await User_1.default.findByIdAndDelete(id);
         else

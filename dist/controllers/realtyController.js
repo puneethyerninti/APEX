@@ -4,30 +4,38 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllProperties = exports.getPropertiesNearMe = exports.createProperty = exports.submitInquiry = void 0;
-const RealEstate_1 = __importDefault(require("../models/RealEstate"));
 const notificationController_1 = require("./notificationController");
+const Lead_1 = __importDefault(require("../models/Lead"));
 const submitInquiry = async (req, res) => {
     try {
-        const { propertyTitle, userId } = req.body;
-        // In a real app we might create a specific "Inquiry" model, 
-        // but the user wants to use RealEstate model to populate the admin dashboard
-        // so we'll create a RealEstate document representing their interest/lead.
-        const newPropertyLead = await RealEstate_1.default.create({
-            title: `Inquiry: ${propertyTitle}`,
-            price: 0,
-            location: 'Website Inquiry',
-            description: `User is inquiring about ${propertyTitle}`,
-            ownerId: userId // The user making the inquiry
-        });
-        // Notify Admin Dashboard in real-time
+        const { propertyId, propertyTitle, userId, contactData } = req.body;
+        // Find the property to get the owner
+        let ownerId = null;
+        if (propertyId) {
+            const property = await Property_1.default.findById(propertyId);
+            if (property)
+                ownerId = property.user;
+        }
         const io = req.app.get('io');
-        if (io) {
-            io.to('admin_room').emit('admin_data_refresh');
+        // Save as a Lead for the Admin Dashboard
+        const newLead = new Lead_1.default({
+            name: contactData?.name || 'Unknown',
+            mobile: contactData?.phone || 'Unknown',
+            serviceType: `Realty Inquiry: ${propertyTitle}`,
+            notes: contactData?.message || '',
+        });
+        await newLead.save();
+        // Notify the Property Owner
+        if (ownerId) {
+            const ownerNotification = await (0, notificationController_1.createNotification)(ownerId.toString(), 'New Property Inquiry', `${contactData?.name || 'Someone'} is interested in your property: ${propertyTitle}. Phone: ${contactData?.phone || 'N/A'}. Message: ${contactData?.message || 'N/A'}`, 'success');
+            if (io)
+                io.to(`user_${ownerId}`).emit('new_notification', ownerNotification);
         }
-        if (userId) {
-            await (0, notificationController_1.createNotification)(userId, 'Inquiry Submitted', `Your inquiry regarding ${propertyTitle} has been received.`, 'info');
+        // Notify the User who inquired
+        if (userId && userId !== 'guest') {
+            await (0, notificationController_1.createNotification)(userId, 'Inquiry Submitted', `Your inquiry regarding ${propertyTitle} has been received. The owner will contact you soon.`, 'info');
         }
-        res.status(201).json({ success: true, message: 'Inquiry submitted', data: newPropertyLead });
+        res.status(201).json({ success: true, message: 'Inquiry submitted' });
     }
     catch (error) {
         console.error('Realty inquiry error:', error);
