@@ -248,6 +248,7 @@ export default function UtilityPage() {
     const pureMobile = user?.phone ? user.phone.replace(/\D/g, '').slice(-10) : '';
     
     // Build payload using exact Eko param_names as keys
+    const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
     const fetchPayload: any = {
       phone_operator_code: selectedOperator.operator_id.toString(),
       operatorName: selectedOperator.name,
@@ -258,7 +259,6 @@ export default function UtilityPage() {
     Object.entries(formValues).forEach(([key, value]) => {
       if (value.trim()) fetchPayload[key] = value.trim();
     });
-    const primaryParamName = operatorParams[0]?.param_name || 'utility_acc_no';
     fetchPayload.utility_acc_no = formValues[primaryParamName] || fetchPayload.utility_acc_no || '';
 
     setIsFetchingBill(true);
