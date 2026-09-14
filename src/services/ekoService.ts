@@ -257,7 +257,7 @@ export const fetchBill = async (params: any) => {
     const queryParams: any = {
         initiator_id: EKO_INITIATOR_ID,
         sender_name: params.sender_name || 'Customer',
-        source_ip: params.source_ip || '103.174.104.14', // Default to valid public IP if missing
+        source_ip: '103.174.104.14', // Eko requires the whitelisted SERVER IP, not the client IP
         ...params
     };
 
@@ -265,7 +265,8 @@ export const fetchBill = async (params: any) => {
     delete queryParams.user_code;
     delete queryParams.latlong;
 
-    // Ensure source_ip is not localhost
+    // Override the dynamic source_ip from params just to be 100% sure
+    queryParams.source_ip = '103.174.104.14';// Ensure source_ip is not localhost
     if (queryParams.source_ip === '127.0.0.1' || queryParams.source_ip === '::1') {
         queryParams.source_ip = '103.174.104.14';
     }

@@ -279,14 +279,8 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
             res.status(400).json({ 
                 success: false, 
                 message: errorMsg,
-                ekoStatus: raw.status,
-                data: raw.data,
-                invalidParams: raw.invalid_params,
-                requestFields: {
-                    phone_operator_code,
-                    utility_acc_no,
-                    category
-                }
+                ekoError: raw,
+                requestPayload: { phone_operator_code, utility_acc_no, category }
             });
         }
     } catch (error: any) {
