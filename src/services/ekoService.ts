@@ -248,19 +248,29 @@ const extractDataText = (desc: string) => {
 
 /**
  * BBPS: Fetch Bill (Section 5 of Eko PDF)
- * Uses clean query string encoding — source_ip NOT needed for GET fetch.
+ * Uses clean query string encoding — source_ip is REQUIRED. user_code is NOT allowed.
  */
 export const fetchBill = async (params: any) => {
-    const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE, EKO_LATLONG } = requireEkoConfig();
+    const { EKO_BASE_URL, EKO_INITIATOR_ID } = requireEkoConfig();
     const headers = getEkoHeaders();
 
-    const query = buildQuery({
+    const queryParams: any = {
         initiator_id: EKO_INITIATOR_ID,
-        user_code: EKO_USER_CODE,
-        latlong: EKO_LATLONG,
         sender_name: params.sender_name || 'Customer',
+        source_ip: params.source_ip || '103.174.104.14', // Default to valid public IP if missing
         ...params
-    });
+    };
+
+    // EPS Support explicitly noted user_code must be omitted for this endpoint
+    delete queryParams.user_code;
+    delete queryParams.latlong;
+
+    // Ensure source_ip is not localhost
+    if (queryParams.source_ip === '127.0.0.1' || queryParams.source_ip === '::1') {
+        queryParams.source_ip = '103.174.104.14';
+    }
+
+    const query = buildQuery(queryParams);
 
     const url = `${EKO_BASE_URL}/customer/payment/bbps/bill?${query}`;
     console.log('[EKO] fetchBill URL:', url);
