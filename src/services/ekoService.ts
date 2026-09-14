@@ -251,25 +251,20 @@ const extractDataText = (desc: string) => {
  * Uses clean query string encoding — source_ip is REQUIRED. user_code is NOT allowed.
  */
 export const fetchBill = async (params: any) => {
-    const { EKO_BASE_URL, EKO_INITIATOR_ID } = requireEkoConfig();
+    const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE, EKO_LATLONG } = requireEkoConfig();
     const headers = getEkoHeaders();
 
     const queryParams: any = {
         initiator_id: EKO_INITIATOR_ID,
+        user_code: EKO_USER_CODE,
         sender_name: params.sender_name || 'Customer',
-        source_ip: '103.174.104.14', // Eko requires the whitelisted SERVER IP, not the client IP
+        source_ip: '103.174.104.14',
+        latlong: params.latlong || EKO_LATLONG,
         ...params
     };
 
-    // EPS Support explicitly noted user_code must be omitted for this endpoint
-    delete queryParams.user_code;
-    delete queryParams.latlong;
-
-    // Override the dynamic source_ip from params just to be 100% sure
-    queryParams.source_ip = '103.174.104.14';// Ensure source_ip is not localhost
-    if (queryParams.source_ip === '127.0.0.1' || queryParams.source_ip === '::1') {
-        queryParams.source_ip = '103.174.104.14';
-    }
+    // Ensure source_ip is always the whitelisted server IP, never localhost
+    queryParams.source_ip = '103.174.104.14';
 
     const query = buildQuery(queryParams);
 
