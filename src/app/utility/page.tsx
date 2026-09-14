@@ -251,7 +251,7 @@ export default function UtilityPage() {
     const fetchPayload: any = {
       phone_operator_code: selectedOperator.operator_id.toString(),
       operatorName: selectedOperator.name,
-      confirmation_mobile_no: pureMobile || '9999999999',  // Eko requires a STRICT 10 digit phone number
+      confirmation_mobile_no: (formValues[primaryParamName]?.length === 10) ? formValues[primaryParamName] : (pureMobile || '9999999999'),
       sender_name: user?.name || 'Customer',
       category: selectedCategory?.operator_category_id || 0,
     };
