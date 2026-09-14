@@ -201,6 +201,45 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
           refundError: refundError.message
         };
       }
+    } else {
+      // Wallet Payment Auto-Refund
+      console.log(`[Fulfillment] Auto-refunding WALLET payment for transaction ${transaction._id}.`);
+      try {
+        const user = await User.findById(userIdStr);
+        if (user) {
+          user.walletBalance += transaction.amount;
+          await user.save();
+          
+          refundInfo = {
+            refundId: `wr_${Date.now()}`,
+            refundedAt: new Date(),
+            status: 'Refunded'
+          };
+          console.log(`[Fulfillment] Wallet refund successful. New balance: ₹${user.walletBalance}`);
+
+          if (appIo) {
+            appIo.to(`user_${user._id}`).emit('wallet_update', {
+              amount: transaction.amount,
+              type: 'credit',
+              message: `Refund of ₹${transaction.amount} credited to wallet for failed service`,
+              newBalance: user.walletBalance
+            });
+          }
+
+          await createNotification(
+            userIdStr,
+            'Payment Refunded',
+            `Your payment of ₹${transaction.amount} has been refunded to your APEX Wallet because the service could not be delivered.`,
+            'info'
+          );
+        }
+      } catch (refundError: any) {
+        console.error(`[Fulfillment] CRITICAL: Wallet auto-refund failed for transaction ${transaction._id}:`, refundError);
+        refundInfo = {
+          status: 'Refund_Failed',
+          refundError: refundError.message
+        };
+      }
     }
 
     await Transaction.findByIdAndUpdate(transaction._id, {

@@ -480,7 +480,7 @@ export const handleUtilityRecharge = async (userId: string, metadata: any) => {
             amount: parsedAmount,
             utilitycustomername: 'Customer',
             client_ref_id: clientRefId,
-            source_ip: metadata.source_ip || '127.0.0.1'
+            source_ip: metadata.source_ip === '127.0.0.1' || metadata.source_ip === '::1' ? '103.174.104.14' : (metadata.source_ip || '103.174.104.14')
         });
 
         if (ekoResult.status === 0 || ekoResult.response_type_id === 333) {
@@ -580,7 +580,7 @@ export const handleBBPSPayment = async (userId: string, metadata: any) => {
             amount: parsedAmount,
             utilitycustomername: utilitycustomername || 'Customer',
             client_ref_id: refId,
-            source_ip: metadata.source_ip || '127.0.0.1',
+            source_ip: metadata.source_ip === '127.0.0.1' || metadata.source_ip === '::1' ? '103.174.104.14' : (metadata.source_ip || '103.174.104.14'),
             ...(billfetchresponse ? { billfetchresponse } : {}),
             ...(formValues || {})
         });
