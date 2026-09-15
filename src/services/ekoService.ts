@@ -7,7 +7,7 @@ const getEkoConfig = () => {
     const EKO_DEV_KEY = process.env.EKO_DEV_KEY;
     const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY;
     const EKO_INITIATOR_ID = process.env.EKO_INITIATOR_ID;
-    const EKO_BASE_URL = (process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici/v1').replace(/\/$/, '');
+    const EKO_BASE_URL = (process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici/v3').replace(/\/$/, '');
     const EKO_USER_CODE = process.env.EKO_USER_CODE || EKO_INITIATOR_ID;
     const EKO_LATLONG = process.env.EKO_LATLONG || '';
     
@@ -247,8 +247,9 @@ const extractDataText = (desc: string) => {
 // ─── Bill Fetch & Pay ──────────────────────────────────────────────────
 
 /**
- * BBPS: Fetch Bill (Section 5 of Eko PDF)
- * Uses clean query string encoding — source_ip is REQUIRED. user_code is NOT allowed.
+ * BBPS: Fetch Bill
+ * Uses v3 endpoint. user_code, source_ip, and latlong are all REQUIRED.
+ * client_ref_id MUST be <= 20 characters.
  */
 export const fetchBill = async (params: any) => {
     const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE, EKO_LATLONG } = requireEkoConfig();

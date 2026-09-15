@@ -16,7 +16,7 @@ import crypto from 'crypto';
 
 const utilityFinalStatuses = ['eko_success', 'eko_failed', 'refunded', 'manual_review', 'Success', 'Failed'];
 
-const makeClientRefId = (prefix = 'utl') => `${prefix}_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`.substring(0, 32);
+const makeClientRefId = (prefix = 'utl') => `${prefix}${Date.now()}`.substring(0, 20);
 
 const getPrimaryAccountNumber = (params: Record<string, any>) => {
     if (params.utility_acc_no) return String(params.utility_acc_no);
@@ -267,19 +267,26 @@ export const fetchBBPSBill = async (req: Request, res: Response) => {
             if (errorMsg === 'No key for Response') {
                 errorMsg = Number(category) === 10
                     ? 'No postpaid bill found for this number. Please confirm it is an active postpaid connection with an outstanding bill.'
-                    : 'No pending bill found, or invalid account number.';
-            } else if (errorMsg === 'Unable to fetch bill' || data.reason?.includes('server is down')) {
-                errorMsg = `Biller's server is temporarily unavailable. Please try again later.`;
+                    : 'No pending bill found, or invalid account number. Please verify your details and try again.';
+            } else if (data.reason?.includes('HGPay') || data.reason?.includes('server is down')) {
+                errorMsg = `Biller's payment gateway (HGPay) is temporarily unavailable. Please try again in a few minutes.`;
+            } else if (errorMsg === 'Unable to fetch bill') {
+                const reason = data.reason || 'Biller is temporarily unavailable';
+                errorMsg = `Unable to fetch bill: ${reason}. Please try again later.`;
             } else if (raw.status === 97 && raw.invalid_params) {
                 // Eko parameter validation error — pass field-level errors
                 const fields = Object.values(raw.invalid_params).join(', ');
                 errorMsg = `Invalid input: ${fields}`;
+            } else if (raw.status === 1320) {
+                errorMsg = 'BBPS service is not activated. Please contact support.';
             }
             
             res.status(400).json({ 
                 success: false, 
                 message: errorMsg,
-                ekoError: raw,
+                ekoStatus: raw.status,
+                ekoResponseType: raw.response_type_id,
+                ekoReason: data.reason || null,
                 requestPayload: { phone_operator_code, utility_acc_no, category }
             });
         }
@@ -320,7 +327,7 @@ export const payBill = async (req: Request, res: Response) => {
         }
 
         // Generate client_ref_id if not provided (e.g., direct recharge without fetch-bill)
-        const refId = client_ref_id || `ref_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`.substring(0, 20);
+        const refId = client_ref_id || makeClientRefId('ref');
 
         // 1. Create Pending Transaction in DB
         const transaction = new UtilityTransaction({
