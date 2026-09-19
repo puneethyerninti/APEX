@@ -3,12 +3,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging-comp
 
 // NOTE: Replace these with your actual Firebase config values
 const firebaseConfig = {
-  apiKey: "AIzaSyA1Tw9yR8kf89AJOOzlVcdt-lTgAgQyGKw",
-  authDomain: "rivan-123.firebaseapp.com",
-  projectId: "rivan-123",
-  storageBucket: "rivan-123.firebasestorage.app",
-  messagingSenderId: "91767917263",
-  appId: "1:91767917263:web:508791b8795f8160c545ba"
+  apiKey: "AIzaSyDpda54cNyiCC8ur1Gvx3pzL2EhEFkEk_Q",
+  authDomain: "apex-5b654.firebaseapp.com",
+  projectId: "apex-5b654",
+  storageBucket: "apex-5b654.firebasestorage.app",
+  messagingSenderId: "1070526094287",
+  appId: "1:1070526094287:web:4a4c292d1a197c824390ba"
 };
 
 firebase.initializeApp(firebaseConfig);
