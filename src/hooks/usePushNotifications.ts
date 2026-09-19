@@ -52,9 +52,14 @@ export const usePushNotifications = (isAuthenticated: boolean) => {
           const permission = await Notification.requestPermission();
           
           if (permission === 'granted') {
-            // NOTE: Replace with your actual VAPID key from Firebase Console
+            const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY;
+            if (!vapidKey || vapidKey === 'REPLACE_WITH_VAPID_KEY') {
+              console.warn('Web Push Notifications skipped: NEXT_PUBLIC_VAPID_KEY is not configured in environment variables.');
+              return;
+            }
+
             const currentToken = await getToken(messaging, {
-              vapidKey: process.env.NEXT_PUBLIC_VAPID_KEY || 'REPLACE_WITH_VAPID_KEY'
+              vapidKey: vapidKey
             });
 
             if (currentToken) {

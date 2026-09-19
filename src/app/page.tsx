@@ -919,11 +919,11 @@ export default function Home() {
                             
                             {/* Text Content */}
                             <div className="flex-1 min-w-0">
-                                <p className="text-white/70 text-[9px] font-black tracking-[0.2em] uppercase mb-1">Welcome Back,</p>
-                                <h3 className="text-white font-black text-xl leading-none tracking-tight mb-1.5">
+                                <h3 className="text-white font-black text-xl leading-tight tracking-tight mb-1">
                                     APEX M.D
                                 </h3>
-                                <p className="text-white/60 text-[11px] italic font-medium truncate">Apex Trading Company</p>
+                                <p className="text-amber-400/90 text-[10px] font-bold uppercase tracking-wider mb-0.5">Founder & Managing Director</p>
+                                <p className="text-white/60 text-[11px] font-medium truncate">Apex Trading Company</p>
                             </div>
                             
                             {/* Chevron */}
