@@ -50,36 +50,65 @@ export default function LoginPage() {
         };
     }, []);
 
+    const sendOtpRequest = async () => {
+        setIsLoading(true);
+        setErrorMsg('');
+        try {
+            // Completely reset Recaptcha to avoid 400 Bad Request on reuse
+            if ((window as any).recaptchaVerifier) {
+                try {
+                    (window as any).recaptchaVerifier.clear();
+                } catch (e) {}
+                const container = document.getElementById('recaptcha-container');
+                if (container) container.innerHTML = '';
+            }
+
+            const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
+            (window as any).recaptchaVerifier = verifier;
+            await verifier.render();
+
+            const phoneNumber = `+91${phone}`;
+            const confirmation = await signInWithPhoneNumber(auth, phoneNumber, verifier);
+            setConfirmationResult(confirmation);
+            setStep('otp');
+            setResendTimer(30);
+            setOtp(['', '', '', '', '', '']); // Clear OTP input
+            setTimeout(() => document.getElementById('otp-0')?.focus(), 100);
+        } catch (err: any) {
+            console.error("SMS Error:", err);
+            setErrorMsg(err.message || 'Failed to send OTP. Try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handlePhoneSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrorMsg('');
         if (phone === '8247885289') {
             setErrorMsg('This number is reserved. Please use the Admin Portal.');
-            setIsLoading(false);
             return;
         }
 
         if (phone.length === 10) {
-            setIsLoading(true);
-            try {
-                const phoneNumber = `+91${phone}`;
-                const appVerifier = (window as any).recaptchaVerifier;
-                const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-                setConfirmationResult(confirmation);
-                setStep('otp');
-                setResendTimer(30);
-            } catch (err: any) {
-                console.error("SMS Error:", err);
-                setErrorMsg(err.message || 'Failed to send OTP. Try again.');
-                // Reset recaptcha if error
-                if ((window as any).recaptchaVerifier) {
-                    (window as any).recaptchaVerifier.render().then((widgetId: any) => {
-                        (window as any).grecaptcha.reset(widgetId);
-                    });
-                }
-            } finally {
-                setIsLoading(false);
-            }
+            await sendOtpRequest();
+        }
+    };
+
+    const submitOtpNow = async (fullOtp: string) => {
+        if (!confirmationResult) return;
+        setIsLoading(true);
+        setErrorMsg('');
+        try {
+            await confirmationResult.confirm(fullOtp);
+            // AuthContext handles redirect automatically
+        } catch (err: any) {
+            console.error("OTP Error:", err);
+            setErrorMsg('Invalid or Expired OTP. Please try again.');
+            setOtp(['', '', '', '', '', '']);
+            document.getElementById('otp-0')?.focus();
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -89,10 +118,17 @@ export default function LoginPage() {
             newOtp[index] = value;
             setOtp(newOtp);
             
-            // Auto-focus next input
-            if (value !== '' && index < 5) {
-                const nextInput = document.getElementById(`otp-${index + 1}`);
-                nextInput?.focus();
+            if (value !== '') {
+                if (index < 5) {
+                    const nextInput = document.getElementById(`otp-${index + 1}`);
+                    nextInput?.focus();
+                } else if (index === 5) {
+                    // 6th digit entered, trigger auto-submit
+                    const fullOtp = newOtp.join('');
+                    if (fullOtp.length === 6) {
+                        submitOtpNow(fullOtp);
+                    }
+                }
             }
         }
     };
@@ -114,42 +150,14 @@ export default function LoginPage() {
 
     const handleResendOtp = async () => {
         if (resendTimer > 0 || phone.length !== 10) return;
-        setIsLoading(true);
-        setErrorMsg('');
-        try {
-            const phoneNumber = `+91${phone}`;
-            const appVerifier = (window as any).recaptchaVerifier;
-            const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-            setConfirmationResult(confirmation);
-            setResendTimer(30);
-        } catch (err: any) {
-            console.error("Resend SMS Error:", err);
-            setErrorMsg(err.message || 'Failed to resend OTP.');
-            if ((window as any).recaptchaVerifier) {
-                (window as any).recaptchaVerifier.render().then((widgetId: any) => {
-                    (window as any).grecaptcha.reset(widgetId);
-                }).catch((err: any) => console.error("Recaptcha reset error", err));
-            }
-        } finally {
-            setIsLoading(false);
-        }
+        await sendOtpRequest();
     };
 
     const handleOtpSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setErrorMsg('');
         const fullOtp = otp.join('');
-        if (fullOtp.length === 6 && confirmationResult) {
-            setIsLoading(true);
-            try {
-                await confirmationResult.confirm(fullOtp);
-                // AuthContext will automatically catch this and redirect to '/'
-            } catch (err: any) {
-                console.error("OTP Error:", err);
-                setErrorMsg(err.message || 'Invalid OTP. Please try again.');
-            } finally {
-                setIsLoading(false);
-            }
+        if (fullOtp.length === 6) {
+            await submitOtpNow(fullOtp);
         }
     };
 
