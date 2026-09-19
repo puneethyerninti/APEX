@@ -901,6 +901,39 @@ export default function Home() {
                     </div>
                 </section>
 
+                {/* ═══ 11. MANAGER / MD BANNER ═══ */}
+                <section className="px-4 pb-6 mt-4">
+                    <div className="bg-gradient-to-br from-[#2D1B69] via-[#3B2189] to-[#1E114D] rounded-3xl overflow-hidden shadow-xl relative group cursor-pointer reveal-up">
+                        {/* Abstract background shapes for premium look */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+                        <div className="absolute bottom-0 right-10 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl translate-y-1/2 pointer-events-none"></div>
+                        <div className="absolute top-1/2 left-0 w-32 h-32 bg-fuchsia-500/10 rounded-full blur-2xl -translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+                        
+                        <div className="p-5 flex items-center gap-4 relative z-10">
+                            {/* Profile Image with Ring */}
+                            <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-200 via-yellow-400 to-orange-500 shadow-lg flex-shrink-0">
+                                <div className="w-full h-full rounded-full border-2 border-[#2D1B69] overflow-hidden bg-[#2D1B69]">
+                                    <img src="/images/Manager.jpeg" alt="APEX M.D" className="w-full h-full object-cover" />
+                                </div>
+                            </div>
+                            
+                            {/* Text Content */}
+                            <div className="flex-1 min-w-0">
+                                <p className="text-white/70 text-[9px] font-black tracking-[0.2em] uppercase mb-1">Welcome Back,</p>
+                                <h3 className="text-white font-black text-xl leading-none tracking-tight mb-1.5">
+                                    APEX M.D
+                                </h3>
+                                <p className="text-white/60 text-[11px] italic font-medium truncate">Apex Trading Company</p>
+                            </div>
+                            
+                            {/* Chevron */}
+                            <div className="text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all flex-shrink-0 pl-2">
+                                <i className="fa-solid fa-chevron-right text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 {/* ═══ FOOTER / FOUNDATION ═══ */}
                 <footer id="foundation" className="bg-white border-t border-gray-100 pt-14 pb-8">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

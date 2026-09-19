@@ -343,6 +343,36 @@ export default function AdminDashboardPage() {
 
                 {activeTab === 'overview' && (
                   <>
+                    {/* ═══ MANAGER / MD BANNER ═══ */}
+                    <div className="bg-gradient-to-br from-[#2D1B69] via-[#3B2189] to-[#1E114D] rounded-3xl overflow-hidden shadow-xl relative group mb-8">
+                        {/* Abstract background shapes for premium look */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+                        <div className="absolute bottom-0 right-10 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl translate-y-1/2 pointer-events-none"></div>
+                        <div className="absolute top-1/2 left-0 w-32 h-32 bg-fuchsia-500/10 rounded-full blur-2xl -translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+                        
+                        <div className="p-6 flex flex-col sm:flex-row items-center gap-5 relative z-10 text-center sm:text-left">
+                            {/* Profile Image with Ring */}
+                            <div className="w-20 h-20 rounded-full p-0.5 bg-gradient-to-tr from-amber-200 via-yellow-400 to-orange-500 shadow-lg flex-shrink-0">
+                                <div className="w-full h-full rounded-full border-2 border-[#2D1B69] overflow-hidden bg-[#2D1B69]">
+                                    <img src="/images/Manager.jpeg" alt="APEX M.D" className="w-full h-full object-cover" />
+                                </div>
+                            </div>
+                            
+                            {/* Text Content */}
+                            <div className="flex-1 min-w-0">
+                                <p className="text-white/70 text-[10px] font-black tracking-[0.2em] uppercase mb-1">Welcome Back,</p>
+                                <h3 className="text-white font-black text-2xl leading-none tracking-tight mb-1.5">
+                                    APEX M.D
+                                </h3>
+                                <p className="text-white/60 text-xs italic font-medium">Apex Trading Company</p>
+                            </div>
+                            
+                            <div className="hidden sm:block text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all flex-shrink-0 px-4">
+                                <i className="fa-solid fa-crown text-2xl text-amber-400 drop-shadow-md"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
                     {/* STAT CARDS */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
                         <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-100 shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
