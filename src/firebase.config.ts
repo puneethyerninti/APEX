@@ -4,7 +4,7 @@ import { getAuth } from "firebase/auth";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDpda54cNyiCC8ur1Gvx3pzL2EhEFkEk_Q",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "your-api-key-here",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "apex-5b654.firebaseapp.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "apex-5b654",
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "apex-5b654.firebasestorage.app",
