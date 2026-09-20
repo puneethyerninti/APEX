@@ -66,7 +66,7 @@ export default function LoginPage() {
             const confirmation = await signInWithPhoneNumber(auth, phoneNumber, verifier);
             setConfirmationResult(confirmation);
             setStep('otp');
-            setResendTimer(30);
+            setResendTimer(60);
             setOtp(['', '', '', '', '', '']); // Clear OTP input
             setTimeout(() => document.getElementById('otp-0')?.focus(), 100);
         } catch (err: any) {
