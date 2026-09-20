@@ -919,11 +919,8 @@ export default function Home() {
                             
                             {/* Text Content */}
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-white font-black text-xl leading-tight tracking-tight mb-1">
-                                    APEX M.D
-                                </h3>
-                                <p className="text-amber-400/90 text-[10px] font-bold uppercase tracking-wider mb-0.5">Founder & Managing Director</p>
-                                <p className="text-white/60 text-[11px] font-medium truncate">Apex Trading Company</p>
+                                <h3 className="text-amber-400 font-black text-sm leading-tight uppercase tracking-wider mb-1">Founder & Managing Director</h3>
+                                <p className="text-white/80 text-xs font-medium truncate">Apex Trading Company</p>
                             </div>
                             
                             {/* Chevron */}

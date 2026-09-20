@@ -360,11 +360,8 @@ export default function AdminDashboardPage() {
                             
                             {/* Text Content */}
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-white font-black text-2xl leading-none tracking-tight mb-2">
-                                    APEX M.D
-                                </h3>
-                                <p className="text-amber-400/90 text-xs font-bold uppercase tracking-wider mb-1">Founder & Managing Director</p>
-                                <p className="text-white/60 text-xs font-medium">Apex Trading Company</p>
+                                <h3 className="text-amber-400 font-black text-lg sm:text-xl leading-tight uppercase tracking-wider mb-1">Founder & Managing Director</h3>
+                                <p className="text-white/80 text-sm font-medium">Apex Trading Company</p>
                             </div>
                             
                             <div className="hidden sm:block text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all flex-shrink-0 px-4">
