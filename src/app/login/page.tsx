@@ -54,18 +54,13 @@ export default function LoginPage() {
         setIsLoading(true);
         setErrorMsg('');
         try {
-            // Completely reset Recaptcha to avoid 400 Bad Request on reuse
-            if ((window as any).recaptchaVerifier) {
-                try {
-                    (window as any).recaptchaVerifier.clear();
-                } catch (e) {}
-                const container = document.getElementById('recaptcha-container');
-                if (container) container.innerHTML = '';
+            let verifier = (window as any).recaptchaVerifier;
+            
+            if (!verifier) {
+                verifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
+                (window as any).recaptchaVerifier = verifier;
+                await verifier.render();
             }
-
-            const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
-            (window as any).recaptchaVerifier = verifier;
-            await verifier.render();
 
             const phoneNumber = `+91${phone}`;
             const confirmation = await signInWithPhoneNumber(auth, phoneNumber, verifier);
