@@ -12,6 +12,7 @@ export interface IProperty extends Document {
     type: string;
     coordinates: number[];
   };
+  images: string[];
   status: 'pending' | 'active' | 'sold' | 'rented' | 'inactive';
 }
 
@@ -28,6 +29,7 @@ const PropertySchema = new Schema<IProperty>(
       type: { type: String, enum: ['Point'] },
       coordinates: { type: [Number], required: false } // [longitude, latitude]
     },
+    images: { type: [String], default: [] },
     status: { type: String, enum: ['pending', 'active', 'sold', 'rented', 'inactive'], default: 'pending' }
   },
   { timestamps: true }

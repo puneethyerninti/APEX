@@ -3,6 +3,7 @@ import RealEstate from '../models/RealEstate';
 import { createNotification } from './notificationController';
 
 import Lead from '../models/Lead';
+import User from '../models/User';
 
 export const submitInquiry = async (req: Request, res: Response) => {
   try {
@@ -58,11 +59,14 @@ import Property from '../models/Property';
 
 export const createProperty = async (req: Request, res: Response) => {
   try {
-    const { userId, listingType, propertyType, title, price, description, phone, longitude, latitude } = req.body;
+    const { userId, listingType, propertyType, title, price, description, phone, longitude, latitude, images } = req.body;
 
     if (!userId || !listingType || !propertyType || !title || !price || !description || !phone) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    const user = await User.findById(userId);
+    const status = user?.role === 'admin' ? 'active' : 'pending';
 
     const newProperty = new Property({
       user: userId,
@@ -72,6 +76,8 @@ export const createProperty = async (req: Request, res: Response) => {
       price,
       description,
       phone,
+      images: images || [],
+      status,
       location: (longitude !== undefined && latitude !== undefined) ? {
         type: 'Point',
         coordinates: [Number(longitude), Number(latitude)]
