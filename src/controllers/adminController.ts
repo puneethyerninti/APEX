@@ -148,9 +148,31 @@ export const updateApprovalStatus = async (req: Request, res: Response) => {
   }
 };
 
+export const updateUserPortfolio = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { portfolioInvested, portfolioReturns } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { $set: { portfolioInvested: Number(portfolioInvested) || 0, portfolioReturns: Number(portfolioReturns) || 0 } },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'Portfolio updated successfully', user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error updating portfolio' });
+  }
+};
+
 export const getUsersList = async (req: Request, res: Response) => {
   try {
-    const users = await User.find({}, 'name phone email walletBalance role createdAt');
+    const users = await User.find({}, 'name phone email walletBalance portfolioInvested portfolioReturns role createdAt');
     res.json({ users });
   } catch (error) {
     console.error(error);

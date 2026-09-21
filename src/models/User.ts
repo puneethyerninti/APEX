@@ -10,6 +10,8 @@ export interface IUser extends Document {
   profilePicture?: string;
   fcmTokens?: string[];
   apexPlan: 'Free' | 'APEX Plus' | 'APEX Prime';
+  portfolioInvested: number;
+  portfolioReturns: number;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -22,7 +24,9 @@ const UserSchema = new Schema<IUser>(
     walletBalance: { type: Number, default: 0 },
     profilePicture: { type: String },
     fcmTokens: [{ type: String }],
-    apexPlan: { type: String, enum: ['Free', 'APEX Plus', 'APEX Prime'], default: 'Free' }
+    apexPlan: { type: String, enum: ['Free', 'APEX Plus', 'APEX Prime'], default: 'Free' },
+    portfolioInvested: { type: Number, default: 0 },
+    portfolioReturns: { type: Number, default: 0 }
   },
   { timestamps: true }
 );

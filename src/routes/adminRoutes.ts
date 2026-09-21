@@ -7,6 +7,7 @@ import {
   getAllTransactions,
   deleteEntity,
   updateUserWallet,
+  updateUserPortfolio,
   completeTransaction,
   getAllStoreOrders,
   updateStoreOrderStatus,
@@ -31,6 +32,7 @@ router.get('/users', getUsersList);
 router.get('/transactions', getAllTransactions);
 router.delete('/:type/:id', deleteEntity);
 router.post('/users/:id/wallet', updateUserWallet);
+router.post('/users/:id/portfolio', updateUserPortfolio);
 router.put('/transactions/:id/complete', completeTransaction);
 
 // New Routes
