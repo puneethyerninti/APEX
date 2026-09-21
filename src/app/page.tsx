@@ -347,13 +347,7 @@ export default function Home() {
                         </div>
                         <span className="text-[9px] font-bold text-gray-600 tracking-tight">Jobs</span>
                     </Link>
-                    {/* 8: Utility */}
-                    <Link href="/utility" className="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
-                            <i className="fa-solid fa-bolt"></i>
-                        </div>
-                        <span className="text-[9px] font-bold text-gray-600 tracking-tight">Utility</span>
-                    </Link>
+
                 </div>
 
                 {/* ═══ 1. HERO — Welcome + Wallet + Promo Carousel ═══ */}
@@ -580,41 +574,7 @@ export default function Home() {
                                                 </div>
                                             </div>
 
-                                            {/* Payments (BBPS) Section */}
-                                            <div className="mt-4 border border-dashed border-white/20 rounded-xl p-3 relative">
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <h3 className="text-white/80 text-[10px] font-bold uppercase tracking-wider">Payments (BBPS)</h3>
-                                                    <Link href="/utility" className="text-white/90 text-[9px] font-medium flex items-center gap-1 hover:text-white transition-colors">
-                                                        View All <i className="fa-solid fa-arrow-right text-[8px]"></i>
-                                                    </Link>
-                                                </div>
-                                                <div className="grid grid-cols-4 gap-2">
-                                                    <Link href="/utility" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-orange-400 shadow-inner">
-                                                            <i className="fa-solid fa-bolt text-lg"></i>
-                                                        </div>
-                                                        <span className="text-white text-[8px] font-medium leading-tight">Electricity</span>
-                                                    </Link>
-                                                    <Link href="/utility" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-red-400 shadow-inner">
-                                                            <i className="fa-solid fa-fire-flame-simple text-lg"></i>
-                                                        </div>
-                                                        <span className="text-white text-[8px] font-medium leading-tight">Gas</span>
-                                                    </Link>
-                                                    <Link href="/utility" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-green-400 shadow-inner">
-                                                            <i className="fa-solid fa-mobile-screen text-lg"></i>
-                                                        </div>
-                                                        <span className="text-white text-[8px] font-medium leading-tight">Mobile<br />Recharge</span>
-                                                    </Link>
-                                                    <Link href="/utility" className="flex flex-col items-center text-center gap-1.5 cursor-pointer hover:scale-105 transition-transform">
-                                                        <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-pink-400 shadow-inner">
-                                                            <i className="fa-solid fa-satellite-dish text-lg"></i>
-                                                        </div>
-                                                        <span className="text-white text-[8px] font-medium leading-tight">DTH<br />Recharge</span>
-                                                    </Link>
-                                                </div>
-                                            </div>
+
                                         </div>
                                     </div>
                                 </div>
@@ -968,12 +928,12 @@ export default function Home() {
                             <div className="reveal-up delay-100">
                                 <h4 className="font-black text-gray-900 mb-3 uppercase text-[10px] tracking-wider">Ecosystem</h4>
                                 <ul className="space-y-2">
-                                    <li><Link href="/utility" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-chart-line text-[10px] text-apex-purple"></i>Finance</Link></li>
+                                    <li><Link href="/finance" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-chart-line text-[10px] text-apex-purple"></i>Finance</Link></li>
                                     <li><Link href="/realty" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-house-chimney text-[10px] text-apex-purple"></i>Realty</Link></li>
                                     <li><Link href="/academy" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-user-graduate text-[10px] text-apex-purple"></i>Academy</Link></li>
                                     <li><Link href="/store" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-store text-[10px] text-apex-purple"></i>Store</Link></li>
                                     <li><Link href="/matrimony" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-ring text-[10px] text-apex-purple"></i>Matrimony</Link></li>
-                                    <li><Link href="/utility" className="text-gray-500 hover:text-apex-purple text-xs transition-colors flex items-center gap-1.5"><i className="fa-solid fa-bolt text-[10px] text-apex-purple"></i>Utility</Link></li>
+
                                 </ul>
                             </div>
                             {/* Foundation */}

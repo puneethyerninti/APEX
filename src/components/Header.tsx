@@ -15,14 +15,11 @@ const SEARCH_CATALOG = [
   { title: "Digital Marketing", category: "Academy", icon: "fa-bullhorn", href: "/academy" },
   { title: "Premium Villas & Apartments", category: "Realty", icon: "fa-building", href: "/realty" },
   { title: "Commercial Plots", category: "Realty", icon: "fa-map-location-dot", href: "/realty" },
-  { title: "Utility Bill Payments", category: "Services", icon: "fa-bolt", href: "/utility" },
-  { title: "Mobile & DTH Recharge", category: "Services", icon: "fa-mobile-screen", href: "/utility" },
   { title: "Flight & Cab Booking", category: "Travel", icon: "fa-plane", href: "/travel" },
   { title: "Matrimony Prime Plans", category: "Matrimony", icon: "fa-heart", href: "/matrimony" },
   { title: "Charity Foundation", category: "Foundation", icon: "fa-hand-holding-heart", href: "/charity" },
   { title: "Job Portal", category: "Jobs", icon: "fa-briefcase", href: "/jobs" },
   { title: "Store & Groceries", category: "Shop", icon: "fa-store", href: "/store" },
-  { title: "Quick Payments & Send Money", category: "Finance", icon: "fa-indian-rupee-sign", href: "/utility" },
 ];
 
 export default function Header() {
