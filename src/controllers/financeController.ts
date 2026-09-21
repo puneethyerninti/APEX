@@ -407,6 +407,146 @@ export const transferMoney = async (req: Request, res: Response) => {
 };
 
 /**
+ * POST /api/finance/wallet/withdraw
+ * RazorpayX Payouts Integration
+ */
+export const withdrawToBank = async (req: Request, res: Response) => {
+  const { amount, method, destination, note } = req.body;
+  // method: 'UPI' | 'IMPS'
+  // destination: 'user@upi' or '{ account_number, ifsc }'
+
+  if (!amount || amount < 50) {
+    return res.status(400).json({ success: false, error: 'Minimum withdrawal is ₹50' });
+  }
+
+  if (!destination) {
+    return res.status(400).json({ success: false, error: 'Destination account required' });
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const user = await resolveUser(req);
+    if (!user) {
+      await session.abortTransaction();
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const liveUser = await User.findById(user._id).session(session);
+    if (!liveUser) {
+      await session.abortTransaction();
+      return res.status(404).json({ success: false, error: 'User account not found' });
+    }
+
+    if (liveUser.walletBalance < amount) {
+      await session.abortTransaction();
+      return res.status(400).json({ 
+        success: false, 
+        error: `Insufficient balance (₹${liveUser.walletBalance})` 
+      });
+    }
+
+    // Deduct immediately for safety
+    liveUser.walletBalance -= amount;
+    await liveUser.save({ session });
+
+    let razorpayPayoutId = 'simulated_' + Date.now();
+    let status = 'processing';
+    const rxKeyId = process.env.RAZORPAYX_KEY_ID || process.env.RAZORPAY_KEY_ID;
+    const rxKeySecret = process.env.RAZORPAYX_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET;
+    const accountNumber = process.env.RAZORPAYX_ACCOUNT_NUMBER;
+
+    if (rxKeyId && rxKeySecret && accountNumber) {
+      try {
+        const authHeader = `Basic ${Buffer.from(`${rxKeyId}:${rxKeySecret}`).toString('base64')}`;
+        // 1. Create Contact
+        const contactRes = await axios.post('https://api.razorpay.com/v1/contacts', {
+          name: liveUser.name || 'APEX User',
+          contact: liveUser.phone,
+          type: 'customer',
+          reference_id: liveUser._id.toString()
+        }, { headers: { Authorization: authHeader } });
+
+        // 2. Create Fund Account
+        const fundDetails = method === 'UPI' 
+          ? { account_type: 'vpa', vpa: { address: destination } }
+          : { account_type: 'bank_account', bank_account: destination };
+          
+        const fundRes = await axios.post('https://api.razorpay.com/v1/fund_accounts', {
+          contact_id: contactRes.data.id,
+          ...fundDetails
+        }, { headers: { Authorization: authHeader } });
+
+        // 3. Initiate Payout
+        const payoutRes = await axios.post('https://api.razorpay.com/v1/payouts', {
+          account_number: accountNumber,
+          fund_account_id: fundRes.data.id,
+          amount: amount * 100,
+          currency: 'INR',
+          mode: method,
+          purpose: 'payout',
+          queue_if_low_balance: true,
+          reference_id: `wth_${Date.now()}`
+        }, { headers: { Authorization: authHeader } });
+
+        razorpayPayoutId = payoutRes.data.id;
+        status = payoutRes.data.status; // 'processing', 'queued', 'processed'
+      } catch (rxError: any) {
+        console.error('RazorpayX Error:', rxError?.response?.data || rxError.message);
+        await session.abortTransaction();
+        return res.status(500).json({ success: false, error: 'Payment gateway error. Contact support.' });
+      }
+    } else {
+      console.warn('RazorpayX keys missing. Falling back to simulated payout.');
+      status = 'pending';
+    }
+
+    const transaction = await Transaction.create([{
+      user: liveUser._id,
+      amount,
+      type: 'debit',
+      category: 'withdrawal',
+      referenceId: razorpayPayoutId,
+      status: status as any,
+      metadata: { method, destination, note }
+    }], { session });
+
+    await session.commitTransaction();
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${liveUser._id}`).emit('wallet_update', {
+        amount,
+        type: 'debit',
+        message: `₹${amount} withdrawal initiated`,
+        newBalance: liveUser.walletBalance
+      });
+    }
+
+    await createNotification(
+      liveUser._id.toString(),
+      'Withdrawal Initiated',
+      `Your request to withdraw ₹${amount} to ${method} is being processed.`,
+      'success'
+    );
+
+    res.json({
+      success: true,
+      message: 'Withdrawal initiated successfully',
+      newBalance: liveUser.walletBalance,
+      transaction: transaction[0]
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('withdrawToBank Error:', error);
+    res.status(500).json({ success: false, error: 'Server error processing withdrawal' });
+  } finally {
+    session.endSession();
+  }
+};
+
+/**
  * POST /api/finance/wallet/pay-merchant
  * Direct QR scan & pay using wallet balance.
  */

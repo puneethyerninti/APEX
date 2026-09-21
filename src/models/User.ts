@@ -12,6 +12,19 @@ export interface IUser extends Document {
   apexPlan: 'Free' | 'APEX Plus' | 'APEX Prime';
   portfolioInvested: number;
   portfolioReturns: number;
+  isOnline?: boolean;
+  vehicleDetails?: {
+    make: string;
+    model: string;
+    plate: string;
+    color: string;
+  };
+  currentLocation?: {
+    lat: number;
+    lng: number;
+    heading?: number;
+    updatedAt?: Date;
+  };
 }
 
 const UserSchema = new Schema<IUser>(
@@ -26,7 +39,21 @@ const UserSchema = new Schema<IUser>(
     fcmTokens: [{ type: String }],
     apexPlan: { type: String, enum: ['Free', 'APEX Plus', 'APEX Prime'], default: 'Free' },
     portfolioInvested: { type: Number, default: 0 },
-    portfolioReturns: { type: Number, default: 0 }
+    portfolioReturns: { type: Number, default: 0 },
+    // Driver fields
+    isOnline: { type: Boolean, default: false },
+    vehicleDetails: {
+      make: String,
+      model: String,
+      plate: String,
+      color: String
+    },
+    currentLocation: {
+      lat: Number,
+      lng: Number,
+      heading: Number,
+      updatedAt: Date
+    }
   },
   { timestamps: true }
 );

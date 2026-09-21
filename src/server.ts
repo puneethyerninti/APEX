@@ -123,77 +123,20 @@ io.on('connection', (socket: AuthenticatedSocket) => {
 
   // --- TRAVELS REAL-TIME CAB DRIVER SYSTEM ---
   
-  socket.on('driver_online', (data) => {
-    // SECURITY: Ideally, we should verify the user is a registered driver in DB.
+  socket.on('driver_online', () => {
     socket.join('driver_room');
     console.log(`Driver ${socket.user?.dbId} is online`);
   });
 
-  socket.on('request_ride', async (data) => {
-    const riderId = socket.user?.dbId;
-    if (!riderId) return;
-    const { rideId, origin, destination, fare, riderName, phone } = data;
-    console.log(`Rider ${riderId} requesting ride ${rideId}`);
-    
-    // Broadcast to the driver room (pilot driver will receive this)
-    io.to('driver_room').emit('new_ride_request', {
-      rideId,
-      origin,
-      destination,
-      fare,
-      riderId,
-      riderName,
-      phone,
-      timestamp: new Date().toISOString()
-    });
-  });
-
-  socket.on('accept_ride', async (data) => {
-    const { rideId, driverId, driverName, riderId } = data;
-    
-    try {
-      await TravelBooking.findByIdAndUpdate(rideId, { 
-        status: 'driver_accepted', 
-        driverName: driverName 
-      });
-      io.to('admin_room').emit('admin_data_refresh');
-      
-      // Notify rider
-      io.to(`user_${riderId}`).emit(`ride_update_${rideId}`, { 
-        status: 'driver_accepted', 
-        driverName,
-        message: `${driverName} has accepted your ride!`
-      });
-    } catch(err) {
-      console.error(err);
-    }
-  });
-
   socket.on('driver_location_update', (data) => {
-    const { rideId, riderId, lat, lng, bearing } = data;
+    const { rideId, riderId, lat, lng, heading } = data;
     // Forward driver's live GPS directly to the specific rider
     io.to(`user_${riderId}`).emit(`ride_update_${rideId}`, {
       lat,
       lng,
-      bearing,
+      heading,
       timestamp: new Date().toISOString()
     });
-  });
-
-  socket.on('update_ride_status', async (data) => {
-    const { rideId, riderId, status } = data; // status: 'en_route_to_pickup', 'arrived', 'en_route', 'completed'
-    
-    try {
-      await TravelBooking.findByIdAndUpdate(rideId, { status });
-      io.to('admin_room').emit('admin_data_refresh');
-      
-      io.to(`user_${riderId}`).emit(`ride_update_${rideId}`, { 
-        status,
-        timestamp: new Date().toISOString()
-      });
-    } catch(err) {
-      console.error(err);
-    }
   });
 
   socket.on('disconnect', () => {

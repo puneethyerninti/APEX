@@ -8,7 +8,8 @@ import {
   getUserTransactions, 
   getMyQrPayload, 
   createRazorpayOrder, 
-  verifyRazorpayPayment 
+  verifyRazorpayPayment,
+  withdrawToBank
 } from '../controllers/financeController';
 
 import { handleRazorpayWebhook } from '../controllers/webhookController';
@@ -21,6 +22,7 @@ router.post('/wallet/deduct', deductMoney);
 router.post('/wallet/add', addMoney);
 router.post('/wallet/transfer', transferMoney);
 router.post('/wallet/pay-merchant', payMerchantWithWallet);
+router.post('/wallet/withdraw', withdrawToBank);
 
 // Passbook & Receive QR
 router.get('/transactions', getUserTransactions);
