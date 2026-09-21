@@ -2,8 +2,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { io, Socket } from 'socket.io-client';
-import api from '@/services/api';
-import Map, { Source, Layer, Marker } from 'react-map-gl';
+import { api } from '@/services/api';
+import Map, { Source, Layer, Marker } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 export default function DriverPortal() {
