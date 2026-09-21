@@ -26,7 +26,7 @@ export default function Page() {
 
   const fetchProperties = async () => {
     try {
-      const res = await api.get('/realty');
+      const res = await api.get('/realty/property/all');
       setProperties(res.data.properties || []);
     } catch (e) {
       console.error(e);
@@ -162,7 +162,7 @@ export default function Page() {
                     {properties.map((prop) => (
                         <div key={prop._id} className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" onClick={() => openInquiry(prop._id, `${prop.title} (₹${prop.price})`)}>
                             <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
-                                <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80" alt={prop.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                <img src={prop.images && prop.images.length > 0 ? prop.images[0] : "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80"} alt={prop.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                 <span className="absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-3 py-1 rounded uppercase tracking-wider">{prop.listingType}</span>
                             </div>
                             <div className="p-4">

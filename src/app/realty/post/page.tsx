@@ -17,6 +17,24 @@ export default function PostPropertyPage() {
         description: '',
         phone: ''
     });
+    const [images, setImages] = useState<string[]>([]);
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const files = Array.from(e.target.files).slice(0, 3 - images.length);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setImages(prev => [...prev, reader.result as string]);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    };
+    
+    const removeImage = (index: number) => {
+        setImages(images.filter((_, i) => i !== index));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,7 +49,8 @@ export default function PostPropertyPage() {
             await api.post('/realty/property', {
                 userId: user._id || user.uid,
                 ...formData,
-                price: Number(formData.price)
+                price: Number(formData.price),
+                images
             });
             setIsSuccess(true);
             setTimeout(() => {
@@ -116,6 +135,24 @@ export default function PostPropertyPage() {
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1">Your Contact Number</label>
                                 <input type="tel" required pattern="[0-9]{10}" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="10-digit mobile number" className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-medium text-gray-900" />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1">Images (Max 3)</label>
+                                <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
+                                    {images.map((img, idx) => (
+                                        <div key={idx} className="relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border border-gray-200">
+                                            <img src={img} alt="Property preview" className="w-full h-full object-cover" />
+                                            <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] hover:bg-red-600 shadow-sm"><i className="fa-solid fa-times"></i></button>
+                                        </div>
+                                    ))}
+                                    {images.length < 3 && (
+                                        <label className="w-20 h-20 flex-shrink-0 flex items-center justify-center border-2 border-dashed border-emerald-200 rounded-xl text-emerald-500 hover:bg-emerald-50 cursor-pointer transition-colors">
+                                            <i className="fa-solid fa-camera text-xl"></i>
+                                            <input type="file" multiple accept="image/*" onChange={handleImageChange} className="hidden" />
+                                        </label>
+                                    )}
+                                </div>
                             </div>
 
                             <button type="submit" disabled={loading} className="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all mt-4 text-sm flex justify-center items-center gap-2">
