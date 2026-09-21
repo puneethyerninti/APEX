@@ -22,6 +22,8 @@ export default function Page() {
   
   const [pickupLocation, setPickupLocation] = useState('');
   const [destinationLocation, setDestinationLocation] = useState('');
+  const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [destCoords, setDestCoords] = useState<{lat: number, lng: number} | null>(null);
   
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   
@@ -46,14 +48,14 @@ export default function Page() {
   useEffect(() => {
     if (activeRideId && socket) {
       const handleRideUpdate = (data: any) => {
-        if (data.status === 'driver_accepted') {
+        if (data.status === 'accepted') {
           setRideStatus('driver_found');
-          setDriverInfo(data.driverName);
-        } else if (data.status === 'en_route_to_pickup') {
+          setDriverInfo(data.driverId?.name || data.driverName || 'Driver');
+        } else if (data.status === 'arrived') {
           setRideStatus('driver_found');
-        } else if (data.status === 'en_route') {
+        } else if (data.status === 'in_progress') {
           setRideStatus('en_route');
-        } else if (data.status === 'completed' || data.status === 'arrived') {
+        } else if (data.status === 'completed' || data.status === 'cancelled') {
           setRideStatus('completed');
         }
         
@@ -137,12 +139,16 @@ export default function Page() {
   const onPickupSelect = (location: { address: string; lat: number; lng: number }) => {
     setPickupLocation(location.address);
     setUserLocation({ lat: location.lat, lng: location.lng });
+    setPickupCoords({ lat: location.lat, lng: location.lng });
   };
 
   const onDestSelect = (location: { address: string; lat: number; lng: number }) => {
     setDestinationLocation(location.address);
+    setDestCoords({ lat: location.lat, lng: location.lng });
     if (userLocation) {
         calculateRouteAndFare(userLocation, { lat: location.lat, lng: location.lng });
+    } else if (pickupCoords) {
+        calculateRouteAndFare(pickupCoords, { lat: location.lat, lng: location.lng });
     }
   };
 
@@ -154,20 +160,45 @@ export default function Page() {
     }
     
     setIsBooking(true);
-    
+    let fare = 1500; // default fare for bus/train/flight
+    if (type.includes('Mini')) fare = estimatedFare.mini;
+    else if (type.includes('XL')) fare = estimatedFare.xl;
+
     try {
-        let fare = 1500; // default fare for bus/train/flight
-        if (type.includes('Mini')) fare = estimatedFare.mini;
-        else if (type.includes('XL')) fare = estimatedFare.xl;
-        
-        // Initiate Razorpay
+        if (type.includes('Ride')) {
+            // New Phase 3: Uber-Style Direct Booking via Ride API (No upfront Razorpay)
+            if (!pickupCoords || !destCoords) {
+                alert("Please select valid pickup and destination locations.");
+                setIsBooking(false);
+                return;
+            }
+
+            const res = await api.post('/travels/rides', {
+                userId: user._id || user.uid,
+                pickup: { address: pickupLocation, lat: pickupCoords.lat, lng: pickupCoords.lng },
+                dropoff: { address: destinationLocation, lat: destCoords.lat, lng: destCoords.lng },
+                fare,
+                distance: parseFloat((distanceText || '0').replace(' km', '')) * 1000,
+                duration: parseFloat((durationText || '0').replace(' mins', '')) * 60,
+                path: routeGeometry
+            });
+
+            if (res.data.success) {
+                setRideStatus('searching');
+                setActiveRideId(res.data.ride._id);
+            }
+            setIsBooking(false);
+            return;
+        }
+
+        // Old Phase 2.5 Logic: Initiate Razorpay for Bus/Train/Flight
         const orderRes = await api.post('/finance/razorpay/order', {
             amount: fare,
             userId: user._id || user.uid,
             category: 'travel_booking',
             serviceName: `Booking for ${type}`,
             metadata: {
-                type: type.includes('Ride') ? 'Cab' : type.includes('Bus') ? 'Bus' : type.includes('Train') ? 'Train' : 'Flight',
+                type: type.includes('Bus') ? 'Bus' : type.includes('Train') ? 'Train' : 'Flight',
                 vehicleType: type,
                 origin: pickupLocation || 'Current Location',
                 destination: destinationLocation || 'Selected Destination',
@@ -195,29 +226,10 @@ export default function Page() {
                     });
                     
                     if (verifyRes.data.success) {
-                        const booking = verifyRes.data.fulfillmentData;
-                        const bookingId = booking?._id || `temp_${Date.now()}`;
-
-                        if (type.includes('Ride') && socket) {
-                            setRideStatus('searching');
-                            const rideId = bookingId; // Use actual DB booking ID to link
-                            socket.emit('request_ride', {
-                                rideId,
-                                origin: pickupLocation || 'Current Location',
-                                destination: destinationLocation || 'Selected Destination',
-                                fare,
-                                riderId: user._id || user.uid,
-                                riderName: user.name || "APEX User",
-                                phone: user.phone || ""
-                            });
-                            setActiveRideId(rideId);
-                        } else {
-                            // Static success for non-cab
-                            setBookingSuccess({
-                                type,
-                                message: `Your ${type} has been successfully booked!`
-                            });
-                        }
+                        setBookingSuccess({
+                            type,
+                            message: `Your ${type} has been successfully booked!`
+                        });
                     }
                 } catch (err) {
                     console.error("Verification failed", err);
@@ -230,14 +242,8 @@ export default function Page() {
                 name: user.name || "APEX User",
                 contact: user.phone || ""
             },
-            theme: {
-                color: "#9333ea"
-            },
-            modal: {
-                ondismiss: function() {
-                    setIsBooking(false);
-                }
-            }
+            theme: { color: "#9333ea" },
+            modal: { ondismiss: () => setIsBooking(false) }
         };
 
         const rzp = new (window as any).Razorpay(options);

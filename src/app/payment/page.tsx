@@ -62,6 +62,12 @@ function PaymentContent() {
     const [sendNote, setSendNote] = useState('');
     const [sendLoading, setSendLoading] = useState(false);
 
+    const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+    const [withdrawMethod, setWithdrawMethod] = useState<'UPI' | 'IMPS'>('UPI');
+    const [withdrawDestination, setWithdrawDestination] = useState('');
+    const [withdrawAmount, setWithdrawAmount] = useState('');
+    const [withdrawLoading, setWithdrawLoading] = useState(false);
+
     const [isMyQrOpen, setIsMyQrOpen] = useState(false);
     const [myQrUpi, setMyQrUpi] = useState('');
 
@@ -445,6 +451,49 @@ function PaymentContent() {
         }
     };
 
+    const handleWithdrawSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const amountNum = Number(withdrawAmount);
+
+        if (!amountNum || amountNum < 50) {
+            showToast('Minimum withdrawal amount is ₹50', 'warning');
+            return;
+        }
+        if (walletBalance < amountNum) {
+            showToast('Insufficient wallet balance', 'error');
+            return;
+        }
+        if (!withdrawDestination.trim()) {
+            showToast('Please enter a valid destination', 'warning');
+            return;
+        }
+
+        setWithdrawLoading(true);
+        try {
+            const res = await api.post('/finance/wallet/withdraw', {
+                amount: amountNum,
+                method: withdrawMethod,
+                destination: withdrawDestination,
+                userId: user?.uid || user?._id
+            });
+
+            if (res.data?.success) {
+                showToast(`₹${amountNum} withdrawal initiated!`, 'success');
+                setIsWithdrawOpen(false);
+                setWithdrawAmount('');
+                setWithdrawDestination('');
+                fetchBalance();
+                fetchTransactions();
+            } else {
+                showToast(res.data?.error || 'Withdrawal failed', 'error');
+            }
+        } catch (err: any) {
+            showToast(err.response?.data?.error || 'Failed to initiate withdrawal', 'error');
+        } finally {
+            setWithdrawLoading(false);
+        }
+    };
+
     const handleOpenMyQr = async () => {
         setIsMyQrOpen(true);
         const phone = user?.phone?.replace(/[^\d]/g, '').slice(-10) || '9494273763';
@@ -507,7 +556,13 @@ function PaymentContent() {
                             <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
                                 <i className="fa-solid fa-paper-plane text-emerald-600"></i>
                             </div>
-                            <span className="text-[10px] font-bold">Send</span>
+                            <span className="text-[10px] font-bold">To Mobile</span>
+                        </button>
+                        <button onClick={() => setIsWithdrawOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors text-gray-700">
+                            <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
+                                <i className="fa-solid fa-building-columns text-emerald-600"></i>
+                            </div>
+                            <span className="text-[10px] font-bold">To Bank/UPI</span>
                         </button>
                         <button onClick={handleOpenMyQr} className="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors text-gray-700">
                             <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
@@ -575,6 +630,28 @@ function PaymentContent() {
                                 {scannerError}
                             </div>
                         )}
+                    </div>
+                    <div className="p-4 bg-black/80 absolute bottom-0 w-full z-50 flex flex-col items-center pb-8 border-t border-white/10">
+                        <p className="text-white/70 text-[10px] font-bold mb-3 uppercase tracking-widest">Or enter UPI ID manually</p>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const input = (document.getElementById('manual-upi-input') as HTMLInputElement)?.value;
+                            if (input) {
+                                stopScanner();
+                                setScannedPayee({ pa: input, pn: 'Merchant', isApex: false, raw: `upi://pay?pa=${input}` });
+                            }
+                        }} className="w-full max-w-sm flex gap-2">
+                            <input 
+                                id="manual-upi-input"
+                                type="text" 
+                                placeholder="e.g. name@okhdfc" 
+                                className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500 placeholder-white/40 font-bold"
+                                required 
+                            />
+                            <button type="submit" className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-colors">
+                                Pay
+                            </button>
+                        </form>
                     </div>
                 </div>
             )}
@@ -721,6 +798,57 @@ function PaymentContent() {
                     </form>
                 </div>
             )}
+
+            {/* WITHDRAW MODAL */}
+            {isWithdrawOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-end justify-center animate-[fadeIn_0.2s_ease-out]">
+                    <form onSubmit={handleWithdrawSubmit} className="bg-white w-full max-w-md rounded-t-3xl p-6 flex flex-col gap-4 pb-8 animate-[slideUp_0.3s_ease-out]">
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="font-black text-gray-900 text-lg">Withdraw to Bank/UPI</h3>
+                            <button type="button" onClick={() => setIsWithdrawOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                            <button type="button" onClick={() => setWithdrawMethod('UPI')} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${withdrawMethod === 'UPI' ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>UPI</button>
+                            <button type="button" onClick={() => setWithdrawMethod('IMPS')} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${withdrawMethod === 'IMPS' ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>Bank Account</button>
+                        </div>
+
+                        <input
+                            type="text"
+                            value={withdrawDestination}
+                            onChange={(e) => setWithdrawDestination(e.target.value)}
+                            placeholder={withdrawMethod === 'UPI' ? "Enter UPI ID (e.g. name@okhdfc)" : "Enter Bank Account Number"}
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:border-emerald-500 font-bold"
+                            required
+                        />
+
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <div className="relative flex items-center">
+                                <span className="absolute left-0 text-xl font-black text-gray-400">₹</span>
+                                <input
+                                    type="number"
+                                    value={withdrawAmount}
+                                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                                    placeholder="0"
+                                    className="w-full pl-6 py-1 bg-transparent text-2xl font-black text-gray-900 focus:outline-none"
+                                    required
+                                />
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1">Available balance: ₹{walletBalance.toFixed(2)}</p>
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={withdrawLoading || !withdrawDestination || !withdrawAmount || Number(withdrawAmount) < 50}
+                            className="w-full py-4 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                        >
+                            {withdrawLoading ? 'Processing...' : 'Withdraw Money'}
+                        </button>
+                    </form>
+                </div>
+            )}
+
 
             {/* MY QR MODAL */}
             {isMyQrOpen && (

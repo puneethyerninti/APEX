@@ -347,6 +347,13 @@ export default function Home() {
                         </div>
                         <span className="text-[9px] font-bold text-gray-600 tracking-tight">Jobs</span>
                     </Link>
+                    {/* 8: Utility (Coming Soon) */}
+                    <button onClick={() => window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Utility Services Coming Soon!', type: 'info' } }))} className="flex flex-col items-center flex-shrink-0 text-center gap-1 group">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-500 to-gray-600 text-white flex items-center justify-center text-sm shadow-sm hover:scale-105 active:scale-95 transition-transform">
+                            <i className="fa-solid fa-bolt"></i>
+                        </div>
+                        <span className="text-[9px] font-bold text-gray-600 tracking-tight text-center leading-tight">Utility<br />Services</span>
+                    </button>
 
                 </div>
 
