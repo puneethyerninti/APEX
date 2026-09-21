@@ -12,6 +12,8 @@ interface UserProfile {
   profilePicture?: string;
   role?: string;
   apexPlan?: string;
+  portfolioInvested?: number;
+  portfolioReturns?: number;
 }
 
 interface AppState {

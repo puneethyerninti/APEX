@@ -1,13 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAppStore } from '@/store/useAppStore';
 import { io, Socket } from 'socket.io-client';
 import { api } from '@/services/api';
 import Map, { Source, Layer, Marker } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import Cookies from 'js-cookie';
 
 export default function DriverPortal() {
-  const { user, token } = useAuth();
+  const user = useAppStore(state => state.user);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isOnline, setIsOnline] = useState(false);
   const [activeRide, setActiveRide] = useState<any>(null);
@@ -28,9 +29,10 @@ export default function DriverPortal() {
 
   // Socket init
   useEffect(() => {
-    if (!token) return;
+    const userToken = Cookies.get('token');
+    if (!userToken) return;
     const s = io(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000', {
-      auth: { token }
+      auth: { token: userToken }
     });
     setSocket(s);
 
@@ -43,7 +45,7 @@ export default function DriverPortal() {
     });
 
     return () => { s.disconnect(); };
-  }, [token]);
+  }, []);
 
   // Fetch active ride on load
   useEffect(() => {
