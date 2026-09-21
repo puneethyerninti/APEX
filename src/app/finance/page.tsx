@@ -13,6 +13,12 @@ export default function FinancePage() {
   const [leadName, setLeadName] = React.useState('');
   const [leadMobile, setLeadMobile] = React.useState('');
 
+  const invested = user?.portfolioInvested || 0;
+  const returns = user?.portfolioReturns || 0;
+  const total = invested + returns;
+  const percent = invested > 0 ? ((returns / invested) * 100).toFixed(1) : 0;
+  const isPositive = returns >= 0;
+
   const handleOpenLeadForm = (e: React.MouseEvent, type: string) => {
       e.preventDefault();
       setLeadServiceType(type);
@@ -71,17 +77,22 @@ export default function FinancePage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
               <p className="text-blue-100 text-[10px] font-bold uppercase tracking-wider mb-1">Total Portfolio Value</p>
               <div className="flex items-end gap-2 mb-3">
-                  <h2 className="text-3xl font-black tracking-tight">₹12,45,600</h2>
-                  <span className="text-green-300 text-xs font-bold mb-1 flex items-center gap-1"><i className="fa-solid fa-arrow-trend-up"></i> +4.2%</span>
+                  <h2 className="text-3xl font-black tracking-tight">₹{total.toLocaleString('en-IN')}</h2>
+                  {total > 0 && (
+                    <span className={`${isPositive ? 'text-green-300' : 'text-red-300'} text-xs font-bold mb-1 flex items-center gap-1`}>
+                        <i className={`fa-solid ${isPositive ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'}`}></i> 
+                        {isPositive ? '+' : ''}{percent}%
+                    </span>
+                  )}
               </div>
               <div className="flex gap-4 border-t border-white/20 pt-3 mt-1">
                   <div>
                       <p className="text-blue-100 text-[9px] uppercase">Invested</p>
-                      <p className="font-bold text-sm">₹10,00,000</p>
+                      <p className="font-bold text-sm">₹{invested.toLocaleString('en-IN')}</p>
                   </div>
                   <div>
                       <p className="text-blue-100 text-[9px] uppercase">Returns</p>
-                      <p className="font-bold text-sm text-green-300">₹2,45,600</p>
+                      <p className={`font-bold text-sm ${isPositive ? 'text-green-300' : 'text-red-300'}`}>₹{returns.toLocaleString('en-IN')}</p>
                   </div>
               </div>
           </div>

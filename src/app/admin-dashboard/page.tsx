@@ -51,7 +51,7 @@ export default function AdminDashboardPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'wallet' | 'job' | null>(null);
+  const [modalType, setModalType] = useState<'wallet' | 'portfolio' | 'job' | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [formData, setFormData] = useState({ amount: '', title: '', company: '', location: '' });
 
@@ -182,6 +182,14 @@ export default function AdminDashboardPage() {
       try {
         await api.post(`/admin/users/${selectedUser._id}/wallet`, { amount: Number(formData.amount) });
         window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Wallet updated', type: 'success' } }));
+      } catch (err) { console.error(err); }
+    } else if (modalType === 'portfolio') {
+      try {
+        await api.post(`/admin/users/${selectedUser._id}/portfolio`, { 
+            portfolioInvested: Number(formData.amount),
+            portfolioReturns: Number(formData.title)
+        });
+        window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Portfolio updated', type: 'success' } }));
       } catch (err) { console.error(err); }
     }
     setIsModalOpen(false);
@@ -674,6 +682,7 @@ export default function AdminDashboardPage() {
                                       <th className="px-5 sm:px-6 py-3.5 font-semibold">User</th>
                                       <th className="px-5 sm:px-6 py-3.5 font-semibold">Phone</th>
                                       <th className="px-5 sm:px-6 py-3.5 font-semibold">Wallet Balance</th>
+                                      <th className="px-5 sm:px-6 py-3.5 font-semibold">Portfolio</th>
                                       <th className="px-5 sm:px-6 py-3.5 font-semibold">Role</th>
                                       <th className="px-5 sm:px-6 py-3.5 text-right font-semibold">Actions</th>
                                   </tr>
@@ -692,6 +701,10 @@ export default function AdminDashboardPage() {
                                         <td className="px-5 sm:px-6 py-4 font-medium text-gray-700">{u.phone}</td>
                                         <td className="px-5 sm:px-6 py-4 font-bold text-green-600">₹{u.walletBalance}</td>
                                         <td className="px-5 sm:px-6 py-4">
+                                            <p className="text-xs font-bold text-indigo-600">Inv: ₹{u.portfolioInvested || 0}</p>
+                                            <p className="text-xs font-bold text-emerald-600">Ret: ₹{u.portfolioReturns || 0}</p>
+                                        </td>
+                                        <td className="px-5 sm:px-6 py-4">
                                             {u.role === 'admin' ? (
                                               <span className="inline-flex items-center px-2 py-0.5 rounded bg-red-50 text-red-700 text-[10px] font-black border border-red-100 uppercase">Admin</span>
                                             ) : (
@@ -701,6 +714,7 @@ export default function AdminDashboardPage() {
                                         <td className="px-5 sm:px-6 py-4 text-right">
                                             <div className="flex justify-end gap-2">
                                               <button onClick={() => { setSelectedUser(u); setFormData({...formData, amount: u.walletBalance}); setModalType('wallet'); setIsModalOpen(true); }} className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition-colors"><i className="fa-solid fa-wallet text-xs"></i></button>
+                                              <button onClick={() => { setSelectedUser(u); setFormData({...formData, amount: String(u.portfolioInvested || 0), title: String(u.portfolioReturns || 0)}); setModalType('portfolio' as any); setIsModalOpen(true); }} className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center justify-center transition-colors"><i className="fa-solid fa-chart-line text-xs"></i></button>
                                               <button onClick={() => handleDelete('user', u._id)} className="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-colors"><i className="fa-solid fa-trash text-xs"></i></button>
                                             </div>
                                         </td>
@@ -1010,13 +1024,26 @@ export default function AdminDashboardPage() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-[slideUp_0.3s_ease-out]">
-            <h3 className="font-black text-xl mb-1 text-gray-900">{modalType === 'wallet' ? 'Edit Wallet Balance' : 'Create Entity'}</h3>
-            <p className="text-xs text-gray-500 mb-5">{modalType === 'wallet' ? `Updating wallet for ${selectedUser?.name}` : ''}</p>
+            <h3 className="font-black text-xl mb-1 text-gray-900">{modalType === 'wallet' ? 'Edit Wallet Balance' : modalType === 'portfolio' ? 'Edit Portfolio' : 'Create Entity'}</h3>
+            <p className="text-xs text-gray-500 mb-5">{modalType === 'wallet' ? `Updating wallet for ${selectedUser?.name}` : modalType === 'portfolio' ? `Updating portfolio for ${selectedUser?.name}` : ''}</p>
             
             {modalType === 'wallet' && (
               <div className="mb-6">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Amount (₹)</label>
                 <input type="number" value={formData.amount} onChange={e=>setFormData({...formData, amount: e.target.value})} className="w-full bg-gray-50 border border-gray-200 focus:border-[#A0684A] focus:ring-1 focus:ring-[#A0684A] rounded-xl px-4 py-3 font-bold text-gray-900 transition-colors outline-none" placeholder="Enter amount" />
+              </div>
+            )}
+
+            {modalType === 'portfolio' && (
+              <div className="mb-6 space-y-3">
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Invested Amount (₹)</label>
+                  <input type="number" value={formData.amount} onChange={e=>setFormData({...formData, amount: e.target.value})} className="w-full bg-gray-50 border border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-3 font-bold text-gray-900 transition-colors outline-none" placeholder="Total invested" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Total Returns (₹)</label>
+                  <input type="number" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} className="w-full bg-gray-50 border border-gray-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-4 py-3 font-bold text-gray-900 transition-colors outline-none" placeholder="Total returns" />
+                </div>
               </div>
             )}
             
