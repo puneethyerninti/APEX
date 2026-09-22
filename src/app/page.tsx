@@ -248,12 +248,12 @@ export default function Home() {
                                 </h1>
                             </div>
                             
-                            <div className="flex items-center gap-3">
-                                <a href="https://www.apextradingcompanystore.co.in/cart" target="_blank" rel="noopener noreferrer" className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-5 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-lg text-[11px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-pink-400/30">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <a href="https://www.apextradingcompanystore.co.in/cart" target="_blank" rel="noopener noreferrer" className="whitespace-nowrap bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-lg text-[10px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-pink-400/30">
                                     <i className="fa-solid fa-cart-shopping"></i> CART
                                 </a>
-                                <button onClick={(e) => handleOpenLeadForm(e, 'Sell on APEX')} className="bg-white/20 hover:bg-white/30 text-white font-bold py-2 px-5 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-lg text-[11px] md:text-xs hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-white/40">
-                                    <i className="fa-solid fa-store"></i> Sell on APEX
+                                <button onClick={(e) => handleOpenLeadForm(e, 'Sell on APEX')} className="whitespace-nowrap bg-white/20 hover:bg-white/30 text-white font-bold py-2 px-4 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-lg text-[10px] md:text-xs hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-white/40">
+                                    <i className="fa-solid fa-store"></i> SELL
                                 </button>
                             </div>
                             
