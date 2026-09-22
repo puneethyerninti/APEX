@@ -179,14 +179,7 @@ export default function Page() {
                 </div>
                 <div className="p-3">
                     <h4 className="font-black text-xs text-gray-900 truncate mb-1">Help Build a Rural School</h4>
-                    <p className="text-[9px] text-gray-500 mb-3 truncate">APEX Education Initiative</p>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
-                        <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: "75%" }}></div>
-                    </div>
-                    <div className="flex items-end justify-between">
-                        <span className="text-gray-900 font-bold text-[10px]">₹7.5L <span className="font-normal text-gray-400">raised</span></span>
-                        <span className="text-[9px] text-gray-400 font-bold">75%</span>
-                    </div>
+                    <p className="text-[9px] text-gray-500 mb-1 truncate">APEX Education Initiative</p>
                 </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-[220px] flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => openDonation('Assam Flood Relief Fund')}>
@@ -195,14 +188,7 @@ export default function Page() {
                 </div>
                 <div className="p-3">
                     <h4 className="font-black text-xs text-gray-900 truncate mb-1">Assam Flood Relief Fund</h4>
-                    <p className="text-[9px] text-gray-500 mb-3 truncate">Disaster Management Team</p>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
-                        <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: "40%" }}></div>
-                    </div>
-                    <div className="flex items-end justify-between">
-                        <span className="text-gray-900 font-bold text-[10px]">₹4.0L <span className="font-normal text-gray-400">raised</span></span>
-                        <span className="text-[9px] text-gray-400 font-bold">40%</span>
-                    </div>
+                    <p className="text-[9px] text-gray-500 mb-1 truncate">Disaster Management Team</p>
                 </div>
             </div>
         </div>

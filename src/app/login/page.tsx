@@ -10,6 +10,7 @@ export default function LoginPage() {
     const router = useRouter();
     const [step, setStep] = useState<'phone' | 'otp'>('phone');
     const [phone, setPhone] = useState('');
+    const [name, setName] = useState('');
     const [otp, setOtp] = useState(['', '', '', '', '', '']); // Firebase OTP is 6 digits
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
@@ -85,8 +86,13 @@ export default function LoginPage() {
             return;
         }
 
-        if (phone.length === 10) {
+        if (phone.length === 10 && name.trim().length > 1) {
+            import('@/store/useAppStore').then(({ useAppStore }) => {
+                useAppStore.getState().setUser({ name: name.trim(), phone: `+91${phone}`, uid: '' });
+            });
             await sendOtpRequest();
+        } else {
+            setErrorMsg('Please enter a valid Name and 10-digit Mobile Number.');
         }
     };
 
@@ -175,6 +181,21 @@ export default function LoginPage() {
                 {step === 'phone' ? (
                     <form onSubmit={handlePhoneSubmit} className="flex flex-col gap-5 animate-[slideUp_0.3s_ease-out]">
                         <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wider">Full Name</label>
+                            <div className="relative flex items-center">
+                                <span className="absolute left-4 text-gray-500 font-bold text-sm"><i className="fa-regular fa-user"></i></span>
+                                <input 
+                                    type="text" 
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Enter your full name"
+                                    className="w-full bg-[#F4F6FB] border-0 rounded-xl py-3.5 pl-12 pr-4 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#6C3FC5]/30 transition-all"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div>
                             <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wider">Mobile Number</label>
                             <div className="relative flex items-center">
                                 <span className="absolute left-4 text-gray-500 font-bold text-sm">+91</span>
@@ -194,7 +215,7 @@ export default function LoginPage() {
 
                         <button 
                             type="submit" 
-                            disabled={phone.length !== 10 || isLoading}
+                            disabled={phone.length !== 10 || name.trim().length < 2 || isLoading}
                             className="w-full bg-[#6C3FC5] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-purple-500/20 hover:bg-[#5a34a8] disabled:opacity-50 disabled:shadow-none transition-all flex justify-center items-center gap-2 mt-2"
                         >
                             {isLoading ? (

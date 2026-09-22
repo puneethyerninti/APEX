@@ -252,6 +252,9 @@ export default function Home() {
                                 <a href="https://www.apextradingcompanystore.co.in/cart" target="_blank" rel="noopener noreferrer" className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-5 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-lg text-[11px] md:text-xs anim-pulse-glow hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-pink-400/30">
                                     <i className="fa-solid fa-cart-shopping"></i> CART
                                 </a>
+                                <button onClick={(e) => handleOpenLeadForm(e, 'Sell on APEX')} className="bg-white/20 hover:bg-white/30 text-white font-bold py-2 px-5 rounded-full inline-flex items-center gap-1.5 transition-colors shadow-lg text-[11px] md:text-xs hover:scale-105 active:scale-95 transform backdrop-blur-sm border border-white/40">
+                                    <i className="fa-solid fa-store"></i> Sell on APEX
+                                </button>
                             </div>
                             
                             {/* Features */}
@@ -1017,6 +1020,7 @@ export default function Home() {
                             <h3 className="text-gray-900 font-black text-xl mb-1">
                                 {leadServiceType === 'Apply PAN' ? 'Apply for PAN Card' : 
                                  leadServiceType === 'PAN Correction' ? 'PAN Card Correction' : 
+                                 leadServiceType === 'Sell on APEX' ? 'Sell on APEX' :
                                  `Apply for ${leadServiceType}`}
                             </h3>
                             <p className="text-gray-500 text-xs">Fill in your details and we will connect you to our expert on WhatsApp.</p>
