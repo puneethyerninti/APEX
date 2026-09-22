@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken';
 import { createNotification } from './notificationController';
 import { fulfillOrder } from '../services/fulfillmentService';
 import { createPendingUtilityTransaction, updateUtilityTransactionStatus } from './utilityController';
+import axios from 'axios';
 
 // Razorpay will be instantiated dynamically to avoid crashing the server on startup if keys are missing
 let razorpayInstance: any = null;
