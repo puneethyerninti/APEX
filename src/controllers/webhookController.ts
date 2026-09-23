@@ -126,13 +126,24 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
       const paymentEntity = payload.payment.entity;
       const razorpayOrderId = paymentEntity.order_id;
       
-      await Transaction.findOneAndUpdate(
+      const failedTx = await Transaction.findOneAndUpdate(
         { razorpayOrderId: razorpayOrderId, status: 'pending' },
         { 
           status: 'failed',
           webhookPayload: req.body
-        }
+        },
+        { new: true }
       );
+      
+      if (failedTx && failedTx.metadata?.utilityTransactionId) {
+          await updateUtilityTransactionStatus(
+            failedTx.metadata.utilityTransactionId,
+            'failed',
+            'Payment failed.',
+            {},
+            req.app.get('io')
+          );
+      }
       console.log(`Webhook: Marked order ${razorpayOrderId} as failed`);
     }
 
