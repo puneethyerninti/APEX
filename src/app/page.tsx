@@ -950,8 +950,13 @@ export default function Home() {
                             <div className="reveal-up delay-200">
                                 <h4 className="font-black text-gray-900 mb-3 uppercase text-[10px] tracking-wider">Foundation</h4>
                                 <ul className="space-y-2">
-                                    <li><Link href="#" className="text-gray-500 hover:text-apex-purple text-xs transition-colors">Our Mission</Link></li>
-                                    <li><Link href="#" className="text-gray-500 hover:text-apex-purple text-xs transition-colors">Project Vidya</Link></li>
+                                    <li>
+                                        <Link href="#" className="text-gray-500 hover:text-apex-purple text-xs transition-colors font-bold">Our Mission</Link>
+                                        <p className="text-[10px] text-gray-400 leading-snug mt-1 border-l-2 border-apex-purple pl-2 ml-1">
+                                            Apex foundation mission. Our aim is to help poor &amp; needy people for Food, shelter &amp; Education through our platform.
+                                        </p>
+                                    </li>
+                                    <li><Link href="#" className="text-gray-500 hover:text-apex-purple text-xs transition-colors mt-2 block">Project Vidya</Link></li>
                                     <li><Link href="#" className="text-gray-500 hover:text-apex-purple text-xs transition-colors">Volunteer</Link></li>
                                     <li><Link href="#" className="text-gray-500 hover:text-apex-purple text-xs transition-colors">Donate</Link></li>
                                     <li><Link href="#" className="text-gray-500 hover:text-apex-purple text-xs transition-colors">CSR Activities</Link></li>

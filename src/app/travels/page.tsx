@@ -233,7 +233,7 @@ export default function Page() {
                     }
                 } catch (err) {
                     console.error("Verification failed", err);
-                    alert("Payment verification failed");
+                    window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Payment verification failed', type: 'error' } }));
                 } finally {
                     setIsBooking(false);
                 }

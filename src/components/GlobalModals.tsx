@@ -148,6 +148,7 @@ export default function GlobalModals() {
                             }
                         } catch (e) {
                             console.error("Verification failed", e);
+                            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Payment verification failed', type: 'error' } }));
                             setCheckoutStep('methods');
                         }
                     },
@@ -170,6 +171,7 @@ export default function GlobalModals() {
             }
         } catch (e) {
             console.error("Failed to initialize payment", e);
+            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Failed to initialize payment', type: 'error' } }));
             setCheckoutStep('methods');
         }
     };
