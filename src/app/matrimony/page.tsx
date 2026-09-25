@@ -366,7 +366,7 @@ export default function Page() {
                                 {/* Use uploaded images or fallback */}
                                 <img src={match.images?.[0] || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80"} alt={match.user?.name} className="w-full h-full object-cover" />
                                 <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-black/80 to-transparent"></div>
-                                <span className="absolute bottom-2 left-2 text-white font-black text-[10px] truncate max-w-[120px]">{match.user?.name} <i className="fa-solid fa-circle-check text-blue-400 ml-0.5"></i></span>
+                                <span className="absolute bottom-2 left-2 text-white font-black text-[10px] truncate max-w-[120px]">{match.user?.name && match.user.name !== 'User' ? match.user.name : (match.profession ? `Verified ${match.profession}` : 'Verified Member')} <i className="fa-solid fa-circle-check text-blue-400 ml-0.5"></i></span>
                             </div>
                             <div className="p-3">
                                 <p className="text-[9px] text-gray-500 mb-1">{match.age} Yrs, {match.height || 'N/A'}</p>
@@ -506,11 +506,11 @@ export default function Page() {
                                 <img src={activeChatProfile.images[0]} alt="Profile" className="w-8 h-8 rounded-full border border-white object-cover shadow-sm" />
                             ) : (
                                 <div className="w-8 h-8 rounded-full border border-white bg-rose-200 text-rose-700 flex items-center justify-center font-black shadow-sm text-xs">
-                                    {activeChatProfile?.user?.name ? activeChatProfile.user.name.substring(0, 2).toUpperCase() : 'U'}
+                                    {activeChatProfile?.user?.name && activeChatProfile.user.name !== 'User' ? activeChatProfile.user.name.substring(0, 2).toUpperCase() : 'VM'}
                                 </div>
                             )}
                             <div>
-                                <h3 className="font-bold text-sm leading-tight">{activeChatProfile?.user?.name || 'User'}</h3>
+                                <h3 className="font-bold text-sm leading-tight">{activeChatProfile?.user?.name && activeChatProfile.user.name !== 'User' ? activeChatProfile.user.name : (activeChatProfile?.profession ? `Verified ${activeChatProfile.profession}` : 'Verified Member')}</h3>
                                 <p className="text-[10px] text-rose-200">
                                     {isTyping ? <span className="animate-pulse">typing...</span> : 'Online'}
                                 </p>
@@ -532,7 +532,7 @@ export default function Page() {
                                             <img src={activeChatProfile.images[0]} alt="Profile" className="w-6 h-6 rounded-full self-end object-cover flex-shrink-0" />
                                         ) : (
                                             <div className="w-6 h-6 rounded-full bg-rose-200 text-rose-700 flex items-center justify-center text-[10px] font-black self-end flex-shrink-0">
-                                                {activeChatProfile?.user?.name ? activeChatProfile.user.name.substring(0, 2).toUpperCase() : 'U'}
+                                                {activeChatProfile?.user?.name && activeChatProfile.user.name !== 'User' ? activeChatProfile.user.name.substring(0, 2).toUpperCase() : 'VM'}
                                             </div>
                                         )
                                     )}
@@ -603,12 +603,12 @@ export default function Page() {
                                                 <img src={chat.profile.images[0]} alt="Profile" className="w-12 h-12 rounded-full object-cover border border-gray-100 flex-shrink-0" />
                                             ) : (
                                                 <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-lg font-black flex-shrink-0 border border-rose-50">
-                                                    {chat.profile.user?.name ? chat.profile.user.name.substring(0, 2).toUpperCase() : 'U'}
+                                                    {chat.profile.user?.name && chat.profile.user.name !== 'User' ? chat.profile.user.name.substring(0, 2).toUpperCase() : 'VM'}
                                                 </div>
                                             )}
                                             <div className="flex-1 overflow-hidden min-w-0">
                                                 <div className="flex justify-between items-center mb-0.5">
-                                                    <h3 className={`font-bold text-sm truncate ${isUnread ? 'text-gray-900' : 'text-gray-700'}`}>{chat.profile.user?.name || 'User'}</h3>
+                                                    <h3 className={`font-bold text-sm truncate ${isUnread ? 'text-gray-900' : 'text-gray-700'}`}>{chat.profile.user?.name && chat.profile.user.name !== 'User' ? chat.profile.user.name : (chat.profile.profession ? `Verified ${chat.profile.profession}` : 'Verified Member')}</h3>
                                                     <span className={`text-[9px] whitespace-nowrap ml-2 ${isUnread ? 'text-rose-600 font-black' : 'text-gray-400'}`}>
                                                         {formatSmartTimestamp(chat.latestMessage.timestamp)}
                                                     </span>
