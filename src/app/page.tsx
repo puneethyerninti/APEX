@@ -955,9 +955,11 @@ export default function Home() {
                                             <i className="fa-solid fa-heart text-orange-500 text-[10px]"></i>
                                             Our Mission
                                         </Link>
-                                        <p className="text-[11px] text-gray-500 leading-relaxed border-l-2 border-orange-400 pl-2.5 ml-1 italic bg-gradient-to-r from-orange-50 to-transparent py-1 rounded-r-md">
-                                            Our aim is to help poor &amp; needy people for <span className="font-bold text-gray-700">Food, Shelter &amp; Education</span> through our platform.
-                                        </p>
+                                        <div className="text-[11px] text-gray-500 leading-relaxed border-l-2 border-orange-400 pl-2.5 ml-1 italic bg-gradient-to-r from-orange-50 to-transparent py-1.5 rounded-r-md space-y-1.5">
+                                            <p><strong>Apex Foundation</strong> is committed to making a positive difference in the lives of people in need.</p>
+                                            <p>Our mission is to support the underprivileged, provide essential assistance, and create opportunities for a better and more dignified life.</p>
+                                            <p className="font-semibold text-gray-700 not-italic">Together, we can help, care, and make a difference.</p>
+                                        </div>
                                     </li>
                                 </ul>
                             </div>
