@@ -9,6 +9,7 @@ import { createNotification } from './notificationController';
 import { fulfillOrder } from '../services/fulfillmentService';
 import { createPendingUtilityTransaction, updateUtilityTransactionStatus } from './utilityController';
 import axios from 'axios';
+import Course from '../models/Course';
 
 // Razorpay will be instantiated dynamically to avoid crashing the server on startup if keys are missing
 let razorpayInstance: any = null;
@@ -721,16 +722,6 @@ export const getMyQrPayload = async (req: Request, res: Response) => {
   }
 };
 
-const COURSE_PRICES: Record<string, number> = {
-  'Spoken English': 4999,
-  'Spoken Hindi': 3999,
-  'Computer Courses': 1200,
-  'Competitive Exams': 1500,
-  'Full-Stack Web Development': 9999,
-  'Data Science & AI/ML': 12499,
-  'Mobile App Development': 20000,
-  'Digital Marketing Masterclass': 7999,
-};
 
 const isUtilityCategory = (category: string) => ['mobile_recharge', 'bbps_payment'].includes(category);
 
@@ -789,8 +780,9 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
 
   // Ensure course enrollment payments are true to their prices
   if (category === 'academy_enrollment' && metadata?.courseName) {
-    const actualPrice = COURSE_PRICES[metadata.courseName];
-    if (actualPrice !== undefined) {
+    const course = await Course.findOne({ title: metadata.courseName, status: 'active' });
+    if (course) {
+      const actualPrice = course.price;
       if (amount !== actualPrice) {
         console.warn(`Price mismatch for ${metadata.courseName}. Received: ${amount}, Expected: ${actualPrice}. Overriding to true price.`);
       }

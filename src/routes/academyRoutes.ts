@@ -1,7 +1,9 @@
 import express from 'express';
+import { getCourses, createCourse } from '../controllers/academyController';
 
 const router = express.Router();
 
-// Internal routing logic migrated to financeController.js
+router.get('/courses', getCourses);
+router.post('/courses', createCourse);
 
 export default router;
