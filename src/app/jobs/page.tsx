@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,7 +18,17 @@ type JobFormValues = z.infer<typeof jobSchema>;
 export default function JobsPage() {
   const [fileName, setFileName] = useState('');
   const [isRegistered, setIsRegistered] = useState(false);
+  const [jobsList, setJobsList] = useState<any[]>([]);
   const user = useAppStore((state) => state.user);
+
+  useEffect(() => {
+      api.get('/jobs').then(res => {
+          if (Array.isArray(res.data)) {
+              // Filter out applications, keep only actual job postings
+              setJobsList(res.data.filter(j => j.type !== 'Application'));
+          }
+      }).catch(e => console.error(e));
+  }, []);
 
   const {
     register,
@@ -199,40 +209,32 @@ export default function JobsPage() {
                   <Link href="#" className="text-[9px] font-bold text-cyan-600">View All</Link>
               </div>
               <div className="flex gap-3 overflow-x-auto scrollbar-none flex-nowrap pb-2">
-                  <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[200px] flex-shrink-0 cursor-pointer hover:border-cyan-200 transition-colors">
-                      <div className="flex items-center gap-2 mb-2">
-                          <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-500 text-sm"><i className="fa-brands fa-google"></i></div>
-                          <div>
-                              <h4 className="font-black text-[11px] text-gray-900 truncate">Senior React Dev</h4>
-                              <p className="text-[9px] text-gray-500">Google &middot; Bangalore</p>
+                  {jobsList.length === 0 ? (
+                      <div className="text-xs text-gray-500 italic p-3">No jobs posted yet. Check back soon!</div>
+                  ) : (
+                      jobsList.map((job) => (
+                          <div key={job._id} className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[200px] flex-shrink-0 cursor-pointer hover:border-cyan-200 transition-colors" onClick={() => {
+                              // Auto-fill form
+                              reset({ fullName: user?.name || '', email: user?.email || '', jobRole: job.title });
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}>
+                              <div className="flex items-center gap-2 mb-2">
+                                  <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-500 text-sm"><i className="fa-solid fa-briefcase"></i></div>
+                                  <div>
+                                      <h4 className="font-black text-[11px] text-gray-900 truncate">{job.title}</h4>
+                                      <p className="text-[9px] text-gray-500">{job.company} &middot; {job.location}</p>
+                                  </div>
+                              </div>
+                              <div className="flex gap-1.5 mb-3">
+                                  <span className="bg-gray-50 text-gray-600 text-[8px] font-bold px-1.5 py-0.5 rounded">{job.type}</span>
+                              </div>
+                              <div className="flex items-end justify-between border-t border-gray-50 pt-2">
+                                  <span className="text-cyan-600 font-black text-[10px]">{job.salary}</span>
+                                  <span className="text-[8px] text-gray-400">Apply</span>
+                              </div>
                           </div>
-                      </div>
-                      <div className="flex gap-1.5 mb-3">
-                          <span className="bg-gray-50 text-gray-600 text-[8px] font-bold px-1.5 py-0.5 rounded">Remote</span>
-                          <span className="bg-gray-50 text-gray-600 text-[8px] font-bold px-1.5 py-0.5 rounded">Full-Time</span>
-                      </div>
-                      <div className="flex items-end justify-between border-t border-gray-50 pt-2">
-                          <span className="text-cyan-600 font-black text-[10px]">&#8377;35L - 50L / yr</span>
-                          <span className="text-[8px] text-gray-400">2d ago</span>
-                      </div>
-                  </div>
-                  <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[200px] flex-shrink-0 cursor-pointer hover:border-cyan-200 transition-colors">
-                      <div className="flex items-center gap-2 mb-2">
-                          <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-blue-600 text-sm"><i className="fa-brands fa-microsoft"></i></div>
-                          <div>
-                              <h4 className="font-black text-[11px] text-gray-900 truncate">Product Designer</h4>
-                              <p className="text-[9px] text-gray-500">Microsoft &middot; Hyderabad</p>
-                          </div>
-                      </div>
-                      <div className="flex gap-1.5 mb-3">
-                          <span className="bg-gray-50 text-gray-600 text-[8px] font-bold px-1.5 py-0.5 rounded">Hybrid</span>
-                          <span className="bg-gray-50 text-gray-600 text-[8px] font-bold px-1.5 py-0.5 rounded">Full-Time</span>
-                      </div>
-                      <div className="flex items-end justify-between border-t border-gray-50 pt-2">
-                          <span className="text-cyan-600 font-black text-[10px]">&#8377;25L - 40L / yr</span>
-                          <span className="text-[8px] text-gray-400">5h ago</span>
-                      </div>
-                  </div>
+                      ))
+                  )}
               </div>
           </div>
       </div>

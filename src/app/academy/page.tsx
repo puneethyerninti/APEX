@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AutoCarousel from '@/components/AutoCarousel';
 import { api } from '@/services/api';
@@ -10,7 +10,16 @@ export default function Page() {
   const [enrollCourse, setEnrollCourse] = useState<{name: string, price: string} | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [courses, setCourses] = useState<any[]>([]);
   const user = useAppStore(state => state.user);
+
+  useEffect(() => {
+    api.get('/academy/courses').then(res => {
+        if (Array.isArray(res.data)) {
+            setCourses(res.data);
+        }
+    }).catch(e => console.error(e));
+  }, []);
 
   const handleEnroll = (name: string, price: string) => {
       setEnrollCourse({name, price});
@@ -135,56 +144,26 @@ export default function Page() {
             <Link href="#" className="text-[9px] font-bold text-purple-600">View All</Link>
         </div>
         <div className="flex gap-3 md:gap-6 overflow-x-auto px-4 scrollbar-none flex-nowrap md:flex-wrap pb-2 snap-x snap-mandatory">
-            
-            {/* Spoken English */}
-            <div onClick={() => handleEnroll('Spoken English', '₹4,999')} className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
-                <div className="h-24 md:h-32 bg-purple-50 relative flex items-center justify-center text-purple-500 text-3xl">
-                    <i className="fa-solid fa-comments"></i>
-                </div>
-                <div className="p-3 md:p-4">
-                    <h4 className="font-black text-[10px] md:text-xs text-gray-900 truncate mb-1">Spoken English</h4>
-                    <p className="text-[9px] md:text-[10px] text-gray-500 mb-2 truncate">Fluency &amp; Grammar</p>
-                    <span className="text-purple-600 font-black text-xs md:text-sm">₹4,999</span>
-                </div>
-            </div>
-
-            {/* Spoken Hindi */}
-            <div onClick={() => handleEnroll('Spoken Hindi', '₹3,999')} className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
-                <div className="h-24 md:h-32 bg-orange-50 relative flex items-center justify-center text-orange-500 text-3xl">
-                    <i className="fa-solid fa-language"></i>
-                </div>
-                <div className="p-3 md:p-4">
-                    <h4 className="font-black text-[10px] md:text-xs text-gray-900 truncate mb-1">Spoken Hindi</h4>
-                    <p className="text-[9px] md:text-[10px] text-gray-500 mb-2 truncate">Conversational Skills</p>
-                    <span className="text-purple-600 font-black text-xs md:text-sm">₹3,999</span>
-                </div>
-            </div>
-
-            {/* Computer Courses */}
-            <div onClick={() => handleEnroll('Computer Courses', '₹1200')} className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
-                <div className="h-24 md:h-32 bg-blue-50 relative flex items-center justify-center text-blue-500 text-3xl">
-                    <i className="fa-solid fa-desktop"></i>
-                </div>
-                <div className="p-3 md:p-4">
-                    <h4 className="font-black text-[10px] md:text-xs text-gray-900 truncate mb-1">Computer Courses</h4>
-                    <p className="text-[9px] md:text-[10px] text-gray-500 mb-2 truncate">MS Office, Tally, Basics</p>
-                    <span className="text-purple-600 font-black text-xs md:text-sm">₹1200</span>
-                </div>
-            </div>
-            
-            {/* Competitive Exam Courses */}
-            <div onClick={() => handleEnroll('Competitive Exams', '₹1500')} className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
-                <div className="h-24 md:h-32 bg-green-50 relative flex items-center justify-center text-green-500 text-3xl">
-                    <i className="fa-solid fa-book-open-reader"></i>
-                </div>
-                <div className="p-3 md:p-4">
-                    <h4 className="font-black text-[10px] md:text-xs text-gray-900 truncate mb-1">Competitive Exams</h4>
-                    <p className="text-[9px] md:text-[10px] text-gray-500 mb-2 truncate">SSC, Bank, Railways</p>
-                    <span className="text-purple-600 font-black text-xs md:text-sm">₹1500</span>
-                </div>
-            </div>
-
-        </div>
+            {courses.length === 0 ? (
+                <div className="text-xs text-gray-500 italic">Courses coming soon...</div>
+            ) : (
+                courses.map((course) => (
+                    <div key={course._id} onClick={() => handleEnroll(course.title, `₹${course.price}`)} className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
+                        <div className="h-24 md:h-32 bg-purple-50 relative flex items-center justify-center text-purple-500 text-3xl overflow-hidden">
+                            {course.thumbnailUrl ? (
+                                <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
+                            ) : (
+                                <i className="fa-solid fa-book-open-reader"></i>
+                            )}
+                        </div>
+                        <div className="p-3 md:p-4">
+                            <h4 className="font-black text-[10px] md:text-xs text-gray-900 truncate mb-1">{course.title}</h4>
+                            <p className="text-[9px] md:text-[10px] text-gray-500 mb-2 truncate">{course.description || course.category}</p>
+                            <span className="text-purple-600 font-black text-xs md:text-sm">₹{course.price}</span>
+                        </div>
+                    </div>
+                ))
+            )}
     </div>
 
     {/* JOB ORIENTED COURSES */}
