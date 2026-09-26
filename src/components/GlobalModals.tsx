@@ -254,25 +254,26 @@ export default function GlobalModals() {
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3 mt-2">
-                                <button className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
+                                <button onClick={() => { setModal(null); window.location.href = '/store'; }} className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
                                     <i className="fa-solid fa-box text-violet-500 text-xl"></i>
                                     <span className="text-[10px] font-bold text-gray-700">My Orders</span>
                                 </button>
                                 <button onClick={() => {
                                     setEditName(user?.name || '');
-                                    setEditEmail(user?.email || '');
+                                    const userEmail = user?.email || '';
+                                    setEditEmail(userEmail.endsWith('@apex.local') ? '' : userEmail);
                                     setEditProfilePicture(user?.profilePicture || '');
                                     setModal('edit_profile');
                                 }} className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
                                     <i className="fa-solid fa-user-pen text-blue-500 text-xl"></i>
                                     <span className="text-[10px] font-bold text-gray-700">Edit Profile</span>
                                 </button>
-                                <button className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
+                                <button onClick={() => { setModal(null); window.location.href = '/matrimony'; }} className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
                                     <i className="fa-solid fa-heart text-rose-500 text-xl"></i>
                                     <span className="text-[10px] font-bold text-gray-700">Saved Matches</span>
                                 </button>
 
-                                <button className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
+                                <button onClick={() => { setModal(null); window.location.href = '/academy'; }} className="flex flex-col items-center justify-center gap-2 bg-white border border-gray-100 shadow-sm p-4 rounded-xl hover:shadow-md transition-all">
                                     <i className="fa-solid fa-graduation-cap text-blue-500 text-xl"></i>
                                     <span className="text-[10px] font-bold text-gray-700">My Courses</span>
                                 </button>
