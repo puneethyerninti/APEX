@@ -105,7 +105,14 @@ export default function FinancePage() {
               <div className="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all">
                   <div className="flex items-center gap-2">
                       <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 text-lg"><i className="fa-solid fa-hand-holding-dollar"></i></div>
-                      <span className="text-sm font-bold text-gray-800">Loans</span>
+                      <div className="flex flex-col gap-0">
+                          <span className="text-sm font-bold text-gray-800">Loans</span>
+                          <div className="flex items-center gap-0.5 opacity-80 mt-0.5">
+                              <span className="text-[6px] text-gray-400 font-medium">Powered By</span>
+                              <div className="w-2.5 h-2.5 bg-emerald-600 rounded-full flex items-center justify-center text-white text-[5px] font-black leading-none">₹</div>
+                              <span className="text-[7px] font-black text-gray-800 tracking-widest leading-none">digi<span className="text-gray-400">पे</span></span>
+                          </div>
+                      </div>
                   </div>
                   <ul className="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-rose-100">
                       <li><a href="#" onClick={(e) => handleOpenLeadForm(e, 'Personal Loan')} className="hover:text-rose-600 font-medium block">Personal Loan</a></li>
@@ -117,7 +124,15 @@ export default function FinancePage() {
               <div className="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all">
                   <div className="flex items-center gap-2">
                       <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-chart-line"></i></div>
-                      <span className="text-sm font-bold text-gray-800">Investment</span>
+                      <div className="flex flex-col gap-0">
+                          <span className="text-sm font-bold text-gray-800">Investment</span>
+                          <div className="flex items-center gap-0.5 opacity-80 mt-0.5">
+                              <span className="text-[6px] text-gray-400 font-medium">Powered By</span>
+                              <span className="text-[7px] font-black text-gray-800 lowercase tracking-widest leading-none">stable money</span>
+                              <span className="text-[6px] text-gray-400 font-black">+</span>
+                              <img src="/APEX%20logo.jpeg" alt="APEX" className="h-2.5 rounded-sm object-contain" />
+                          </div>
+                      </div>
                   </div>
                   <ul className="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-emerald-100">
                       <li><Link href="/finance/mutual-funds" className="hover:text-emerald-600 font-medium block">Mutual Funds</Link></li>
@@ -144,7 +159,15 @@ export default function FinancePage() {
               <div className="flex flex-col items-start p-4 bg-white rounded-2xl border border-gray-100 shadow-sm gap-3 hover:border-blue-200 transition-all justify-start">
                   <div className="flex items-center gap-2">
                       <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-lg"><i className="fa-solid fa-credit-card"></i></div>
-                      <span className="text-sm font-bold text-gray-800">Credit Cards</span>
+                      <div className="flex flex-col gap-0">
+                          <span className="text-sm font-bold text-gray-800">Credit Cards</span>
+                          <div className="flex items-center gap-1 opacity-80 mt-0.5">
+                              <span className="text-[6px] text-gray-400 font-medium">Powered By</span>
+                              <div className="bg-blue-600 text-white text-[4px] font-black px-1 rounded-sm flex items-center justify-center tracking-widest leading-tight">
+                                  ZET
+                              </div>
+                          </div>
+                      </div>
                   </div>
                   <ul className="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-blue-100">
                       <li><a href="#" onClick={(e) => handleOpenLeadForm(e, 'Credit Card')} className="hover:text-blue-600 font-medium block">Apply New</a></li>

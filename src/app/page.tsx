@@ -438,7 +438,15 @@ export default function Home() {
 
                                             {/* Investments Grid */}
                                             <div className="mb-3">
-                                                <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Investments</h3>
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <h3 className="text-white/80 text-[10px] font-bold uppercase tracking-wider">Investments</h3>
+                                                    <div className="flex items-center gap-1 opacity-75">
+                                                        <span className="text-[6px] text-gray-400 font-medium">Powered By</span>
+                                                        <span className="text-[7px] font-black text-white lowercase tracking-widest leading-none">stable money</span>
+                                                        <span className="text-[6px] text-gray-400 font-black">+</span>
+                                                        <img src="/APEX%20logo.jpeg" alt="APEX" className="h-2.5 rounded-sm object-contain" />
+                                                    </div>
+                                                </div>
                                                 <div className="grid grid-cols-4 gap-2">
                                                     <a href="https://stablemoney.onelink.me/rkWL/reg7ibv8" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-amber-400 shadow-inner">
@@ -493,7 +501,16 @@ export default function Home() {
 
                                             {/* Loans Grid */}
                                             <div className="mb-3">
-                                                <h3 className="text-white/80 text-[10px] font-bold mb-2 uppercase tracking-wider">Loans</h3>
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <h3 className="text-white/80 text-[10px] font-bold uppercase tracking-wider">Loans</h3>
+                                                    <div className="flex items-center gap-1 opacity-75">
+                                                        <span className="text-[6px] text-gray-400 font-medium">Powered By</span>
+                                                        <div className="flex items-center gap-0.5">
+                                                            <div className="w-2.5 h-2.5 bg-emerald-600 rounded-full flex items-center justify-center text-white text-[5px] font-black leading-none">₹</div>
+                                                            <span className="text-[7px] font-black text-white tracking-widest leading-none">digi<span className="text-gray-300">पे</span></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                                 <div className="grid grid-cols-4 gap-2">
                                                     <a href="#" onClick={(e) => handleOpenLeadForm(e, 'Personal Loan')} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 transition-transform">
                                                         <div className="w-10 h-10 rounded-lg bg-gray-800/80 border border-gray-700/50 flex items-center justify-center text-sky-400 shadow-inner">
