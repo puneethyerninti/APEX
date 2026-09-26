@@ -108,9 +108,9 @@ export default function FinancePage() {
                       <div className="flex flex-col gap-0">
                           <span className="text-sm font-bold text-gray-800">Loans</span>
                           <div className="flex items-center gap-0.5 opacity-80 mt-0.5">
-                              <span className="text-[6px] text-gray-400 font-medium">Powered By</span>
-                              <div className="w-2.5 h-2.5 bg-emerald-600 rounded-full flex items-center justify-center text-white text-[5px] font-black leading-none">₹</div>
-                              <span className="text-[7px] font-black text-gray-800 tracking-widest leading-none">digi<span className="text-gray-400">पे</span></span>
+                              <span className="text-[8px] text-gray-400 font-medium">Powered By</span>
+                              <div className="w-3 h-3 bg-emerald-600 rounded-full flex items-center justify-center text-white text-[6px] font-black leading-none">₹</div>
+                              <span className="text-[9px] font-black text-gray-800 tracking-widest leading-none">digi<span className="text-gray-400">पे</span></span>
                           </div>
                       </div>
                   </div>
@@ -127,10 +127,10 @@ export default function FinancePage() {
                       <div className="flex flex-col gap-0">
                           <span className="text-sm font-bold text-gray-800">Investment</span>
                           <div className="flex items-center gap-0.5 opacity-80 mt-0.5">
-                              <span className="text-[6px] text-gray-400 font-medium">Powered By</span>
-                              <span className="text-[7px] font-black text-gray-800 lowercase tracking-widest leading-none">stable money</span>
-                              <span className="text-[6px] text-gray-400 font-black">+</span>
-                              <img src="/APEX%20logo.jpeg" alt="APEX" className="h-2.5 rounded-sm object-contain" />
+                              <span className="text-[8px] text-gray-400 font-medium">Powered By</span>
+                              <span className="text-[9px] font-black text-gray-800 lowercase tracking-widest leading-none">stable money</span>
+                              <span className="text-[8px] text-gray-400 font-black">+</span>
+                              <img src="/APEX%20logo.jpeg" alt="APEX" className="h-3.5 rounded-sm object-contain" />
                           </div>
                       </div>
                   </div>
@@ -162,8 +162,8 @@ export default function FinancePage() {
                       <div className="flex flex-col gap-0">
                           <span className="text-sm font-bold text-gray-800">Credit Cards</span>
                           <div className="flex items-center gap-1 opacity-80 mt-0.5">
-                              <span className="text-[6px] text-gray-400 font-medium">Powered By</span>
-                              <div className="bg-blue-600 text-white text-[4px] font-black px-1 rounded-sm flex items-center justify-center tracking-widest leading-tight">
+                              <span className="text-[8px] text-gray-400 font-medium">Powered By</span>
+                              <div className="bg-blue-600 text-white text-[6px] font-black px-1.5 rounded-sm flex items-center justify-center tracking-widest leading-tight">
                                   ZET
                               </div>
                           </div>
