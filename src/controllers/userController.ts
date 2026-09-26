@@ -69,7 +69,9 @@ export const updateUserProfile = async (req: Request, res: Response) => {
     if (user) {
       // Update existing user
       if (name !== undefined) user.name = name;
-      if (email !== undefined) user.email = email;
+      if (email !== undefined) {
+          user.email = email.trim() === '' ? `${user.phone}@apex.local` : email;
+      }
       if (profilePicture !== undefined) user.profilePicture = profilePicture;
       if (isAdminPhone && user.role !== 'admin') {
           user.role = 'admin'; // Auto-upgrade to admin
