@@ -31,7 +31,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
       try {
         // Get custom backend JWT token
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('apex_token');
 
         if (!token) {
           console.warn('No authentication token found for Socket.io connection.');

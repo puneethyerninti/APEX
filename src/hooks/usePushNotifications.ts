@@ -78,8 +78,12 @@ export const usePushNotifications = (isAuthenticated: boolean) => {
             });
           }
         }
-      } catch (error) {
-        console.error('Error registering push notifications:', error);
+      } catch (error: any) {
+        if (error?.message?.includes('authentication credential')) {
+          console.warn('Web Push Notifications skipped: FCM authentication credential missing or invalid.');
+        } else {
+          console.warn('Could not register push notifications:', error);
+        }
       }
     };
 
