@@ -47,7 +47,7 @@ export default function TravelsMap({ cabLocation, userLocation, routeGeometry }:
         latitude: centerLat,
         zoom: 13
       }}
-      style={{width: '100vw', height: '100vh'}}
+      style={{width: '100%', height: '100%'}}
       mapStyle="mapbox://styles/mapbox/streets-v12"
       attributionControl={false}
     >

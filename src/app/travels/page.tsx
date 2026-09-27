@@ -306,7 +306,7 @@ export default function Page() {
 
     {/* CAB SECTION */}
     {activeTab === 'cab' && (
-        <div className="tab-content active h-screen relative">
+        <div className="tab-content active h-[100dvh] w-full relative overflow-hidden">
             <div className="absolute inset-0 z-0 bg-gray-100 w-full h-full">
                 {mapboxToken ? (
                     <TravelsMap cabLocation={cabLocation} userLocation={userLocation} routeGeometry={routeGeometry} />
