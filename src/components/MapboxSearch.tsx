@@ -26,7 +26,7 @@ export default function MapboxSearch({ placeholder, value, onChange, onSelect, c
       if (!token) return;
 
       try {
-        const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?access_token=${token}&autocomplete=true&limit=5`);
+        const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?access_token=${token}&autocomplete=true&limit=5&bbox=83.10,17.50,83.45,17.95`);
         const data = await response.json();
         if (data.features) {
           setSuggestions(data.features);

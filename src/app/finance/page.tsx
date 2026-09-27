@@ -98,6 +98,34 @@ export default function FinancePage() {
           </div>
       </div>
 
+      {/* STABLE MONEY PROMO VIDEO */}
+      <div className="px-4 mb-5 relative">
+          <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-100 relative bg-black/5 group">
+              <video 
+                src="/stable_money.mp4" 
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                className="w-full h-[180px] object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
+              <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between pointer-events-none">
+                  <div>
+                      <h3 className="text-white font-black text-lg leading-tight mb-1">Grow your Wealth<br/>with Fixed Deposits</h3>
+                      <div className="flex items-center gap-1.5 opacity-90">
+                          <span className="text-[8px] text-gray-300 font-medium">Powered By</span>
+                          <span className="text-[10px] font-black text-white lowercase tracking-widest leading-none">stable money</span>
+                          <span className="text-[9px] text-gray-300 font-black">+</span>
+                          <img src="/APEX%20logo.jpeg" alt="APEX" className="h-4 rounded-sm object-contain" />
+                      </div>
+                  </div>
+                  <a href="https://stablemoney.onelink.me/rkWL/reg7ibv8" target="_blank" rel="noopener noreferrer" className="pointer-events-auto bg-white text-gray-900 text-[10px] font-black px-4 py-2 rounded-full shadow-sm hover:scale-105 active:scale-95 transition-transform flex items-center gap-1.5">
+                      Invest Now <i className="fa-solid fa-arrow-right"></i>
+                  </a>
+              </div>
+          </div>
+      </div>
       {/* SERVICES GRID */}
       <div className="px-4 mb-5">
           <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Our Services</h3>

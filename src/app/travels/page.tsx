@@ -173,6 +173,15 @@ export default function Page() {
                 return;
             }
 
+            const isVizag = (coords: {lat: number, lng: number}) => 
+                coords.lat >= 17.0 && coords.lat <= 18.5 && coords.lng >= 82.5 && coords.lng <= 84.0;
+            
+            if (!isVizag(pickupCoords) || !isVizag(destCoords)) {
+                alert("Sorry, APEX cab booking is currently available only in the Visakhapatnam region.");
+                setIsBooking(false);
+                return;
+            }
+
             const res = await api.post('/travels/rides', {
                 userId: user._id || user.uid,
                 pickup: { address: pickupLocation, lat: pickupCoords.lat, lng: pickupCoords.lng },
