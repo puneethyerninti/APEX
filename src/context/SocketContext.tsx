@@ -45,23 +45,21 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         });
 
         socketInstance.on('connect', () => {
-          console.log('Connected to APEX Real-time Server (Authenticated)');
           setIsConnected(true);
         });
 
         socketInstance.on('connect_error', (err) => {
-          console.error('Socket Connection Error:', err.message);
+          // Suppress verbose connection timeout errors in console
           setIsConnected(false);
         });
 
         socketInstance.on('disconnect', () => {
-          console.log('Disconnected from APEX Real-time Server');
           setIsConnected(false);
         });
 
         setSocket(socketInstance);
-      } catch (error) {
-        console.error('Error initializing authenticated socket:', error);
+        } catch (error) {
+        // Suppress init errors
       }
     };
 

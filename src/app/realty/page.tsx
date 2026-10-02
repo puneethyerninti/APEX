@@ -181,17 +181,14 @@ export default function Page() {
         <div className="px-4 mb-2">
             <AutoCarousel interval={4000}>
                 {properties.map((prop) => (
-                    <div key={prop._id} className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" onClick={() => openInquiry(prop._id, `${prop.title} (₹${prop.price})`)}>
+                    <div key={prop._id} className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" onClick={() => openInquiry(prop._id, prop.title)}>
                         <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
                             <img src={prop.images[0]} alt={prop.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                             <span className="absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-3 py-1 rounded uppercase tracking-wider">{prop.listingType}</span>
                         </div>
                         <div className="p-4">
                             <h4 className="font-black text-sm text-gray-900 truncate mb-1">{prop.title}</h4>
-                            <p className="text-xs text-gray-500 mb-3 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>{prop.propertyType}</p>
-                            <div className="flex items-end justify-between">
-                                <span className="text-emerald-600 font-black text-lg">₹{prop.price.toLocaleString()}</span>
-                            </div>
+                            <p className="text-xs text-gray-500 mb-0 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>{prop.propertyType}</p>
                         </div>
                     </div>
                 ))}
