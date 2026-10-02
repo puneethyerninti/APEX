@@ -12,6 +12,7 @@ export default function FinancePage() {
   const [leadServiceType, setLeadServiceType] = React.useState('');
   const [leadName, setLeadName] = React.useState('');
   const [leadMobile, setLeadMobile] = React.useState('');
+  const [isVideoMuted, setIsVideoMuted] = React.useState(true);
 
   const invested = user?.portfolioInvested || 0;
   const returns = user?.portfolioReturns || 0;
@@ -105,10 +106,16 @@ export default function FinancePage() {
                 src="/stable_money.mp4" 
                 autoPlay 
                 loop 
-                muted 
+                muted={isVideoMuted} 
                 playsInline 
                 className="w-full h-[180px] object-cover group-hover:scale-105 transition-transform duration-700"
               />
+              <button 
+                  onClick={() => setIsVideoMuted(!isVideoMuted)}
+                  className="absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors z-10"
+              >
+                  <i className={`fa-solid ${isVideoMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-[10px]`}></i>
+              </button>
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
               <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between pointer-events-none">
                   <div>
