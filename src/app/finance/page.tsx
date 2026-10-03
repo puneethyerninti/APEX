@@ -142,10 +142,12 @@ export default function FinancePage() {
                       <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 text-lg"><i className="fa-solid fa-hand-holding-dollar"></i></div>
                       <div className="flex flex-col gap-0">
                           <span className="text-sm font-bold text-gray-800">Loans</span>
-                          <div className="flex items-center gap-0.5 opacity-80 mt-0.5">
-                              <span className="text-[8px] text-gray-400 font-medium">Powered By</span>
-                              <div className="w-3 h-3 bg-emerald-600 rounded-full flex items-center justify-center text-white text-[6px] font-black leading-none">₹</div>
-                              <span className="text-[9px] font-black text-gray-800 tracking-widest leading-none">digi<span className="text-gray-400">पे</span></span>
+                          <div className="flex flex-col items-start gap-1 opacity-80 mt-1">
+                              <span className="text-[7px] text-gray-400 font-medium uppercase tracking-wider leading-none">Powered By</span>
+                              <div className="flex items-center gap-0.5">
+                                  <div className="w-3.5 h-3.5 bg-emerald-600 rounded-full flex items-center justify-center text-white text-[7px] font-black leading-none">₹</div>
+                                  <span className="text-[10px] font-black text-gray-800 tracking-widest leading-none">digi<span className="text-gray-400">पे</span></span>
+                              </div>
                           </div>
                       </div>
                   </div>
@@ -161,11 +163,13 @@ export default function FinancePage() {
                       <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-chart-line"></i></div>
                       <div className="flex flex-col gap-0">
                           <span className="text-sm font-bold text-gray-800">Investment</span>
-                          <div className="flex items-center gap-0.5 opacity-80 mt-0.5">
-                              <span className="text-[8px] text-gray-400 font-medium">Powered By</span>
-                              <span className="text-[9px] font-black text-gray-800 lowercase tracking-widest leading-none">stable money</span>
-                              <span className="text-[8px] text-gray-400 font-black">+</span>
-                              <img src="/APEX%20logo.jpeg" alt="APEX" className="h-3.5 rounded-sm object-contain" />
+                          <div className="flex flex-col items-start gap-1 opacity-80 mt-1">
+                              <span className="text-[7px] text-gray-400 font-medium uppercase tracking-wider leading-none">Powered By</span>
+                              <div className="flex items-center gap-0.5">
+                                  <span className="text-[10px] font-black text-gray-800 lowercase tracking-widest leading-none">stable money</span>
+                                  <span className="text-[8px] text-gray-400 font-black">+</span>
+                                  <img src="/APEX%20logo.jpeg" alt="APEX" className="h-4 rounded-sm object-contain" />
+                              </div>
                           </div>
                       </div>
                   </div>
@@ -173,8 +177,8 @@ export default function FinancePage() {
                       <li><Link href="/finance/mutual-funds" className="hover:text-emerald-600 font-medium block">Mutual Funds</Link></li>
                       <li><a href="https://stablemoney.onelink.me/rkWL/reg7ibv8" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-600 font-medium block">Fixed Deposit</a></li>
                       <li><a href="#" onClick={(e) => handleOpenLeadForm(e, 'NPS')} className="hover:text-emerald-600 font-medium block">NPS</a></li>
-                      <li><a href="#" onClick={(e) => handleOpenLeadForm(e, 'NFO')} className="hover:text-emerald-600 font-medium block">NFO</a></li>
-                      <li><a href="#" onClick={(e) => handleOpenLeadForm(e, 'Bonds')} className="hover:text-emerald-600 font-medium block">Bonds</a></li>
+                      <li><Link href="/finance/mutual-funds" className="hover:text-emerald-600 font-medium block">NFO</Link></li>
+                      <li><a href="https://stablemoney.onelink.me/rkWL/reg7ibv8" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-600 font-medium block">Bonds</a></li>
                   </ul>
               </div>
               
@@ -196,16 +200,16 @@ export default function FinancePage() {
                       <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-lg"><i className="fa-solid fa-credit-card"></i></div>
                       <div className="flex flex-col gap-0">
                           <span className="text-sm font-bold text-gray-800">Credit Cards</span>
-                          <div className="flex items-center gap-1 opacity-80 mt-0.5">
-                              <span className="text-[8px] text-gray-400 font-medium">Powered By</span>
-                              <div className="bg-blue-600 text-white text-[6px] font-black px-1.5 rounded-sm flex items-center justify-center tracking-widest leading-tight">
+                          <div className="flex flex-col items-start gap-1 opacity-80 mt-1">
+                              <span className="text-[7px] text-gray-400 font-medium uppercase tracking-wider leading-none">Powered By</span>
+                              <div className="bg-blue-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-sm flex items-center justify-center tracking-widest leading-none">
                                   ZET
                               </div>
                           </div>
                       </div>
                   </div>
                   <ul className="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-blue-100">
-                      <li><a href="#" onClick={(e) => handleOpenLeadForm(e, 'Credit Card')} className="hover:text-blue-600 font-medium block">Apply New</a></li>
+                      <li><Link href="/finance/credit-cards" className="hover:text-blue-600 font-medium block">Apply New</Link></li>
                   </ul>
               </div>
           </div>
