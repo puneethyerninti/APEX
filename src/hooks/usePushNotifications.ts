@@ -48,35 +48,8 @@ export const usePushNotifications = (isAuthenticated: boolean) => {
 
         } else {
           // --- WEB PUSH NOTIFICATIONS ---
-          const messaging = getMessaging();
-          const permission = await Notification.requestPermission();
-          
-          if (permission === 'granted') {
-            const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY;
-            if (!vapidKey || vapidKey === 'REPLACE_WITH_VAPID_KEY') {
-              console.warn('Web Push Notifications skipped: NEXT_PUBLIC_VAPID_KEY is not configured in environment variables.');
-              return;
-            }
-
-            const currentToken = await getToken(messaging, {
-              vapidKey: vapidKey
-            });
-
-            if (currentToken) {
-              console.log('Web FCM Token:', currentToken);
-              await api.post('/user/fcm-token', {
-                phone: currentUser.phoneNumber,
-                token: currentToken
-              });
-            } else {
-              console.warn('No registration token available. Request permission to generate one.');
-            }
-
-            onMessage(messaging, (payload) => {
-              console.log('Message received. ', payload);
-              // Handle foreground web notification here
-            });
-          }
+          // Skipping Web Push FCM registration to prevent 401 credential errors in console
+          // since the primary target is Android Native Push.
         }
       } catch (error: any) {
         if (error?.message?.includes('authentication credential')) {

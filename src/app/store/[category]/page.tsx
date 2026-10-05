@@ -108,51 +108,8 @@ export default function CategoryPage({ params }: { params: { category: string } 
                             <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Top Sellers</h3>
                             <Link href="#" className={`text-[9px] font-bold ${details.color}`}>View All</Link>
                         </div>
-                        <div className="flex gap-3 overflow-x-auto scrollbar-none flex-nowrap pb-2">
-                            {/* Dummy Product 1 */}
-                            <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0 cursor-pointer hover:border-gray-200 transition-colors">
-                                <div className="h-24 bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                                    <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80" alt="Product 1" className="w-full h-full object-cover" />
-                                </div>
-                                <h4 className="font-black text-[11px] text-gray-900 truncate">Premium Item 1</h4>
-                                <div className="flex items-center gap-1 mb-1">
-                                    <i className="fa-solid fa-star text-amber-400 text-[8px]"></i>
-                                    <span className="text-[9px] font-bold text-gray-600">4.8</span>
-                                </div>
-                                <div className="flex items-end justify-between pt-1">
-                                    <span className="text-gray-900 font-black text-sm">&#8377;999</span>
-                                </div>
-                            </div>
-                            
-                            {/* Dummy Product 2 */}
-                            <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0 cursor-pointer hover:border-gray-200 transition-colors">
-                                <div className="h-24 bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                                    <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80" alt="Product 2" className="w-full h-full object-cover" />
-                                </div>
-                                <h4 className="font-black text-[11px] text-gray-900 truncate">Premium Item 2</h4>
-                                <div className="flex items-center gap-1 mb-1">
-                                    <i className="fa-solid fa-star text-amber-400 text-[8px]"></i>
-                                    <span className="text-[9px] font-bold text-gray-600">4.5</span>
-                                </div>
-                                <div className="flex items-end justify-between pt-1">
-                                    <span className="text-gray-900 font-black text-sm">&#8377;1,499</span>
-                                </div>
-                            </div>
-
-                            {/* Dummy Product 3 */}
-                            <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 min-w-[140px] flex-shrink-0 cursor-pointer hover:border-gray-200 transition-colors">
-                                <div className="h-24 bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                                    <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80" alt="Product 3" className="w-full h-full object-cover" />
-                                </div>
-                                <h4 className="font-black text-[11px] text-gray-900 truncate">Premium Item 3</h4>
-                                <div className="flex items-center gap-1 mb-1">
-                                    <i className="fa-solid fa-star text-amber-400 text-[8px]"></i>
-                                    <span className="text-[9px] font-bold text-gray-600">4.9</span>
-                                </div>
-                                <div className="flex items-end justify-between pt-1">
-                                    <span className="text-gray-900 font-black text-sm">&#8377;2,999</span>
-                                </div>
-                            </div>
+                        <div className="flex gap-3 overflow-x-auto scrollbar-none flex-nowrap pb-2 text-center items-center justify-center w-full py-8 border-2 border-dashed border-gray-100 rounded-xl bg-gray-50/50">
+                            <span className="text-gray-400 font-medium text-xs">More products arriving soon...</span>
                         </div>
                     </div>
 

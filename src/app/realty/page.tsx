@@ -25,14 +25,35 @@ export default function Page() {
   }, []);
 
   const fetchProperties = async () => {
-    try {
-      const res = await api.get('/realty/property/all');
-      setProperties(res.data.properties || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    // Overriding dynamic DB fetch with client's requested premium listings
+    const mockProperties = [
+      {
+        _id: '1',
+        title: 'Agriculture land Anand puram 1km',
+        price: 5000000,
+        propertyType: 'Agriculture Land',
+        listingType: 'sell',
+        images: ['/realty/Agriculture land.jpeg']
+      },
+      {
+        _id: '2',
+        title: 'FARM LAND',
+        price: 8500000,
+        propertyType: 'Farm Land',
+        listingType: 'sell',
+        images: ['/realty/Farm land.jpeg']
+      },
+      {
+        _id: '3',
+        title: 'Open plot ACHUTAPU RAM',
+        price: 3200000,
+        propertyType: 'Open Plot',
+        listingType: 'sell',
+        images: ['/realty/plot.jpeg']
+      }
+    ];
+    setProperties(mockProperties);
+    setLoading(false);
   };
 
   const openInquiry = (propertyId: string, propertyTitle: string) => {
@@ -98,8 +119,17 @@ export default function Page() {
 
     {/* HERO SEARCH */}
     <div className="relative bg-emerald-900 pt-8 pb-12 px-4 overflow-hidden rounded-b-3xl shadow-md">
-        {/* Background Image overlay */}
-        <div className="absolute inset-0 z-0 opacity-20 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&amp;fit=crop&amp;q=80')" }}></div>
+        {/* Background Video overlay */}
+        <div className="absolute inset-0 z-0 bg-emerald-900">
+            <video 
+                src="/realty/Property Video.mp4" 
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                className="w-full h-full object-cover opacity-30"
+            />
+        </div>
         
         <div className="relative z-10">
             <h2 className="text-white text-xl font-black mb-1">Find your dream home</h2>
@@ -124,16 +154,16 @@ export default function Page() {
         <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Explore Properties</h3>
         <div className="grid grid-cols-4 gap-3">
             <button onClick={() => {}} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
-                <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-building"></i></div>
-                <span className="text-[9px] font-bold text-gray-600">Apartments</span>
+                <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-leaf"></i></div>
+                <span className="text-[9px] font-bold text-gray-600">Farm Land</span>
             </button>
             <button onClick={() => {}} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
-                <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-teal-600 text-lg"><i className="fa-solid fa-house-user"></i></div>
-                <span className="text-[9px] font-bold text-gray-600">Villas</span>
+                <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-teal-600 text-lg"><i className="fa-solid fa-tractor"></i></div>
+                <span className="text-[9px] font-bold text-gray-600">Agri Land</span>
             </button>
             <button onClick={() => {}} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
                 <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-map-location-dot"></i></div>
-                <span className="text-[9px] font-bold text-gray-600">Plots</span>
+                <span className="text-[9px] font-bold text-gray-600">Open Plots</span>
             </button>
             <button onClick={() => {}} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
                 <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-teal-600 text-lg"><i className="fa-solid fa-city"></i></div>
@@ -149,33 +179,20 @@ export default function Page() {
             <Link href="#" className="text-[9px] font-bold text-emerald-600">View All</Link>
         </div>
         <div className="px-4 mb-2">
-            {loading ? (
-                <div className="h-48 flex items-center justify-center bg-gray-50 rounded-2xl">
-                    <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-            ) : properties.length === 0 ? (
-                <div className="h-48 flex items-center justify-center bg-gray-50 rounded-2xl text-gray-400 text-sm font-medium">
-                    No properties available right now.
-                </div>
-            ) : (
-                <AutoCarousel interval={4000}>
-                    {properties.map((prop) => (
-                        <div key={prop._id} className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" onClick={() => openInquiry(prop._id, `${prop.title} (₹${prop.price})`)}>
-                            <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
-                                <img src={prop.images && prop.images.length > 0 ? prop.images[0] : "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80"} alt={prop.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                <span className="absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-3 py-1 rounded uppercase tracking-wider">{prop.listingType}</span>
-                            </div>
-                            <div className="p-4">
-                                <h4 className="font-black text-sm text-gray-900 truncate mb-1">{prop.title}</h4>
-                                <p className="text-xs text-gray-500 mb-3 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>{prop.propertyType}</p>
-                                <div className="flex items-end justify-between">
-                                    <span className="text-emerald-600 font-black text-lg">₹{prop.price.toLocaleString()}</span>
-                                </div>
-                            </div>
+            <AutoCarousel interval={4000}>
+                {properties.map((prop) => (
+                    <div key={prop._id} className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" onClick={() => openInquiry(prop._id, prop.title)}>
+                        <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
+                            <img src={prop.images[0]} alt={prop.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            <span className="absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-3 py-1 rounded uppercase tracking-wider">{prop.listingType}</span>
                         </div>
-                    ))}
-                </AutoCarousel>
-            )}
+                        <div className="p-4">
+                            <h4 className="font-black text-sm text-gray-900 truncate mb-1">{prop.title}</h4>
+                            <p className="text-xs text-gray-500 mb-0 truncate"><i className="fa-solid fa-location-dot text-gray-400 mr-1"></i>{prop.propertyType}</p>
+                        </div>
+                    </div>
+                ))}
+            </AutoCarousel>
         </div>
     </div>
 

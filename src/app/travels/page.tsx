@@ -174,6 +174,15 @@ export default function Page() {
                 return;
             }
 
+            const isVizag = (coords: {lat: number, lng: number}) => 
+                coords.lat >= 17.0 && coords.lat <= 18.5 && coords.lng >= 82.5 && coords.lng <= 84.0;
+            
+            if (!isVizag(pickupCoords) || !isVizag(destCoords)) {
+                alert("Sorry, APEX cab booking is currently available only in the Visakhapatnam region.");
+                setIsBooking(false);
+                return;
+            }
+
             const res = await api.post('/travels/rides', {
                 userId: user._id || user.uid,
                 pickup: { address: pickupLocation, lat: pickupCoords.lat, lng: pickupCoords.lng },
@@ -299,7 +308,7 @@ export default function Page() {
 
     {/* CAB SECTION */}
     {activeTab === 'cab' && (
-        <div className="tab-content active h-screen relative">
+        <div className="tab-content active h-[100dvh] w-full relative overflow-hidden">
             <div className="absolute inset-0 z-0 bg-gray-100 w-full h-full">
                 {mapboxToken ? (
                     <TravelsMap cabLocation={cabLocation} userLocation={userLocation} routeGeometry={routeGeometry} />
@@ -321,7 +330,7 @@ export default function Page() {
             <div className="absolute bottom-0 w-full bg-white rounded-t-3xl shadow-[0_-10px_20px_rgba(0,0,0,0.1)] z-20 overflow-hidden flex flex-col" style={{ maxHeight: "65vh" }}>
                 <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto my-3"></div>
                 
-                <div className="px-5 pb-6 overflow-y-auto custom-scrollbar">
+                <div className="px-5 pb-20 overflow-y-auto custom-scrollbar">
                     <h2 className="text-xl font-black text-gray-900 mb-4">Book a Ride</h2>
                     
                     <div className="relative pl-8 mb-5">
@@ -435,7 +444,7 @@ export default function Page() {
 
     {/* BUS SECTION */}
     {activeTab === 'bus' && (
-        <div className="tab-content pt-[110px] px-4 pb-10 min-h-screen bg-gray-50">
+        <div className="tab-content pt-[110px] px-4 pb-20 min-h-screen bg-gray-50">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-5">
                 <h2 className="text-lg font-black text-gray-900 mb-4"><i className="fa-solid fa-bus text-orange-500 mr-2"></i>Bus Booking</h2>
                 
@@ -471,7 +480,7 @@ export default function Page() {
 
     {/* TRAIN SECTION */}
     {activeTab === 'train' && (
-        <div className="tab-content pt-[110px] px-4 pb-10 min-h-screen bg-gray-50">
+        <div className="tab-content pt-[110px] px-4 pb-20 min-h-screen bg-gray-50">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-5">
                 <h2 className="text-lg font-black text-gray-900 mb-4"><i className="fa-solid fa-train text-blue-500 mr-2"></i>Train Booking</h2>
                 
@@ -517,7 +526,7 @@ export default function Page() {
 
     {/* FLIGHT SECTION */}
     {activeTab === 'flight' && (
-        <div className="tab-content pt-[110px] px-4 pb-10 min-h-screen bg-gray-50">
+        <div className="tab-content pt-[110px] px-4 pb-20 min-h-screen bg-gray-50">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-5">
                 <h2 className="text-lg font-black text-gray-900 mb-4"><i className="fa-solid fa-plane-departure text-purple-600 mr-2"></i>Flight Booking</h2>
                 

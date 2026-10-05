@@ -83,8 +83,8 @@ export default function CreditCardCarousel() {
                     <div className="flex flex-col">
                         <h3 className="text-gray-900 font-extrabold text-[8px] sm:text-[10px] uppercase tracking-wider">Credit Cards</h3>
                         <div className="flex items-center gap-1 opacity-80 mt-[1px]">
-                            <span className="text-[5px] sm:text-[6px] text-gray-500 font-medium">Powered By</span>
-                            <div className="bg-blue-600 text-white text-[4px] sm:text-[5px] font-black px-1 rounded-sm flex items-center justify-center tracking-widest leading-tight">
+                            <span className="text-[7px] sm:text-[8px] text-gray-500 font-medium">Powered By</span>
+                            <div className="bg-blue-600 text-white text-[6px] sm:text-[7px] font-black px-1.5 rounded-sm flex items-center justify-center tracking-widest leading-tight">
                                 ZET
                             </div>
                         </div>

@@ -12,6 +12,7 @@ export default function FinancePage() {
   const [leadServiceType, setLeadServiceType] = React.useState('');
   const [leadName, setLeadName] = React.useState('');
   const [leadMobile, setLeadMobile] = React.useState('');
+  const [isVideoMuted, setIsVideoMuted] = React.useState(true);
 
   const invested = user?.portfolioInvested || 0;
   const returns = user?.portfolioReturns || 0;
@@ -98,6 +99,40 @@ export default function FinancePage() {
           </div>
       </div>
 
+      {/* STABLE MONEY PROMO VIDEO */}
+      <div className="px-4 mb-5 relative">
+          <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-100 relative bg-black/5 group">
+              <video 
+                src="/stable_money.mp4" 
+                autoPlay 
+                loop 
+                muted={isVideoMuted} 
+                playsInline 
+                className="w-full h-[180px] object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+              <button 
+                  onClick={() => setIsVideoMuted(!isVideoMuted)}
+                  className="absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors z-10"
+              >
+                  <i className={`fa-solid ${isVideoMuted ? 'fa-volume-xmark' : 'fa-volume-high'} text-[10px]`}></i>
+              </button>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
+              <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between pointer-events-none">
+                  <div>
+                      <h3 className="text-white font-black text-lg leading-tight mb-1">Grow your Wealth<br/>with Fixed Deposits</h3>
+                      <div className="flex items-center gap-1.5 opacity-90">
+                          <span className="text-[8px] text-gray-300 font-medium">Powered By</span>
+                          <span className="text-[10px] font-black text-white lowercase tracking-widest leading-none">stable money</span>
+                          <span className="text-[9px] text-gray-300 font-black">+</span>
+                          <img src="/APEX%20logo.jpeg" alt="APEX" className="h-4 rounded-sm object-contain" />
+                      </div>
+                  </div>
+                  <a href="https://stablemoney.onelink.me/rkWL/reg7ibv8" target="_blank" rel="noopener noreferrer" className="pointer-events-auto bg-white text-gray-900 text-[10px] font-black px-4 py-2 rounded-full shadow-sm hover:scale-105 active:scale-95 transition-transform flex items-center gap-1.5">
+                      Invest Now <i className="fa-solid fa-arrow-right"></i>
+                  </a>
+              </div>
+          </div>
+      </div>
       {/* SERVICES GRID */}
       <div className="px-4 mb-5">
           <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Our Services</h3>
@@ -107,10 +142,12 @@ export default function FinancePage() {
                       <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 text-lg"><i className="fa-solid fa-hand-holding-dollar"></i></div>
                       <div className="flex flex-col gap-0">
                           <span className="text-sm font-bold text-gray-800">Loans</span>
-                          <div className="flex items-center gap-0.5 opacity-80 mt-0.5">
-                              <span className="text-[6px] text-gray-400 font-medium">Powered By</span>
-                              <div className="w-2.5 h-2.5 bg-emerald-600 rounded-full flex items-center justify-center text-white text-[5px] font-black leading-none">₹</div>
-                              <span className="text-[7px] font-black text-gray-800 tracking-widest leading-none">digi<span className="text-gray-400">पे</span></span>
+                          <div className="flex flex-col items-start gap-1 opacity-80 mt-1">
+                              <span className="text-[7px] text-gray-400 font-medium uppercase tracking-wider leading-none">Powered By</span>
+                              <div className="flex items-center gap-0.5">
+                                  <div className="w-3.5 h-3.5 bg-emerald-600 rounded-full flex items-center justify-center text-white text-[7px] font-black leading-none">₹</div>
+                                  <span className="text-[10px] font-black text-gray-800 tracking-widest leading-none">digi<span className="text-gray-400">पे</span></span>
+                              </div>
                           </div>
                       </div>
                   </div>
@@ -126,11 +163,13 @@ export default function FinancePage() {
                       <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-chart-line"></i></div>
                       <div className="flex flex-col gap-0">
                           <span className="text-sm font-bold text-gray-800">Investment</span>
-                          <div className="flex items-center gap-0.5 opacity-80 mt-0.5">
-                              <span className="text-[6px] text-gray-400 font-medium">Powered By</span>
-                              <span className="text-[7px] font-black text-gray-800 lowercase tracking-widest leading-none">stable money</span>
-                              <span className="text-[6px] text-gray-400 font-black">+</span>
-                              <img src="/APEX%20logo.jpeg" alt="APEX" className="h-2.5 rounded-sm object-contain" />
+                          <div className="flex flex-col items-start gap-1 opacity-80 mt-1">
+                              <span className="text-[7px] text-gray-400 font-medium uppercase tracking-wider leading-none">Powered By</span>
+                              <div className="flex items-center gap-0.5">
+                                  <span className="text-[10px] font-black text-gray-800 lowercase tracking-widest leading-none">stable money</span>
+                                  <span className="text-[8px] text-gray-400 font-black">+</span>
+                                  <img src="/APEX%20logo.jpeg" alt="APEX" className="h-4 rounded-sm object-contain" />
+                              </div>
                           </div>
                       </div>
                   </div>
@@ -138,8 +177,8 @@ export default function FinancePage() {
                       <li><Link href="/finance/mutual-funds" className="hover:text-emerald-600 font-medium block">Mutual Funds</Link></li>
                       <li><a href="https://stablemoney.onelink.me/rkWL/reg7ibv8" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-600 font-medium block">Fixed Deposit</a></li>
                       <li><a href="#" onClick={(e) => handleOpenLeadForm(e, 'NPS')} className="hover:text-emerald-600 font-medium block">NPS</a></li>
-                      <li><a href="#" onClick={(e) => handleOpenLeadForm(e, 'NFO')} className="hover:text-emerald-600 font-medium block">NFO</a></li>
-                      <li><a href="#" onClick={(e) => handleOpenLeadForm(e, 'Bonds')} className="hover:text-emerald-600 font-medium block">Bonds</a></li>
+                      <li><Link href="/finance/mutual-funds" className="hover:text-emerald-600 font-medium block">NFO</Link></li>
+                      <li><a href="https://stablemoney.onelink.me/rkWL/reg7ibv8" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-600 font-medium block">Bonds</a></li>
                   </ul>
               </div>
               
@@ -161,16 +200,16 @@ export default function FinancePage() {
                       <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-lg"><i className="fa-solid fa-credit-card"></i></div>
                       <div className="flex flex-col gap-0">
                           <span className="text-sm font-bold text-gray-800">Credit Cards</span>
-                          <div className="flex items-center gap-1 opacity-80 mt-0.5">
-                              <span className="text-[6px] text-gray-400 font-medium">Powered By</span>
-                              <div className="bg-blue-600 text-white text-[4px] font-black px-1 rounded-sm flex items-center justify-center tracking-widest leading-tight">
+                          <div className="flex flex-col items-start gap-1 opacity-80 mt-1">
+                              <span className="text-[7px] text-gray-400 font-medium uppercase tracking-wider leading-none">Powered By</span>
+                              <div className="bg-blue-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-sm flex items-center justify-center tracking-widest leading-none">
                                   ZET
                               </div>
                           </div>
                       </div>
                   </div>
                   <ul className="text-xs text-gray-500 space-y-1.5 w-full pl-2 border-l-2 border-blue-100">
-                      <li><a href="#" onClick={(e) => handleOpenLeadForm(e, 'Credit Card')} className="hover:text-blue-600 font-medium block">Apply New</a></li>
+                      <li><Link href="/finance/credit-cards" className="hover:text-blue-600 font-medium block">Apply New</Link></li>
                   </ul>
               </div>
           </div>
@@ -178,8 +217,8 @@ export default function FinancePage() {
 
       {/* Lead Form Modal */}
       {isLeadFormOpen && (
-          <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-hidden">
-              <div className="bg-white border border-gray-100 rounded-2xl w-full max-w-sm p-5 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+          <div className="fixed inset-0 bg-black/70 z-[100] flex items-end sm:items-center justify-center p-4 pb-0 sm:pb-4 backdrop-blur-sm overflow-hidden">
+              <div className="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-[slideUp_0.3s_ease-out]">
                   <button 
                       onClick={() => setIsLeadFormOpen(false)}
                       className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900 transition-colors"
