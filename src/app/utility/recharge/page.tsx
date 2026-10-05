@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/services/api';
+import { loadRazorpay } from '@/services/razorpay';
 
 interface Plan {
     id: string;
@@ -81,6 +82,7 @@ export default function MobileRechargePage() {
     
     setIsPaying(true);
     try {
+        const RazorpayCheckout = await loadRazorpay();
         const orderRes = await api.post('/finance/razorpay/order', {
             amount: selectedPlan.price,
             userId: user.uid,
@@ -143,7 +145,7 @@ export default function MobileRechargePage() {
             }
         };
         
-        const rzp = new (window as any).Razorpay(options);
+        const rzp = new RazorpayCheckout(options);
         rzp.open();
 
     } catch (error: any) {

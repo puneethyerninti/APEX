@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/services/api';
+import { loadRazorpay } from '@/services/razorpay';
 
 const allowedUtilityCategoryIds = new Set([2, 4, 5, 8, 10, 18, 22]);
 const categoryOrder = ['prepaid', 'postpaid', 'dth', 'electricity', 'fastag', 'gas', 'lpg'];
@@ -317,6 +318,7 @@ export default function UtilityPage() {
     const numAmount = parseFloat(plan.price);
     setIsPaying(true);
     try {
+      const RazorpayCheckout = await loadRazorpay();
       const orderRes = await api.post('/finance/razorpay/order', {
         amount: numAmount,
         userId: user.uid,
@@ -366,7 +368,7 @@ export default function UtilityPage() {
         theme: { color: '#2D1B69' },
         modal: { ondismiss: () => setIsPaying(false) }
       };
-      const rzp = new (window as any).Razorpay(options);
+      const rzp = new RazorpayCheckout(options);
       rzp.open();
     } catch (error: any) {
       window.dispatchEvent(new CustomEvent('showToast', { detail: { message: error.response?.data?.message || 'Payment gateway failed', type: 'error' } }));
@@ -390,6 +392,7 @@ export default function UtilityPage() {
     const accountNo = formValues[primaryParamName] || '';
     
     try {
+        const RazorpayCheckout = await loadRazorpay();
         const orderRes = await api.post('/finance/razorpay/order', {
             amount: numAmount,
             userId: user.uid,
@@ -453,7 +456,7 @@ export default function UtilityPage() {
             modal: { ondismiss: function() { setIsPaying(false); } }
         };
         
-        const rzp = new (window as any).Razorpay(options);
+        const rzp = new RazorpayCheckout(options);
         rzp.open();
 
     } catch (error) {

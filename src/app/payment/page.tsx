@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef, Suspense, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import Script from 'next/script';
 import { api } from '@/services/api';
+import { loadRazorpay } from '@/services/razorpay';
 import { useAppStore } from '@/store/useAppStore';
 import { useSocket } from '@/context/SocketContext';
 
@@ -141,9 +141,9 @@ function PaymentContent() {
 
         if (trimmed.toLowerCase().startsWith('upi://pay') || url.searchParams.has('pa')) {
             const pa = url.searchParams.get('pa') || '';
-            const pn = decodeURIComponent(url.searchParams.get('pn') || 'Merchant').replace(/\+/g, ' ');
+            const pn = url.searchParams.get('pn') || 'Merchant';
             const am = url.searchParams.get('am') || '';
-            const tn = decodeURIComponent(url.searchParams.get('tn') || '').replace(/\+/g, ' ');
+            const tn = url.searchParams.get('tn') || '';
             const cu = url.searchParams.get('cu') || 'INR';
 
             setScannedPayee({ pa, pn, am, tn, cu, raw: trimmed });
@@ -154,7 +154,7 @@ function PaymentContent() {
 
         if (trimmed.toLowerCase().startsWith('apex://pay')) {
             const phone = url.searchParams.get('phone') || '';
-            const name = decodeURIComponent(url.searchParams.get('name') || 'APEX User');
+            const name = url.searchParams.get('name') || 'APEX User';
             setScannedPayee({ pa: phone, pn: name, isApex: true, raw: trimmed });
             return;
         }
@@ -216,7 +216,7 @@ function PaymentContent() {
 
     const handlePayWithWallet = async () => {
         const amountNum = Number(payAmount);
-        if (!amountNum || amountNum <= 0) {
+        if (!Number.isFinite(amountNum) || amountNum <= 0) {
             showToast('Please enter a valid payment amount', 'warning');
             return;
         }
@@ -227,16 +227,15 @@ function PaymentContent() {
 
         setPayLoading(true);
         try {
-            const res = await api.post('/finance/wallet/pay-merchant', {
+            const res = await api.post('/finance/wallet/transfer', {
                 amount: amountNum,
-                payeeVpa: scannedPayee?.pa,
-                payeeName: scannedPayee?.pn,
+                recipientPhone: scannedPayee?.pa,
                 note: payNote,
                 userId: user?.uid || user?._id
             });
 
             if (res.data?.success) {
-                setWalletBalance(res.data.balance);
+                setWalletBalance(res.data.newBalance);
                 setPaymentSuccess({
                     amount: amountNum,
                     payeeName: scannedPayee?.pn,
@@ -271,79 +270,6 @@ function PaymentContent() {
         window.location.href = upiUri;
     };
 
-    const handlePayWithRazorpay = async () => {
-        const amountNum = Number(payAmount);
-        if (!amountNum || amountNum <= 0) {
-            showToast('Please enter a valid amount', 'warning');
-            return;
-        }
-        setPayLoading(true);
-        try {
-            const orderRes = await api.post('/finance/razorpay/order', {
-                amount: amountNum,
-                userId: user?.uid || user?._id,
-                category: 'qr_payment',
-                serviceName: `Pay ${scannedPayee?.pn || 'Merchant'}`,
-                metadata: {
-                    payeeVpa: scannedPayee?.pa,
-                    payeeName: scannedPayee?.pn,
-                    note: payNote
-                }
-            });
-
-            const { order, keyId } = orderRes.data;
-
-            const options = {
-                key: keyId,
-                amount: order.amount,
-                currency: order.currency,
-                name: "APEX Pay",
-                description: `Payment to ${scannedPayee?.pn}`,
-                order_id: order.id,
-                handler: async function (response: any) {
-                    try {
-                        const verifyRes = await api.post('/finance/razorpay/verify', {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                            amount: amountNum,
-                            userId: user?.uid || user?._id
-                        });
-
-                        if (verifyRes.data?.success) {
-                            setPaymentSuccess({
-                                amount: amountNum,
-                                payeeName: scannedPayee?.pn,
-                                payeeVpa: scannedPayee?.pa,
-                                txId: response.razorpay_payment_id,
-                                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                            });
-                            setScannedPayee(null);
-                            fetchTransactions();
-                        }
-                    } catch (e) {
-                        showToast('Verification failed after payment capture', 'error');
-                    } finally {
-                        setPayLoading(false);
-                    }
-                },
-                prefill: {
-                    name: user?.name || "APEX User",
-                    contact: user?.phone || ""
-                },
-                theme: { color: "#059669" }, // emerald-600
-                modal: {
-                    ondismiss: () => setPayLoading(false)
-                }
-            };
-
-            const rzp = new (window as any).Razorpay(options);
-            rzp.open();
-        } catch (err: any) {
-            showToast(err.response?.data?.error || 'Failed to initiate gateway payment', 'error');
-            setPayLoading(false);
-        }
-    };
 
     const handleAddMoneySubmit = async () => {
         const amountNum = Number(addAmount);
@@ -354,6 +280,7 @@ function PaymentContent() {
 
         setAddLoading(true);
         try {
+            const RazorpayCheckout = await loadRazorpay();
             const orderRes = await api.post('/finance/razorpay/order', {
                 amount: amountNum,
                 userId: user?.uid || user?._id,
@@ -402,7 +329,7 @@ function PaymentContent() {
                 }
             };
 
-            const rzp = new (window as any).Razorpay(options);
+            const rzp = new RazorpayCheckout(options);
             rzp.open();
         } catch (err: any) {
             showToast(err.response?.data?.error || 'Failed to start wallet recharge', 'error');
@@ -495,14 +422,17 @@ function PaymentContent() {
     };
 
     const handleOpenMyQr = async () => {
-        setIsMyQrOpen(true);
-        const phone = user?.phone?.replace(/[^\d]/g, '').slice(-10) || '9494273763';
-        setMyQrUpi(`upi://pay?pa=${phone}@apex&pn=${encodeURIComponent(user?.name || 'APEX User')}&cu=INR`);
+        try {
+            const response = await api.get('/finance/my-qr');
+            setMyQrUpi(response.data.apexUri);
+            setIsMyQrOpen(true);
+        } catch (error: any) {
+            showToast(error.response?.data?.error || 'Unable to load your payment QR.', 'error');
+        }
     };
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans pb-24 text-gray-900">
-            <Script src="https://checkout.razorpay.com/v1/checkout.js" />
 
             {/* HEADER */}
             <div className="sticky top-0 z-40 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between shadow-sm">
@@ -698,6 +628,7 @@ function PaymentContent() {
                         />
 
                         <div className="flex flex-col gap-3">
+                            {scannedPayee.isApex && (
                             <button
                                 onClick={handlePayWithWallet}
                                 disabled={payLoading || !payAmount || Number(payAmount) <= 0 || walletBalance < Number(payAmount)}
@@ -705,7 +636,8 @@ function PaymentContent() {
                             >
                                 {payLoading ? 'Processing...' : 'Pay with Wallet'}
                             </button>
-
+                            )}
+                            {!scannedPayee.isApex && (
                             <button
                                 onClick={handlePayWithUpiIntent}
                                 disabled={payLoading || !payAmount || Number(payAmount) <= 0}
@@ -713,6 +645,7 @@ function PaymentContent() {
                             >
                                 Pay with UPI App (GPay/PhonePe)
                             </button>
+                            )}
                         </div>
                     </div>
                 </div>

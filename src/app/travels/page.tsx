@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { SocketContext } from '@/context/SocketContext';
 import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/services/api';
+import { loadRazorpay } from '@/services/razorpay';
 import MapboxSearch from '@/components/MapboxSearch';
 import NotificationBell from '@/components/NotificationBell';
 
@@ -192,6 +193,7 @@ export default function Page() {
         }
 
         // Old Phase 2.5 Logic: Initiate Razorpay for Bus/Train/Flight
+        const RazorpayCheckout = await loadRazorpay();
         const orderRes = await api.post('/finance/razorpay/order', {
             amount: fare,
             userId: user._id || user.uid,
@@ -246,7 +248,7 @@ export default function Page() {
             modal: { ondismiss: () => setIsBooking(false) }
         };
 
-        const rzp = new (window as any).Razorpay(options);
+        const rzp = new RazorpayCheckout(options);
         rzp.open();
     } catch (err: any) {
         console.error("Error initiating payment", err);

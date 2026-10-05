@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/services/api';
+import { loadRazorpay } from '@/services/razorpay';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function Page() {
@@ -30,6 +31,7 @@ export default function Page() {
     setIsSubmitting(true);
     try {
         const numAmount = parseInt(amount, 10);
+        const RazorpayCheckout = await loadRazorpay();
         const orderRes = await api.post('/finance/razorpay/order', {
             amount: numAmount,
             userId: user.uid,
@@ -81,7 +83,7 @@ export default function Page() {
             }
         };
         
-        const rzp = new (window as any).Razorpay(options);
+        const rzp = new RazorpayCheckout(options);
         rzp.open();
     } catch (error) {
         window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Failed to initiate donation', type: 'error' } }));

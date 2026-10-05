@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
+import { loadRazorpay } from '@/services/razorpay';
 import { db } from '@/firebase.config';
 // doc, setDoc removed as they are no longer used for profile
 
@@ -97,6 +98,7 @@ export default function GlobalModals() {
                     ...(modalData?.metadata || {})
                 };
                 
+                const RazorpayCheckout = await loadRazorpay();
                 const orderRes = await api.post('/finance/razorpay/order', {
                     amount: numericAmt,
                     userId: user.uid,
@@ -166,7 +168,7 @@ export default function GlobalModals() {
                     }
                 };
                 
-                const rzp = new (window as any).Razorpay(options);
+                const rzp = new RazorpayCheckout(options);
                 rzp.open();
             }
         } catch (e) {

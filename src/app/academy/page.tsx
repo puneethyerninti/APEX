@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AutoCarousel from '@/components/AutoCarousel';
 import { api } from '@/services/api';
+import { loadRazorpay } from '@/services/razorpay';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function Page() {
@@ -36,6 +37,7 @@ export default function Page() {
       
       try {
           const amountValue = parseInt(enrollCourse.price.replace(/[^0-9]/g, ''), 10) || 500;
+          const RazorpayCheckout = await loadRazorpay();
           const orderRes = await api.post('/finance/razorpay/order', {
               amount: amountValue,
               userId: user.uid,
@@ -89,7 +91,7 @@ export default function Page() {
               }
           };
           
-          const rzp = new (window as any).Razorpay(options);
+          const rzp = new RazorpayCheckout(options);
           rzp.open();
       } catch (error) {
           console.error("Enrollment failed:", error);
