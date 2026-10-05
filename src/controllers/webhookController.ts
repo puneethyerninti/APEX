@@ -58,20 +58,21 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
   }
 
   // Validate the signature
-  const rawBody = (req as any).rawBody || Buffer.from(JSON.stringify(req.body));
+  const rawBody = (req as any).rawBody;
+  if (!Buffer.isBuffer(rawBody)) return res.status(400).send('Raw webhook body required');
   const expectedSignature = crypto
     .createHmac('sha256', secret)
     .update(rawBody)
     .digest('hex');
 
-  if (expectedSignature !== signature) {
+  if (!/^[a-f0-9]{64}$/i.test(signature) || !crypto.timingSafeEqual(Buffer.from(expectedSignature, 'hex'), Buffer.from(signature, 'hex'))) {
     console.error('Invalid signature for webhook');
     return res.status(400).send('Invalid signature');
   }
 
   // Process the event
   const { event, payload } = req.body;
-  const eventId = (req.headers['x-razorpay-event-id'] as string) || `${event}:${payload?.payment?.entity?.id || payload?.order?.entity?.id || Date.now()}`;
+  const eventId = (req.headers['x-razorpay-event-id'] as string) || crypto.createHash('sha256').update(rawBody).digest('hex');
 
   try {
     try {
@@ -92,14 +93,18 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
       const paymentEntity = payload.payment.entity;
       const razorpayOrderId = paymentEntity.order_id;
       const razorpayPaymentId = paymentEntity.id;
+      const stored = await Transaction.findOne({ razorpayOrderId });
+      if (!stored) throw new Error('Captured payment order not found');
+      if (paymentEntity.status !== 'captured' || Number(paymentEntity.amount) !== Math.round(stored.amount * 100) || paymentEntity.currency !== 'INR') {
+        throw new Error('Captured payment does not match order');
+      }
       
       // Idempotency check: Find pending transaction and complete it
       let transaction = await Transaction.findOneAndUpdate(
-        { razorpayOrderId: razorpayOrderId, status: 'pending' },
+        { razorpayOrderId: razorpayOrderId, status: { $in: ['pending', 'failed'] }, 'metadata.fulfillmentError': { $exists: false } },
         { 
           status: 'completed',
           razorpayPaymentId: razorpayPaymentId,
-          referenceId: razorpayPaymentId,
           webhookPayload: req.body
         },
         { new: true }
@@ -109,7 +114,7 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
         transaction = await Transaction.findOne({ razorpayOrderId: razorpayOrderId });
       }
 
-      if (transaction) {
+      if (transaction && transaction.status === 'completed' && transaction.razorpayPaymentId === razorpayPaymentId) {
         if (isUtilityCategory(transaction.category)) {
           await scheduleUtilityFulfillment(transaction, req.app.get('io'));
           console.log(`Webhook: Queued utility fulfillment for order ${razorpayOrderId} (${transaction.category})`);
@@ -126,31 +131,23 @@ export const handleRazorpayWebhook = async (req: Request, res: Response) => {
       const paymentEntity = payload.payment.entity;
       const razorpayOrderId = paymentEntity.order_id;
       
-      const failedTx = await Transaction.findOneAndUpdate(
+      await Transaction.findOneAndUpdate(
         { razorpayOrderId: razorpayOrderId, status: 'pending' },
         { 
-          status: 'failed',
+          'metadata.lastPaymentFailure': paymentEntity.error_description || 'Payment attempt failed',
           webhookPayload: req.body
         },
         { new: true }
       );
       
-      if (failedTx && failedTx.metadata?.utilityTransactionId) {
-          await updateUtilityTransactionStatus(
-            failedTx.metadata.utilityTransactionId,
-            'failed',
-            'Payment failed.',
-            {},
-            req.app.get('io')
-          );
-      }
-      console.log(`Webhook: Marked order ${razorpayOrderId} as failed`);
+      console.log(`Webhook: Recorded failed payment attempt for order ${razorpayOrderId}`);
     }
 
     // Always return 200 OK to acknowledge receipt
     res.status(200).send('OK');
   } catch (error) {
     console.error('Error processing webhook:', error);
+    await WebhookEvent.deleteOne({ provider: 'razorpay', eventId });
     res.status(500).send('Server error');
   }
 };

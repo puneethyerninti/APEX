@@ -46,18 +46,20 @@ const handleRazorpayWebhook = async (req, res) => {
         return res.status(400).send('Signature missing');
     }
     // Validate the signature
-    const rawBody = req.rawBody || Buffer.from(JSON.stringify(req.body));
+    const rawBody = req.rawBody;
+    if (!Buffer.isBuffer(rawBody))
+        return res.status(400).send('Raw webhook body required');
     const expectedSignature = crypto_1.default
         .createHmac('sha256', secret)
         .update(rawBody)
         .digest('hex');
-    if (expectedSignature !== signature) {
+    if (!/^[a-f0-9]{64}$/i.test(signature) || !crypto_1.default.timingSafeEqual(Buffer.from(expectedSignature, 'hex'), Buffer.from(signature, 'hex'))) {
         console.error('Invalid signature for webhook');
         return res.status(400).send('Invalid signature');
     }
     // Process the event
     const { event, payload } = req.body;
-    const eventId = req.headers['x-razorpay-event-id'] || `${event}:${payload?.payment?.entity?.id || payload?.order?.entity?.id || Date.now()}`;
+    const eventId = req.headers['x-razorpay-event-id'] || crypto_1.default.createHash('sha256').update(rawBody).digest('hex');
     try {
         try {
             await WebhookEvent_1.default.create({
@@ -77,17 +79,22 @@ const handleRazorpayWebhook = async (req, res) => {
             const paymentEntity = payload.payment.entity;
             const razorpayOrderId = paymentEntity.order_id;
             const razorpayPaymentId = paymentEntity.id;
+            const stored = await Transaction_1.default.findOne({ razorpayOrderId });
+            if (!stored)
+                throw new Error('Captured payment order not found');
+            if (paymentEntity.status !== 'captured' || Number(paymentEntity.amount) !== Math.round(stored.amount * 100) || paymentEntity.currency !== 'INR') {
+                throw new Error('Captured payment does not match order');
+            }
             // Idempotency check: Find pending transaction and complete it
-            let transaction = await Transaction_1.default.findOneAndUpdate({ razorpayOrderId: razorpayOrderId, status: 'pending' }, {
+            let transaction = await Transaction_1.default.findOneAndUpdate({ razorpayOrderId: razorpayOrderId, status: { $in: ['pending', 'failed'] }, 'metadata.fulfillmentError': { $exists: false } }, {
                 status: 'completed',
                 razorpayPaymentId: razorpayPaymentId,
-                referenceId: razorpayPaymentId,
                 webhookPayload: req.body
             }, { new: true });
             if (!transaction) {
                 transaction = await Transaction_1.default.findOne({ razorpayOrderId: razorpayOrderId });
             }
-            if (transaction) {
+            if (transaction && transaction.status === 'completed' && transaction.razorpayPaymentId === razorpayPaymentId) {
                 if (isUtilityCategory(transaction.category)) {
                     await scheduleUtilityFulfillment(transaction, req.app.get('io'));
                     console.log(`Webhook: Queued utility fulfillment for order ${razorpayOrderId} (${transaction.category})`);
@@ -105,16 +112,17 @@ const handleRazorpayWebhook = async (req, res) => {
             const paymentEntity = payload.payment.entity;
             const razorpayOrderId = paymentEntity.order_id;
             await Transaction_1.default.findOneAndUpdate({ razorpayOrderId: razorpayOrderId, status: 'pending' }, {
-                status: 'failed',
+                'metadata.lastPaymentFailure': paymentEntity.error_description || 'Payment attempt failed',
                 webhookPayload: req.body
-            });
-            console.log(`Webhook: Marked order ${razorpayOrderId} as failed`);
+            }, { new: true });
+            console.log(`Webhook: Recorded failed payment attempt for order ${razorpayOrderId}`);
         }
         // Always return 200 OK to acknowledge receipt
         res.status(200).send('OK');
     }
     catch (error) {
         console.error('Error processing webhook:', error);
+        await WebhookEvent_1.default.deleteOne({ provider: 'razorpay', eventId });
         res.status(500).send('Server error');
     }
 };

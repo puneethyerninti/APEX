@@ -24,6 +24,19 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
     console.log(`[Fulfillment] Transaction ${transaction._id} (${transaction.razorpayOrderId}) already fulfilled. Skipping.`);
     return metadata.fulfillmentResult || null;
   }
+  if (transaction.status !== 'completed') throw new Error('Payment is not eligible for fulfillment');
+  if (!['add_money', 'wallet_recharge'].includes(transaction.category)) {
+    const claimed = await Transaction.findOneAndUpdate(
+      { _id: transaction._id, status: 'completed', 'metadata.fulfilled': { $ne: true }, 'metadata.fulfillmentInProgress': { $ne: true } },
+      { $set: { 'metadata.fulfillmentInProgress': true, 'metadata.fulfillmentStartedAt': new Date() } },
+      { new: true }
+    );
+    if (!claimed) {
+      const current = await Transaction.findById(transaction._id);
+      if (current?.metadata?.fulfilled) return current.metadata.fulfillmentResult;
+      throw new Error('Service delivery is processing. Check payment history shortly.');
+    }
+  }
 
   let fulfillmentResult: any = null;
   const userIdStr = transaction.user.toString();
@@ -36,39 +49,35 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
       case 'wallet_recharge':
         // Both add_money and wallet_recharge credit the user's wallet
         const session = await mongoose.startSession();
-        session.startTransaction();
+        let walletResult: any = null;
         try {
-          const updatedUser = await User.findByIdAndUpdate(transaction.user, { 
-            $inc: { walletBalance: transaction.amount } 
-          }, { session, new: true });
-          
-          await Transaction.findByIdAndUpdate(transaction._id, {
-            $set: {
-              'metadata.fulfilled': true,
-              'metadata.fulfilledAt': new Date(),
-              'metadata.fulfillmentResult': { credited: true, amount: transaction.amount }
+          await session.withTransaction(async () => {
+            const claimed = await Transaction.findOneAndUpdate(
+              { _id: transaction._id, status: 'completed', 'metadata.fulfilled': { $ne: true } },
+              { $set: { 'metadata.fulfilled': true, 'metadata.fulfilledAt': new Date() } },
+              { session, new: true }
+            );
+            if (!claimed) {
+              const existing = await Transaction.findById(transaction._id).session(session);
+              walletResult = existing?.metadata?.fulfillmentResult;
+              return;
             }
-          }, { session });
-          
-          await session.commitTransaction();
-          console.log(`[Fulfillment] Credited ₹${transaction.amount} to user wallet. New balance: ₹${updatedUser?.walletBalance}`);
-
-          if (appIo && updatedUser) {
-            appIo.to(`user_${updatedUser._id}`).emit('wallet_update', {
-              amount: transaction.amount,
-              type: 'credit',
-              message: `₹${transaction.amount} added to wallet successfully`,
-              newBalance: updatedUser.walletBalance
-            });
-          }
-
-          return { credited: true, amount: transaction.amount, newBalance: updatedUser?.walletBalance };
-        } catch (error) {
-          await session.abortTransaction();
-          throw error;
+            const updatedUser = await User.findByIdAndUpdate(transaction.user,
+              { $inc: { walletBalance: transaction.amount } }, { session, new: true });
+            if (!updatedUser) throw new Error('Wallet account not found');
+            walletResult = { credited: true, amount: transaction.amount, newBalance: updatedUser.walletBalance };
+            await Transaction.findByIdAndUpdate(transaction._id,
+              { $set: { 'metadata.fulfillmentResult': walletResult } }, { session });
+          });
         } finally {
-          session.endSession();
+          await session.endSession();
         }
+        if (appIo && walletResult) {
+          appIo.to(`user_${transaction.user}`).emit('wallet_update', {
+            amount: transaction.amount, type: 'credit', newBalance: walletResult.newBalance
+          });
+        }
+        return walletResult;
 
       case 'mobile_recharge':
         // Execute Eko recharge API
@@ -119,14 +128,10 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
         break;
 
       case 'qr_payment':
-        fulfillmentResult = {
-          status: 'paid',
-          payee: metadata.payeeName || metadata.payeeVpa || 'Merchant'
-        };
-        break;
+        throw new Error('Merchant payout was not delivered');
 
       default:
-        console.warn(`[Fulfillment] Unknown category: ${transaction.category}`);
+        throw new Error(`Unsupported payment category: ${transaction.category}`);
     }
 
     // Mark transaction metadata as fulfilled
@@ -144,7 +149,7 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
       'Payment Successful',
       `Your payment of ₹${transaction.amount} for ${transaction.referenceId || transaction.category} was successful.`,
       'success'
-    );
+    ).catch(error => console.error('Payment notification failed:', error));
 
     // Emit live socket event to admin room if io is available
     if (appIo) {
@@ -154,6 +159,10 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
     return fulfillmentResult;
   } catch (error: any) {
     console.error(`[Fulfillment] Error fulfilling transaction ${transaction._id}:`, error);
+    if (['add_money', 'wallet_recharge'].includes(transaction.category)) {
+      // A failed database commit can be retried; it must never issue a second wallet credit as a refund.
+      throw error;
+    }
     
     let refundInfo: any = null;
     if (metadata.utilityTransactionId) {

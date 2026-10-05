@@ -28,6 +28,17 @@ const fulfillOrder = async (transaction, appIo) => {
         console.log(`[Fulfillment] Transaction ${transaction._id} (${transaction.razorpayOrderId}) already fulfilled. Skipping.`);
         return metadata.fulfillmentResult || null;
     }
+    if (transaction.status !== 'completed')
+        throw new Error('Payment is not eligible for fulfillment');
+    if (!['add_money', 'wallet_recharge'].includes(transaction.category)) {
+        const claimed = await Transaction_1.default.findOneAndUpdate({ _id: transaction._id, status: 'completed', 'metadata.fulfilled': { $ne: true }, 'metadata.fulfillmentInProgress': { $ne: true } }, { $set: { 'metadata.fulfillmentInProgress': true, 'metadata.fulfillmentStartedAt': new Date() } }, { new: true });
+        if (!claimed) {
+            const current = await Transaction_1.default.findById(transaction._id);
+            if (current?.metadata?.fulfilled)
+                return current.metadata.fulfillmentResult;
+            throw new Error('Service delivery is processing. Check payment history shortly.');
+        }
+    }
     let fulfillmentResult = null;
     const userIdStr = transaction.user.toString();
     console.log(`[Fulfillment] Processing fulfillment for Order: ${transaction.razorpayOrderId}, Category: ${transaction.category}, Amount: ₹${transaction.amount}`);
@@ -37,37 +48,31 @@ const fulfillOrder = async (transaction, appIo) => {
             case 'wallet_recharge':
                 // Both add_money and wallet_recharge credit the user's wallet
                 const session = await mongoose_1.default.startSession();
-                session.startTransaction();
+                let walletResult = null;
                 try {
-                    const updatedUser = await User_1.default.findByIdAndUpdate(transaction.user, {
-                        $inc: { walletBalance: transaction.amount }
-                    }, { session, new: true });
-                    await Transaction_1.default.findByIdAndUpdate(transaction._id, {
-                        $set: {
-                            'metadata.fulfilled': true,
-                            'metadata.fulfilledAt': new Date(),
-                            'metadata.fulfillmentResult': { credited: true, amount: transaction.amount }
+                    await session.withTransaction(async () => {
+                        const claimed = await Transaction_1.default.findOneAndUpdate({ _id: transaction._id, status: 'completed', 'metadata.fulfilled': { $ne: true } }, { $set: { 'metadata.fulfilled': true, 'metadata.fulfilledAt': new Date() } }, { session, new: true });
+                        if (!claimed) {
+                            const existing = await Transaction_1.default.findById(transaction._id).session(session);
+                            walletResult = existing?.metadata?.fulfillmentResult;
+                            return;
                         }
-                    }, { session });
-                    await session.commitTransaction();
-                    console.log(`[Fulfillment] Credited ₹${transaction.amount} to user wallet. New balance: ₹${updatedUser?.walletBalance}`);
-                    if (appIo && updatedUser) {
-                        appIo.to(`user_${updatedUser._id}`).emit('wallet_update', {
-                            amount: transaction.amount,
-                            type: 'credit',
-                            message: `₹${transaction.amount} added to wallet successfully`,
-                            newBalance: updatedUser.walletBalance
-                        });
-                    }
-                    return { credited: true, amount: transaction.amount, newBalance: updatedUser?.walletBalance };
-                }
-                catch (error) {
-                    await session.abortTransaction();
-                    throw error;
+                        const updatedUser = await User_1.default.findByIdAndUpdate(transaction.user, { $inc: { walletBalance: transaction.amount } }, { session, new: true });
+                        if (!updatedUser)
+                            throw new Error('Wallet account not found');
+                        walletResult = { credited: true, amount: transaction.amount, newBalance: updatedUser.walletBalance };
+                        await Transaction_1.default.findByIdAndUpdate(transaction._id, { $set: { 'metadata.fulfillmentResult': walletResult } }, { session });
+                    });
                 }
                 finally {
-                    session.endSession();
+                    await session.endSession();
                 }
+                if (appIo && walletResult) {
+                    appIo.to(`user_${transaction.user}`).emit('wallet_update', {
+                        amount: transaction.amount, type: 'credit', newBalance: walletResult.newBalance
+                    });
+                }
+                return walletResult;
             case 'mobile_recharge':
                 // Execute Eko recharge API
                 fulfillmentResult = await (0, utilityController_1.handleUtilityRecharge)(userIdStr, {
@@ -104,13 +109,9 @@ const fulfillOrder = async (transaction, appIo) => {
                 fulfillmentResult = { status: 'donated' };
                 break;
             case 'qr_payment':
-                fulfillmentResult = {
-                    status: 'paid',
-                    payee: metadata.payeeName || metadata.payeeVpa || 'Merchant'
-                };
-                break;
+                throw new Error('Merchant payout was not delivered');
             default:
-                console.warn(`[Fulfillment] Unknown category: ${transaction.category}`);
+                throw new Error(`Unsupported payment category: ${transaction.category}`);
         }
         // Mark transaction metadata as fulfilled
         await Transaction_1.default.findByIdAndUpdate(transaction._id, {
@@ -121,7 +122,7 @@ const fulfillOrder = async (transaction, appIo) => {
             }
         });
         // Send in-app notification to user
-        await (0, notificationController_1.createNotification)(userIdStr, 'Payment Successful', `Your payment of ₹${transaction.amount} for ${transaction.referenceId || transaction.category} was successful.`, 'success');
+        await (0, notificationController_1.createNotification)(userIdStr, 'Payment Successful', `Your payment of ₹${transaction.amount} for ${transaction.referenceId || transaction.category} was successful.`, 'success').catch(error => console.error('Payment notification failed:', error));
         // Emit live socket event to admin room if io is available
         if (appIo) {
             appIo.to('admin_room').emit('admin_data_refresh', { type: 'new_transaction', data: transaction });
@@ -130,6 +131,10 @@ const fulfillOrder = async (transaction, appIo) => {
     }
     catch (error) {
         console.error(`[Fulfillment] Error fulfilling transaction ${transaction._id}:`, error);
+        if (['add_money', 'wallet_recharge'].includes(transaction.category)) {
+            // A failed database commit can be retried; it must never issue a second wallet credit as a refund.
+            throw error;
+        }
         let refundInfo = null;
         if (metadata.utilityTransactionId) {
             await (0, utilityController_1.updateUtilityTransactionStatus)(metadata.utilityTransactionId, 'refund_pending', error.message || 'Service delivery failed after payment', {}, appIo);
@@ -158,6 +163,39 @@ const fulfillOrder = async (transaction, appIo) => {
             }
             catch (refundError) {
                 console.error(`[Fulfillment] CRITICAL: Auto-refund failed for ${transaction.razorpayPaymentId}:`, refundError);
+                refundInfo = {
+                    status: 'Refund_Failed',
+                    refundError: refundError.message
+                };
+            }
+        }
+        else {
+            // Wallet Payment Auto-Refund
+            console.log(`[Fulfillment] Auto-refunding WALLET payment for transaction ${transaction._id}.`);
+            try {
+                const user = await User_1.default.findById(userIdStr);
+                if (user) {
+                    user.walletBalance += transaction.amount;
+                    await user.save();
+                    refundInfo = {
+                        refundId: `wr_${Date.now()}`,
+                        refundedAt: new Date(),
+                        status: 'Refunded'
+                    };
+                    console.log(`[Fulfillment] Wallet refund successful. New balance: ₹${user.walletBalance}`);
+                    if (appIo) {
+                        appIo.to(`user_${user._id}`).emit('wallet_update', {
+                            amount: transaction.amount,
+                            type: 'credit',
+                            message: `Refund of ₹${transaction.amount} credited to wallet for failed service`,
+                            newBalance: user.walletBalance
+                        });
+                    }
+                    await (0, notificationController_1.createNotification)(userIdStr, 'Payment Refunded', `Your payment of ₹${transaction.amount} has been refunded to your APEX Wallet because the service could not be delivered.`, 'info');
+                }
+            }
+            catch (refundError) {
+                console.error(`[Fulfillment] CRITICAL: Wallet auto-refund failed for transaction ${transaction._id}:`, refundError);
                 refundInfo = {
                     status: 'Refund_Failed',
                     refundError: refundError.message

@@ -261,9 +261,10 @@ export const addMoney = async (req: Request, res: Response) => {
  * Real-time atomic P2P wallet transfer between APEX users via phone number.
  */
 export const transferMoney = async (req: Request, res: Response) => {
-  const { recipientPhone, amount, note } = req.body;
+  const { recipientPhone, note } = req.body;
+  const amount = Number(req.body.amount);
 
-  if (!amount || amount <= 0) {
+  if (!Number.isFinite(amount) || amount < 0.01) {
     return res.status(400).json({ success: false, error: 'Please enter a valid transfer amount' });
   }
 
@@ -413,11 +414,15 @@ export const transferMoney = async (req: Request, res: Response) => {
  * RazorpayX Payouts Integration
  */
 export const withdrawToBank = async (req: Request, res: Response) => {
-  const { amount, method, destination, note } = req.body;
+  const { method, destination, note } = req.body;
+  const amount = Number(req.body.amount);
+  if (!process.env.RAZORPAYX_ACCOUNT_NUMBER || !(process.env.RAZORPAYX_KEY_ID || process.env.RAZORPAY_KEY_ID) || !(process.env.RAZORPAYX_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)) {
+    return res.status(503).json({ success: false, error: 'Withdrawals are unavailable until the payout account is configured. Your wallet has not been debited.' });
+  }
   // method: 'UPI' | 'IMPS'
   // destination: 'user@upi' or '{ account_number, ifsc }'
 
-  if (!amount || amount < 50) {
+  if (!Number.isFinite(amount) || amount < 50) {
     return res.status(400).json({ success: false, error: 'Minimum withdrawal is ₹50' });
   }
 
@@ -484,7 +489,7 @@ export const withdrawToBank = async (req: Request, res: Response) => {
         const payoutRes = await axios.post('https://api.razorpay.com/v1/payouts', {
           account_number: accountNumber,
           fund_account_id: fundRes.data.id,
-          amount: amount * 100,
+          amount: Math.round(amount * 100),
           currency: 'INR',
           mode: method,
           purpose: 'payout',
@@ -510,8 +515,8 @@ export const withdrawToBank = async (req: Request, res: Response) => {
       type: 'debit',
       category: 'withdrawal',
       referenceId: razorpayPayoutId,
-      status: status as any,
-      metadata: { method, destination, note }
+      status: status === 'processed' ? 'completed' : 'pending',
+      metadata: { method, destination, note, payoutStatus: status }
     }], { session });
 
     await session.commitTransaction();
@@ -553,91 +558,7 @@ export const withdrawToBank = async (req: Request, res: Response) => {
  * Direct QR scan & pay using wallet balance.
  */
 export const payMerchantWithWallet = async (req: Request, res: Response) => {
-  const { amount, payeeVpa, payeeName, note } = req.body;
-
-  if (!amount || amount <= 0) {
-    return res.status(400).json({ success: false, error: 'Please enter a valid payment amount' });
-  }
-
-  if (!payeeVpa && !payeeName) {
-    return res.status(400).json({ success: false, error: 'Merchant details (VPA or Name) are required' });
-  }
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const user = await resolveUser(req);
-    if (!user) {
-      await session.abortTransaction();
-      return res.status(401).json({ success: false, error: 'Authentication required' });
-    }
-
-    const liveUser = await User.findById(user._id).session(session);
-    if (!liveUser) {
-      await session.abortTransaction();
-      return res.status(404).json({ success: false, error: 'User account not found' });
-    }
-
-    if (liveUser.walletBalance < amount) {
-      await session.abortTransaction();
-      return res.status(400).json({ 
-        success: false, 
-        error: `Insufficient wallet balance (₹${liveUser.walletBalance}). Please top up your wallet or pay via UPI intent.` 
-      });
-    }
-
-    liveUser.walletBalance -= amount;
-    await liveUser.save({ session });
-
-    const merchantLabel = payeeName || payeeVpa;
-    const transaction = await Transaction.create([{
-      user: liveUser._id,
-      amount,
-      type: 'debit',
-      category: 'qr_payment',
-      referenceId: `Paid to ${merchantLabel}`,
-      status: 'completed',
-      metadata: {
-        payeeVpa: payeeVpa || '',
-        payeeName: payeeName || 'Merchant',
-        note: note || '',
-        paymentMethod: 'APEX_WALLET'
-      }
-    }], { session });
-
-    await session.commitTransaction();
-
-    const io = req.app.get('io');
-    if (io) {
-      io.to(`user_${liveUser._id}`).emit('wallet_update', {
-        amount,
-        type: 'debit',
-        message: `₹${amount} paid to ${merchantLabel}`,
-        newBalance: liveUser.walletBalance
-      });
-    }
-
-    await createNotification(
-      liveUser._id.toString(),
-      'Payment Successful',
-      `₹${amount} paid to ${merchantLabel} using APEX Wallet.`,
-      'success'
-    );
-
-    res.json({
-      success: true,
-      message: 'Payment completed successfully',
-      balance: liveUser.walletBalance,
-      transaction: transaction[0]
-    });
-  } catch (error) {
-    await session.abortTransaction();
-    console.error('payMerchantWithWallet Error:', error);
-    res.status(500).json({ success: false, error: 'Server error processing QR payment' });
-  } finally {
-    session.endSession();
-  }
+  return res.status(503).json({ success: false, error: 'Merchant wallet payments are unavailable. Use your UPI app to pay the merchant.' });
 };
 
 /**
@@ -702,13 +623,10 @@ export const getMyQrPayload = async (req: Request, res: Response) => {
     const cleanPhone = (user.phone || '').replace(/[^\d]/g, '').slice(-10);
     const userName = user.name || 'APEX User';
     
-    // Official standard UPI intent for APEX
-    const upiUri = `upi://pay?pa=9494273763@ybl&pn=${encodeURIComponent(userName)}&tr=APEX_${user._id}&cu=INR`;
     const apexUri = `apex://pay?phone=${cleanPhone}&name=${encodeURIComponent(userName)}&id=${user._id}`;
 
     res.json({
       success: true,
-      upiUri,
       apexUri,
       user: {
         _id: user._id,
@@ -774,9 +692,20 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Payment gateway is not configured correctly on the server.' });
   }
 
-  if (!userId) {
-    return res.status(400).json({ error: 'User ID is required' });
+  const user = await resolveUser(req);
+  if (!user) return res.status(401).json({ error: 'Please login to make a payment.' });
+  userId = user._id;
+  amount = Number(amount);
+  if (!Number.isFinite(amount) || amount < 0.01 || !Number.isSafeInteger(Math.round(amount * 100))) {
+    return res.status(400).json({ error: 'Enter a valid payment amount.' });
   }
+  const supportedCategories = ['add_money', 'wallet_recharge', 'mobile_recharge', 'bbps_payment', 'matrimony', 'subscription', 'travel_booking', 'academy_enrollment', 'charity'];
+  if (!supportedCategories.includes(category)) {
+    return res.status(400).json({ error: 'This payment service is unavailable. Pay external merchants using your UPI app.' });
+  }
+  const reservedMetadata = new Set(['fulfilled', 'fulfilledAt', 'fulfillmentResult', 'fulfillmentError', 'fulfillmentFailedAt', 'fulfillmentQueued', 'fulfillmentQueuedAt', 'fulfillmentInProgress', 'fulfillmentStartedAt', 'refundInfo', 'utilityTransactionId']);
+  metadata = Object.fromEntries(Object.entries(metadata && typeof metadata === 'object' && !Array.isArray(metadata) ? metadata : {})
+    .filter(([key]) => !reservedMetadata.has(key)));
 
   // Ensure course enrollment payments are true to their prices
   if (category === 'academy_enrollment' && metadata?.courseName) {
@@ -801,11 +730,12 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
     const order = await getRazorpay().orders.create(options);
     const utilityTransaction = await createPendingUtilityTransaction(userId, category, amount, metadata || {}, order.id);
     
+    const txType = ['add_money', 'wallet_recharge'].includes(category) ? 'credit' : 'debit';
     // Create pending transaction
     await Transaction.create({
       user: userId,
       amount,
-      type: 'credit',
+      type: txType,
       category: category,
       referenceId: serviceName || 'wallet_topup',
       status: 'pending',
@@ -832,85 +762,54 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
 
 // Razorpay Payment Verification (Strict)
 export const verifyRazorpayPayment = async (req: Request, res: Response) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount, userId } = req.body;
-
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-    return res.status(500).json({ error: 'Payment gateway configuration missing' });
+    return res.status(503).json({ error: 'Payment gateway configuration missing' });
   }
-
+  if (![razorpay_order_id, razorpay_payment_id, razorpay_signature].every(value => typeof value === 'string' && value.length > 0)) {
+    return res.status(400).json({ success: false, error: 'Payment verification details are required.' });
+  }
   try {
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
-      .update(body.toString())
-      .digest("hex");
-
-    const isAuthentic = expectedSignature === razorpay_signature;
-
-    if (isAuthentic) {
-      // Idempotency: Find the pending transaction and mark it completed
-      const transaction = await Transaction.findOneAndUpdate(
-        { razorpayOrderId: razorpay_order_id, status: 'pending' },
-        { 
-          status: 'completed',
-          razorpayPaymentId: razorpay_payment_id,
-          razorpaySignature: razorpay_signature
-        },
-        { new: true }
-      );
-
-      if (transaction) {
-        if (isUtilityCategory(transaction.category)) {
-          await scheduleUtilityFulfillment(transaction, req.app.get('io'));
-          return res.json({
-            success: true,
-            message: 'Payment verified. Utility service is processing.',
-            category: transaction.category,
-            utilityTransactionId: transaction.metadata?.utilityTransactionId,
-            status: 'fulfillment_pending'
-          });
-        }
-
-        try {
-          const fulfillmentResult = await fulfillOrder(transaction, req.app.get('io'));
-          return res.json({ 
-            success: true, 
-            message: "Payment verified and fulfilled successfully", 
-            fulfillmentData: fulfillmentResult, 
-            category: transaction.category 
-          });
-        } catch (fulfillmentError: any) {
-          console.error("Fulfillment failed after successful payment:", fulfillmentError);
-          return res.status(500).json({ 
-            error: 'Payment verified, but failed to deliver service.', 
-            details: fulfillmentError.message 
-          });
-        }
-      } else {
-        // Transaction was already completed (e.g. by webhook) - check if fulfilled
-        const existingTx = await Transaction.findOne({ razorpayOrderId: razorpay_order_id });
-        if (existingTx && isUtilityCategory(existingTx.category)) {
-          await scheduleUtilityFulfillment(existingTx, req.app.get('io'));
-          return res.json({
-            success: true,
-            message: 'Payment already verified. Utility service is processing.',
-            category: existingTx.category,
-            utilityTransactionId: existingTx.metadata?.utilityTransactionId,
-            status: existingTx.metadata?.fulfilled ? 'eko_success' : 'fulfillment_pending'
-          });
-        }
-        if (existingTx && !existingTx.metadata?.fulfilled) {
-          const fulfillmentResult = await fulfillOrder(existingTx, req.app.get('io'));
-          return res.json({ success: true, message: "Payment fulfilled successfully", fulfillmentData: fulfillmentResult });
-        }
-        return res.json({ success: true, message: "Payment already verified and fulfilled" });
-      }
-    } else {
-      res.status(400).json({ success: false, error: "Invalid signature" });
+    const user = await resolveUser(req);
+    if (!user) return res.status(401).json({ error: 'Please login to verify payment.' });
+    let transaction = await Transaction.findOne({ razorpayOrderId: razorpay_order_id, user: user._id });
+    if (!transaction) return res.status(404).json({ success: false, error: 'Payment order not found.' });
+    const expected = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(transaction.razorpayOrderId + '|' + razorpay_payment_id).digest('hex');
+    if (!/^[a-f0-9]{64}$/i.test(razorpay_signature) ||
+        !crypto.timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(razorpay_signature, 'hex'))) {
+      return res.status(400).json({ success: false, error: 'Invalid payment signature.' });
     }
-  } catch (error) {
-    console.error("Verification error:", error);
-    res.status(500).json({ error: 'Server error during verification' });
+    const payment = await getRazorpay().payments.fetch(razorpay_payment_id);
+    if (payment.order_id !== transaction.razorpayOrderId ||
+        Number(payment.amount) !== Math.round(transaction.amount * 100) || payment.currency !== 'INR') {
+      return res.status(400).json({ success: false, error: 'Payment does not match this order.' });
+    }
+    if (payment.status !== 'captured') {
+      return res.status(409).json({ success: false, status: 'payment_pending', error: 'Payment has not been captured yet. Please check your payment history shortly.' });
+    }
+    if (transaction.status === 'refunded' || transaction.metadata?.fulfillmentError) {
+      return res.status(409).json({ success: false, status: transaction.status, error: 'This payment needs support review or has been refunded.' });
+    }
+    const captured = await Transaction.findOneAndUpdate(
+      { _id: transaction._id, status: { $in: ['pending', 'failed'] }, 'metadata.fulfillmentError': { $exists: false } },
+      { $set: { status: 'completed', razorpayPaymentId: razorpay_payment_id, razorpaySignature: razorpay_signature } },
+      { new: true }
+    );
+    transaction = captured || await Transaction.findById(transaction._id);
+    if (!transaction || transaction.status !== 'completed' || transaction.razorpayPaymentId !== razorpay_payment_id) {
+      return res.status(409).json({ success: false, error: 'Payment is awaiting reconciliation.' });
+    }
+    if (isUtilityCategory(transaction.category)) {
+      await scheduleUtilityFulfillment(transaction, req.app.get('io'));
+      return res.json({ success: true, category: transaction.category,
+        utilityTransactionId: transaction.metadata?.utilityTransactionId, status: 'fulfillment_pending' });
+    }
+    const fulfillmentData = await fulfillOrder(transaction, req.app.get('io'));
+    return res.json({ success: true, category: transaction.category, fulfillmentData,
+      message: 'Payment verified and service delivered.' });
+  } catch (error: any) {
+    console.error('Payment verification failed:', error.message);
+    return res.status(500).json({ success: false, error: 'Payment confirmation is delayed. Check payment history before paying again.' });
   }
 };
