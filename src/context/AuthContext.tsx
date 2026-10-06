@@ -75,7 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try { await signOut(auth); }
     catch { setError('Unable to sign out. Check your connection and retry.'); }
   };
-  if (isLoading) return <main className="p-6 text-center" role="status">Verifying session...</main>;
+  if (isLoading) return <main className="flex min-h-dvh items-center justify-center" role="status" aria-label="Loading APEX">
+    <span aria-hidden="true" className="h-6 w-6 rounded-full border-2 border-gray-200 border-t-gray-600 motion-safe:animate-spin" />
+  </main>;
   return <AuthContext.Provider value={{ isAuthenticated, isLoading, logout }}>
     {error ? <main className="p-6 text-center"><p role="alert">{error}</p><button className="mt-4 p-3 border rounded-lg" onClick={() => setRetry(v => v + 1)}>Retry</button><button className="ml-3 p-3" onClick={logout}>Sign out</button></main> : children}
   </AuthContext.Provider>;
