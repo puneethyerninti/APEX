@@ -14,6 +14,13 @@ export interface IRide extends Document {
     lng: number;
   };
   fare: number;
+  quoteId?: mongoose.Types.ObjectId;
+  vehicleType?: 'mini' | 'xl';
+  paymentMethod?: 'cash' | 'online';
+  paymentStatus?: 'unpaid' | 'paid';
+  paymentTransactionId?: mongoose.Types.ObjectId;
+  expiresAt?: Date;
+  statusHistory?: any[];
   distance: number; // in meters
   duration: number; // in seconds
   status: 'searching' | 'accepted' | 'arrived' | 'in_progress' | 'completed' | 'cancelled';
@@ -37,6 +44,13 @@ const RideSchema = new Schema<IRide>(
       lng: { type: Number, required: true }
     },
     fare: { type: Number, required: true },
+    quoteId: { type: Schema.Types.ObjectId, unique: true, sparse: true },
+    vehicleType: { type: String, enum: ['mini', 'xl'], default: 'mini' },
+    paymentMethod: { type: String, enum: ['cash', 'online'], default: 'cash' },
+    paymentStatus: { type: String, enum: ['unpaid', 'paid'], default: 'unpaid' },
+    paymentTransactionId: { type: Schema.Types.ObjectId, ref: 'Transaction' },
+    expiresAt: Date,
+    statusHistory: [{ status: String, actor: String, at: Date, reason: String }],
     distance: { type: Number, required: true },
     duration: { type: Number, required: true },
     status: {

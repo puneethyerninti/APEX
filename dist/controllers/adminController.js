@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refundUtilityTransaction = exports.markUtilityManualReview = exports.retryUtilityTransaction = exports.getUtilityTransactions = exports.broadcastMessage = exports.getAllLeads = exports.getAllCharityDonations = exports.updateStoreOrderStatus = exports.getAllStoreOrders = exports.completeTransaction = exports.updateUserWallet = exports.deleteEntity = exports.getAllTransactions = exports.getUsersList = exports.updateApprovalStatus = exports.getPendingApprovals = exports.getDashboardStats = void 0;
+exports.refundUtilityTransaction = exports.markUtilityManualReview = exports.retryUtilityTransaction = exports.getUtilityTransactions = exports.broadcastMessage = exports.getAllLeads = exports.getAllCharityDonations = exports.updateStoreOrderStatus = exports.getAllStoreOrders = exports.completeTransaction = exports.updateUserWallet = exports.deleteEntity = exports.getAllTransactions = exports.getUsersList = exports.updateUserPortfolio = exports.updateApprovalStatus = exports.getPendingApprovals = exports.getDashboardStats = void 0;
 const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const Job_1 = __importDefault(require("../models/Job"));
@@ -11,7 +11,7 @@ const MatrimonyProfile_1 = __importDefault(require("../models/MatrimonyProfile")
 const Property_1 = __importDefault(require("../models/Property"));
 const StoreOrder_1 = __importDefault(require("../models/StoreOrder"));
 const CharityDonation_1 = __importDefault(require("../models/CharityDonation"));
-const TravelBooking_1 = __importDefault(require("../models/TravelBooking"));
+const Ride_1 = __importDefault(require("../models/Ride"));
 const Lead_1 = __importDefault(require("../models/Lead"));
 const Notification_1 = __importDefault(require("../models/Notification"));
 const UtilityTransaction_1 = __importDefault(require("../models/UtilityTransaction"));
@@ -27,7 +27,7 @@ const getDashboardStats = async (req, res) => {
         const pendingJobs = await Job_1.default.countDocuments({ status: 'pending' });
         const pendingProfiles = await MatrimonyProfile_1.default.countDocuments({ status: 'pending' });
         const pendingRealty = await Property_1.default.countDocuments({ status: 'pending' });
-        const totalTravelBookings = await TravelBooking_1.default.countDocuments();
+        const totalTravelBookings = await Ride_1.default.countDocuments();
         // Calculate revenue (sum of all credit transactions, or just an example logic)
         const revenueAgg = await Transaction_1.default.aggregate([
             { $match: { status: 'completed' } },
@@ -143,9 +143,25 @@ const updateApprovalStatus = async (req, res) => {
     }
 };
 exports.updateApprovalStatus = updateApprovalStatus;
+const updateUserPortfolio = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { portfolioInvested, portfolioReturns } = req.body;
+        const user = await User_1.default.findByIdAndUpdate(id, { $set: { portfolioInvested: Number(portfolioInvested) || 0, portfolioReturns: Number(portfolioReturns) || 0 } }, { new: true });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        res.json({ message: 'Portfolio updated successfully', user });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server error updating portfolio' });
+    }
+};
+exports.updateUserPortfolio = updateUserPortfolio;
 const getUsersList = async (req, res) => {
     try {
-        const users = await User_1.default.find({}, 'name phone email walletBalance role createdAt');
+        const users = await User_1.default.find({}, 'name phone email walletBalance portfolioInvested portfolioReturns role createdAt');
         res.json({ users });
     }
     catch (error) {

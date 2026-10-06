@@ -3,114 +3,88 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleAPEXPlanUpgrade = exports.saveFCMToken = exports.sendEmailNotification = exports.updateUserProfile = exports.getUserProfile = void 0;
+exports.handleAPEXPlanUpgrade = exports.saveFCMToken = exports.sendEmailNotification = exports.updateUserProfile = exports.getUserProfile = exports.exchangeFirebaseSession = void 0;
 const User_1 = __importDefault(require("../models/User"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const auth_1 = require("firebase-admin/auth");
 const resend_1 = require("resend");
 const notificationController_1 = require("./notificationController");
 const resend = new resend_1.Resend(process.env.RESEND_API_KEY || 'mock_key');
-const getUserProfile = async (req, res) => {
-    const { phone } = req.query;
-    if (!phone) {
-        return res.status(400).json({ error: 'Phone number is required' });
-    }
+const publicProfile = (user) => ({
+    _id: user._id, name: user.name, email: user.email, phone: user.phone,
+    profilePicture: user.profilePicture, role: user.role, walletBalance: user.walletBalance,
+    apexPlan: user.apexPlan, isPremium: user.apexPlan !== 'Free'
+});
+const exchangeFirebaseSession = async (req, res) => {
+    const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null;
+    if (!token)
+        return res.status(401).json({ error: 'Verified phone login is required.' });
     try {
-        const user = await User_1.default.findOne({ phone: phone });
+        const identity = await (0, auth_1.getAuth)().verifyIdToken(token, true);
+        const phone = identity.phone_number;
+        if (!phone || !/^\+91[6-9]\d{9}$/.test(phone))
+            return res.status(403).json({ error: 'An Indian phone OTP login is required.' });
+        let user = await User_1.default.findOne({ $or: [{ firebaseUid: identity.uid }, { phone }, { phone: phone.slice(3) }] });
+        if (user?.firebaseUid && user.firebaseUid !== identity.uid)
+            return res.status(403).json({ error: 'Account identity mismatch. Contact support.' });
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            user = await User_1.default.create({ firebaseUid: identity.uid, phone, name: String(req.body?.name || 'APEX User').trim().slice(0, 100) || 'APEX User',
+                email: `${phone.slice(1)}@apex.local`, role: 'user' });
         }
-        const isAdminPhone = phone === '8247885289' || phone === '+918247885289';
-        const isDriverPhone = phone === '7032709656' || phone === '+917032709656';
-        if (isAdminPhone && user.role !== 'admin') {
-            user.role = 'admin';
+        else if (!user.firebaseUid) {
+            user.firebaseUid = identity.uid;
             await user.save();
         }
-        else if (isDriverPhone && user.role !== 'driver') {
-            user.role = 'driver';
-            await user.save();
-        }
-        const token = jsonwebtoken_1.default.sign({ id: user._id, phone: user.phone, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.json({
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            profilePicture: user.profilePicture,
-            role: user.role,
-            walletBalance: user.walletBalance,
-            token,
-        });
+        const session = jsonwebtoken_1.default.sign({ id: user._id, phone: user.phone, role: user.role, authVersion: 2 }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        return res.json({ user: publicProfile(user), token: session });
     }
     catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server error fetching user profile' });
+        console.error('Session exchange failed:', error.code || error.message);
+        return res.status(error.code?.startsWith('auth/') ? 401 : 503).json({ error: 'Unable to verify login. Please retry.' });
+    }
+};
+exports.exchangeFirebaseSession = exchangeFirebaseSession;
+const getUserProfile = async (req, res) => {
+    try {
+        const user = await User_1.default.findById(req.user?.id);
+        if (!user)
+            return res.status(404).json({ error: 'User not found' });
+        return res.json(publicProfile(user));
+    }
+    catch {
+        return res.status(500).json({ error: 'Unable to load profile.' });
     }
 };
 exports.getUserProfile = getUserProfile;
 const updateUserProfile = async (req, res) => {
-    const { phone, name, email, profilePicture } = req.body;
-    if (!phone) {
-        return res.status(400).json({ error: 'Phone number is required' });
-    }
     try {
-        let user = await User_1.default.findOne({ phone });
-        const isAdminPhone = phone === '8247885289' || phone === '+918247885289';
-        const isDriverPhone = phone === '7032709656' || phone === '+917032709656';
-        if (user) {
-            // Update existing user
-            if (name !== undefined)
-                user.name = name;
-            if (email !== undefined)
-                user.email = email;
-            if (profilePicture !== undefined)
-                user.profilePicture = profilePicture;
-            if (isAdminPhone && user.role !== 'admin') {
-                user.role = 'admin'; // Auto-upgrade to admin
-            }
-            else if (isDriverPhone && user.role !== 'driver') {
-                user.role = 'driver'; // Auto-upgrade to driver
-            }
-            await user.save();
-            // Send real-time push notification for manual testing!
-            await (0, notificationController_1.createNotification)(user._id.toString(), "Profile Updated ✅", "Your profile details were updated successfully. Push notifications are working!", "success");
+        const user = await User_1.default.findById(req.user?.id);
+        if (!user)
+            return res.status(404).json({ error: 'User not found' });
+        const { name, email, profilePicture } = req.body;
+        if (name !== undefined) {
+            if (typeof name !== 'string' || name.trim().length < 2 || name.length > 100)
+                return res.status(400).json({ error: 'Enter a valid name.' });
+            user.name = name.trim();
         }
-        else {
-            // Create user if not found (fallback)
-            user = await User_1.default.create({
-                phone,
-                name: name || (isAdminPhone ? 'APEX Admin' : isDriverPhone ? 'APEX Driver' : 'User'),
-                email: email || `${phone}@apex.local`,
-                walletBalance: 0,
-                role: isAdminPhone ? 'admin' : isDriverPhone ? 'driver' : 'user'
-            });
-            // Emit live event to admin dashboard
-            const io = req.app.get('io');
-            if (io) {
-                io.to('admin_room').emit('admin_data_refresh');
-            }
+        if (email !== undefined) {
+            if (typeof email !== 'string' || email.length > 254 || (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))
+                return res.status(400).json({ error: 'Enter a valid email.' });
+            user.email = email.trim() || `${String(user.phone).replace(/\D/g, '')}@apex.local`;
         }
-        const token = jsonwebtoken_1.default.sign({ id: user._id, phone: user.phone, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.json({
-            message: 'Profile updated successfully',
-            user: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                phone: user.phone,
-                profilePicture: user.profilePicture,
-                role: user.role,
-                walletBalance: user.walletBalance
-            },
-            token
-        });
+        if (profilePicture !== undefined) {
+            if (typeof profilePicture !== 'string' || profilePicture.length > 2000000)
+                return res.status(400).json({ error: 'Invalid profile picture.' });
+            user.profilePicture = profilePicture;
+        }
+        await user.save();
+        return res.json({ user: publicProfile(user), message: 'Profile updated.' });
     }
-    catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Server error updating profile' });
+    catch {
+        return res.status(500).json({ error: 'Unable to update profile.' });
     }
 };
 exports.updateUserProfile = updateUserProfile;
-// Resend Email Notification (Hybrid Mock)
 const sendEmailNotification = async (req, res) => {
     const { to, subject, html } = req.body;
     if (!to || !subject || !html) {
@@ -136,12 +110,12 @@ const sendEmailNotification = async (req, res) => {
 };
 exports.sendEmailNotification = sendEmailNotification;
 const saveFCMToken = async (req, res) => {
-    const { phone, token } = req.body;
-    if (!phone || !token) {
-        return res.status(400).json({ error: "Phone number and FCM token are required" });
+    const { token } = req.body;
+    if (typeof token !== 'string' || !token || token.length > 4096) {
+        return res.status(400).json({ error: "Valid FCM token required" });
     }
     try {
-        const user = await User_1.default.findOne({ phone });
+        const user = await User_1.default.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }

@@ -34,14 +34,14 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const MessageSchema = new mongoose_1.Schema({
-    senderId: { type: String, required: true },
-    receiverId: { type: String, required: true },
-    roomId: { type: String, required: true },
-    text: { type: String, required: true },
-    timestamp: { type: Date, default: Date.now },
-    isRead: { type: Boolean, default: false },
-    clientMessageId: String,
+const schema = new mongoose_1.Schema({
+    userId: { type: mongoose_1.Schema.Types.ObjectId, required: true },
+    pickup: { type: mongoose_1.Schema.Types.Mixed, required: true },
+    dropoff: { type: mongoose_1.Schema.Types.Mixed, required: true },
+    fares: { mini: Number, xl: Number },
+    distance: Number,
+    duration: Number,
+    path: mongoose_1.Schema.Types.Mixed,
+    expiresAt: { type: Date, required: true, expires: 0 }
 }, { timestamps: true });
-MessageSchema.index({ senderId: 1, clientMessageId: 1 }, { unique: true, partialFilterExpression: { clientMessageId: { $type: 'string' } } });
-exports.default = mongoose_1.default.model('Message', MessageSchema);
+exports.default = mongoose_1.default.model('CabQuote', schema);

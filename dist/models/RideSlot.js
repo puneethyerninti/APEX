@@ -34,14 +34,8 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const MessageSchema = new mongoose_1.Schema({
-    senderId: { type: String, required: true },
-    receiverId: { type: String, required: true },
-    roomId: { type: String, required: true },
-    text: { type: String, required: true },
-    timestamp: { type: Date, default: Date.now },
-    isRead: { type: Boolean, default: false },
-    clientMessageId: String,
-}, { timestamps: true });
-MessageSchema.index({ senderId: 1, clientMessageId: 1 }, { unique: true, partialFilterExpression: { clientMessageId: { $type: 'string' } } });
-exports.default = mongoose_1.default.model('Message', MessageSchema);
+// Unique per-account reservations prevent parallel booking/acceptance races.
+exports.default = mongoose_1.default.model('RideSlot', new mongoose_1.Schema({
+    _id: { type: String, required: true },
+    rideId: { type: mongoose_1.Schema.Types.ObjectId, required: true }
+}));

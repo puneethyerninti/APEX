@@ -9,12 +9,13 @@ const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const razorpay_1 = __importDefault(require("razorpay"));
 const crypto_1 = __importDefault(require("crypto"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const notificationController_1 = require("./notificationController");
 const fulfillmentService_1 = require("../services/fulfillmentService");
 const utilityController_1 = require("./utilityController");
-const axios_1 = __importDefault(require("axios"));
 const Course_1 = __importDefault(require("../models/Course"));
+const WalletTransfer_1 = __importDefault(require("../models/WalletTransfer"));
+const MatrimonyProfile_1 = __importDefault(require("../models/MatrimonyProfile"));
+const matrimonyPolicy_1 = require("../services/matrimonyPolicy");
 // Razorpay will be instantiated dynamically to avoid crashing the server on startup if keys are missing
 let razorpayInstance = null;
 const getRazorpay = () => {
@@ -35,53 +36,8 @@ exports.getRazorpay = getRazorpay;
  * Extracts user from JWT auth token, query params, or body payload.
  */
 const resolveUser = async (req) => {
-    let userId = req.user?.id || req.user?._id;
-    if (!userId) {
-        const authHeader = req.headers.authorization;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            try {
-                const token = authHeader.split(' ')[1];
-                const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
-                if (decoded?.id)
-                    userId = decoded.id;
-            }
-            catch (e) { }
-        }
-    }
-    if (!userId) {
-        userId = req.query.userId || req.body.userId;
-    }
-    const phone = req.query.phone || req.body.phone;
-    if (userId && mongoose_1.default.Types.ObjectId.isValid(String(userId))) {
-        const user = await User_1.default.findById(userId);
-        if (user)
-            return user;
-    }
-    if (phone) {
-        const cleanPhone = String(phone).replace(/[^\d]/g, '').slice(-10);
-        const user = await User_1.default.findOne({
-            $or: [
-                { phone: cleanPhone },
-                { phone: `+91${cleanPhone}` }
-            ]
-        });
-        if (user)
-            return user;
-    }
-    if (userId && typeof userId === 'string') {
-        const cleanPhone = userId.replace(/[^\d]/g, '').slice(-10);
-        if (cleanPhone.length === 10) {
-            const user = await User_1.default.findOne({
-                $or: [
-                    { phone: cleanPhone },
-                    { phone: `+91${cleanPhone}` }
-                ]
-            });
-            if (user)
-                return user;
-        }
-    }
-    return null;
+    const id = req.user?.id;
+    return id && mongoose_1.default.isValidObjectId(String(id)) ? User_1.default.findById(id) : null;
 };
 exports.resolveUser = resolveUser;
 /**
@@ -238,123 +194,75 @@ exports.addMoney = addMoney;
  * Real-time atomic P2P wallet transfer between APEX users via phone number.
  */
 const transferMoney = async (req, res) => {
-    const { recipientPhone, note } = req.body;
     const amount = Number(req.body.amount);
-    if (!Number.isFinite(amount) || amount < 0.01) {
-        return res.status(400).json({ success: false, error: 'Please enter a valid transfer amount' });
+    const rawAmount = String(req.body.amount);
+    const recipientPhone = String(req.body.recipientPhone || '').replace(/[\s()-]/g, '').replace(/^\+91/, '');
+    const key = String(req.body.idempotencyKey || '');
+    const note = String(req.body.note || '').trim().slice(0, 250);
+    if (!/^\d+(\.\d{1,2})?$/.test(rawAmount) || !Number.isFinite(amount) || amount < 0.01 || amount > 100000 ||
+        !/^[6-9]\d{9}$/.test(recipientPhone) || !/^[a-zA-Z0-9-]{16,80}$/.test(key)) {
+        return res.status(400).json({ error: 'Valid mobile, amount (two decimal places maximum) and transfer reference required.' });
     }
-    if (!recipientPhone) {
-        return res.status(400).json({ success: false, error: 'Recipient phone number is required' });
-    }
-    const cleanRecipientPhone = String(recipientPhone).replace(/[^\d]/g, '').slice(-10);
-    if (cleanRecipientPhone.length !== 10) {
-        return res.status(400).json({ success: false, error: 'Please enter a valid 10-digit mobile number' });
-    }
+    const senderId = req.user.id;
     const session = await mongoose_1.default.startSession();
-    session.startTransaction();
+    let result;
+    let recipientId;
+    let fresh = false;
     try {
-        const sender = await (0, exports.resolveUser)(req);
-        if (!sender) {
-            await session.abortTransaction();
-            return res.status(401).json({ success: false, error: 'Authentication required' });
-        }
-        const liveSender = await User_1.default.findById(sender._id).session(session);
-        if (!liveSender) {
-            await session.abortTransaction();
-            return res.status(404).json({ success: false, error: 'Sender account not found' });
-        }
-        if (liveSender.walletBalance < amount) {
-            await session.abortTransaction();
-            return res.status(400).json({ success: false, error: `Insufficient wallet balance (₹${liveSender.walletBalance})` });
-        }
-        // Lookup recipient
-        const recipient = await User_1.default.findOne({
-            $or: [
-                { phone: cleanRecipientPhone },
-                { phone: `+91${cleanRecipientPhone}` }
-            ]
-        }).session(session);
-        if (!recipient) {
-            await session.abortTransaction();
-            return res.status(404).json({
-                success: false,
-                error: `User with phone (+91 ${cleanRecipientPhone}) is not registered on APEX.`
-            });
-        }
-        if (recipient._id.toString() === liveSender._id.toString()) {
-            await session.abortTransaction();
-            return res.status(400).json({ success: false, error: 'Cannot transfer money to your own account' });
-        }
-        // Atomic debit from sender & credit to recipient
-        liveSender.walletBalance -= amount;
-        recipient.walletBalance += amount;
-        await liveSender.save({ session });
-        await recipient.save({ session });
-        // Debit transaction for sender
-        const senderTx = await Transaction_1.default.create([{
-                user: liveSender._id,
-                amount,
-                type: 'debit',
-                category: 'p2p_transfer',
-                referenceId: `Sent to ${recipient.name || recipient.phone}`,
-                status: 'completed',
-                metadata: {
-                    recipientId: recipient._id.toString(),
-                    recipientName: recipient.name,
-                    recipientPhone: recipient.phone,
-                    note: note || ''
-                }
-            }], { session });
-        // Credit transaction for recipient
-        await Transaction_1.default.create([{
-                user: recipient._id,
-                amount,
-                type: 'credit',
-                category: 'p2p_receive',
-                referenceId: `Received from ${liveSender.name || liveSender.phone}`,
-                status: 'completed',
-                metadata: {
-                    senderId: liveSender._id.toString(),
-                    senderName: liveSender.name,
-                    senderPhone: liveSender.phone,
-                    note: note || ''
-                }
-            }], { session });
-        await session.commitTransaction();
-        const io = req.app.get('io');
-        if (io) {
-            // Live sync to sender
-            io.to(`user_${liveSender._id}`).emit('wallet_update', {
-                amount,
-                type: 'debit',
-                message: `₹${amount} sent to ${recipient.name || cleanRecipientPhone}`,
-                newBalance: liveSender.walletBalance
-            });
-            // Live sync to recipient
-            io.to(`user_${recipient._id}`).emit('wallet_update', {
-                amount,
-                type: 'credit',
-                message: `₹${amount} received from ${liveSender.name || liveSender.phone}`,
-                newBalance: recipient.walletBalance
-            });
-        }
-        // Push / in-app notifications
-        await (0, notificationController_1.createNotification)(liveSender._id.toString(), 'Transfer Successful', `You sent ₹${amount} to ${recipient.name || cleanRecipientPhone}.`, 'success');
-        await (0, notificationController_1.createNotification)(recipient._id.toString(), 'Money Received!', `You received ₹${amount} from ${liveSender.name || liveSender.phone}.`, 'success');
-        res.json({
-            success: true,
-            message: `₹${amount} transferred to ${recipient.name || cleanRecipientPhone} successfully`,
-            newBalance: liveSender.walletBalance,
-            transaction: senderTx[0]
+        await session.withTransaction(async () => {
+            fresh = false;
+            const existing = await WalletTransfer_1.default.findOne({ user: senderId, key }).session(session);
+            if (existing) {
+                if (existing.amount !== amount || existing.recipientPhone !== recipientPhone || existing.note !== note)
+                    throw Object.assign(new Error('Transfer reference already used for different details.'), { httpStatus: 409 });
+                result = existing.result;
+                return;
+            }
+            const recipient = await User_1.default.findOne({ $or: [{ phone: recipientPhone }, { phone: '+91' + recipientPhone }], firebaseUid: { $exists: true } }).session(session);
+            if (!recipient)
+                throw Object.assign(new Error('Recipient must sign in to APEX with this mobile number first. This is an APEX wallet transfer, not a bank transfer.'), { httpStatus: 404 });
+            if (recipient._id.toString() === String(senderId))
+                throw Object.assign(new Error('Cannot transfer to your own wallet.'), { httpStatus: 400 });
+            await WalletTransfer_1.default.create([{ user: senderId, key, recipientPhone, amount, note }], { session });
+            const sender = await User_1.default.findOneAndUpdate({ _id: senderId, walletBalance: { $gte: amount } }, { $inc: { walletBalance: -amount } }, { session, new: true });
+            if (!sender)
+                throw Object.assign(new Error('Insufficient wallet balance.'), { httpStatus: 400 });
+            const credited = await User_1.default.findByIdAndUpdate(recipient._id, { $inc: { walletBalance: amount } }, { session, new: true });
+            if (!credited)
+                throw new Error('Recipient account unavailable.');
+            const pair = await Transaction_1.default.create([
+                { user: senderId, amount, type: 'debit', category: 'p2p_transfer', referenceId: 'Sent to ' + recipient.name, status: 'completed', metadata: { transferKey: key, recipientId: recipient._id.toString(), note } },
+                { user: recipient._id, amount, type: 'credit', category: 'p2p_receive', referenceId: 'Received from ' + sender.name, status: 'completed', metadata: { transferKey: key, senderId: String(senderId), note } }
+            ], { session });
+            result = { success: true, newBalance: sender.walletBalance, recipientBalance: credited.walletBalance, recipientName: recipient.name, transaction: pair[0] };
+            recipientId = recipient._id.toString();
+            await WalletTransfer_1.default.updateOne({ user: senderId, key }, { $set: { result } }, { session });
+            fresh = true;
         });
+        if (!result)
+            throw new Error('Transfer needs support reconciliation. Do not resend with a different reference.');
+        if (fresh) {
+            try {
+                const io = req.app.get('io');
+                io?.to('user_' + senderId).emit('wallet_update', { type: 'debit', amount, newBalance: result.newBalance });
+                io?.to('user_' + recipientId).emit('wallet_update', { type: 'credit', amount, newBalance: result.recipientBalance });
+            }
+            catch (error) {
+                console.error('Wallet event delivery delayed');
+            }
+            await Promise.allSettled([
+                (0, notificationController_1.createNotification)(String(senderId), 'Transfer completed', 'Your APEX wallet transfer was completed.', 'success'),
+                (0, notificationController_1.createNotification)(recipientId, 'Money received', 'You received INR ' + amount + ' in your APEX wallet.', 'success')
+            ]);
+        }
+        const { recipientBalance: _privateBalance, ...publicResult } = result;
+        return res.json(publicResult);
     }
     catch (error) {
-        await session.abortTransaction();
-        console.error('transferMoney Error:', error);
-        res.status(500).json({ success: false, error: 'Server error during transfer' });
+        return res.status(error.code === 11000 ? 409 : error.httpStatus || 503).json({ error: error.code === 11000 ? 'Transfer is processing. Retry using the same reference.' : error.message });
     }
     finally {
-        session.endSession();
+        await session.endSession();
     }
 };
 exports.transferMoney = transferMoney;
@@ -362,125 +270,8 @@ exports.transferMoney = transferMoney;
  * POST /api/finance/wallet/withdraw
  * RazorpayX Payouts Integration
  */
-const withdrawToBank = async (req, res) => {
-    const { method, destination, note } = req.body;
-    const amount = Number(req.body.amount);
-    if (!process.env.RAZORPAYX_ACCOUNT_NUMBER || !(process.env.RAZORPAYX_KEY_ID || process.env.RAZORPAY_KEY_ID) || !(process.env.RAZORPAYX_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET)) {
-        return res.status(503).json({ success: false, error: 'Withdrawals are unavailable until the payout account is configured. Your wallet has not been debited.' });
-    }
-    // method: 'UPI' | 'IMPS'
-    // destination: 'user@upi' or '{ account_number, ifsc }'
-    if (!Number.isFinite(amount) || amount < 50) {
-        return res.status(400).json({ success: false, error: 'Minimum withdrawal is ₹50' });
-    }
-    if (!destination) {
-        return res.status(400).json({ success: false, error: 'Destination account required' });
-    }
-    const session = await mongoose_1.default.startSession();
-    session.startTransaction();
-    try {
-        const user = await (0, exports.resolveUser)(req);
-        if (!user) {
-            await session.abortTransaction();
-            return res.status(401).json({ success: false, error: 'Authentication required' });
-        }
-        const liveUser = await User_1.default.findById(user._id).session(session);
-        if (!liveUser) {
-            await session.abortTransaction();
-            return res.status(404).json({ success: false, error: 'User account not found' });
-        }
-        if (liveUser.walletBalance < amount) {
-            await session.abortTransaction();
-            return res.status(400).json({
-                success: false,
-                error: `Insufficient balance (₹${liveUser.walletBalance})`
-            });
-        }
-        // Deduct immediately for safety
-        liveUser.walletBalance -= amount;
-        await liveUser.save({ session });
-        let razorpayPayoutId = 'simulated_' + Date.now();
-        let status = 'processing';
-        const rxKeyId = process.env.RAZORPAYX_KEY_ID || process.env.RAZORPAY_KEY_ID;
-        const rxKeySecret = process.env.RAZORPAYX_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET;
-        const accountNumber = process.env.RAZORPAYX_ACCOUNT_NUMBER;
-        if (rxKeyId && rxKeySecret && accountNumber) {
-            try {
-                const authHeader = `Basic ${Buffer.from(`${rxKeyId}:${rxKeySecret}`).toString('base64')}`;
-                // 1. Create Contact
-                const contactRes = await axios_1.default.post('https://api.razorpay.com/v1/contacts', {
-                    name: liveUser.name || 'APEX User',
-                    contact: liveUser.phone,
-                    type: 'customer',
-                    reference_id: liveUser._id.toString()
-                }, { headers: { Authorization: authHeader } });
-                // 2. Create Fund Account
-                const fundDetails = method === 'UPI'
-                    ? { account_type: 'vpa', vpa: { address: destination } }
-                    : { account_type: 'bank_account', bank_account: destination };
-                const fundRes = await axios_1.default.post('https://api.razorpay.com/v1/fund_accounts', {
-                    contact_id: contactRes.data.id,
-                    ...fundDetails
-                }, { headers: { Authorization: authHeader } });
-                // 3. Initiate Payout
-                const payoutRes = await axios_1.default.post('https://api.razorpay.com/v1/payouts', {
-                    account_number: accountNumber,
-                    fund_account_id: fundRes.data.id,
-                    amount: Math.round(amount * 100),
-                    currency: 'INR',
-                    mode: method,
-                    purpose: 'payout',
-                    queue_if_low_balance: true,
-                    reference_id: `wth_${Date.now()}`
-                }, { headers: { Authorization: authHeader } });
-                razorpayPayoutId = payoutRes.data.id;
-                status = payoutRes.data.status; // 'processing', 'queued', 'processed'
-            }
-            catch (rxError) {
-                console.error('RazorpayX Error:', rxError?.response?.data || rxError.message);
-                await session.abortTransaction();
-                return res.status(500).json({ success: false, error: 'Payment gateway error. Contact support.' });
-            }
-        }
-        else {
-            console.warn('RazorpayX keys missing. Falling back to simulated payout.');
-            status = 'pending';
-        }
-        const transaction = await Transaction_1.default.create([{
-                user: liveUser._id,
-                amount,
-                type: 'debit',
-                category: 'withdrawal',
-                referenceId: razorpayPayoutId,
-                status: status === 'processed' ? 'completed' : 'pending',
-                metadata: { method, destination, note, payoutStatus: status }
-            }], { session });
-        await session.commitTransaction();
-        const io = req.app.get('io');
-        if (io) {
-            io.to(`user_${liveUser._id}`).emit('wallet_update', {
-                amount,
-                type: 'debit',
-                message: `₹${amount} withdrawal initiated`,
-                newBalance: liveUser.walletBalance
-            });
-        }
-        await (0, notificationController_1.createNotification)(liveUser._id.toString(), 'Withdrawal Initiated', `Your request to withdraw ₹${amount} to ${method} is being processed.`, 'success');
-        res.json({
-            success: true,
-            message: 'Withdrawal initiated successfully',
-            newBalance: liveUser.walletBalance,
-            transaction: transaction[0]
-        });
-    }
-    catch (error) {
-        await session.abortTransaction();
-        console.error('withdrawToBank Error:', error);
-        res.status(500).json({ success: false, error: 'Server error processing withdrawal' });
-    }
-    finally {
-        session.endSession();
-    }
+const withdrawToBank = async (_req, res) => {
+    return res.status(503).json({ success: false, error: 'External wallet payouts are not enabled for this app. Standard Razorpay checkout collects money; it does not send your wallet balance to bank or UPI accounts. Your balance has not changed.' });
 };
 exports.withdrawToBank = withdrawToBank;
 /**
@@ -604,17 +395,28 @@ const createRazorpayOrder = async (req, res) => {
     if (!user)
         return res.status(401).json({ error: 'Please login to make a payment.' });
     userId = user._id;
+    const amountText = String(amount);
     amount = Number(amount);
-    if (!Number.isFinite(amount) || amount < 0.01 || !Number.isSafeInteger(Math.round(amount * 100))) {
+    if (!/^\d+(\.\d{1,2})?$/.test(amountText) || !Number.isFinite(amount) || amount < 0.01 || amount > 100000 || !Number.isSafeInteger(Math.round(amount * 100))) {
         return res.status(400).json({ error: 'Enter a valid payment amount.' });
     }
-    const supportedCategories = ['add_money', 'wallet_recharge', 'mobile_recharge', 'bbps_payment', 'matrimony', 'subscription', 'travel_booking', 'academy_enrollment', 'charity'];
+    const supportedCategories = ['add_money', 'wallet_recharge', 'mobile_recharge', 'bbps_payment', 'matrimony', 'subscription', 'academy_enrollment', 'charity'];
     if (!supportedCategories.includes(category)) {
         return res.status(400).json({ error: 'This payment service is unavailable. Pay external merchants using your UPI app.' });
     }
     const reservedMetadata = new Set(['fulfilled', 'fulfilledAt', 'fulfillmentResult', 'fulfillmentError', 'fulfillmentFailedAt', 'fulfillmentQueued', 'fulfillmentQueuedAt', 'fulfillmentInProgress', 'fulfillmentStartedAt', 'refundInfo', 'utilityTransactionId']);
     metadata = Object.fromEntries(Object.entries(metadata && typeof metadata === 'object' && !Array.isArray(metadata) ? metadata : {})
         .filter(([key]) => !reservedMetadata.has(key)));
+    if (category === 'matrimony') {
+        const plan = (0, matrimonyPolicy_1.normalizePlan)(metadata.plan);
+        if (!matrimonyPolicy_1.matrimonyPlans[plan])
+            return res.status(400).json({ error: 'Select a valid matrimony membership.' });
+        const profile = await MatrimonyProfile_1.default.findOne({ user: userId, ownerVerified: true, status: 'approved' });
+        if (!profile)
+            return res.status(409).json({ error: 'Create your APEX profile and wait for approval before buying membership.' });
+        amount = matrimonyPolicy_1.matrimonyPlans[plan].amount;
+        metadata = { plan };
+    }
     // Ensure course enrollment payments are true to their prices
     if (category === 'academy_enrollment' && metadata?.courseName) {
         const course = await Course_1.default.findOne({ title: metadata.courseName, status: 'active' });
@@ -693,6 +495,9 @@ const verifyRazorpayPayment = async (req, res) => {
         if (payment.order_id !== transaction.razorpayOrderId ||
             Number(payment.amount) !== Math.round(transaction.amount * 100) || payment.currency !== 'INR') {
             return res.status(400).json({ success: false, error: 'Payment does not match this order.' });
+        }
+        if (Number(payment.amount_refunded || 0) > 0) {
+            return res.status(409).json({ success: false, error: 'Refunded payment requires support review.' });
         }
         if (payment.status !== 'captured') {
             return res.status(409).json({ success: false, status: 'payment_pending', error: 'Payment has not been captured yet. Please check your payment history shortly.' });

@@ -3,7 +3,7 @@ import User from '../models/User';
 import Transaction from '../models/Transaction';
 import { handleAPEXPlanUpgrade } from '../controllers/userController';
 import { handleMatrimonyUpgrade } from '../controllers/matrimonyController';
-import { handleTravelBooking } from '../controllers/travelsController';
+import { handleTravelBooking, fulfillCabPayment } from '../controllers/travelsController';
 import { handleUtilityRecharge, handleBBPSPayment, updateUtilityTransactionStatus } from '../controllers/utilityController';
 import { handleAcademyEnrollment } from '../controllers/academyController';
 import { createNotification } from '../controllers/notificationController';
@@ -25,6 +25,8 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
     return metadata.fulfillmentResult || null;
   }
   if (transaction.status !== 'completed') throw new Error('Payment is not eligible for fulfillment');
+  if (transaction.category === 'cab_payment') return fulfillCabPayment(transaction, appIo);
+  if (transaction.category === 'matrimony') return handleMatrimonyUpgrade(transaction.user.toString(), metadata.plan, metadata, transaction);
   if (!['add_money', 'wallet_recharge'].includes(transaction.category)) {
     const claimed = await Transaction.findOneAndUpdate(
       { _id: transaction._id, status: 'completed', 'metadata.fulfilled': { $ne: true }, 'metadata.fulfillmentInProgress': { $ne: true } },
@@ -104,7 +106,8 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
       case 'matrimony':
         fulfillmentResult = await handleMatrimonyUpgrade(
           userIdStr, 
-          metadata.plan || transaction.referenceId?.replace('Matrimony ', '').replace(' Plan', '')
+          metadata.plan || transaction.referenceId?.replace('Matrimony ', '').replace(' Plan', ''),
+          metadata
         );
         break;
 

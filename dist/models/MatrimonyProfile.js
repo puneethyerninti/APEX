@@ -36,6 +36,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
 const MatrimonyProfileSchema = new mongoose_1.Schema({
     user: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+    ownerVerified: { type: Boolean, default: true },
+    community: String,
     age: { type: Number, required: true },
     height: { type: String },
     religion: { type: String },
@@ -45,8 +47,11 @@ const MatrimonyProfileSchema = new mongoose_1.Schema({
     images: [{ type: String }],
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
     subscription: {
-        plan: { type: String, enum: ['Free', 'Silver', 'Gold', 'Premium'], default: 'Free' },
-        isActive: { type: Boolean, default: false }
+        plan: { type: String, enum: ['Free', 'Silver', 'Gold', 'Premium', 'Diamond'], default: 'Free' },
+        isActive: { type: Boolean, default: false },
+        expiresAt: Date,
+        paymentTransactionId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Transaction' }
     }
 }, { timestamps: true });
+MatrimonyProfileSchema.index({ user: 1 }, { unique: true, partialFilterExpression: { ownerVerified: true } });
 exports.default = mongoose_1.default.model('MatrimonyProfile', MatrimonyProfileSchema);

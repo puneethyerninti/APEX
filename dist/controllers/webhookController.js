@@ -82,7 +82,7 @@ const handleRazorpayWebhook = async (req, res) => {
             const stored = await Transaction_1.default.findOne({ razorpayOrderId });
             if (!stored)
                 throw new Error('Captured payment order not found');
-            if (paymentEntity.status !== 'captured' || Number(paymentEntity.amount) !== Math.round(stored.amount * 100) || paymentEntity.currency !== 'INR') {
+            if (paymentEntity.status !== 'captured' || Number(paymentEntity.amount_refunded || 0) > 0 || Number(paymentEntity.amount) !== Math.round(stored.amount * 100) || paymentEntity.currency !== 'INR') {
                 throw new Error('Captured payment does not match order');
             }
             // Idempotency check: Find pending transaction and complete it

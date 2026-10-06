@@ -40,9 +40,27 @@ const UserSchema = new mongoose_1.Schema({
     name: { type: String, required: true },
     phone: { type: String },
     role: { type: String, enum: ['user', 'admin', 'driver'], default: 'user' },
+    firebaseUid: { type: String, unique: true, sparse: true },
     walletBalance: { type: Number, default: 0 },
     profilePicture: { type: String },
     fcmTokens: [{ type: String }],
-    apexPlan: { type: String, enum: ['Free', 'APEX Plus', 'APEX Prime'], default: 'Free' }
+    apexPlan: { type: String, enum: ['Free', 'APEX Plus', 'APEX Prime'], default: 'Free' },
+    portfolioInvested: { type: Number, default: 0 },
+    portfolioReturns: { type: Number, default: 0 },
+    // Driver fields
+    isOnline: { type: Boolean, default: false },
+    vehicleDetails: {
+        type: { type: String, enum: ['mini', 'xl'] },
+        make: String,
+        model: String,
+        plate: String,
+        color: String
+    },
+    currentLocation: {
+        lat: Number,
+        lng: Number,
+        heading: Number,
+        updatedAt: Date
+    }
 }, { timestamps: true });
 exports.default = mongoose_1.default.model('User', UserSchema);

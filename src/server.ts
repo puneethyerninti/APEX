@@ -15,12 +15,21 @@ import adminRoutes from './routes/adminRoutes';
 import wealthRoutes from './routes/wealthRoutes';
 import realtyRoutes from './routes/realtyRoutes';
 import travelsRoutes from './routes/travelsRoutes';
+import { expireSearches, reconcileCabPayments } from './controllers/travelsController';
+import Ride from './models/Ride';
+import CabQuote from './models/CabQuote';
+import RideSlot from './models/RideSlot';
+import WalletTransfer from './models/WalletTransfer';
+import MatrimonyProfile from './models/MatrimonyProfile';
+import { validLocation } from './services/cabPolicy';
 import notificationRoutes from './routes/notificationRoutes';
 import leadRoutes from './routes/leadRoutes';
 import academyRoutes from './routes/academyRoutes';
 import utilityRoutes from './routes/utilityRoutes';
 
 import Message from './models/Message';
+import { authorizeChat } from './services/matrimonyPolicy';
+import { reconcileWalletAndMembershipPayments } from './services/paymentRecovery';
 import User from './models/User';
 import TravelBooking from './models/TravelBooking';
 import { initFirebaseAdmin } from './firebaseAdmin';
@@ -29,7 +38,6 @@ import { createNotification } from './controllers/notificationController';
 dotenv.config();
 
 // Connect to Database
-connectDB();
 
 // Initialize Firebase Admin for Push Notifications
 initFirebaseAdmin();
@@ -70,9 +78,14 @@ io.on('connection', (socket: AuthenticatedSocket) => {
   // Any legacy client emits of these events will simply be ignored.
 
   // --- MATRIMONY CHAT ---
-  socket.on('join_room', (roomId) => {
-    socket.join(roomId);
-    console.log(`User ${socket.user?.dbId} joined room ${roomId}`);
+  socket.on('join_room', async (roomId, acknowledge) => {
+    try {
+      await authorizeChat(String(socket.user?.dbId), roomId);
+      await socket.join(roomId);
+      if (typeof acknowledge === 'function') acknowledge({ success: true });
+    } catch {
+      if (typeof acknowledge === 'function') acknowledge({ error: 'Chat access denied.' });
+    }
   });
 
   socket.on('send_message', async (data) => {
@@ -81,21 +94,25 @@ io.on('connection', (socket: AuthenticatedSocket) => {
     if (!senderId) return;
 
     try {
-      const newMessage = new Message({
+      const receiverId = await authorizeChat(senderId, data?.roomId);
+      if (typeof data?.text !== 'string' || !data.text.trim() || data.text.length > 2000 ||
+          typeof data.clientMessageId !== 'string' || !/^[a-zA-Z0-9-]{16,80}$/.test(data.clientMessageId)) return;
+      const newMessage = await Message.findOneAndUpdate({ senderId, clientMessageId: data.clientMessageId }, { $setOnInsert: {
         roomId: data.roomId,
         senderId: senderId, // Server authoritative!
-        receiverId: data.receiverId,
-        text: data.text,
-        timestamp: data.timestamp || new Date()
-      });
-      await newMessage.save();
+        receiverId,
+        text: data.text.trim(),
+        timestamp: new Date()
+      } }, { upsert: true, new: true });
+      if (newMessage.roomId !== data.roomId || newMessage.text !== data.text.trim()) return;
       
-      io.to(data.roomId).emit('receive_message', { ...data, senderId });
+      io.to('user_' + senderId).emit('receive_message', newMessage.toObject());
+      io.to('user_' + receiverId).emit('receive_message', newMessage.toObject());
 
       // Send global toast notification to receiver
       try {
         const sender = await User.findById(senderId);
-        const receiver = await User.findById(data.receiverId);
+        const receiver = await User.findById(receiverId);
         
         if (sender && receiver) {
           io.to(`user_${receiver._id}`).emit('system_notice', {
@@ -117,26 +134,27 @@ io.on('connection', (socket: AuthenticatedSocket) => {
     }
   });
 
-  socket.on('typing', (data) => {
-    socket.to(data.roomId).emit('typing', data);
+  socket.on('typing', async (data) => {
+    try {
+      const receiver = await authorizeChat(String(socket.user?.dbId), data?.roomId);
+      io.to('user_' + receiver).emit('typing', { roomId: data.roomId, isTyping: data.isTyping === true });
+    } catch { /* Unauthorized rooms receive no events. */ }
   });
 
   // --- TRAVELS REAL-TIME CAB DRIVER SYSTEM ---
   
-  socket.on('driver_online', () => {
-    socket.join('driver_room');
-    console.log(`Driver ${socket.user?.dbId} is online`);
-  });
+  // Requests are fetched through the authenticated driver API; no public driver room.
 
-  socket.on('driver_location_update', (data) => {
-    const { rideId, riderId, lat, lng, heading } = data;
-    // Forward driver's live GPS directly to the specific rider
-    io.to(`user_${riderId}`).emit(`ride_update_${rideId}`, {
-      lat,
-      lng,
-      heading,
-      timestamp: new Date().toISOString()
-    });
+  socket.on('driver_location_update', async (data) => {
+    try {
+      if (socket.user?.role !== 'driver' || !validLocation(data)) return;
+      const ride = await Ride.findOne({ _id: data.rideId, driverId: socket.user.dbId, status: { $in: ['accepted', 'arrived', 'in_progress'] } });
+      if (!ride) return;
+      io.to(`user_${ride.userId}`).emit('ride_location_update', {
+        rideId: ride._id, lat: data.lat, lng: data.lng,
+        heading: Number.isFinite(data.heading) ? data.heading : 0
+      });
+    } catch { /* Invalid or stale GPS updates are ignored. */ }
   });
 
   socket.on('disconnect', () => {
@@ -166,6 +184,16 @@ app.get('/', (req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const start = async () => {
+  await connectDB();
+  await Promise.all([Ride.init(), CabQuote.init(), RideSlot.init(), User.init(), WalletTransfer.init(), MatrimonyProfile.init(), Message.init()]);
+  server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+};
+start().catch(() => { console.error('Backend startup failed. Check database configuration and indexes.'); process.exit(1); });
+let expiring = false;
+setInterval(async () => {
+  if (expiring || Ride.db.readyState !== 1) return;
+  expiring = true;
+  try { await expireSearches(); await reconcileCabPayments(io); await reconcileWalletAndMembershipPayments(io); } catch (error) { console.error('Payment/trip recovery failed', error); }
+  finally { expiring = false; }
+}, 30000).unref();

@@ -16,8 +16,7 @@ const s3Config = {
 
 const s3 = new S3Client(s3Config);
 
-export const uploadToS3 = multer({
-  storage: multerS3({
+const storage = multerS3({
     s3: s3,
     bucket: process.env.AWS_S3_BUCKET || 'apex-uploads',
     metadata: function (req, file, cb) {
@@ -27,8 +26,18 @@ export const uploadToS3 = multer({
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       cb(null, `uploads/${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
     }
-  }),
+  });
+export const uploadToS3 = multer({
+  storage,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB
+  }
+});
+export const uploadProfileImages = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024, files: 5 },
+  fileFilter: (_req, file, cb) => {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.mimetype)) return cb(new Error('Only JPEG, PNG or WebP profile images are accepted.'));
+    cb(null, true);
   }
 });

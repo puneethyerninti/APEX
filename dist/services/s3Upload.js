@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadToS3 = void 0;
+exports.uploadProfileImages = exports.uploadToS3 = void 0;
 const client_s3_1 = require("@aws-sdk/client-s3");
 const multer_1 = __importDefault(require("multer"));
 const multer_s3_1 = __importDefault(require("multer-s3"));
@@ -18,19 +18,29 @@ const s3Config = {
     }
 };
 const s3 = new client_s3_1.S3Client(s3Config);
+const storage = (0, multer_s3_1.default)({
+    s3: s3,
+    bucket: process.env.AWS_S3_BUCKET || 'apex-uploads',
+    metadata: function (req, file, cb) {
+        cb(null, { fieldName: file.fieldname });
+    },
+    key: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `uploads/${file.fieldname}-${uniqueSuffix}${path_1.default.extname(file.originalname)}`);
+    }
+});
 exports.uploadToS3 = (0, multer_1.default)({
-    storage: (0, multer_s3_1.default)({
-        s3: s3,
-        bucket: process.env.AWS_S3_BUCKET || 'apex-uploads',
-        metadata: function (req, file, cb) {
-            cb(null, { fieldName: file.fieldname });
-        },
-        key: function (req, file, cb) {
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-            cb(null, `uploads/${file.fieldname}-${uniqueSuffix}${path_1.default.extname(file.originalname)}`);
-        }
-    }),
+    storage,
     limits: {
         fileSize: 10 * 1024 * 1024 // 10MB
+    }
+});
+exports.uploadProfileImages = (0, multer_1.default)({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024, files: 5 },
+    fileFilter: (_req, file, cb) => {
+        if (!/^image\/(jpeg|png|webp)$/.test(file.mimetype))
+            return cb(new Error('Only JPEG, PNG or WebP profile images are accepted.'));
+        cb(null, true);
     }
 });

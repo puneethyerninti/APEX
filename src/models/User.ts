@@ -6,6 +6,7 @@ export interface IUser extends Document {
   name: string;
   phone?: string;
   role: 'user' | 'admin' | 'driver';
+  firebaseUid?: string;
   walletBalance: number;
   profilePicture?: string;
   fcmTokens?: string[];
@@ -14,6 +15,7 @@ export interface IUser extends Document {
   portfolioReturns: number;
   isOnline?: boolean;
   vehicleDetails?: {
+    type?: 'mini' | 'xl';
     make: string;
     model: string;
     plate: string;
@@ -34,6 +36,7 @@ const UserSchema = new Schema<IUser>(
     name: { type: String, required: true },
     phone: { type: String },
     role: { type: String, enum: ['user', 'admin', 'driver'], default: 'user' },
+    firebaseUid: { type: String, unique: true, sparse: true },
     walletBalance: { type: Number, default: 0 },
     profilePicture: { type: String },
     fcmTokens: [{ type: String }],
@@ -43,6 +46,7 @@ const UserSchema = new Schema<IUser>(
     // Driver fields
     isOnline: { type: Boolean, default: false },
     vehicleDetails: {
+      type: { type: String, enum: ['mini', 'xl'] },
       make: String,
       model: String,
       plate: String,

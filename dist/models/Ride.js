@@ -34,14 +34,34 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const MessageSchema = new mongoose_1.Schema({
-    senderId: { type: String, required: true },
-    receiverId: { type: String, required: true },
-    roomId: { type: String, required: true },
-    text: { type: String, required: true },
-    timestamp: { type: Date, default: Date.now },
-    isRead: { type: Boolean, default: false },
-    clientMessageId: String,
+const RideSchema = new mongoose_1.Schema({
+    userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+    driverId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' },
+    pickup: {
+        address: { type: String, required: true },
+        lat: { type: Number, required: true },
+        lng: { type: Number, required: true }
+    },
+    dropoff: {
+        address: { type: String, required: true },
+        lat: { type: Number, required: true },
+        lng: { type: Number, required: true }
+    },
+    fare: { type: Number, required: true },
+    quoteId: { type: mongoose_1.Schema.Types.ObjectId, unique: true, sparse: true },
+    vehicleType: { type: String, enum: ['mini', 'xl'], default: 'mini' },
+    paymentMethod: { type: String, enum: ['cash', 'online'], default: 'cash' },
+    paymentStatus: { type: String, enum: ['unpaid', 'paid'], default: 'unpaid' },
+    paymentTransactionId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Transaction' },
+    expiresAt: Date,
+    statusHistory: [{ status: String, actor: String, at: Date, reason: String }],
+    distance: { type: Number, required: true },
+    duration: { type: Number, required: true },
+    status: {
+        type: String,
+        enum: ['searching', 'accepted', 'arrived', 'in_progress', 'completed', 'cancelled'],
+        default: 'searching'
+    },
+    path: { type: mongoose_1.Schema.Types.Mixed }
 }, { timestamps: true });
-MessageSchema.index({ senderId: 1, clientMessageId: 1 }, { unique: true, partialFilterExpression: { clientMessageId: { $type: 'string' } } });
-exports.default = mongoose_1.default.model('Message', MessageSchema);
+exports.default = mongoose_1.default.model('Ride', RideSchema);

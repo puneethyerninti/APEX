@@ -10,7 +10,7 @@ const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = express_1.default.Router();
 // Real-Time Wallet & Payment Routes
 router.get('/wallet', authMiddleware_1.requireAuth, financeController_1.getWalletBalance);
-router.post('/wallet/deduct', authMiddleware_1.requireAuth, financeController_1.deductMoney);
+router.post('/wallet/deduct', authMiddleware_1.requireAuth, (_req, res) => res.status(400).json({ error: 'Use a supported checkout or APEX transfer. A wallet deduction alone does not deliver a service.' }));
 router.post('/wallet/add', authMiddleware_1.requireAuth, (_req, res) => res.status(400).json({ error: 'Use Razorpay checkout to add money. A captured payment is required.' }));
 router.post('/wallet/transfer', authMiddleware_1.requireAuth, financeController_1.transferMoney);
 router.post('/wallet/pay-merchant', authMiddleware_1.requireAuth, financeController_1.payMerchantWithWallet);

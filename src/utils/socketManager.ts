@@ -8,6 +8,7 @@ export interface AuthenticatedSocket extends Socket {
     uid: string;
     dbId: string;
     isAdmin: boolean;
+    role: string;
   };
 }
 
@@ -46,6 +47,7 @@ export const initSocket = (server: http.Server) => {
       // Verify custom JWT token
       const jwt = require('jsonwebtoken');
       const decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as any;
+      if (decodedToken.authVersion !== 2) return next(new Error('Please sign in again'));
       
       // Fetch user from DB to get the MongoDB _id and roles
       const dbUser = await User.findById(decodedToken.id);
@@ -57,7 +59,8 @@ export const initSocket = (server: http.Server) => {
       socket.user = {
         uid: dbUser.email, // Custom backend doesn't use firebaseUid, use email or id
         dbId: dbUser._id.toString(),
-        isAdmin: dbUser.role === 'admin'
+        isAdmin: dbUser.role === 'admin',
+        role: dbUser.role
       };
 
       // SERVER-AUTHORITATIVE ROOM JOINING

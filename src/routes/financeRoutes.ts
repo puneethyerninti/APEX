@@ -19,7 +19,7 @@ const router = express.Router();
 
 // Real-Time Wallet & Payment Routes
 router.get('/wallet', requireAuth, getWalletBalance);
-router.post('/wallet/deduct', requireAuth, deductMoney);
+router.post('/wallet/deduct', requireAuth, (_req, res) => res.status(400).json({ error: 'Use a supported checkout or APEX transfer. A wallet deduction alone does not deliver a service.' }));
 router.post('/wallet/add', requireAuth, (_req, res) => res.status(400).json({ error: 'Use Razorpay checkout to add money. A captured payment is required.' }));
 router.post('/wallet/transfer', requireAuth, transferMoney);
 router.post('/wallet/pay-merchant', requireAuth, payMerchantWithWallet);

@@ -8,7 +8,6 @@ const app_1 = require("firebase-admin/app");
 const messaging_1 = require("firebase-admin/messaging");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-const os_1 = __importDefault(require("os"));
 const serviceAccountPath = path_1.default.resolve(__dirname, '../../firebase-service-account.json');
 const initFirebaseAdmin = () => {
     try {
@@ -26,19 +25,8 @@ const initFirebaseAdmin = () => {
                 // Fix any escaped newlines just in case
                 serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
             }
-            // Bypass firebase-admin's cert() strictness by using the native Google Auth Library
-            // which is usually much more robust across different Node/OpenSSL versions.
-            const tempFilePath = path_1.default.join(os_1.default.tmpdir(), 'firebase-service-account.json');
-            fs_1.default.writeFileSync(tempFilePath, JSON.stringify(serviceAccount, null, 2));
-            process.env.GOOGLE_APPLICATION_CREDENTIALS = tempFilePath;
-            try {
-                (0, app_1.initializeApp)();
-                console.log('🔥 Firebase Admin initialized successfully from Base64 env variable');
-            }
-            catch (err) {
-                console.error('Failed to init Firebase with Base64 key. Key starts with:', serviceAccount.private_key ? serviceAccount.private_key.substring(0, 35) : 'Missing');
-                throw err;
-            }
+            (0, app_1.initializeApp)({ credential: (0, app_1.cert)(serviceAccount) });
+            console.log('Firebase Admin initialized from environment credentials');
         }
         else {
             console.warn('⚠️ FIREBASE ADMIN NOT INITIALIZED: Missing service account JSON or environment variable.');

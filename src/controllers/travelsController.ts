@@ -1,246 +1,306 @@
 import { Request, Response } from 'express';
-import TravelBooking from '../models/TravelBooking';
-import User from '../models/User';
-import Transaction from '../models/Transaction';
-import { createNotification } from './notificationController';
+import mongoose from 'mongoose';
 import axios from 'axios';
+import User from '../models/User';
+import Ride from '../models/Ride';
+import CabQuote from '../models/CabQuote';
+import RideSlot from '../models/RideSlot';
+import Transaction from '../models/Transaction';
+import { getRazorpay } from './financeController';
+import { activeStatuses, validLocation, faresForDistance, canTransition } from '../services/cabPolicy';
 
-// Create a new travel booking
-export const handleTravelBooking = async (userId: string, metadata: any) => {
-  const { type, vehicleType, origin, destination, amount } = metadata;
-  
-  let user;
-  try {
-    user = await User.findById(userId);
-  } catch (e) {
-    throw new Error('Invalid User ID format.');
-  }
+const identity = (req: Request) => (req as any).user.id;
+const driverFields = 'name phone vehicleDetails currentLocation';
+const fail = (res: Response, error: any) => res.status(error.code === 11000 ? 409 : error.httpStatus || 503)
+  .json({ error: error.code === 11000 ? 'Another booking or acceptance is already in progress. Refresh to continue.' : error.message || 'Cab service temporarily unavailable' });
+const reject = (message: string, httpStatus = 409): never => { throw Object.assign(new Error(message), { httpStatus }); };
+const emitRide = (req: Request, ride: any) => {
+  const io = req.app.get('io');
+  io?.to('user_' + ride.userId.toString()).emit('ride_status_update', ride);
+  if (ride.driverId) io?.to('user_' + (ride.driverId._id || ride.driverId).toString()).emit('ride_status_update', ride);
+};
+const populateRide = (ride: any) => ride.populate('driverId', driverFields);
 
-  if (!user) throw new Error('User not found');
-
-  const initialStatus = type?.toLowerCase() === 'cab' ? 'searching' : 'completed';
-
-  const booking = await TravelBooking.create({
-    user: userId,
-    type,
-    vehicleType,
-    origin,
-    destination,
-    amount,
-    status: initialStatus
-  });
-
-  await createNotification(
-    userId,
-    'Travel Booked',
-    `Your ${type} booking from ${origin} to ${destination} was successful!`,
-    'success'
-  );
-
-  return booking;
+// Old ticket orders must not fabricate a booking or ticket.
+export const handleTravelBooking = async (_userId: string, _metadata: any): Promise<any> => {
+  throw new Error('Ticket services are unavailable. Contact support for any previously collected payment.');
 };
 
-// Get all bookings for a user
-export const getUserBookings = async (req: Request, res: Response) => {
-  const { userId } = req.params;
-  
-  try {
-    const bookings = await TravelBooking.find({ user: userId }).sort({ createdAt: -1 });
-    res.json({ bookings });
-  } catch (error) {
-    console.error('Error fetching user bookings:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-};
-
-// Get all bookings for admin dashboard
-export const getAllBookingsAdmin = async (req: Request, res: Response) => {
-  try {
-    const bookings = await TravelBooking.find().populate('user', 'name phone').sort({ createdAt: -1 });
-    res.json({ bookings });
-  } catch (error) {
-    console.error('Error fetching all bookings:', error);
-    res.status(500).json({ error: 'Server error' });
+export const expireSearches = async () => {
+  const stale = await Ride.find({ status: 'searching', $or: [{ expiresAt: { $lte: new Date() } }, { expiresAt: { $exists: false }, createdAt: { $lte: new Date(Date.now() - 5 * 60000) } }] }).limit(100);
+  for (const ride of stale) {
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        const changed = await Ride.findOneAndUpdate({ _id: ride._id, status: 'searching' },
+          { $set: { status: 'cancelled' }, $push: { statusHistory: { status: 'cancelled', actor: 'system', at: new Date(), reason: 'No driver accepted before search expired' } } }, { session });
+        if (changed) await RideSlot.deleteMany({ rideId: ride._id }, { session });
+      });
+    } finally { await session.endSession(); }
   }
 };
 
 export const calculateFare = async (req: Request, res: Response) => {
-  const { origin, destination } = req.body;
-
-  if (!origin || !destination) {
-    return res.status(400).json({ error: 'Origin and destination are required' });
-  }
-
   try {
-    const mapboxToken = process.env.MAPBOX_API_KEY || ["pk", "eyJ1IjoicHVuZWV0aHllcm5pbnRpIiwiYSI6ImNtczc5NnFoZDAxYTkzMHF5b2pza3djaXAifQ", "Vq4KPlACKh1jbeFq1Hl3Cw"].join(".");
-    
-    const geoOriginRes = await axios.get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(origin)}.json?access_token=${mapboxToken}`);
-    const originCoords = geoOriginRes.data.features?.[0]?.center;
-
-    const geoDestRes = await axios.get(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destination)}.json?access_token=${mapboxToken}`);
-    const destCoords = geoDestRes.data.features?.[0]?.center;
-
-    if (!originCoords || !destCoords) throw new Error("Geocoding failed");
-
-    const dirRes = await axios.get(`https://api.mapbox.com/directions/v5/mapbox/driving/${originCoords[0]},${originCoords[1]};${destCoords[0]},${destCoords[1]}?geometries=geojson&access_token=${mapboxToken}`);
-    const route = dirRes.data.routes?.[0];
-    
-    if (!route) throw new Error("No route found");
-
-    const distanceKm = route.distance / 1000;
-    const durationMin = route.duration / 60;
-
-    const fare = Math.round(50 + (distanceKm * 15) + (durationMin * 2));
-
-    res.json({ fare, distanceKm, durationMin, routeGeometry: route.geometry });
-  } catch (error: any) {
-    console.error('Error calculating fare:', error.message);
-    res.status(500).json({ error: 'Server error calculating fare' });
-  }
-};
-
-// --- NEW RIDE APIs (Phase 3 Uber-style) ---
-import Ride from '../models/Ride';
-
-const resolveUser = async (req: Request) => {
-  const userId = req.query.userId || req.body.userId || req.params.userId;
-  if (!userId) return null;
-  return User.findById(userId);
+    const { pickup, dropoff } = req.body;
+    if (![pickup, dropoff].every(validLocation)) reject('Select pickup and destination inside Visakhapatnam.', 400);
+    if (![pickup, dropoff].every(p => typeof p.address === 'string' && p.address.trim().length >= 3 && p.address.length <= 500)) reject('Select complete addresses.', 400);
+    const token = process.env.MAPBOX_API_KEY;
+    if (!token) reject('Route service is not configured. Contact support.', 503);
+    const { data } = await axios.get('https://api.mapbox.com/directions/v5/mapbox/driving/' + pickup.lng + ',' + pickup.lat + ';' + dropoff.lng + ',' + dropoff.lat, {
+      params: { access_token: token, geometries: 'geojson' }, timeout: 10000
+    });
+    const route = data.routes?.[0];
+    if (data.code !== 'Ok' || !route || !Number.isFinite(route.duration) || route.duration <= 0) reject('No drivable route found.', 422);
+    const fares = faresForDistance(route.distance);
+    const quote = await CabQuote.create({
+      userId: identity(req), pickup, dropoff, fares, distance: route.distance, duration: route.duration,
+      path: route.geometry, expiresAt: new Date(Date.now() + 5 * 60000)
+    });
+    res.json({ quote });
+  } catch (error) { fail(res, error); }
 };
 
 export const requestRide = async (req: Request, res: Response) => {
+  const session = await mongoose.startSession();
   try {
-    const { pickup, dropoff, fare, distance, duration, path, userId } = req.body;
-    
-    if (!pickup || !dropoff || !fare) {
-      return res.status(400).json({ success: false, error: 'Missing ride details' });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(401).json({ success: false, error: 'Unauthorized' });
-    }
-
-    const existingRide = await Ride.findOne({
-      userId: user._id,
-      status: { $in: ['searching', 'accepted', 'arrived', 'in_progress'] }
+    const { quoteId, vehicleType, paymentMethod } = req.body;
+    if (!mongoose.isValidObjectId(quoteId) || !['mini', 'xl'].includes(vehicleType) || !['cash', 'online'].includes(paymentMethod)) reject('Invalid cab selection.', 400);
+    let ride: any;
+    await expireSearches();
+    await session.withTransaction(async () => {
+      ride = await Ride.findOne({ userId: identity(req), quoteId }).session(session);
+      if (ride) return;
+      const quote: any = await CabQuote.findOne({ _id: quoteId, userId: identity(req), expiresAt: { $gt: new Date() } }).session(session);
+      if (!quote) reject('Fare quote expired. Please refresh your route.', 400);
+      if (await Ride.exists({ $or: [{ userId: identity(req) }, { driverId: identity(req) }], status: { $in: activeStatuses } }).session(session)) reject('You already have an active ride.');
+      if (await Ride.exists({ userId: identity(req), status: 'completed', paymentMethod: 'online', paymentStatus: 'unpaid' }).session(session)) reject('Please pay your previous trip before booking again.');
+      const id = new mongoose.Types.ObjectId();
+      await RideSlot.create([{ _id: 'account:' + identity(req), rideId: id }], { session });
+      [ride] = await Ride.create([{
+        _id: id, userId: identity(req), quoteId, pickup: quote.pickup, dropoff: quote.dropoff,
+        fare: (quote.fares as any)[vehicleType], distance: quote.distance, duration: quote.duration, path: quote.path,
+        vehicleType, paymentMethod, paymentStatus: 'unpaid', status: 'searching', expiresAt: new Date(Date.now() + 5 * 60000),
+        statusHistory: [{ status: 'searching', actor: identity(req), at: new Date() }]
+      }], { session });
     });
-
-    if (existingRide) {
-      return res.status(400).json({ success: false, error: 'You already have an active ride' });
-    }
-
-    const newRide = await Ride.create({
-      userId: user._id,
-      pickup,
-      dropoff,
-      fare,
-      distance,
-      duration,
-      path,
-      status: 'searching'
-    });
-
-    const io = req.app.get('io');
-    if (io) {
-      io.to('driver_room').emit('new_ride_request', newRide);
-    }
-
-    return res.status(201).json({ success: true, ride: newRide });
-  } catch (error) {
-    console.error('requestRide error:', error);
-    res.status(500).json({ success: false, error: 'Server error' });
-  }
+    res.status(201).json({ ride: await populateRide(ride) });
+  } catch (error) { fail(res, error); } finally { await session.endSession(); }
 };
 
 export const getActiveRide = async (req: Request, res: Response) => {
   try {
-    const user = await resolveUser(req);
-    if (!user) {
-      return res.status(401).json({ success: false, error: 'Unauthorized' });
-    }
-
+    await expireSearches();
     const ride = await Ride.findOne({
-      $or: [{ userId: user._id }, { driverId: user._id }],
-      status: { $in: ['searching', 'accepted', 'arrived', 'in_progress'] }
-    }).populate('driverId', 'name phone vehicleDetails currentLocation profilePicture')
-      .populate('userId', 'name phone profilePicture');
-
-    return res.json({ success: true, ride });
-  } catch (error) {
-    console.error('getActiveRide error:', error);
-    res.status(500).json({ success: false, error: 'Server error' });
-  }
+      $and: [{ $or: [{ userId: identity(req) }, { driverId: identity(req) }] },
+        { $or: [{ status: { $in: activeStatuses } }, { userId: identity(req), status: 'completed', paymentMethod: 'online', paymentStatus: 'unpaid' }] }]
+    }).sort({ createdAt: -1 }).populate('driverId', driverFields);
+    res.json({ ride });
+  } catch (error) { fail(res, error); }
 };
 
-export const updateRideStatus = async (req: Request, res: Response) => {
+export const getRide = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const { status, driverId } = req.body;
-
-    const ride = await Ride.findById(id);
-    if (!ride) {
-      return res.status(404).json({ success: false, error: 'Ride not found' });
-    }
-
-    if (status === 'accepted') {
-      if (ride.status !== 'searching') {
-        return res.status(400).json({ success: false, error: 'Ride already accepted by another driver' });
-      }
-      if (!driverId) {
-        return res.status(400).json({ success: false, error: 'Driver ID required' });
-      }
-      ride.driverId = driverId;
-    }
-
-    ride.status = status;
-    await ride.save();
-    await ride.populate('driverId', 'name phone vehicleDetails currentLocation profilePicture');
-
-    const io = req.app.get('io');
-    if (io) {
-      io.to(`user_${ride.userId}`).emit('ride_status_update', ride);
-      if (status === 'accepted') {
-         io.to('driver_room').emit('remove_ride_request', ride._id);
-      }
-    }
-
-    return res.json({ success: true, ride });
-  } catch (error) {
-    console.error('updateRideStatus error:', error);
-    res.status(500).json({ success: false, error: 'Server error' });
-  }
+    if (!mongoose.isValidObjectId(req.params.id)) reject('Invalid ride ID', 400);
+    const ride = await Ride.findOne({ _id: req.params.id, $or: [{ userId: identity(req) }, { driverId: identity(req) }] }).populate('driverId', driverFields);
+    if (!ride) reject('Ride not found', 404);
+    res.json({ ride });
+  } catch (error) { fail(res, error); }
 };
 
+export const getUserBookings = async (req: Request, res: Response) => {
+  try {
+    if (req.params.userId && req.params.userId !== identity(req)) reject('Not authorized', 403);
+    const bookings = await Ride.find({ $or: [{ userId: identity(req) }, { driverId: identity(req) }] })
+      .sort({ createdAt: -1 }).limit(100).populate('driverId', driverFields);
+    res.json({ bookings });
+  } catch (error) { fail(res, error); }
+};
+export const getAllBookingsAdmin = async (_req: Request, res: Response) => {
+  try {
+    const rides = await Ride.find().sort({ createdAt: -1 }).limit(200).populate('userId', 'name phone').populate('driverId', driverFields);
+    res.json({ bookings: rides.map(ride => ({ ...ride.toObject(), user: ride.userId, type: 'cab', amount: ride.fare, origin: ride.pickup.address, destination: ride.dropoff.address })) });
+  } catch (error) { fail(res, error); }
+};
+
+const approvedDriver = async (req: Request) => {
+  const user = await User.findById(identity(req));
+  if (!user || user.role !== 'driver') reject('Approved driver access required', 403);
+  if (!user!.vehicleDetails?.type || !user!.vehicleDetails.plate) reject('Support must configure your approved vehicle before you go online.', 403);
+  return user!;
+};
+export const getDriverRequests = async (req: Request, res: Response) => {
+  try {
+    const driver = await approvedDriver(req);
+    await expireSearches();
+    const fresh = driver.isOnline && driver.currentLocation?.updatedAt && driver.currentLocation.updatedAt.getTime() > Date.now() - 45000;
+    const busy = await Ride.exists({ driverId: driver._id, status: { $in: activeStatuses } });
+    const rides = fresh && !busy ? await Ride.find({ status: 'searching', vehicleType: driver.vehicleDetails?.type, expiresAt: { $gt: new Date() } }).sort({ createdAt: 1 }).limit(50) : [];
+    res.json({ rides, isOnline: !!fresh, vehicle: driver.vehicleDetails });
+  } catch (error) { fail(res, error); }
+};
+export const updateRideStatus = async (req: Request, res: Response) => {
+  const session = await mongoose.startSession();
+  try {
+    const { status, cashCollected } = req.body;
+    if (!mongoose.isValidObjectId(req.params.id)) reject('Invalid ride ID', 400);
+    let changed: any;
+    await session.withTransaction(async () => {
+      const ride = await Ride.findById(req.params.id).session(session);
+      if (!ride) reject('Ride not found', 404);
+      const trip = ride!;
+      if (status === 'accepted') {
+        const driver = await approvedDriver(req);
+        if (trip.userId.toString() === identity(req)) reject('You cannot accept your own ride.', 403);
+        if (trip.status !== 'searching' || !trip.expiresAt || trip.expiresAt <= new Date()) reject('This request is no longer available.');
+        if (!driver.isOnline || !driver.currentLocation?.updatedAt || driver.currentLocation.updatedAt.getTime() < Date.now() - 45000) reject('Go online with a current GPS location first.');
+        if (trip.vehicleType !== driver.vehicleDetails?.type) reject('This request requires a different vehicle.', 403);
+        if (await Ride.exists({ driverId: driver._id, status: { $in: activeStatuses } }).session(session)) reject('Finish your active trip first.');
+        await RideSlot.create([{ _id: 'account:' + identity(req), rideId: trip._id }], { session });
+      } else if (!canTransition(trip.status, status, trip.driverId?.toString() === identity(req), trip.userId.toString() === identity(req))) {
+        reject('This trip transition is not permitted.', 403);
+      }
+      if (status === 'completed' && trip.paymentMethod === 'cash' && cashCollected !== true) reject('Confirm cash collection before completing this trip.', 400);
+      const update: any = { status };
+      if (status === 'accepted') update.driverId = identity(req);
+      if (status === 'completed' && trip.paymentMethod === 'cash') {
+        update.paymentStatus = 'paid';
+        const cashId = new mongoose.Types.ObjectId();
+        update.paymentTransactionId = cashId;
+        await Transaction.create([{ _id: cashId, user: trip.userId, amount: trip.fare, type: 'debit', category: 'cab_cash', status: 'completed', referenceId: 'Cab ' + trip._id,
+          metadata: { fulfilled: true, rideId: trip._id.toString(), paymentMethod: 'cash', collectedBy: identity(req), collectedAt: new Date() } }], { session });
+      }
+      changed = await Ride.findOneAndUpdate({ _id: trip._id, status: trip.status },
+        { $set: update, $push: { statusHistory: { status, actor: identity(req), at: new Date() } } }, { session, new: true });
+      if (!changed) reject('Trip changed. Refresh and try again.');
+      if (['completed', 'cancelled'].includes(status)) await RideSlot.deleteMany({ rideId: trip._id }, { session });
+    });
+    await populateRide(changed);
+    emitRide(req, changed);
+    res.json({ ride: changed });
+  } catch (error) { fail(res, error); } finally { await session.endSession(); }
+};
 export const updateDriverStatus = async (req: Request, res: Response) => {
   try {
+    const driver = await approvedDriver(req);
     const { isOnline, lat, lng, heading } = req.body;
-    const user = await resolveUser(req);
-    if (!user) {
-      return res.status(401).json({ success: false, error: 'Unauthorized' });
-    }
+    if (typeof isOnline !== 'boolean') reject('Specify online status.', 400);
+    if (isOnline && !validLocation({ lat, lng })) reject('A current Visakhapatnam GPS location is required.', 400);
+    driver.isOnline = isOnline;
+    if (isOnline) driver.currentLocation = { lat, lng, heading: Number.isFinite(heading) ? heading : 0, updatedAt: new Date() };
+    await driver.save();
+    const ride = await Ride.findOne({ driverId: driver._id, status: { $in: ['accepted', 'arrived', 'in_progress'] } });
+    if (ride && isOnline) req.app.get('io')?.to('user_' + ride.userId).emit('ride_location_update', { rideId: ride._id, lat, lng, heading: driver.currentLocation?.heading });
+    res.json({ isOnline: driver.isOnline });
+  } catch (error) { fail(res, error); }
+};
 
-    if (user.role !== 'driver' && user.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Not a driver' });
+export const createCabPaymentOrder = async (req: Request, res: Response) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ error: 'Invalid ride ID' });
+  const session = await mongoose.startSession();
+  let transaction: any;
+  let creating = false;
+  try {
+    const provider = getRazorpay();
+    await session.withTransaction(async () => {
+      creating = false;
+      const ride = await Ride.findOne({ _id: req.params.id, userId: identity(req), status: 'completed', paymentMethod: 'online', paymentStatus: 'unpaid' }).session(session);
+      if (!ride) reject('No payable trip found.', 404);
+      if (ride!.paymentTransactionId) {
+        transaction = await Transaction.findById(ride!.paymentTransactionId).session(session);
+        return;
+      }
+      const id = new mongoose.Types.ObjectId();
+      [transaction] = await Transaction.create([{ _id: id, user: identity(req), amount: ride!.fare, type: 'debit', category: 'cab_payment', status: 'pending', referenceId: 'Cab ' + ride!._id, metadata: { rideId: ride!._id.toString(), orderCreatingAt: new Date() } }], { session });
+      await Ride.updateOne({ _id: ride!._id }, { $set: { paymentTransactionId: id } }, { session });
+      creating = true;
+    });
+    if (!transaction) reject('Payment record needs support review.', 409);
+    if (!transaction.razorpayOrderId && !creating) reject('Payment order is processing or needs support review. Do not pay again.', 409);
+    if (creating) {
+      const order = await provider.orders.create({ amount: Math.round(transaction.amount * 100), currency: 'INR', receipt: transaction._id.toString(), notes: { rideId: transaction.metadata.rideId } });
+      transaction.razorpayOrderId = order.id;
+      await transaction.save();
     }
+    res.json({ orderId: transaction.razorpayOrderId, amount: Math.round(transaction.amount * 100), currency: 'INR', keyId: process.env.RAZORPAY_KEY_ID });
+  } catch (error) { fail(res, error); } finally { await session.endSession(); }
+};
 
-    if (typeof isOnline === 'boolean') {
-      user.isOnline = isOnline;
-    }
-    
-    if (lat && lng) {
-      user.currentLocation = {
-        lat,
-        lng,
-        heading: heading || 0,
-        updatedAt: new Date()
-      };
-    }
+export const fulfillCabPayment = async (transaction: any, io?: any) => {
+  const session = await mongoose.startSession();
+  let result: any;
+  try {
+    await session.withTransaction(async () => {
+      const tx = await Transaction.findOne({ _id: transaction._id, status: 'completed', category: 'cab_payment' }).session(session);
+      if (!tx) throw new Error('Captured cab payment required');
+      if (tx.metadata?.fulfilled) { result = tx.metadata.fulfillmentResult; return; }
+      const ride = await Ride.findOne({ _id: tx.metadata?.rideId, userId: tx.user, paymentTransactionId: tx._id, status: 'completed', paymentMethod: 'online', fare: tx.amount }).session(session);
+      if (!ride) throw new Error('Cab payment requires support reconciliation');
+      ride!.paymentStatus = 'paid';
+      await ride!.save({ session });
+      result = { rideId: ride!._id.toString(), paid: true, amount: tx.amount };
+      await Transaction.updateOne({ _id: tx._id }, { $set: { 'metadata.fulfilled': true, 'metadata.fulfilledAt': new Date(), 'metadata.fulfillmentResult': result } }, { session });
+    });
+  } finally { await session.endSession(); }
+  io?.to('user_' + transaction.user).emit('cab_payment_update', result);
+  return result;
+};
 
-    await user.save();
-    return res.json({ success: true, user });
-  } catch (error) {
-    console.error('updateDriverStatus error:', error);
-    res.status(500).json({ success: false, error: 'Server error' });
+export const reconcileCabPayments = async (io?: any) => {
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) return;
+  const transactions = await Transaction.find({ category: 'cab_payment', status: { $in: ['pending', 'completed'] }, 'metadata.fulfilled': { $ne: true },
+    $or: [{ 'metadata.reconcileAfter': { $exists: false } }, { 'metadata.reconcileAfter': { $lte: new Date() } }] }).sort({ createdAt: 1 }).limit(20);
+  for (const tx of transactions) {
+    try {
+      await Transaction.updateOne({ _id: tx._id }, { $set: { 'metadata.reconcileAfter': new Date(Date.now() + 5 * 60000) } });
+      if (!tx.razorpayOrderId) {
+        await Transaction.updateOne({ _id: tx._id }, { $set: { 'metadata.manualReview': true, 'metadata.reviewReason': 'Order creation interrupted. Verify receipt with Razorpay before issuing another order.' } });
+        continue;
+      }
+      if (tx.status === 'pending') {
+        const payments = await getRazorpay().orders.fetchPayments(tx.razorpayOrderId);
+        const payment = payments.items?.find((p: any) => p.status === 'captured' && p.order_id === tx.razorpayOrderId && p.currency === 'INR' && Number(p.amount) === Math.round(tx.amount * 100) && Number(p.amount_refunded || 0) === 0);
+        if (!payment) continue;
+        const captured = await Transaction.findOneAndUpdate({ _id: tx._id, status: 'pending' }, { $set: { status: 'completed', razorpayPaymentId: payment.id } }, { new: true });
+        if (!captured) continue;
+        await fulfillCabPayment(captured, io);
+      } else { await fulfillCabPayment(tx, io); }
+    } catch (error: any) {
+      await Transaction.updateOne({ _id: tx._id }, { $set: { 'metadata.manualReview': true, 'metadata.reviewReason': error.message } });
+    }
   }
+};
+
+export const configureDriver = async (req: Request, res: Response) => {
+  try {
+    const { type, plate, make, model, color } = req.body;
+    if (!['mini', 'xl'].includes(type) || ![plate, make, model].every(v => typeof v === 'string' && v.trim().length >= 2 && v.length <= 80)) reject('Approved vehicle type, plate, make and model are required.', 400);
+    const driver = await User.findById(req.params.id);
+    if (!driver || driver.role === 'admin') reject('Eligible driver account not found.', 404);
+    if (driver!.role !== 'driver' && req.body.approved !== true) reject('Confirm driver approval first.', 400);
+    if (driver!.isOnline) reject('Driver must go offline before changing vehicle details.');
+    if (await Ride.exists({ $or: [{ driverId: driver!._id }, { userId: driver!._id }], status: { $in: activeStatuses } })) reject('Finish the active trip before changing vehicle details.');
+    driver!.vehicleDetails = { type, plate: plate.trim().toUpperCase(), make: make.trim(), model: model.trim(), color: typeof color === 'string' ? color.slice(0, 40) : '' };
+    driver!.role = 'driver';
+    driver!.isOnline = false;
+    await driver!.save();
+    res.json({ vehicle: driver!.vehicleDetails });
+  } catch (error) { fail(res, error); }
+};
+
+export const cancelRideAdmin = async (req: Request, res: Response) => {
+  const session = await mongoose.startSession();
+  try {
+    const { reason } = req.body;
+    if (!mongoose.isValidObjectId(req.params.id) || typeof reason !== 'string' || reason.trim().length < 5 || reason.length > 500) reject('A valid ride and cancellation reason are required.', 400);
+    let ride: any;
+    await session.withTransaction(async () => {
+      ride = await Ride.findOneAndUpdate({ _id: req.params.id, status: { $in: activeStatuses }, paymentStatus: { $ne: 'paid' } },
+        { $set: { status: 'cancelled' }, $push: { statusHistory: { status: 'cancelled', actor: identity(req), at: new Date(), reason: reason.trim() } } }, { session, new: true });
+      if (!ride) reject('Only active unpaid trips can be cancelled by support.');
+      await RideSlot.deleteMany({ rideId: ride._id }, { session });
+    });
+    emitRide(req, ride);
+    res.json({ ride });
+  } catch (error) { fail(res, error); } finally { await session.endSession(); }
 };

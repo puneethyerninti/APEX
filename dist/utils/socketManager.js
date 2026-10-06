@@ -38,6 +38,8 @@ const initSocket = (server) => {
             // Verify custom JWT token
             const jwt = require('jsonwebtoken');
             const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+            if (decodedToken.authVersion !== 2)
+                return next(new Error('Please sign in again'));
             // Fetch user from DB to get the MongoDB _id and roles
             const dbUser = await User_1.default.findById(decodedToken.id);
             if (!dbUser) {
@@ -47,7 +49,8 @@ const initSocket = (server) => {
             socket.user = {
                 uid: dbUser.email, // Custom backend doesn't use firebaseUid, use email or id
                 dbId: dbUser._id.toString(),
-                isAdmin: dbUser.role === 'admin'
+                isAdmin: dbUser.role === 'admin',
+                role: dbUser.role
             };
             // SERVER-AUTHORITATIVE ROOM JOINING
             // Prevent client spoofing by forcing room joins here
