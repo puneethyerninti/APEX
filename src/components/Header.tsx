@@ -15,7 +15,7 @@ const SEARCH_CATALOG = [
   { title: "Digital Marketing", category: "Academy", icon: "fa-bullhorn", href: "/academy" },
   { title: "Premium Villas & Apartments", category: "Realty", icon: "fa-building", href: "/realty" },
   { title: "Commercial Plots", category: "Realty", icon: "fa-map-location-dot", href: "/realty" },
-  { title: "Flight & Cab Booking", category: "Travel", icon: "fa-plane", href: "/travel" },
+  { title: "Cab Booking", category: "Travel", icon: "fa-taxi", href: "/travels" },
   { title: "Matrimony Prime Plans", category: "Matrimony", icon: "fa-heart", href: "/matrimony" },
   { title: "Charity Foundation", category: "Foundation", icon: "fa-hand-holding-heart", href: "/charity" },
   { title: "Job Portal", category: "Jobs", icon: "fa-briefcase", href: "/jobs" },

@@ -14,9 +14,12 @@ export default function MapboxSearch({ placeholder, value, onChange, onSelect, c
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const selectedValue = useRef<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchSuggestions = async () => {
+      if (value === selectedValue.current || disabled) return;
       if (!value || value.length < 3) {
         setSuggestions([]);
         return;
@@ -26,9 +29,9 @@ export default function MapboxSearch({ placeholder, value, onChange, onSelect, c
       if (!token) return;
 
       try {
-        const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?access_token=${token}&autocomplete=true&limit=5&bbox=83.10,17.50,83.45,17.95`);
+        const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(value)}.json?access_token=${token}&autocomplete=true&limit=5&bbox=83.10,17.50,83.45,17.95`, { signal: controller.signal });
         const data = await response.json();
-        if (data.features) {
+        if (!controller.signal.aborted && data.features) {
           setSuggestions(data.features);
           setIsOpen(true);
         }
@@ -44,8 +47,8 @@ export default function MapboxSearch({ placeholder, value, onChange, onSelect, c
       }
     }, 500);
 
-    return () => clearTimeout(delayDebounce);
-  }, [value]);
+    return () => { clearTimeout(delayDebounce); controller.abort(); };
+  }, [value, disabled]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -62,6 +65,7 @@ export default function MapboxSearch({ placeholder, value, onChange, onSelect, c
     setSuggestions([]);
     
     const address = feature.place_name;
+    selectedValue.current = address;
     const [lng, lat] = feature.center;
     
     onChange(address);
@@ -75,6 +79,8 @@ export default function MapboxSearch({ placeholder, value, onChange, onSelect, c
         placeholder={placeholder}
         value={value}
         onChange={(e) => {
+            selectedValue.current = null;
+            setSuggestions([]);
             onChange(e.target.value);
             setIsOpen(true);
         }}

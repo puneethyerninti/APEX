@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Map, { Marker, Source, Layer } from 'react-map-gl/mapbox';
 import type { MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -12,6 +12,13 @@ interface TravelsMapProps {
 
 export default function TravelsMap({ cabLocation, userLocation, routeGeometry }: TravelsMapProps) {
   const mapRef = useRef<MapRef>(null);
+  const [mapError, setMapError] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+  useEffect(() => {
+    if (mapReady) return;
+    const timeout = setTimeout(() => setMapError(true), 15000);
+    return () => clearTimeout(timeout);
+  }, [mapReady]);
 
   // Default to Vizag coords if no user or cab yet
   const centerLat = cabLocation ? cabLocation.lat : userLocation ? userLocation.lat : 17.6868;
@@ -30,7 +37,7 @@ export default function TravelsMap({ cabLocation, userLocation, routeGeometry }:
 
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || ["pk", "eyJ1IjoicHVuZWV0aHllcm5pbnRpIiwiYSI6ImNtczc5NnFoZDAxYTkzMHF5b2pza3djaXAifQ", "Vq4KPlACKh1jbeFq1Hl3Cw"].join(".");
 
-  if (!mapboxToken) return <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">Mapbox Token Missing</div>;
+  if (!mapboxToken || mapError) return <div role="status" className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-600 p-4 text-center">Map unavailable. Your trip details remain below.</div>;
 
   const routeSource = routeGeometry ? {
     type: 'Feature' as const,
@@ -39,9 +46,13 @@ export default function TravelsMap({ cabLocation, userLocation, routeGeometry }:
   } : null;
 
   return (
+    <div className="relative w-full h-full">
+    {!mapReady && <div role="status" className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100 text-gray-600">Loading map...</div>}
     <Map
       ref={mapRef}
       mapboxAccessToken={mapboxToken}
+      onError={() => setMapError(true)}
+      onLoad={() => setMapReady(true)}
       initialViewState={{
         longitude: centerLng,
         latitude: centerLat,
@@ -92,5 +103,6 @@ export default function TravelsMap({ cabLocation, userLocation, routeGeometry }:
         </Marker>
       )}
     </Map>
+    </div>
   );
 }

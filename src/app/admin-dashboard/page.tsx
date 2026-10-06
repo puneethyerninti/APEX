@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAppStore } from '@/store/useAppStore';
 import { useRouter } from 'next/navigation';
 import { api } from '@/services/api';
+import CabDriverAdmin from '@/components/CabDriverAdmin';
 import { SocketContext } from '@/context/SocketContext';
 import { Line, Doughnut } from 'react-chartjs-2';
 import {
@@ -785,6 +786,7 @@ export default function AdminDashboardPage() {
 
                 {activeTab === 'travels' && (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                      <CabDriverAdmin />
                       <div className="overflow-x-auto">
                           <table className="w-full text-left border-collapse min-w-[700px]">
                               <thead>
@@ -825,7 +827,7 @@ export default function AdminDashboardPage() {
                                             <i className="fa-solid fa-arrow-down text-[8px] text-gray-400 my-1 block"></i>
                                             <p className="text-xs text-gray-900 font-semibold truncate max-w-[200px]">{t.destination}</p>
                                         </td>
-                                        <td className="px-5 sm:px-6 py-4 font-bold text-gray-900">₹{t.amount}</td>
+                                        <td className="px-5 sm:px-6 py-4 font-bold text-gray-900">₹{t.amount}<p className="text-xs font-normal">{t.paymentMethod} / {t.paymentStatus || 'unpaid'}</p></td>
                                         <td className="px-5 sm:px-6 py-4">
                                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${t.status==='completed'?'bg-green-50 text-green-700 border-green-100':t.status==='en_route'?'bg-blue-50 text-blue-700 border-blue-100':'bg-purple-50 text-purple-700 border-purple-100'}`}>
                                                 {t.status === 'searching' && <><i className="fa-solid fa-circle-notch fa-spin mr-1"></i> Searching</>}
@@ -834,6 +836,12 @@ export default function AdminDashboardPage() {
                                                 {t.status === 'cancelled' && <><i className="fa-solid fa-xmark mr-1"></i> Cancelled</>}
                                                 {!['searching', 'en_route', 'completed', 'cancelled'].includes(t.status) && t.status}
                                             </span>
+                                            {['searching', 'accepted', 'arrived', 'in_progress'].includes(t.status) && <button className="block mt-2 text-xs underline" onClick={async () => {
+                                                const reason = window.prompt('Reason for cancelling this cab trip:');
+                                                if (!reason) return;
+                                                try { await api.post('/travels/admin/rides/' + t._id + '/cancel', { reason }); setTravels(items => items.map(item => item._id === t._id ? { ...item, status: 'cancelled' } : item)); }
+                                                catch (error: any) { window.alert(error.response?.data?.error || 'Cancellation failed.'); }
+                                            }}>Cancel trip</button>}
                                         </td>
                                         <td className="px-5 sm:px-6 py-4 text-gray-500 text-xs">{new Date(t.createdAt).toLocaleDateString()}</td>
                                     </tr>

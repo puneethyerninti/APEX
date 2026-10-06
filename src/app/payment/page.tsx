@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/services/api';
 import { loadRazorpay } from '@/services/razorpay';
+import { parsePaymentPayload, makeUpiIntent, validVpa, validAmount } from '@/services/paymentPayload';
+import { openUpiApp } from '@/services/upiLauncher';
+import { transferWallet, pendingWalletTransfer } from '@/services/walletTransfer';
 import { useAppStore } from '@/store/useAppStore';
 import { useSocket } from '@/context/SocketContext';
 
@@ -40,11 +43,19 @@ function PaymentContent() {
     const [isBalanceVisible, setIsBalanceVisible] = useState(true);
     const [transactions, setTransactions] = useState<TransactionItem[]>([]);
     const [txLoading, setTxLoading] = useState(false);
+    const [syncError, setSyncError] = useState('');
+    const [hasPendingTransfer, setHasPendingTransfer] = useState(false);
+    useEffect(() => {
+        if (!user) return;
+        try { setHasPendingTransfer(!!pendingWalletTransfer(user.uid || user._id!)); }
+        catch (e: any) { setSyncError(e.message); }
+    }, [user, transactions]);
     const [activeTab, setActiveTab] = useState<'all' | 'debit' | 'credit'>('all');
 
     const [isScannerOpen, setIsScannerOpen] = useState(autoScan);
     const [scannerError, setScannerError] = useState<string | null>(null);
     const scannerRef = useRef<any>(null);
+    const scannerGeneration = useRef(0);
 
     const [scannedPayee, setScannedPayee] = useState<ScannedPayee | null>(null);
     const [payAmount, setPayAmount] = useState('');
@@ -85,6 +96,7 @@ function PaymentContent() {
                 setWalletBalance(res.data.balance);
             }
         } catch (err) {
+            setSyncError('Wallet balance could not be refreshed. Retry before making a transfer.');
             console.error('Failed to sync wallet balance:', err);
         }
     }, [user, setWalletBalance]);
@@ -97,8 +109,10 @@ function PaymentContent() {
             const res = await api.get(`/finance/transactions?userId=${user.uid || user._id}&limit=20${queryType}`);
             if (res.data?.success) {
                 setTransactions(res.data.transactions || []);
+                setSyncError('');
             }
         } catch (err) {
+            setSyncError('Payment history could not be loaded. Please refresh.');
             console.error('Failed to fetch transactions:', err);
         } finally {
             setTxLoading(false);
@@ -108,6 +122,8 @@ function PaymentContent() {
     useEffect(() => {
         fetchBalance();
         fetchTransactions();
+        const timer = setInterval(() => { if (document.visibilityState === 'visible') { void fetchBalance(); void fetchTransactions(); } }, 10000);
+        return () => clearInterval(timer);
     }, [fetchBalance, fetchTransactions]);
 
     useEffect(() => {
@@ -129,47 +145,21 @@ function PaymentContent() {
     }, [socket, setWalletBalance, fetchTransactions]);
 
     const parseScannedText = (decodedText: string) => {
-        const trimmed = decodedText.trim();
-        
-        let url: URL;
         try {
-            url = new URL(trimmed.replace('upi://pay', 'http://upi.pay'));
-        } catch {
-            showToast('Invalid QR Code format', 'error');
-            return;
-        }
-
-        if (trimmed.toLowerCase().startsWith('upi://pay') || url.searchParams.has('pa')) {
-            const pa = url.searchParams.get('pa') || '';
-            const pn = url.searchParams.get('pn') || 'Merchant';
-            const am = url.searchParams.get('am') || '';
-            const tn = url.searchParams.get('tn') || '';
-            const cu = url.searchParams.get('cu') || 'INR';
-
-            setScannedPayee({ pa, pn, am, tn, cu, raw: trimmed });
-            setPayAmount(am || '');
-            setPayNote(tn || '');
-            return;
-        }
-
-        if (trimmed.toLowerCase().startsWith('apex://pay')) {
-            const phone = url.searchParams.get('phone') || '';
-            const name = url.searchParams.get('name') || 'APEX User';
-            setScannedPayee({ pa: phone, pn: name, isApex: true, raw: trimmed });
-            return;
-        }
-
-        // If it's just a website link (like apextradingcompany.com) without payment parameters
-        showToast('Please scan a valid Payment QR code. Scanned a website link instead.', 'warning');
+            const payee = parsePaymentPayload(decodedText);
+            setScannedPayee(payee); setPayAmount(payee.am || ''); setPayNote(payee.tn || '');
+        } catch (error: any) { showToast(error.message || 'Invalid payment QR.', 'error'); }
     };
-
     const startScanner = async () => {
+        if (scannerRef.current) return;
+        const generation = ++scannerGeneration.current;
         setIsScannerOpen(true);
         setScannerError(null);
 
         setTimeout(async () => {
             try {
                 const { Html5Qrcode } = await import('html5-qrcode');
+                if (generation !== scannerGeneration.current) return;
                 const html5QrCode = new Html5Qrcode("reader");
                 scannerRef.current = html5QrCode;
 
@@ -177,20 +167,27 @@ function PaymentContent() {
                     { facingMode: "environment" },
                     { fps: 10, qrbox: { width: 250, height: 250 } },
                     (decodedText) => {
+                        if (generation !== scannerGeneration.current) return;
                         stopScanner(html5QrCode);
                         parseScannedText(decodedText);
                     },
                     () => {}
                 );
+                if (generation !== scannerGeneration.current) {
+                    await html5QrCode.stop().catch(() => {});
+                    html5QrCode.clear();
+                }
             } catch (err: any) {
                 console.error("Scanner access error:", err);
-                setScannerError('Unable to access device camera. Please grant camera permission.');
+                if (generation === scannerGeneration.current) setScannerError('Unable to access device camera. Please grant camera permission.');
             }
         }, 50); // Reduced timeout to fix delay issue
     };
 
     const stopScanner = async (instance?: any) => {
+        ++scannerGeneration.current;
         const qrCode = instance || scannerRef.current;
+        scannerRef.current = null;
         if (qrCode) {
             try {
                 await qrCode.stop();
@@ -208,6 +205,7 @@ function PaymentContent() {
 
     useEffect(() => {
         return () => {
+            ++scannerGeneration.current;
             if (scannerRef.current) {
                 scannerRef.current.stop().catch(() => {});
             }
@@ -215,8 +213,9 @@ function PaymentContent() {
     }, []);
 
     const handlePayWithWallet = async () => {
+        if (!user || !scannedPayee?.isApex || payLoading) return;
         const amountNum = Number(payAmount);
-        if (!Number.isFinite(amountNum) || amountNum <= 0) {
+        if (!validAmount(payAmount)) {
             showToast('Please enter a valid payment amount', 'warning');
             return;
         }
@@ -227,7 +226,7 @@ function PaymentContent() {
 
         setPayLoading(true);
         try {
-            const res = await api.post('/finance/wallet/transfer', {
+            const res = await transferWallet({
                 amount: amountNum,
                 recipientPhone: scannedPayee?.pa,
                 note: payNote,
@@ -238,9 +237,9 @@ function PaymentContent() {
                 setWalletBalance(res.data.newBalance);
                 setPaymentSuccess({
                     amount: amountNum,
-                    payeeName: scannedPayee?.pn,
+                    payeeName: res.data.recipientName,
                     payeeVpa: scannedPayee?.pa,
-                    txId: res.data.transaction?._id || `TXN${Date.now()}`,
+                    txId: res.data.transaction._id,
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 });
                 setScannedPayee(null);
@@ -249,27 +248,21 @@ function PaymentContent() {
                 showToast(res.data?.error || 'Payment failed', 'error');
             }
         } catch (error: any) {
-            showToast(error.response?.data?.error || 'Failed to complete payment', 'error');
+            showToast(error.response?.data?.error || error.message || 'Failed to complete payment', 'error');
         } finally {
             setPayLoading(false);
         }
     };
 
-    const handlePayWithUpiIntent = () => {
-        const amountNum = Number(payAmount);
-        if (!amountNum || amountNum <= 0) {
-            showToast('Please enter a valid payment amount', 'warning');
-            return;
-        }
-        if (!scannedPayee?.pa) {
-            showToast('Invalid payee UPI address', 'error');
-            return;
-        }
-
-        const upiUri = `upi://pay?pa=${encodeURIComponent(scannedPayee.pa)}&pn=${encodeURIComponent(scannedPayee.pn)}&am=${amountNum}&cu=INR&tn=${encodeURIComponent(payNote || 'APEX Pay')}`;
-        window.location.href = upiUri;
+    const handlePayWithUpiIntent = async () => {
+        if (!scannedPayee || payLoading) return;
+        setPayLoading(true);
+        try {
+            await openUpiApp(makeUpiIntent(scannedPayee, payAmount, payNote));
+            showToast('Complete payment in your UPI app. APEX has not confirmed this payment or debited your wallet.', 'info');
+        } catch (error: any) { showToast(error.message || 'Unable to open UPI app.', 'error'); }
+        finally { setPayLoading(false); }
     };
-
 
     const handleAddMoneySubmit = async () => {
         const amountNum = Number(addAmount);
@@ -353,7 +346,7 @@ function PaymentContent() {
 
         setSendLoading(true);
         try {
-            const res = await api.post('/finance/wallet/transfer', {
+            const res = await transferWallet({
                 recipientPhone: cleanPhone,
                 amount: amountNum,
                 note: sendNote,
@@ -372,7 +365,7 @@ function PaymentContent() {
                 showToast(res.data?.error || 'Transfer failed', 'error');
             }
         } catch (err: any) {
-            showToast(err.response?.data?.error || 'Failed to transfer funds', 'error');
+            showToast(err.response?.data?.error || err.message || 'Failed to transfer funds', 'error');
         } finally {
             setSendLoading(false);
         }
@@ -380,47 +373,17 @@ function PaymentContent() {
 
     const handleWithdrawSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const amountNum = Number(withdrawAmount);
-
-        if (!amountNum || amountNum < 50) {
-            showToast('Minimum withdrawal amount is ₹50', 'warning');
-            return;
+        if (withdrawMethod !== 'UPI') {
+            showToast('Bank withdrawals are not enabled. Your APEX wallet has not been debited.', 'warning'); return;
         }
-        if (walletBalance < amountNum) {
-            showToast('Insufficient wallet balance', 'error');
-            return;
-        }
-        if (!withdrawDestination.trim()) {
-            showToast('Please enter a valid destination', 'warning');
-            return;
-        }
-
-        setWithdrawLoading(true);
         try {
-            const res = await api.post('/finance/wallet/withdraw', {
-                amount: amountNum,
-                method: withdrawMethod,
-                destination: withdrawDestination,
-                userId: user?.uid || user?._id
-            });
-
-            if (res.data?.success) {
-                showToast(`₹${amountNum} withdrawal initiated!`, 'success');
-                setIsWithdrawOpen(false);
-                setWithdrawAmount('');
-                setWithdrawDestination('');
-                fetchBalance();
-                fetchTransactions();
-            } else {
-                showToast(res.data?.error || 'Withdrawal failed', 'error');
-            }
-        } catch (err: any) {
-            showToast(err.response?.data?.error || 'Failed to initiate withdrawal', 'error');
-        } finally {
-            setWithdrawLoading(false);
-        }
+            const pa = withdrawDestination.trim();
+            if (!validVpa(pa)) throw new Error('Enter a valid UPI ID.');
+            setScannedPayee({ pa, pn: pa, raw: 'upi://pay?pa=' + encodeURIComponent(pa) });
+            setPayAmount(withdrawAmount); setPayNote('');
+            setIsWithdrawOpen(false);
+        } catch (error: any) { showToast(error.message, 'error'); }
     };
-
     const handleOpenMyQr = async () => {
         try {
             const response = await api.get('/finance/my-qr');
@@ -453,6 +416,18 @@ function PaymentContent() {
             </div>
 
             <div className="p-4 max-w-md mx-auto w-full flex flex-col gap-5">
+                {syncError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-700">{syncError}</p>}
+                {hasPendingTransfer && <button disabled={sendLoading} className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-left" onClick={async () => {
+                    if (!user) return;
+                    setSendLoading(true);
+                    try {
+                        const saved = pendingWalletTransfer(user.uid || user._id!);
+                        if (!saved?.payload) throw new Error('Check history and contact support with your saved transfer reference.');
+                        const res = await transferWallet(saved.payload);
+                        if (res.data.success) { setHasPendingTransfer(false); await fetchBalance(); await fetchTransactions(); showToast('Transfer confirmed.', 'success'); }
+                    } catch (e: any) { showToast(e.response?.data?.error || e.message, 'error'); }
+                    finally { setSendLoading(false); }
+                }}>{sendLoading ? 'Checking transfer...' : 'Retry confirmation of pending APEX transfer'}</button>}
                 
                 {/* WALLET CARD */}
                 <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
@@ -486,13 +461,13 @@ function PaymentContent() {
                             <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
                                 <i className="fa-solid fa-paper-plane text-emerald-600"></i>
                             </div>
-                            <span className="text-[10px] font-bold">To Mobile</span>
+                            <span className="text-[10px] font-bold">To APEX User</span>
                         </button>
                         <button onClick={() => setIsWithdrawOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors text-gray-700">
                             <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
                                 <i className="fa-solid fa-building-columns text-emerald-600"></i>
                             </div>
-                            <span className="text-[10px] font-bold">To Bank/UPI</span>
+                            <span className="text-[10px] font-bold">UPI App</span>
                         </button>
                         <button onClick={handleOpenMyQr} className="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors text-gray-700">
                             <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
@@ -567,8 +542,10 @@ function PaymentContent() {
                             e.preventDefault();
                             const input = (document.getElementById('manual-upi-input') as HTMLInputElement)?.value;
                             if (input) {
+                                if (!validVpa(input.trim())) { setScannerError('Enter a valid UPI ID.'); return; }
                                 stopScanner();
-                                setScannedPayee({ pa: input, pn: 'Merchant', isApex: false, raw: `upi://pay?pa=${input}` });
+                                setScannedPayee(parsePaymentPayload('upi://pay?pa=' + encodeURIComponent(input.trim())));
+                                setPayAmount(''); setPayNote('');
                             }
                         }} className="w-full max-w-sm flex gap-2">
                             <input 
@@ -737,7 +714,7 @@ function PaymentContent() {
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-end justify-center animate-[fadeIn_0.2s_ease-out]">
                     <form onSubmit={handleWithdrawSubmit} className="bg-white w-full max-w-md rounded-t-3xl p-6 flex flex-col gap-4 pb-8 animate-[slideUp_0.3s_ease-out]">
                         <div className="flex justify-between items-center mb-2">
-                            <h3 className="font-black text-gray-900 text-lg">Withdraw to Bank/UPI</h3>
+                            <h3 className="font-black text-gray-900 text-lg">Pay a UPI ID</h3>
                             <button type="button" onClick={() => setIsWithdrawOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">
                                 <i className="fa-solid fa-xmark"></i>
                             </button>
@@ -745,7 +722,7 @@ function PaymentContent() {
                         
                         <div className="flex gap-2">
                             <button type="button" onClick={() => setWithdrawMethod('UPI')} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${withdrawMethod === 'UPI' ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>UPI</button>
-                            <button type="button" onClick={() => setWithdrawMethod('IMPS')} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${withdrawMethod === 'IMPS' ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>Bank Account</button>
+                            <button type="button" disabled className="flex-1 py-2 rounded-lg text-xs border text-gray-400">Bank payout unavailable</button>
                         </div>
 
                         <input
@@ -769,14 +746,14 @@ function PaymentContent() {
                                     required
                                 />
                             </div>
-                            <p className="text-[10px] text-gray-400 mt-1">Available balance: ₹{walletBalance.toFixed(2)}</p>
+                            <p className="text-xs text-gray-500 mt-1">Pay from your linked bank account in a UPI app. APEX wallet funds are not used.</p>
                         </div>
                         <button
                             type="submit"
-                            disabled={withdrawLoading || !withdrawDestination || !withdrawAmount || Number(withdrawAmount) < 50}
+                            disabled={withdrawLoading || !withdrawDestination || !withdrawAmount || Number(withdrawAmount) <= 0}
                             className="w-full py-4 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                         >
-                            {withdrawLoading ? 'Processing...' : 'Withdraw Money'}
+                            {withdrawLoading ? 'Processing...' : 'Review UPI payment'}
                         </button>
                     </form>
                 </div>
@@ -788,7 +765,7 @@ function PaymentContent() {
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]">
                     <div className="bg-white rounded-3xl p-6 w-full max-w-sm text-center flex flex-col items-center animate-[scaleUp_0.3s_ease-out]">
                         <div className="flex justify-between items-center w-full mb-4">
-                            <h3 className="font-black text-gray-900 text-lg">My QR Code</h3>
+                            <h3 className="font-black text-gray-900 text-lg">APEX Wallet QR</h3>
                             <button onClick={() => setIsMyQrOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">
                                 <i className="fa-solid fa-xmark"></i>
                             </button>

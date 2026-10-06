@@ -1,157 +1,77 @@
 "use client";
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useAppStore } from '@/store/useAppStore';
-import { auth } from '@/firebase.config';
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { onIdTokenChanged, signOut } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
+import { auth } from '@/firebase.config';
 import { api } from '@/services/api';
+import { useAppStore } from '@/store/useAppStore';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   logout: () => Promise<void>;
 }
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-import { usePushNotifications } from '@/hooks/usePushNotifications';
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const setUser = useAppStore((state) => state.setUser);
-  const setWalletBalance = useAppStore((state) => state.setWalletBalance);
+  const [isAuthenticated, setAuthenticated] = useState(false);
+  const [isLoading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
   const router = useRouter();
   const pathname = usePathname();
-
-  // Initialize Push Notifications
   usePushNotifications(isAuthenticated);
-
   useEffect(() => {
-    // Listen for Firebase auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
-      if (firebaseUser) {
-        try {
-          // Check if user exists in Node.js backend
-          const response = await api.get(`/user/profile?phone=${encodeURIComponent(firebaseUser.phoneNumber || '')}`);
-          
-            if (response.data) {
-              const userData = response.data;
-              const currentUser = useAppStore.getState().user;
-              
-              if (userData.token) {
-                localStorage.setItem('apex_token', userData.token);
-              }
-              
-              setUser({
-                uid: userData._id || firebaseUser.uid,
-                phone: firebaseUser.phoneNumber,
-                name: userData.name || currentUser?.name,
-                email: userData.email || currentUser?.email,
-                isPremium: userData.isPremium || currentUser?.isPremium,
-                profilePicture: userData.profilePicture || currentUser?.profilePicture,
-                role: userData.role || currentUser?.role,
-              });
-              if (userData.walletBalance !== undefined) {
-                setWalletBalance(userData.walletBalance);
-              }
-            }
-          } catch (error: any) {
-            if (error.response?.status === 404) {
-              // First time login, create user doc in backend but KEEP local state if it exists
-              const currentUser = useAppStore.getState().user;
-              let dbId = firebaseUser.uid;
-              let userRole = currentUser?.role;
-              try {
-                const res = await api.post('/user/profile', {
-                  phone: firebaseUser.phoneNumber,
-                  name: currentUser?.name || '',
-                  email: currentUser?.email || '',
-                });
-                if (res.data?.user?._id) {
-                  dbId = res.data.user._id;
-                  userRole = res.data.user.role;
-                }
-                if (res.data?.token) {
-                  localStorage.setItem('apex_token', res.data.token);
-                }
-              } catch (createErr) {
-                console.error("Error creating user profile in backend:", createErr);
-              }
-              setUser({
-                uid: dbId,
-                phone: firebaseUser.phoneNumber,
-                name: currentUser?.name || '',
-                email: currentUser?.email || '',
-                isPremium: currentUser?.isPremium,
-                profilePicture: currentUser?.profilePicture,
-                role: userRole,
-              });
-            } else {
-              console.error("Error fetching user profile:", error);
-            // Fallback if firestore fails
-            const currentUser = useAppStore.getState().user;
-            setUser({
-              uid: firebaseUser.uid,
-              phone: firebaseUser.phoneNumber,
-              ...(currentUser?.uid === firebaseUser.uid ? {
-                name: currentUser.name,
-                email: currentUser.email,
-                isPremium: currentUser.isPremium,
-                role: currentUser.role,
-              } : {})
-            });
-          } // End of else
-          } // End of catch block
-          
-          setIsAuthenticated(true);
-          if (pathname === '/login') {
-            router.push('/');
-          } else if (pathname === '/admin-login') {
-            const storeUser = useAppStore.getState().user;
-            const isAdmin = storeUser?.role === 'admin' || firebaseUser.phoneNumber?.includes('8247885289');
-            if (isAdmin) {
-              router.push('/admin-dashboard');
-            } else {
-              // Sign out the normal user so they can log in with admin credentials
-              await signOut(auth);
-            }
-          }
-        } else {
-          // User is logged out
-          setUser(null);
+    let alive = true;
+    const unsubscribe = onIdTokenChanged(auth, async firebaseUser => {
+      setLoading(true);
+      setError('');
+      if (!firebaseUser) {
+        localStorage.removeItem('apex_token');
+        useAppStore.getState().setUser(null);
+        setAuthenticated(false);
+        setLoading(false);
+        return;
+      }
+      try {
+        const proof = await firebaseUser.getIdToken();
+        const { data } = await api.post('/user/session', { name: useAppStore.getState().user?.name }, { headers: { Authorization: 'Bearer ' + proof } });
+        if (!alive) return;
+        localStorage.setItem('apex_token', data.token);
+        const profile = data.user;
+        useAppStore.getState().setUser({
+          uid: profile._id, phone: profile.phone, name: profile.name, email: profile.email,
+          role: profile.role, profilePicture: profile.profilePicture, isPremium: profile.isPremium
+        });
+        useAppStore.getState().setWalletBalance(profile.walletBalance || 0);
+        setAuthenticated(true);
+      } catch (e: any) {
+        if (alive) {
+          setAuthenticated(false);
+          useAppStore.getState().setUser(null);
           localStorage.removeItem('apex_token');
-          setIsAuthenticated(false);
-          if (pathname !== '/login' && pathname !== '/admin-login') {
-            router.push('/login');
-          }
+          setError(e.response?.data?.error || 'Unable to verify your session. Please retry.');
         }
-      setIsLoading(false);
+      } finally { if (alive) setLoading(false); }
     });
-
-    return () => unsubscribe();
-  }, [setUser, router, pathname]);
-
-  const logout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error("Error signing out:", error);
+    return () => { alive = false; unsubscribe(); };
+  }, [retry]);
+  useEffect(() => {
+    if (isLoading || error) return;
+    if (!isAuthenticated && !['/login', '/admin-login'].includes(pathname)) router.replace('/login');
+    if (isAuthenticated && pathname === '/login') router.replace('/');
+    if (isAuthenticated && pathname === '/admin-login') {
+      router.replace(useAppStore.getState().user?.role === 'admin' ? '/admin-dashboard' : '/');
     }
-  };
-
-  return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  }, [isAuthenticated, isLoading, error, pathname, router]);
+  const logout = async () => { await signOut(auth); };
+  if (isLoading) return <main className="p-6 text-center" role="status">Verifying session...</main>;
+  return <AuthContext.Provider value={{ isAuthenticated, isLoading, logout }}>
+    {error ? <main className="p-6 text-center"><p role="alert">{error}</p><button className="mt-4 p-3 border rounded-lg" onClick={() => setRetry(v => v + 1)}>Retry</button><button className="ml-3 p-3" onClick={logout}>Sign out</button></main> : children}
+  </AuthContext.Provider>;
 }
-
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };

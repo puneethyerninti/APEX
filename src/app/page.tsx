@@ -620,22 +620,6 @@ export default function Home() {
                                     <i className="fa-solid fa-taxi text-lg"></i></div>
                                 <span className="text-[9px] font-bold text-gray-700 mt-1.5">Cab</span>
                             </Link>
-                            <Link href="/travels" className="quick-action group">
-                                <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform shadow-sm border border-indigo-50" style={{ background: "linear-gradient(135deg,#eef2ff,#e0e7ff)", color: "#4f46e5" }}>
-                                    <i className="fa-solid fa-bus-simple text-lg"></i></div>
-                                <span className="text-[9px] font-bold text-gray-700 mt-1.5">Bus</span>
-                            </Link>
-                            <Link href="/travels" className="quick-action group">
-                                <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform shadow-sm border border-emerald-50" style={{ background: "linear-gradient(135deg,#f0fdf4,#dcfce7)", color: "#16a34a" }}>
-                                    <i className="fa-solid fa-train text-lg"></i></div>
-                                <span className="text-[9px] font-bold text-gray-700 mt-1.5">Train</span>
-                            </Link>
-                            <Link href="/travels" className="quick-action group">
-                                <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform shadow-sm border border-purple-50" style={{ background: "linear-gradient(135deg,#faf5ff,#f3e8ff)", color: "#9333ea" }}>
-                                    <i className="fa-solid fa-plane-departure text-lg"></i>
-                                </div>
-                                <span className="text-[9px] font-bold text-gray-700 mt-1.5">Flight</span>
-                            </Link>
                         </div>
                     </div>
                 </section>
