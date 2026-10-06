@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/firebase.config';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+import { setLoginDraft } from '@/services/loginDraft';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -87,9 +88,7 @@ export default function LoginPage() {
         }
 
         if (phone.length === 10 && name.trim().length > 1) {
-            import('@/store/useAppStore').then(({ useAppStore }) => {
-                useAppStore.getState().setUser({ name: name.trim(), phone: `+91${phone}`, uid: '' });
-            });
+            setLoginDraft(name.trim(), `+91${phone}`);
             await sendOtpRequest();
         } else {
             setErrorMsg('Please enter a valid Name and 10-digit Mobile Number.');

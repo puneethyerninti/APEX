@@ -61,9 +61,10 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'apex-storage', // Saves to cookies now
+      // Account data must come from a verified session, never a saved cookie.
+      merge: (persisted, current) => ({ ...current, cartCount: (persisted as Partial<AppState>)?.cartCount || 0 }),
       partialize: (state) => ({ 
-        ...state, 
-        user: state.user ? { ...state.user, profilePicture: undefined } : null 
+        cartCount: state.cartCount
       }),
       storage: createJSONStorage(() => cookieStorage),
     }

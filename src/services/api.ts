@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { auth } from '@/firebase.config';
+import { useAppStore } from '@/store/useAppStore';
+import { waitForSessionReadiness } from './sessionReadiness';
 
 let refreshing: Promise<string> | null = null;
 
@@ -14,9 +16,12 @@ export const api = axios.create({
 
 // Request Interceptor: Automatically attach JWT tokens to every request
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    if (typeof window !== 'undefined' && config.url !== '/user/session') {
+      if (!await waitForSessionReadiness()) throw new axios.CanceledError('Session is unavailable.');
+    }
     // In a real app, you might get this from localStorage, Zustand, or Cookies
-    const token = typeof window !== 'undefined' ? localStorage.getItem('apex_token') : null;
+    const token = typeof window !== 'undefined' && useAppStore.getState().user ? localStorage.getItem('apex_token') : null;
     
     if (token && config.headers && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;

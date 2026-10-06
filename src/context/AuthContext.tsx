@@ -7,6 +7,8 @@ import { api } from '@/services/api';
 import { useAppStore } from '@/store/useAppStore';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { createSessionGate } from '@/services/sessionGate';
+import { resetSessionReadiness, settleSessionReadiness } from '@/services/sessionReadiness';
+import { getLoginDraftName, clearLoginDraft } from '@/services/loginDraft';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -23,6 +25,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   usePushNotifications(isAuthenticated);
   useEffect(() => {
+    if (!error) return;
+    const recover = () => setRetry(value => value + 1);
+    window.addEventListener('online', recover);
+    window.addEventListener('focus', recover);
+    return () => { window.removeEventListener('online', recover); window.removeEventListener('focus', recover); };
+  }, [error]);
+  useEffect(() => {
+    resetSessionReadiness();
     const clearSession = () => {
       try { localStorage.removeItem('apex_token'); } catch { /* Storage may be disabled. */ }
       useAppStore.getState().setUser(null);
@@ -32,9 +42,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     setLoading(true); setError('');
     const gate = createSessionGate<any>({
-      loading: () => { setLoading(true); setError(''); },
-      anonymous: () => { clearSession(); setError(''); },
-      failed: (e: any) => { clearSession(); setError(e.response?.data?.error || e.message || 'Unable to verify your session. Please retry.'); },
+      loading: () => {
+        resetSessionReadiness();
+        useAppStore.getState().setUser(null);
+        useAppStore.getState().setWalletBalance(0);
+        setAuthenticated(false); setLoading(true); setError('');
+      },
+      anonymous: () => { clearSession(); setError(''); settleSessionReadiness(true); },
+      failed: (e: any) => { clearSession(); setError(e.response?.data?.error || e.message || 'Unable to verify your session. Please retry.'); settleSessionReadiness(false); },
       verified: data => {
         localStorage.setItem('apex_token', data.token);
         const profile = data.user;
@@ -44,6 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         useAppStore.getState().setWalletBalance(profile.walletBalance || 0);
         setAuthenticated(true); setLoading(false); setError('');
+        clearLoginDraft();
+        settleSessionReadiness(true);
       }
     });
     let unsubscribe = () => {};
@@ -53,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         void gate.verify(async signal => {
           const proof = await firebaseUser.getIdToken();
           if (signal.aborted) throw new Error('Session verification cancelled.');
-          const { data } = await api.post('/user/session', { name: useAppStore.getState().user?.name }, {
+          const { data } = await api.post('/user/session', { name: getLoginDraftName(firebaseUser.phoneNumber) }, {
             headers: { Authorization: 'Bearer ' + proof }, signal, timeout: 30000
           });
           if (!data?.token || !data?.user?._id) throw new Error('Invalid session response. Please retry.');
@@ -61,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }, error => gate.fail(error));
     } catch (error) { gate.fail(error); }
-    return () => { gate.dispose(); unsubscribe(); };
+    return () => { gate.dispose(); unsubscribe(); settleSessionReadiness(false); };
   }, [retry]);
   useEffect(() => {
     if (isLoading || error) return;
@@ -75,11 +92,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try { await signOut(auth); }
     catch { setError('Unable to sign out. Check your connection and retry.'); }
   };
-  if (isLoading) return <main className="flex min-h-dvh items-center justify-center" role="status" aria-label="Loading APEX">
-    <span aria-hidden="true" className="h-6 w-6 rounded-full border-2 border-gray-200 border-t-gray-600 motion-safe:animate-spin" />
-  </main>;
   return <AuthContext.Provider value={{ isAuthenticated, isLoading, logout }}>
-    {error ? <main className="p-6 text-center"><p role="alert">{error}</p><button className="mt-4 p-3 border rounded-lg" onClick={() => setRetry(v => v + 1)}>Retry</button><button className="ml-3 p-3" onClick={logout}>Sign out</button></main> : children}
+    {error && <div role="alert" className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">Sign-in is temporarily unavailable. Your account and payments remain protected.</div>}
+    {children}
   </AuthContext.Provider>;
 }
 export const useAuth = () => {
