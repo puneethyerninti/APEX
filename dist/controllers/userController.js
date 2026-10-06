@@ -19,11 +19,13 @@ const exchangeFirebaseSession = async (req, res) => {
     const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null;
     if (!token)
         return res.status(401).json({ error: 'Verified phone login is required.' });
+    let stage = 'firebase_verification';
     try {
         const identity = await (0, auth_1.getAuth)().verifyIdToken(token, true);
         const phone = identity.phone_number;
         if (!phone || !/^\+91[6-9]\d{9}$/.test(phone))
             return res.status(403).json({ error: 'An Indian phone OTP login is required.' });
+        stage = 'account_lookup';
         let user = await User_1.default.findOne({ $or: [{ firebaseUid: identity.uid }, { phone }, { phone: phone.slice(3) }] });
         if (user?.firebaseUid && user.firebaseUid !== identity.uid)
             return res.status(403).json({ error: 'Account identity mismatch. Contact support.' });
@@ -35,12 +37,18 @@ const exchangeFirebaseSession = async (req, res) => {
             user.firebaseUid = identity.uid;
             await user.save();
         }
+        stage = 'session_signing';
         const session = jsonwebtoken_1.default.sign({ id: user._id, phone: user.phone, role: user.role, authVersion: 2 }, process.env.JWT_SECRET, { expiresIn: '1d' });
         return res.json({ user: publicProfile(user), token: session });
     }
     catch (error) {
-        console.error('Session exchange failed:', error.code || error.message);
-        return res.status(error.code?.startsWith('auth/') ? 401 : 503).json({ error: 'Unable to verify login. Please retry.' });
+        console.error('Session exchange failed:', 'stage=' + stage, 'code=' + (error.code || error.name || 'unknown'));
+        const invalidToken = ['auth/argument-error', 'auth/invalid-id-token', 'auth/id-token-expired', 'auth/id-token-revoked', 'auth/user-disabled', 'auth/user-not-found'].includes(error.code);
+        const configurationError = stage === 'session_signing' || error.code?.startsWith('app/') || ['auth/invalid-credential', 'auth/insufficient-permission'].includes(error.code);
+        return res.status(invalidToken ? 401 : 503).json({
+            code: invalidToken ? 'LOGIN_EXPIRED' : configurationError ? 'LOGIN_CONFIGURATION_ERROR' : 'LOGIN_SERVICE_UNAVAILABLE',
+            error: invalidToken ? 'Your sign-in has expired. Please sign in again.' : configurationError ? 'Server sign-in configuration needs to be corrected.' : 'Sign-in service is temporarily unavailable.'
+        });
     }
 };
 exports.exchangeFirebaseSession = exchangeFirebaseSession;

@@ -8,32 +8,25 @@ const app_1 = require("firebase-admin/app");
 const messaging_1 = require("firebase-admin/messaging");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
+const firebaseCredentials_1 = require("./services/firebaseCredentials");
 const serviceAccountPath = path_1.default.resolve(__dirname, '../../firebase-service-account.json');
 const initFirebaseAdmin = () => {
     try {
         if ((0, app_1.getApps)().length > 0)
             return;
-        if (fs_1.default.existsSync(serviceAccountPath)) {
-            process.env.GOOGLE_APPLICATION_CREDENTIALS = serviceAccountPath;
-            (0, app_1.initializeApp)();
-            console.log('🔥 Firebase Admin initialized successfully from JSON file');
-        }
-        else if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
-            const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8');
-            const serviceAccount = JSON.parse(decoded);
-            if (serviceAccount.private_key) {
-                // Fix any escaped newlines just in case
-                serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-            }
-            (0, app_1.initializeApp)({ credential: (0, app_1.cert)(serviceAccount) });
-            console.log('Firebase Admin initialized from environment credentials');
+        const environmentKey = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 || process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+        const file = process.env.GOOGLE_APPLICATION_CREDENTIALS || serviceAccountPath;
+        if (environmentKey || fs_1.default.existsSync(file)) {
+            const account = (0, firebaseCredentials_1.parseFirebaseCredentials)(environmentKey || fs_1.default.readFileSync(file, 'utf8'), process.env.FIREBASE_PROJECT_ID);
+            (0, app_1.initializeApp)({ credential: (0, app_1.cert)(account), projectId: account.projectId });
+            console.log('Firebase Admin initialized successfully for project ' + account.projectId);
         }
         else {
             console.warn('⚠️ FIREBASE ADMIN NOT INITIALIZED: Missing service account JSON or environment variable.');
         }
     }
     catch (error) {
-        console.error('🔥 Error initializing Firebase Admin:', error);
+        console.error('Firebase Admin configuration failed:', error.code || 'FIREBASE_CREDENTIAL_INVALID');
     }
 };
 exports.initFirebaseAdmin = initFirebaseAdmin;

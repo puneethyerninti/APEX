@@ -2,6 +2,7 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 import path from 'path';
 import fs from 'fs';
+import { parseFirebaseCredentials } from './services/firebaseCredentials';
 
 const serviceAccountPath = path.resolve(__dirname, '../../firebase-service-account.json');
 
@@ -9,26 +10,17 @@ export const initFirebaseAdmin = () => {
   try {
     if (getApps().length > 0) return;
 
-    if (fs.existsSync(serviceAccountPath)) {
-      process.env.GOOGLE_APPLICATION_CREDENTIALS = serviceAccountPath;
-      initializeApp();
-      console.log('🔥 Firebase Admin initialized successfully from JSON file');
-    } else if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
-      const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8');
-      const serviceAccount = JSON.parse(decoded);
-      
-      if (serviceAccount.private_key) {
-        // Fix any escaped newlines just in case
-        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-      }
-
-      initializeApp({ credential: cert(serviceAccount) });
-      console.log('Firebase Admin initialized from environment credentials');
+    const environmentKey = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 || process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    const file = process.env.GOOGLE_APPLICATION_CREDENTIALS || serviceAccountPath;
+    if (environmentKey || fs.existsSync(file)) {
+      const account = parseFirebaseCredentials(environmentKey || fs.readFileSync(file, 'utf8'), process.env.FIREBASE_PROJECT_ID);
+      initializeApp({ credential: cert(account), projectId: account.projectId });
+      console.log('Firebase Admin initialized successfully for project ' + account.projectId);
     } else {
       console.warn('⚠️ FIREBASE ADMIN NOT INITIALIZED: Missing service account JSON or environment variable.');
     }
-  } catch (error) {
-    console.error('🔥 Error initializing Firebase Admin:', error);
+  } catch (error: any) {
+    console.error('Firebase Admin configuration failed:', error.code || 'FIREBASE_CREDENTIAL_INVALID');
   }
 };
 
