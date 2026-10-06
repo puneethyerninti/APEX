@@ -13,6 +13,8 @@
 1. Rotate the Eko, MongoDB and Razorpay secrets previously exposed in screenshots. Keep secrets only in Render, not public frontend variables or Git.
 2. Deploy the backend branch to Render and the main branch to Vercel. Existing users must sign in again for the Firebase-verified server session.
 3. Render needs Firebase Admin credentials, matching live Razorpay keys, and the actual configured Razorpay webhook secret. Configure the webhook at `/api/finance/razorpay/webhook` for captured and failed payments. MongoDB must support transactions (Atlas replica set).
+
+   The backend address verified from the deployed frontend is `https://apex-backend-fl0k.onrender.com` (digit zero in `fl0k`). The complete webhook URL is `https://apex-backend-fl0k.onrender.com/api/finance/razorpay/webhook`; do not substitute the letter o.
 4. Profile images need the existing AWS S3 credentials/bucket, correct image read permissions, and upload permissions. Only JPEG/PNG/WebP files up to 5 MB are accepted, at most five per request.
 5. Users submit an actual APEX profile for admin review. Only approved, owner-bound profiles are listed or allowed to purchase memberships. Review is not a claim of government-ID verification.
 6. Audit legacy matrimony profiles and paid memberships manually before migration: older records did not reliably bind profiles to a verified owner and may have fabricated defaults. Do not bulk-enable them. New owner-bound submissions are isolated by `ownerVerified: true`.

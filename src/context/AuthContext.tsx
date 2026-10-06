@@ -6,6 +6,7 @@ import { auth } from '@/firebase.config';
 import { api } from '@/services/api';
 import { useAppStore } from '@/store/useAppStore';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { createSessionGate } from '@/services/sessionGate';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -22,21 +23,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   usePushNotifications(isAuthenticated);
   useEffect(() => {
-    let alive = true;
-    const unsubscribe = onIdTokenChanged(auth, async firebaseUser => {
-      setLoading(true);
-      setError('');
-      if (!firebaseUser) {
-        localStorage.removeItem('apex_token');
-        useAppStore.getState().setUser(null);
-        setAuthenticated(false);
-        setLoading(false);
-        return;
-      }
-      try {
-        const proof = await firebaseUser.getIdToken();
-        const { data } = await api.post('/user/session', { name: useAppStore.getState().user?.name }, { headers: { Authorization: 'Bearer ' + proof } });
-        if (!alive) return;
+    const clearSession = () => {
+      try { localStorage.removeItem('apex_token'); } catch { /* Storage may be disabled. */ }
+      useAppStore.getState().setUser(null);
+      useAppStore.getState().setWalletBalance(0);
+      setAuthenticated(false);
+      setLoading(false);
+    };
+    setLoading(true); setError('');
+    const gate = createSessionGate<any>({
+      loading: () => { setLoading(true); setError(''); },
+      anonymous: () => { clearSession(); setError(''); },
+      failed: (e: any) => { clearSession(); setError(e.response?.data?.error || e.message || 'Unable to verify your session. Please retry.'); },
+      verified: data => {
         localStorage.setItem('apex_token', data.token);
         const profile = data.user;
         useAppStore.getState().setUser({
@@ -44,17 +43,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role: profile.role, profilePicture: profile.profilePicture, isPremium: profile.isPremium
         });
         useAppStore.getState().setWalletBalance(profile.walletBalance || 0);
-        setAuthenticated(true);
-      } catch (e: any) {
-        if (alive) {
-          setAuthenticated(false);
-          useAppStore.getState().setUser(null);
-          localStorage.removeItem('apex_token');
-          setError(e.response?.data?.error || 'Unable to verify your session. Please retry.');
-        }
-      } finally { if (alive) setLoading(false); }
+        setAuthenticated(true); setLoading(false); setError('');
+      }
     });
-    return () => { alive = false; unsubscribe(); };
+    let unsubscribe = () => {};
+    try {
+      unsubscribe = onIdTokenChanged(auth, firebaseUser => {
+        if (!firebaseUser) { gate.anonymous(); return; }
+        void gate.verify(async signal => {
+          const proof = await firebaseUser.getIdToken();
+          if (signal.aborted) throw new Error('Session verification cancelled.');
+          const { data } = await api.post('/user/session', { name: useAppStore.getState().user?.name }, {
+            headers: { Authorization: 'Bearer ' + proof }, signal, timeout: 30000
+          });
+          if (!data?.token || !data?.user?._id) throw new Error('Invalid session response. Please retry.');
+          return data;
+        });
+      }, error => gate.fail(error));
+    } catch (error) { gate.fail(error); }
+    return () => { gate.dispose(); unsubscribe(); };
   }, [retry]);
   useEffect(() => {
     if (isLoading || error) return;
@@ -64,7 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.replace(useAppStore.getState().user?.role === 'admin' ? '/admin-dashboard' : '/');
     }
   }, [isAuthenticated, isLoading, error, pathname, router]);
-  const logout = async () => { await signOut(auth); };
+  const logout = async () => {
+    try { await signOut(auth); }
+    catch { setError('Unable to sign out. Check your connection and retry.'); }
+  };
   if (isLoading) return <main className="p-6 text-center" role="status">Verifying session...</main>;
   return <AuthContext.Provider value={{ isAuthenticated, isLoading, logout }}>
     {error ? <main className="p-6 text-center"><p role="alert">{error}</p><button className="mt-4 p-3 border rounded-lg" onClick={() => setRetry(v => v + 1)}>Retry</button><button className="ml-3 p-3" onClick={logout}>Sign out</button></main> : children}
