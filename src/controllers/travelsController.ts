@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import axios from 'axios';
 import User from '../models/User';
 import Ride from '../models/Ride';
 import CabQuote from '../models/CabQuote';
@@ -8,11 +7,12 @@ import RideSlot from '../models/RideSlot';
 import Transaction from '../models/Transaction';
 import { getRazorpay } from './financeController';
 import { activeStatuses, validLocation, faresForDistance, canTransition } from '../services/cabPolicy';
+import { getCabRoute } from '../services/cabRouting';
 
 const identity = (req: Request) => (req as any).user.id;
 const driverFields = 'name phone vehicleDetails currentLocation';
 const fail = (res: Response, error: any) => res.status(error.code === 11000 ? 409 : error.httpStatus || 503)
-  .json({ error: error.code === 11000 ? 'Another booking or acceptance is already in progress. Refresh to continue.' : error.message || 'Cab service temporarily unavailable' });
+  .json({ code: typeof error.code === 'string' ? error.code : undefined, error: error.code === 11000 ? 'Another booking or acceptance is already in progress. Refresh to continue.' : error.message || 'Cab service temporarily unavailable' });
 const reject = (message: string, httpStatus = 409): never => { throw Object.assign(new Error(message), { httpStatus }); };
 const emitRide = (req: Request, ride: any) => {
   const io = req.app.get('io');
@@ -45,13 +45,7 @@ export const calculateFare = async (req: Request, res: Response) => {
     const { pickup, dropoff } = req.body;
     if (![pickup, dropoff].every(validLocation)) reject('Select pickup and destination inside Visakhapatnam.', 400);
     if (![pickup, dropoff].every(p => typeof p.address === 'string' && p.address.trim().length >= 3 && p.address.length <= 500)) reject('Select complete addresses.', 400);
-    const token = process.env.MAPBOX_API_KEY;
-    if (!token) reject('Route service is not configured. Contact support.', 503);
-    const { data } = await axios.get('https://api.mapbox.com/directions/v5/mapbox/driving/' + pickup.lng + ',' + pickup.lat + ';' + dropoff.lng + ',' + dropoff.lat, {
-      params: { access_token: token, geometries: 'geojson' }, timeout: 10000
-    });
-    const route = data.routes?.[0];
-    if (data.code !== 'Ok' || !route || !Number.isFinite(route.duration) || route.duration <= 0) reject('No drivable route found.', 422);
+    const route = await getCabRoute(pickup, dropoff);
     const fares = faresForDistance(route.distance);
     const quote = await CabQuote.create({
       userId: identity(req), pickup, dropoff, fares, distance: route.distance, duration: route.duration,

@@ -100,7 +100,7 @@ test('quote rejects outside service area before calling Mapbox', async () => {
 });
 test('quote uses server routing and fare, ignoring supplied fare', async () => {
   process.env.MAPBOX_API_KEY = 'test-map-token';
-  stub(axios, 'get', async () => ({ data: { code: 'Ok', routes: [{ distance: 1000, duration: 180, geometry: { type: 'LineString', coordinates: [] } }] } }));
+  stub(axios, 'get', async () => ({ data: { code: 'Ok', routes: [{ distance: 1000, duration: 180, geometry: { type: 'LineString', coordinates: [[83.2,17.7],[83.21,17.71]] } }] } }));
   stub(Quote, 'create', async value => { assert.equal(String(value.userId), String(rider)); return value; });
   const p = { address: 'Selected address', lat: 17.7, lng: 83.2 };
   const res = response(); await travel.calculateFare(request({ pickup: p, dropoff: p, fare: -100 }), res);

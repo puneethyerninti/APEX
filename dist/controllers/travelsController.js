@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cancelRideAdmin = exports.configureDriver = exports.reconcileCabPayments = exports.fulfillCabPayment = exports.createCabPaymentOrder = exports.updateDriverStatus = exports.updateRideStatus = exports.getDriverRequests = exports.getAllBookingsAdmin = exports.getUserBookings = exports.getRide = exports.getActiveRide = exports.requestRide = exports.calculateFare = exports.expireSearches = exports.handleTravelBooking = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
-const axios_1 = __importDefault(require("axios"));
 const User_1 = __importDefault(require("../models/User"));
 const Ride_1 = __importDefault(require("../models/Ride"));
 const CabQuote_1 = __importDefault(require("../models/CabQuote"));
@@ -13,10 +12,11 @@ const RideSlot_1 = __importDefault(require("../models/RideSlot"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const financeController_1 = require("./financeController");
 const cabPolicy_1 = require("../services/cabPolicy");
+const cabRouting_1 = require("../services/cabRouting");
 const identity = (req) => req.user.id;
 const driverFields = 'name phone vehicleDetails currentLocation';
 const fail = (res, error) => res.status(error.code === 11000 ? 409 : error.httpStatus || 503)
-    .json({ error: error.code === 11000 ? 'Another booking or acceptance is already in progress. Refresh to continue.' : error.message || 'Cab service temporarily unavailable' });
+    .json({ code: typeof error.code === 'string' ? error.code : undefined, error: error.code === 11000 ? 'Another booking or acceptance is already in progress. Refresh to continue.' : error.message || 'Cab service temporarily unavailable' });
 const reject = (message, httpStatus = 409) => { throw Object.assign(new Error(message), { httpStatus }); };
 const emitRide = (req, ride) => {
     const io = req.app.get('io');
@@ -54,15 +54,7 @@ const calculateFare = async (req, res) => {
             reject('Select pickup and destination inside Visakhapatnam.', 400);
         if (![pickup, dropoff].every(p => typeof p.address === 'string' && p.address.trim().length >= 3 && p.address.length <= 500))
             reject('Select complete addresses.', 400);
-        const token = process.env.MAPBOX_API_KEY;
-        if (!token)
-            reject('Route service is not configured. Contact support.', 503);
-        const { data } = await axios_1.default.get('https://api.mapbox.com/directions/v5/mapbox/driving/' + pickup.lng + ',' + pickup.lat + ';' + dropoff.lng + ',' + dropoff.lat, {
-            params: { access_token: token, geometries: 'geojson' }, timeout: 10000
-        });
-        const route = data.routes?.[0];
-        if (data.code !== 'Ok' || !route || !Number.isFinite(route.duration) || route.duration <= 0)
-            reject('No drivable route found.', 422);
+        const route = await (0, cabRouting_1.getCabRoute)(pickup, dropoff);
         const fares = (0, cabPolicy_1.faresForDistance)(route.distance);
         const quote = await CabQuote_1.default.create({
             userId: identity(req), pickup, dropoff, fares, distance: route.distance, duration: route.duration,
