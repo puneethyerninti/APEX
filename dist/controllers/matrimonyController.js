@@ -9,9 +9,11 @@ const MatrimonyProfile_1 = __importDefault(require("../models/MatrimonyProfile")
 const Message_1 = __importDefault(require("../models/Message"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const matrimonyPolicy_1 = require("../services/matrimonyPolicy");
+const matrimonyMessages_1 = require("../services/matrimonyMessages");
 const owner = (req) => String(req.user.id);
 const fail = (res, e) => res.status(e.code === 11000 ? 409 : e.httpStatus || 503).json({ error: e.code === 11000 ? 'Profile changed. Refresh and try again.' : e.message || 'Service unavailable' });
 const membershipView = (profile) => profile ? { ...profile.toObject(), subscription: { ...profile.subscription, isActive: (0, matrimonyPolicy_1.activeMembership)(profile) } } : null;
+const chatFail = (res, e) => res.status(e.httpStatus || 503).json({ error: e.httpStatus ? e.message : 'Messages are temporarily unavailable. Please retry.' });
 const getMyProfile = async (req, res) => {
     try {
         res.json(membershipView(await MatrimonyProfile_1.default.findOne({ user: owner(req), ownerVerified: true })));
@@ -64,44 +66,54 @@ exports.createProfile = createProfile;
 const getMessages = async (req, res) => {
     try {
         await (0, matrimonyPolicy_1.authorizeChat)(owner(req), req.params.roomId);
-        const messages = await Message_1.default.find({ roomId: req.params.roomId }).sort({ timestamp: -1, _id: -1 }).limit(200);
+        const query = { roomId: req.params.roomId };
+        if (req.query.before) {
+            if (typeof req.query.before !== 'string' || !/^[a-f0-9]{24}$/.test(req.query.before))
+                return res.status(400).json({ error: 'Invalid message cursor.' });
+            const anchor = await Message_1.default.findOne({ _id: req.query.before, roomId: req.params.roomId });
+            if (!anchor)
+                return res.status(400).json({ error: 'Message cursor not found.' });
+            query.$or = [{ timestamp: { $lt: anchor.timestamp } }, { timestamp: anchor.timestamp, _id: { $lt: anchor._id } }];
+        }
+        const messages = await Message_1.default.find(query).sort({ timestamp: -1, _id: -1 }).limit(200);
         res.json(messages.reverse());
     }
     catch (e) {
-        res.status(403).json({ error: e.message });
+        chatFail(res, e);
     }
 };
 exports.getMessages = getMessages;
 const sendMessage = async (req, res) => {
     try {
-        const receiverId = await (0, matrimonyPolicy_1.authorizeChat)(owner(req), req.params.roomId);
-        const text = typeof req.body.text === 'string' ? req.body.text.trim() : '';
-        if (!text || text.length > 2000)
-            return res.status(400).json({ error: 'Message must contain 1-2000 characters.' });
-        const clientMessageId = req.body.clientMessageId;
-        if (typeof clientMessageId !== 'string' || !/^[a-zA-Z0-9-]{16,80}$/.test(clientMessageId))
-            return res.status(400).json({ error: 'Message reference required.' });
-        const message = await Message_1.default.findOneAndUpdate({ senderId: owner(req), clientMessageId }, { $setOnInsert: { senderId: owner(req), receiverId, roomId: req.params.roomId, text, timestamp: new Date() } }, { upsert: true, new: true });
-        if (message.roomId !== req.params.roomId || message.text !== text)
-            return res.status(409).json({ error: 'Message reference was reused for different content.' });
-        const io = req.app.get('io');
-        io?.to('user_' + owner(req)).emit('receive_message', message.toObject());
-        io?.to('user_' + receiverId).emit('receive_message', message.toObject());
+        const message = await (0, matrimonyMessages_1.persistChatMessage)(owner(req), req.params.roomId, req.body.text, req.body.clientMessageId);
+        (0, matrimonyMessages_1.publishChatMessage)(req.app.get('io'), message);
         res.json(message);
     }
     catch (e) {
-        res.status(403).json({ error: e.message });
+        chatFail(res, e);
     }
 };
 exports.sendMessage = sendMessage;
 const markMessagesAsRead = async (req, res) => {
     try {
-        await (0, matrimonyPolicy_1.authorizeChat)(owner(req), req.params.roomId);
-        await Message_1.default.updateMany({ roomId: req.params.roomId, receiverId: owner(req), isRead: false }, { $set: { isRead: true } });
+        const other = await (0, matrimonyPolicy_1.authorizeChat)(owner(req), req.params.roomId);
+        const ids = req.body.messageIds;
+        // Cached older clients sent no IDs. Preserve compatibility without marking
+        // messages the user has not opened.
+        if (ids === undefined)
+            return res.json({ success: true, messageIdsRequired: true });
+        if (!Array.isArray(ids) || ids.length > 200 || ids.some(id => typeof id !== 'string' || !/^[a-f0-9]{24}$/.test(id)))
+            return res.status(400).json({ error: 'Displayed message IDs are required.' });
+        const result = await Message_1.default.updateMany({ _id: { $in: ids }, roomId: req.params.roomId, receiverId: owner(req), isRead: { $ne: true } }, { $set: { isRead: true } });
+        if (result.modifiedCount) {
+            const event = { roomId: req.params.roomId, readerId: owner(req), messageIds: ids };
+            req.app.get('io')?.to('user_' + other).emit('messages_read', event);
+            req.app.get('io')?.to('user_' + owner(req)).emit('messages_read', event);
+        }
         res.json({ success: true });
     }
     catch (e) {
-        res.status(403).json({ error: e.message });
+        chatFail(res, e);
     }
 };
 exports.markMessagesAsRead = markMessagesAsRead;
@@ -112,22 +124,24 @@ const getInbox = async (req, res) => {
         const profile = await MatrimonyProfile_1.default.findOne({ user: owner(req), ownerVerified: true });
         if (!(0, matrimonyPolicy_1.activeMembership)(profile))
             return res.status(403).json({ error: 'Active membership required.' });
-        const messages = await Message_1.default.find({ $or: [{ senderId: owner(req) }, { receiverId: owner(req) }] }).sort({ timestamp: -1 }).limit(500);
-        const chats = new Map();
-        for (const msg of messages) {
-            if (chats.has(msg.roomId))
-                continue;
-            const other = msg.senderId === owner(req) ? msg.receiverId : msg.senderId;
-            if (!mongoose_1.default.isValidObjectId(other))
-                continue;
-            const otherProfile = await MatrimonyProfile_1.default.findOne({ user: other, ownerVerified: true, status: 'approved' }).populate('user', 'name');
-            if (otherProfile)
-                chats.set(msg.roomId, { latestMessage: msg, profile: otherProfile });
-        }
-        res.json([...chats.values()]);
+        const chats = await Message_1.default.aggregate([
+            { $match: { $or: [{ senderId: owner(req) }, { receiverId: owner(req) }] } },
+            { $sort: { timestamp: -1, _id: -1 } },
+            { $group: { _id: '$roomId', latestMessage: { $first: '$$ROOT' }, unreadCount: { $sum: { $cond: [{ $and: [{ $eq: ['$receiverId', owner(req)] }, { $eq: [{ $ifNull: ['$isRead', false] }, false] }] }, 1, 0] } } } },
+            { $sort: { 'latestMessage.timestamp': -1, 'latestMessage._id': -1 } },
+            { $limit: 100 }
+        ]);
+        const otherIds = chats.map(c => c.latestMessage.senderId === owner(req) ? c.latestMessage.receiverId : c.latestMessage.senderId).filter(id => mongoose_1.default.isValidObjectId(id));
+        const profiles = await MatrimonyProfile_1.default.find({ user: { $in: otherIds }, ownerVerified: true, status: 'approved' }).populate('user', 'name');
+        const byOwner = new Map(profiles.map(p => [String(p.user?._id || p.user), p]));
+        res.json(chats.flatMap(c => {
+            const other = c.latestMessage.senderId === owner(req) ? c.latestMessage.receiverId : c.latestMessage.senderId;
+            const p = byOwner.get(other);
+            return p ? [{ latestMessage: c.latestMessage, unreadCount: c.unreadCount, profile: { ...p.toObject(), subscription: { plan: p.subscription.plan, isActive: (0, matrimonyPolicy_1.activeMembership)(p) } } }] : [];
+        }));
     }
     catch (e) {
-        fail(res, e);
+        chatFail(res, e);
     }
 };
 exports.getInbox = getInbox;

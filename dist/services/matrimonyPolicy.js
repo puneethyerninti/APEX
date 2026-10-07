@@ -22,16 +22,16 @@ const activeMembership = (profile) => profile?.status === 'approved' && profile.
 exports.activeMembership = activeMembership;
 function roomParticipants(room, userId) {
     if (typeof room !== 'string' || !/^match_[a-f0-9]{24}_[a-f0-9]{24}$/.test(room))
-        throw new Error('Invalid chat room.');
+        throw Object.assign(new Error('Invalid chat room.'), { httpStatus: 403 });
     const ids = room.slice(6).split('_');
     if (!ids.includes(userId) || ids[0] === ids[1] || ids.join('_') !== [...ids].sort().join('_'))
-        throw new Error('Chat access denied.');
+        throw Object.assign(new Error('Chat access denied.'), { httpStatus: 403 });
     return ids;
 }
 async function authorizeChat(userId, room) {
     const ids = roomParticipants(room, userId);
     const profiles = await MatrimonyProfile_1.default.find({ user: { $in: ids.map(id => new mongoose_1.default.Types.ObjectId(id)) }, ownerVerified: true, status: 'approved' });
     if (profiles.length !== 2 || !(0, exports.activeMembership)(profiles.find(p => p.user.toString() === userId)))
-        throw new Error('An approved profile and active APEX membership are required.');
+        throw Object.assign(new Error('An approved profile and active APEX membership are required.'), { httpStatus: 403 });
     return ids.find(id => id !== userId);
 }

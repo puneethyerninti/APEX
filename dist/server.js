@@ -32,6 +32,7 @@ const academyRoutes_1 = __importDefault(require("./routes/academyRoutes"));
 const utilityRoutes_1 = __importDefault(require("./routes/utilityRoutes"));
 const Message_1 = __importDefault(require("./models/Message"));
 const matrimonyPolicy_1 = require("./services/matrimonyPolicy");
+const matrimonyMessages_1 = require("./services/matrimonyMessages");
 const paymentRecovery_1 = require("./services/paymentRecovery");
 const User_1 = __importDefault(require("./models/User"));
 const firebaseAdmin_1 = require("./firebaseAdmin");
@@ -80,27 +81,17 @@ io.on('connection', (socket) => {
                 acknowledge({ error: 'Chat access denied.' });
         }
     });
-    socket.on('send_message', async (data) => {
+    socket.on('send_message', async (data, acknowledge) => {
         // SECURITY: Enforce senderId to be the authenticated socket user
         const senderId = socket.user?.dbId;
         if (!senderId)
             return;
         try {
-            const receiverId = await (0, matrimonyPolicy_1.authorizeChat)(senderId, data?.roomId);
-            if (typeof data?.text !== 'string' || !data.text.trim() || data.text.length > 2000 ||
-                typeof data.clientMessageId !== 'string' || !/^[a-zA-Z0-9-]{16,80}$/.test(data.clientMessageId))
-                return;
-            const newMessage = await Message_1.default.findOneAndUpdate({ senderId, clientMessageId: data.clientMessageId }, { $setOnInsert: {
-                    roomId: data.roomId,
-                    senderId: senderId, // Server authoritative!
-                    receiverId,
-                    text: data.text.trim(),
-                    timestamp: new Date()
-                } }, { upsert: true, new: true });
-            if (newMessage.roomId !== data.roomId || newMessage.text !== data.text.trim())
-                return;
-            io.to('user_' + senderId).emit('receive_message', newMessage.toObject());
-            io.to('user_' + receiverId).emit('receive_message', newMessage.toObject());
+            const newMessage = await (0, matrimonyMessages_1.persistChatMessage)(senderId, data?.roomId, data?.text, data?.clientMessageId);
+            const receiverId = newMessage.receiverId;
+            (0, matrimonyMessages_1.publishChatMessage)(io, newMessage);
+            if (typeof acknowledge === 'function')
+                acknowledge({ success: true, message: newMessage.toObject() });
             // Send global toast notification to receiver
             try {
                 const sender = await User_1.default.findById(senderId);
@@ -117,7 +108,8 @@ io.on('connection', (socket) => {
             }
         }
         catch (err) {
-            console.error('Error saving message', err);
+            if (typeof acknowledge === 'function')
+                acknowledge({ success: false, status: err.httpStatus || 503, error: err.httpStatus ? err.message : 'Messages are temporarily unavailable. Please retry.' });
         }
     });
     socket.on('typing', async (data) => {

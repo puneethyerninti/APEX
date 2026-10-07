@@ -11,14 +11,14 @@ export const normalizePlan = (value: unknown) => {
 export const activeMembership = (profile: any) => profile?.status === 'approved' && profile.subscription?.isActive === true &&
   profile.subscription.expiresAt && new Date(profile.subscription.expiresAt).getTime() > Date.now();
 export function roomParticipants(room: unknown, userId: string) {
-  if (typeof room !== 'string' || !/^match_[a-f0-9]{24}_[a-f0-9]{24}$/.test(room)) throw new Error('Invalid chat room.');
+  if (typeof room !== 'string' || !/^match_[a-f0-9]{24}_[a-f0-9]{24}$/.test(room)) throw Object.assign(new Error('Invalid chat room.'), { httpStatus: 403 });
   const ids = room.slice(6).split('_');
-  if (!ids.includes(userId) || ids[0] === ids[1] || ids.join('_') !== [...ids].sort().join('_')) throw new Error('Chat access denied.');
+  if (!ids.includes(userId) || ids[0] === ids[1] || ids.join('_') !== [...ids].sort().join('_')) throw Object.assign(new Error('Chat access denied.'), { httpStatus: 403 });
   return ids;
 }
 export async function authorizeChat(userId: string, room: unknown) {
   const ids = roomParticipants(room, userId);
   const profiles = await MatrimonyProfile.find({ user: { $in: ids.map(id => new mongoose.Types.ObjectId(id)) }, ownerVerified: true, status: 'approved' });
-  if (profiles.length !== 2 || !activeMembership(profiles.find(p => p.user.toString() === userId))) throw new Error('An approved profile and active APEX membership are required.');
+  if (profiles.length !== 2 || !activeMembership(profiles.find(p => p.user.toString() === userId))) throw Object.assign(new Error('An approved profile and active APEX membership are required.'), { httpStatus: 403 });
   return ids.find(id => id !== userId)!;
 }

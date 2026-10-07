@@ -44,4 +44,7 @@ const MessageSchema = new mongoose_1.Schema({
     clientMessageId: String,
 }, { timestamps: true });
 MessageSchema.index({ senderId: 1, clientMessageId: 1 }, { unique: true, partialFilterExpression: { clientMessageId: { $type: 'string' } } });
+MessageSchema.index({ roomId: 1, timestamp: -1, _id: -1 });
+MessageSchema.index({ receiverId: 1, isRead: 1, timestamp: -1 });
+MessageSchema.index({ senderId: 1, timestamp: -1 });
 exports.default = mongoose_1.default.model('Message', MessageSchema);

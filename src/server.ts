@@ -29,6 +29,7 @@ import utilityRoutes from './routes/utilityRoutes';
 
 import Message from './models/Message';
 import { authorizeChat } from './services/matrimonyPolicy';
+import { persistChatMessage, publishChatMessage } from './services/matrimonyMessages';
 import { reconcileWalletAndMembershipPayments } from './services/paymentRecovery';
 import User from './models/User';
 import TravelBooking from './models/TravelBooking';
@@ -88,26 +89,16 @@ io.on('connection', (socket: AuthenticatedSocket) => {
     }
   });
 
-  socket.on('send_message', async (data) => {
+  socket.on('send_message', async (data, acknowledge) => {
     // SECURITY: Enforce senderId to be the authenticated socket user
     const senderId = socket.user?.dbId;
     if (!senderId) return;
 
     try {
-      const receiverId = await authorizeChat(senderId, data?.roomId);
-      if (typeof data?.text !== 'string' || !data.text.trim() || data.text.length > 2000 ||
-          typeof data.clientMessageId !== 'string' || !/^[a-zA-Z0-9-]{16,80}$/.test(data.clientMessageId)) return;
-      const newMessage = await Message.findOneAndUpdate({ senderId, clientMessageId: data.clientMessageId }, { $setOnInsert: {
-        roomId: data.roomId,
-        senderId: senderId, // Server authoritative!
-        receiverId,
-        text: data.text.trim(),
-        timestamp: new Date()
-      } }, { upsert: true, new: true });
-      if (newMessage.roomId !== data.roomId || newMessage.text !== data.text.trim()) return;
-      
-      io.to('user_' + senderId).emit('receive_message', newMessage.toObject());
-      io.to('user_' + receiverId).emit('receive_message', newMessage.toObject());
+      const newMessage = await persistChatMessage(senderId, data?.roomId, data?.text, data?.clientMessageId);
+      const receiverId = newMessage.receiverId;
+      publishChatMessage(io, newMessage);
+      if (typeof acknowledge === 'function') acknowledge({ success: true, message: newMessage.toObject() });
 
       // Send global toast notification to receiver
       try {
@@ -129,8 +120,8 @@ io.on('connection', (socket: AuthenticatedSocket) => {
       } catch (err) {
         console.error('Error fetching users for notification', err);
       }
-    } catch (err) {
-      console.error('Error saving message', err);
+    } catch (err: any) {
+      if (typeof acknowledge === 'function') acknowledge({ success: false, status: err.httpStatus || 503, error: err.httpStatus ? err.message : 'Messages are temporarily unavailable. Please retry.' });
     }
   });
 
