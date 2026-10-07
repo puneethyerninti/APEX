@@ -10,6 +10,7 @@ import { openUpiApp } from '@/services/upiLauncher';
 import { transferWallet, pendingWalletTransfer } from '@/services/walletTransfer';
 import { useAppStore } from '@/store/useAppStore';
 import { useSocket } from '@/context/SocketContext';
+import PaymentQr from '@/components/PaymentQr';
 
 interface ScannedPayee {
     pa: string;
@@ -44,6 +45,7 @@ function PaymentContent() {
     const [transactions, setTransactions] = useState<TransactionItem[]>([]);
     const [txLoading, setTxLoading] = useState(false);
     const [syncError, setSyncError] = useState('');
+    const [pendingPayment, setPendingPayment] = useState('');
     const [hasPendingTransfer, setHasPendingTransfer] = useState(false);
     useEffect(() => {
         if (!user) return;
@@ -179,7 +181,11 @@ function PaymentContent() {
                 }
             } catch (err: any) {
                 console.error("Scanner access error:", err);
-                if (generation === scannerGeneration.current) setScannerError('Unable to access device camera. Please grant camera permission.');
+                if (generation === scannerGeneration.current) {
+                    try { scannerRef.current?.clear(); } catch { /* A failed camera start may already be stopped. */ }
+                    scannerRef.current = null;
+                    setScannerError('Unable to access device camera. Please grant camera permission.');
+                }
             }
         }, 50); // Reduced timeout to fix delay issue
     };
@@ -256,6 +262,10 @@ function PaymentContent() {
 
     const handlePayWithUpiIntent = async () => {
         if (!scannedPayee || payLoading) return;
+        if (!/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+            showToast('Use the displayed UPI QR to pay from your phone. No APEX wallet transfer has been made.', 'info');
+            return;
+        }
         setPayLoading(true);
         try {
             await openUpiApp(makeUpiIntent(scannedPayee, payAmount, payNote));
@@ -306,8 +316,9 @@ function PaymentContent() {
                             fetchBalance();
                             fetchTransactions();
                         }
-                    } catch (e) {
-                        showToast('Verification failed.', 'error');
+                    } catch (e: any) {
+                        setPendingPayment('Payment confirmation is pending. Do not pay again. Payment reference: ' + response.razorpay_payment_id);
+                        showToast(e.response?.data?.error || 'Payment confirmation is pending. Your payment must be reconciled before another top-up.', 'warning');
                     } finally {
                         setAddLoading(false);
                     }
@@ -417,6 +428,7 @@ function PaymentContent() {
 
             <div className="p-4 max-w-md mx-auto w-full flex flex-col gap-5">
                 {syncError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-700">{syncError}</p>}
+                {pendingPayment && <p role="status" className="rounded-lg bg-amber-50 p-3 text-amber-800">{pendingPayment}</p>}
                 {hasPendingTransfer && <button disabled={sendLoading} className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-left" onClick={async () => {
                     if (!user) return;
                     setSendLoading(true);
@@ -605,6 +617,10 @@ function PaymentContent() {
                         />
 
                         <div className="flex flex-col gap-3">
+                            {!scannedPayee.isApex && validAmount(payAmount) && <div className="border-y border-gray-100 py-3">
+                                <PaymentQr value={makeUpiIntent(scannedPayee, payAmount, payNote)} label="UPI payment QR" />
+                                <p className="mt-2 text-center text-xs text-gray-500">Unconfirmed bank payment. APEX wallet is not debited.</p>
+                            </div>}
                             {scannedPayee.isApex && (
                             <button
                                 onClick={handlePayWithWallet}
@@ -771,11 +787,7 @@ function PaymentContent() {
                             </button>
                         </div>
                         <div className="bg-white p-4 rounded-2xl border border-gray-100 mb-4 inline-block shadow-sm">
-                            {myQrUpi ? (
-                                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(myQrUpi)}`} alt="QR" className="w-48 h-48" />
-                            ) : (
-                                <div className="w-48 h-48 bg-gray-50 rounded-xl animate-pulse"></div>
-                            )}
+                            <PaymentQr value={myQrUpi} label="APEX receive QR" />
                         </div>
                         <h4 className="font-black text-gray-900">{user?.name || 'APEX User'}</h4>
                         <p className="text-sm text-gray-500 font-mono mb-4">{user?.phone || ''}</p>

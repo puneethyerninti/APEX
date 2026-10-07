@@ -5,6 +5,7 @@
 - Razorpay checkout collects captured payments for wallet top-ups and APEX memberships.
 - APEX wallet transfers work only between users who have signed into APEX with verified mobile OTP. Debit, credit, both ledger entries and the duplicate-transfer reference commit together in MongoDB.
 - External UPI QR/ID payments open a bank/UPI app. APEX does not debit its wallet, record external payment success, or know that bank payment's outcome. Check the bank app for confirmation.
+- On desktop, entering an external UPI ID and amount displays a locally generated payment QR for a phone's bank/UPI app. Receive QRs are also generated locally, without sending the receiver's phone number to a third-party QR-image server. These are not external APEX wallet payouts.
 - Bank withdrawals and external wallet payouts are unavailable with the currently configured standard Razorpay product. An approved payout/regulated wallet integration is required before enabling them.
 - Complete Profile opens https://anandmatrimony.co.in/. No Anand API, shared login, payment or profile synchronization has been provided. APEX membership purchases apply only to APEX profiles and messaging.
 
@@ -17,6 +18,8 @@
    The backend address verified from the deployed frontend is `https://apex-backend-fl0k.onrender.com` (digit zero in `fl0k`). The complete webhook URL is `https://apex-backend-fl0k.onrender.com/api/finance/razorpay/webhook`; do not substitute the letter o.
 4. Profile images need the existing AWS S3 credentials/bucket, correct image read permissions, and upload permissions. Only JPEG/PNG/WebP files up to 5 MB are accepted, at most five per request.
 5. Users submit an actual APEX profile for admin review. Only approved, owner-bound profiles are listed or allowed to purchase memberships. Review is not a claim of government-ID verification.
+
+   Purchase now opens the missing/rejected APEX profile form or displays the pending admin-review requirement. No Razorpay order is created before approval. The external Anand Complete Profile link cannot submit or approve an APEX profile, since no integration API has been supplied.
 6. Audit legacy matrimony profiles and paid memberships manually before migration: older records did not reliably bind profiles to a verified owner and may have fabricated defaults. Do not bulk-enable them. New owner-bound submissions are isolated by `ownerVerified: true`.
 7. Rebuild and distribute the Android app: native UPI intent support cannot arrive through Vercel alone. Test on a real Android phone with installed UPI apps. The launcher only confirms that an app opened, never that a payment succeeded.
 

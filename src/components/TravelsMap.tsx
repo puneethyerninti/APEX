@@ -7,10 +7,11 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 interface TravelsMapProps {
   cabLocation: { lat: number; lng: number } | null;
   userLocation: { lat: number; lng: number } | null;
+  destination?: { lat: number; lng: number } | null;
   routeGeometry?: any | null; // GeoJSON LineString coordinates
 }
 
-export default function TravelsMap({ cabLocation, userLocation, routeGeometry }: TravelsMapProps) {
+export default function TravelsMap({ cabLocation, userLocation, destination, routeGeometry }: TravelsMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [mapError, setMapError] = useState(false);
   const [mapReady, setMapReady] = useState(false);
@@ -34,6 +35,16 @@ export default function TravelsMap({ cabLocation, userLocation, routeGeometry }:
         }
     }
   }, [cabLocation, userLocation]);
+
+  useEffect(() => {
+    const points = routeGeometry?.coordinates;
+    if (!mapReady || !mapRef.current || !Array.isArray(points) || points.length < 2) return;
+    const longitudes = points.map((p: number[]) => p[0]);
+    const latitudes = points.map((p: number[]) => p[1]);
+    mapRef.current.fitBounds([[Math.min(...longitudes), Math.min(...latitudes)], [Math.max(...longitudes), Math.max(...latitudes)]], {
+      padding: { top: 90, right: 45, bottom: Math.min(window.innerHeight * 0.45, 300), left: 45 }, duration: 800, maxZoom: 16
+    });
+  }, [mapReady, routeGeometry]);
 
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || ["pk", "eyJ1IjoicHVuZWV0aHllcm5pbnRpIiwiYSI6ImNtczc5NnFoZDAxYTkzMHF5b2pza3djaXAifQ", "Vq4KPlACKh1jbeFq1Hl3Cw"].join(".");
 
@@ -82,15 +93,16 @@ export default function TravelsMap({ cabLocation, userLocation, routeGeometry }:
       )}
 
       {/* User Location Marker */}
-      {userLocation && !cabLocation && !routeGeometry && (
+      {userLocation && (
           <Marker 
               longitude={userLocation.lng} 
               latitude={userLocation.lat} 
               anchor="bottom"
           >
-              <img src="https://img.icons8.com/color/48/marker.png" alt="marker" style={{ width: 40, height: 40 }} />
+              <div aria-label="Pickup" className="h-5 w-5 rounded-full border-4 border-white bg-emerald-500 shadow-md" />
           </Marker>
       )}
+      {destination && <Marker longitude={destination.lng} latitude={destination.lat} anchor="center"><div aria-label="Destination" className="h-5 w-5 rounded border-4 border-white bg-rose-500 shadow-md" /></Marker>}
 
       {/* Cab Marker */}
       {cabLocation && (

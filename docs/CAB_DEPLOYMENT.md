@@ -16,6 +16,12 @@ Only Mini and XL cabs in Visakhapatnam are available. Bus, train and flight navi
 
 ## Driver operation
 
+### Fixing the reported route 503
+
+In Render > APEX-Backend > Environment, add `MAPBOX_API_KEY` with a token from the client's Mapbox account that can call Directions. Save and redeploy. Setting a key in Vercel alone does not configure Render. A URL-restricted browser token may be unsuitable for server requests; check the token's restrictions instead of removing them blindly. `GOOGLE_MAPS_API_KEY` is not used by this Mapbox routing flow.
+
+The server now returns distinct codes for missing configuration, rejected access, temporary provider failures, and an unavailable road route. It never substitutes a simulated route or fare. A visible map is not proof that server quoting or driver dispatch works.
+
 In Admin > Travel Bookings > Driver approval, select the driver's account, verify identity/licence/vehicle outside the app, choose Mini or XL, and save the real plate/make/model. The driver should sign out and back in, open Driver Mode, allow GPS, and go online.
 
 Requests are recovered by authenticated polling. Online eligibility expires after 45 seconds without a GPS heartbeat. Drivers can accept only their approved vehicle class, one active trip at a time. Passenger status survives refresh and is also refreshed by sockets.

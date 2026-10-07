@@ -77,6 +77,17 @@ export default function MatrimonyPage() {
   }
   async function checkout(plan: typeof plans[number]) {
     if (busy) return;
+    if (!uid) { setError('Sign in before purchasing a membership.'); return; }
+    if (!loaded) { setError('Your profile is still being refreshed.'); return; }
+    if (profile?.status !== 'approved') {
+      setNotice(profile?.status === 'pending' ? 'Your APEX profile is awaiting admin review. No payment has been collected.' : 'Submit your APEX profile for review before purchasing a membership. No payment has been collected.');
+      if (!profile || profile.status !== 'pending') {
+        setForm(Object.fromEntries(Object.keys(empty).map(key => [key, String(profile?.[key] || '')])) as typeof empty);
+        setPhotos([]); setEditing(true);
+      }
+      document.getElementById('apex-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     setBusy(true); setError(''); setNotice('');
     try {
       const Razorpay = await loadRazorpay();
@@ -121,7 +132,7 @@ export default function MatrimonyPage() {
         </div>
       </section>
     </div>
-    {error && <p role="alert" className="mx-4 my-3 rounded-lg bg-red-50 p-3 text-red-800">{error}</p>}{notice && <p role="status" className="mx-4 my-3 bg-green-50 p-3 text-green-800">{notice}</p>}
+    {error && <p role="alert" className="mx-4 my-3 rounded-lg bg-red-50 p-3 text-red-800">{error}</p>}
     <section className="mx-auto mb-6 max-w-7xl px-4 md:px-6">
       <h2 className="mb-4 text-sm font-extrabold uppercase text-gray-400">Browse Profiles</h2>
       <div className="grid grid-cols-4 gap-3 md:max-w-lg md:gap-6">{[
@@ -139,11 +150,12 @@ export default function MatrimonyPage() {
         {index === 1 && <span className="absolute right-4 top-0 rounded-b-lg bg-rose-600 px-3 py-1 text-xs font-bold text-white">Popular</span>}
         <div className={'mb-4 mt-3 flex h-16 w-16 items-center justify-center rounded-full text-3xl ' + (index === 1 ? 'bg-yellow-200 text-yellow-600' : index === 2 ? 'bg-sky-100 text-sky-500' : 'bg-gray-100 text-gray-400')}><i aria-hidden="true" className={'fas ' + (index === 1 ? 'fa-crown' : index === 2 ? 'fa-gem' : 'fa-medal')} /></div>
         <h3 className="text-2xl font-black">{plan.name}</h3><p className="mt-1 text-sm text-gray-500">{plan.months} Months Access</p><p className="my-5 text-2xl font-black text-rose-600">{'\u20b9'}{plan.amount.toLocaleString('en-IN')}</p>
-        <button disabled={busy || profile?.status !== 'approved' || !loaded} onClick={() => void checkout(plan)} className="mt-auto w-full rounded-full bg-rose-600 py-3 text-sm font-bold text-white disabled:opacity-40">{busy ? 'Processing...' : 'Purchase'}</button>
+        <button disabled={busy || (!!uid && !loaded)} onClick={() => void checkout(plan)} className="mt-auto w-full rounded-full bg-rose-600 py-3 text-sm font-bold text-white disabled:opacity-40">{busy ? 'Processing...' : 'Purchase'}</button>
       </div>)}</div>
     </section>
     {!uid ? <p className="mx-auto max-w-7xl px-4"><Link href="/login" className="text-pink-700 underline">Sign in</Link> to view APEX profiles.</p> : <div className="mx-auto max-w-7xl px-4 md:px-6">
-      <section className="border-y border-gray-200 py-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-base font-bold">My APEX Profile</h2><p className="mt-1 text-sm text-gray-500">{!loaded ? 'Updating profile' : profile ? 'Review: ' + profile.status : 'Not submitted'}</p>{profile?.subscription?.isActive && <p className="text-sm text-rose-600">{profile.subscription.plan} until {new Date(profile.subscription.expiresAt).toLocaleDateString()}</p>}</div><button disabled={!loaded || busy} onClick={() => { setForm(Object.fromEntries(Object.keys(empty).map(key => [key, String(profile?.[key] || '')])) as typeof empty); setPhotos([]); setEditing(!editing); }} className="rounded-full bg-white px-4 py-2 text-sm font-bold text-rose-600 shadow-sm disabled:opacity-40">{editing ? 'Cancel' : 'Edit APEX Profile'}</button></div>
+      <section id="apex-profile" className="scroll-mt-24 border-y border-gray-200 py-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-base font-bold">My APEX Profile</h2><p className="mt-1 text-sm text-gray-500">{!loaded ? 'Updating profile' : profile ? 'Review: ' + profile.status : 'Not submitted'}</p>{profile?.subscription?.isActive && <p className="text-sm text-rose-600">{profile.subscription.plan} until {new Date(profile.subscription.expiresAt).toLocaleDateString()}</p>}</div><button disabled={!loaded || busy} onClick={() => { setForm(Object.fromEntries(Object.keys(empty).map(key => [key, String(profile?.[key] || '')])) as typeof empty); setPhotos([]); setEditing(!editing); }} className="rounded-full bg-white px-4 py-2 text-sm font-bold text-rose-600 shadow-sm disabled:opacity-40">{editing ? 'Cancel' : 'Edit APEX Profile'}</button></div>
+        {notice && <p role="status" className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{notice}</p>}
         {editing && <form onSubmit={saveProfile} className="mt-4 grid gap-4 sm:grid-cols-2">{Object.keys(empty).filter(k => k !== 'bio').map(key => <label key={key} className="capitalize">{key === 'location' ? 'City' : key}<input className="mt-1 block w-full rounded-lg border p-3" required={['age','religion','profession','location'].includes(key)} type={key === 'age' ? 'number' : 'text'} min={key === 'age' ? 18 : undefined} max={key === 'age' ? 100 : undefined} maxLength={120} value={(form as any)[key]} onChange={e => setForm({ ...form, [key]: e.target.value })} /></label>)}<label className="sm:col-span-2">About Me<textarea className="block w-full rounded-lg border p-3" maxLength={2000} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} /></label><label>Photos<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e => setPhotos(Array.from(e.target.files || []).slice(0,5))} /></label><button disabled={busy} className="rounded-lg bg-pink-700 p-3 text-white">{busy ? 'Saving...' : 'Submit for Review'}</button></form>}
       </section>
       <section className="py-6"><h2 className="mb-4 text-sm font-extrabold uppercase text-gray-400">New Matches</h2>{loaded && !filtered.length && <p className="text-sm text-gray-500">No approved profiles match your filters.</p>}<div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">{filtered.map(p => <article key={p._id} className="min-w-0 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">{p.images?.[0] ? <img alt={p.user?.name || 'Profile'} src={p.images[0]} className="aspect-[4/5] w-full object-cover" /> : <div className="flex aspect-[4/5] items-center justify-center bg-rose-50 text-4xl text-rose-300"><i aria-hidden="true" className="fas fa-user" /></div>}<div className="p-3"><h3 className="break-words text-sm font-extrabold">{p.user?.name || 'APEX Member'}</h3><p className="mt-1 break-words text-xs text-gray-500">{p.age} years, {p.location}</p><p className="mt-1 break-words text-xs text-gray-500">{p.profession}</p><button disabled={!profile?.subscription?.isActive} onClick={() => { if (pending.current) { setError('Retry the pending message before switching conversations.'); return; } setError(''); setText(''); setChat(p); }} className="mt-3 w-full rounded-full bg-rose-50 py-2 text-xs font-bold text-rose-600 disabled:opacity-40">Message</button></div></article>)}</div></section>
