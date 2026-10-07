@@ -60,32 +60,24 @@ test('transfer amount and references are validated before a database transaction
 test('duplicate transfer returns stored result without debiting or exposing recipient balance', async () => {
   const session = { async withTransaction(fn) { await fn(); }, async endSession() {} };
   stub(mongoose, 'startSession', async () => session);
-  stub(WalletTransfer, 'findOne', () => ({ session: async () => ({ amount: 10, recipientPhone: '9000000000', note: '', result: { success: true, transaction: { _id: 'saved' }, recipientBalance: 500 } }) }));
+  stub(WalletTransfer, 'findOne', async () => ({ amount: 10, recipientPhone: '9000000000', note: '', result: { success: true, transaction: { _id: 'saved' }, recipientBalance: 500 } }));
   stub(User, 'findOneAndUpdate', () => { throw new Error('must not debit'); });
   const res = response(); await finance.transferMoney(request({ amount: 10, recipientPhone: '9000000000', idempotencyKey: 'test-reference-123456' }), res);
   assert.equal(res.code, 200); assert.equal(res.body.transaction._id, 'saved'); assert.equal(res.body.recipientBalance, undefined);
 });
 test('reusing a transfer reference for another amount is rejected', async () => {
   stub(mongoose, 'startSession', async () => ({ async withTransaction(fn) { await fn(); }, async endSession() {} }));
-  stub(WalletTransfer, 'findOne', () => ({ session: async () => ({ amount: 20, recipientPhone: '9000000000', note: '' }) }));
+  stub(WalletTransfer, 'findOne', async () => ({ amount: 20, recipientPhone: '9000000000', note: '' }));
   const res = response(); await finance.transferMoney(request({ amount: 10, recipientPhone: '9000000000', idempotencyKey: 'test-reference-123456' }), res);
   assert.equal(res.code, 409);
 });
-test('transfer commits both ledgers once and notification failure cannot report it failed', async () => {
-  const session = { async withTransaction(fn) { await fn(); }, async endSession() {} };
-  stub(mongoose, 'startSession', async () => session);
-  let saved, debits = 0, credits = 0;
-  stub(WalletTransfer, 'findOne', () => ({ session: async () => saved }));
-  stub(WalletTransfer, 'create', async (_docs, opts) => assert.equal(opts.session, session));
-  stub(WalletTransfer, 'updateOne', async (_query, update, opts) => { assert.equal(opts.session, session); saved = { amount: 10, recipientPhone: '9000000000', note: '', result: update.$set.result }; });
-  stub(User, 'findOne', () => ({ session: async () => ({ _id: b, name: 'Recipient' }) }));
-  stub(User, 'findOneAndUpdate', async (query, update, opts) => { assert.equal(opts.session, session); assert.equal(query.walletBalance.$gte, 10); assert.equal(update.$inc.walletBalance, -10); debits++; return { walletBalance: 90, name: 'Sender' }; });
-  stub(User, 'findByIdAndUpdate', async (_id, update, opts) => { assert.equal(opts.session, session); assert.equal(update.$inc.walletBalance, 10); credits++; return { walletBalance: 10 }; });
-  stub(Transaction, 'create', async (docs, opts) => { assert.equal(opts.session, session); assert.equal(docs.length, 2); assert.deepEqual(docs.map(d => d.type), ['debit','credit']); return [{ _id: 'real-ledger-id' }, {}]; });
-  stub(require('../dist/controllers/notificationController'), 'createNotification', async () => { throw new Error('notification unavailable'); });
-  const body = { amount: 10, recipientPhone: '9000000000', idempotencyKey: 'test-reference-123456' };
-  for (let i = 0; i < 2; i++) { const res = response(); await finance.transferMoney(request(body), res); assert.equal(res.code, 200); assert.equal(res.body.transaction._id, 'real-ledger-id'); }
-  assert.equal(debits, 1); assert.equal(credits, 1);
+test('new wallet transfers cannot start a session, debit, credit or create ledger records', async () => {
+  stub(mongoose, 'startSession', () => { throw new Error('must not start'); });
+  stub(WalletTransfer, 'findOne', async query => { assert.equal(query.user, a); return null; });
+  for (const [model, method] of [[User, 'findOneAndUpdate'], [User, 'findByIdAndUpdate'], [WalletTransfer, 'create'], [Transaction, 'create']]) stub(model, method, () => { throw new Error('must not write'); });
+  const res = response();
+  await finance.transferMoney(request({ amount: 10, recipientPhone: '9000000000', idempotencyKey: 'test-reference-123456' }), res);
+  assert.equal(res.code, 409); assert.equal(res.body.code, 'WALLET_TRANSFERS_PAUSED');
 });
 test('membership fulfillment needs a real matching captured payment', async () => {
   await assert.rejects(matri.handleMatrimonyUpgrade(a, 'Gold'), /captured/);

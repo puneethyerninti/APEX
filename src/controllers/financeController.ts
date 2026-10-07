@@ -5,7 +5,6 @@ import Transaction from '../models/Transaction';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { createNotification } from './notificationController';
 import { fulfillOrder } from '../services/fulfillmentService';
 import { createPendingUtilityTransaction, updateUtilityTransactionStatus } from './utilityController';
 import axios from 'axios';
@@ -65,156 +64,11 @@ export const getWalletBalance = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * POST /api/finance/wallet/deduct
- * Atomically deducts funds from user's wallet with session transaction.
- */
-export const deductMoney = async (req: Request, res: Response) => {
-  const { amount, category, referenceId, note } = req.body;
-  if (!amount || amount <= 0) {
-    return res.status(400).json({ success: false, error: 'Invalid deduction amount' });
-  }
+// Retained endpoints protect cached clients without changing historical balances.
+export const deductMoney = async (_req: Request, res: Response) => res.status(409).json({ success: false, error: 'Wallet spending is paused. Your stored balance has not changed.' });
+export const addMoney = async (_req: Request, res: Response) => res.status(409).json({ success: false, error: 'New wallet deposits are paused. Pay recipients directly in your UPI app.' });
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const user = await resolveUser(req);
-    if (!user) {
-      await session.abortTransaction();
-      return res.status(401).json({ success: false, error: 'User not found or unauthenticated' });
-    }
-
-    const liveUser = await User.findById(user._id).session(session);
-    if (!liveUser || liveUser.walletBalance < amount) {
-      await session.abortTransaction();
-      return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
-    }
-
-    liveUser.walletBalance -= amount;
-    await liveUser.save({ session });
-
-    const transaction = await Transaction.create([{
-      user: liveUser._id,
-      amount,
-      type: 'debit',
-      category: category || 'payment',
-      referenceId: referenceId || 'Wallet Debit',
-      status: 'completed',
-      metadata: { note }
-    }], { session });
-
-    await session.commitTransaction();
-
-    const io = req.app.get('io');
-    if (io) {
-      io.to(`user_${liveUser._id}`).emit('wallet_update', {
-        amount,
-        type: 'debit',
-        message: `₹${amount} debited from wallet`,
-        newBalance: liveUser.walletBalance
-      });
-    }
-
-    await createNotification(
-      liveUser._id.toString(),
-      'Payment Successful',
-      `₹${amount} has been deducted from your wallet for ${referenceId || category || 'payment'}.`,
-      'success'
-    );
-
-    res.json({ 
-      success: true, 
-      message: 'Payment successful', 
-      balance: liveUser.walletBalance, 
-      transaction: transaction[0] 
-    });
-  } catch (error) {
-    await session.abortTransaction();
-    console.error('deductMoney Error:', error);
-    res.status(500).json({ success: false, error: 'Server error processing deduction' });
-  } finally {
-    session.endSession();
-  }
-};
-
-/**
- * POST /api/finance/wallet/add
- * Atomically adds funds to user's wallet with session transaction.
- */
-export const addMoney = async (req: Request, res: Response) => {
-  const { amount, referenceId, note } = req.body;
-  if (!amount || amount <= 0) {
-    return res.status(400).json({ success: false, error: 'Invalid top-up amount' });
-  }
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const user = await resolveUser(req);
-    if (!user) {
-      await session.abortTransaction();
-      return res.status(401).json({ success: false, error: 'User not found or unauthenticated' });
-    }
-
-    const liveUser = await User.findById(user._id).session(session);
-    if (!liveUser) {
-      await session.abortTransaction();
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
-
-    liveUser.walletBalance += amount;
-    await liveUser.save({ session });
-
-    const transaction = await Transaction.create([{
-      user: liveUser._id,
-      amount,
-      type: 'credit',
-      category: 'add_money',
-      referenceId: referenceId || 'Wallet Recharge',
-      status: 'completed',
-      metadata: { note }
-    }], { session });
-
-    await session.commitTransaction();
-
-    const io = req.app.get('io');
-    if (io) {
-      io.to(`user_${liveUser._id}`).emit('wallet_update', {
-        amount,
-        type: 'credit',
-        message: `₹${amount} added to wallet`,
-        newBalance: liveUser.walletBalance
-      });
-    }
-
-    await createNotification(
-      liveUser._id.toString(),
-      'Wallet Recharged',
-      `₹${amount} has been added to your wallet.`,
-      'success'
-    );
-
-    res.json({ 
-      success: true, 
-      message: 'Money added successfully', 
-      balance: liveUser.walletBalance, 
-      transaction: transaction[0] 
-    });
-  } catch (error) {
-    await session.abortTransaction();
-    console.error('addMoney Error:', error);
-    res.status(500).json({ success: false, error: 'Server error adding money' });
-  } finally {
-    session.endSession();
-  }
-};
-
-/**
- * POST /api/finance/wallet/transfer
- * Real-time atomic P2P wallet transfer between APEX users via phone number.
- */
+// An old uncertain send can check its committed receipt, never create a new transfer.
 export const transferMoney = async (req: Request, res: Response) => {
   const amount = Number(req.body.amount);
   const rawAmount = String(req.body.amount);
@@ -223,56 +77,20 @@ export const transferMoney = async (req: Request, res: Response) => {
   const note = String(req.body.note || '').trim().slice(0, 250);
   if (!/^\d+(\.\d{1,2})?$/.test(rawAmount) || !Number.isFinite(amount) || amount < 0.01 || amount > 100000 ||
       !/^[6-9]\d{9}$/.test(recipientPhone) || !/^[a-zA-Z0-9-]{16,80}$/.test(key)) {
-    return res.status(400).json({ error: 'Valid mobile, amount (two decimal places maximum) and transfer reference required.' });
+    return res.status(400).json({ error: 'Valid mobile, amount and earlier transfer reference required.' });
   }
-  const senderId = (req as any).user.id;
-  const session = await mongoose.startSession();
-  let result: any;
-  let recipientId: string | undefined;
-  let fresh = false;
   try {
-    await session.withTransaction(async () => {
-      fresh = false;
-      const existing = await WalletTransfer.findOne({ user: senderId, key }).session(session);
-      if (existing) {
-        if (existing.amount !== amount || existing.recipientPhone !== recipientPhone || existing.note !== note) throw Object.assign(new Error('Transfer reference already used for different details.'), { httpStatus: 409 });
-        result = existing.result;
-        return;
-      }
-      const recipient = await User.findOne({ $or: [{ phone: recipientPhone }, { phone: '+91' + recipientPhone }], firebaseUid: { $exists: true } }).session(session);
-      if (!recipient) throw Object.assign(new Error('Recipient must sign in to APEX with this mobile number first. This is an APEX wallet transfer, not a bank transfer.'), { httpStatus: 404 });
-      if (recipient._id.toString() === String(senderId)) throw Object.assign(new Error('Cannot transfer to your own wallet.'), { httpStatus: 400 });
-      await WalletTransfer.create([{ user: senderId, key, recipientPhone, amount, note }], { session });
-      const sender = await User.findOneAndUpdate({ _id: senderId, walletBalance: { $gte: amount } }, { $inc: { walletBalance: -amount } }, { session, new: true });
-      if (!sender) throw Object.assign(new Error('Insufficient wallet balance.'), { httpStatus: 400 });
-      const credited = await User.findByIdAndUpdate(recipient._id, { $inc: { walletBalance: amount } }, { session, new: true });
-      if (!credited) throw new Error('Recipient account unavailable.');
-      const pair = await Transaction.create([
-        { user: senderId, amount, type: 'debit', category: 'p2p_transfer', referenceId: 'Sent to ' + recipient.name, status: 'completed', metadata: { transferKey: key, recipientId: recipient._id.toString(), note } },
-        { user: recipient._id, amount, type: 'credit', category: 'p2p_receive', referenceId: 'Received from ' + sender.name, status: 'completed', metadata: { transferKey: key, senderId: String(senderId), note } }
-      ], { session });
-      result = { success: true, newBalance: sender.walletBalance, recipientBalance: credited.walletBalance, recipientName: recipient.name, transaction: pair[0] };
-      recipientId = recipient._id.toString();
-      await WalletTransfer.updateOne({ user: senderId, key }, { $set: { result } }, { session });
-      fresh = true;
-    });
-    if (!result) throw new Error('Transfer needs support reconciliation. Do not resend with a different reference.');
-    if (fresh) {
-      try {
-        const io = req.app.get('io');
-        io?.to('user_' + senderId).emit('wallet_update', { type: 'debit', amount, newBalance: result.newBalance });
-        io?.to('user_' + recipientId).emit('wallet_update', { type: 'credit', amount, newBalance: result.recipientBalance });
-      } catch (error) { console.error('Wallet event delivery delayed'); }
-      await Promise.allSettled([
-        createNotification(String(senderId), 'Transfer completed', 'Your APEX wallet transfer was completed.', 'success'),
-        createNotification(recipientId!, 'Money received', 'You received INR ' + amount + ' in your APEX wallet.', 'success')
-      ]);
+    const existing = await WalletTransfer.findOne({ user: (req as any).user.id, key });
+    if (existing) {
+      if (existing.amount !== amount || existing.recipientPhone !== recipientPhone || existing.note !== note) return res.status(409).json({ error: 'Transfer reference already used for different details.' });
+      if (!existing.result?.success) return res.status(409).json({ error: 'The earlier transfer requires support reconciliation. Your balance has not been changed by this request.' });
+      const { recipientBalance: _privateBalance, ...receipt } = existing.result;
+      return res.json(receipt);
     }
-    const { recipientBalance: _privateBalance, ...publicResult } = result;
-    return res.json(publicResult);
-  } catch (error: any) {
-    return res.status(error.code === 11000 ? 409 : error.httpStatus || 503).json({ error: error.code === 11000 ? 'Transfer is processing. Retry using the same reference.' : error.message });
-  } finally { await session.endSession(); }
+    return res.status(409).json({ success: false, code: 'WALLET_TRANSFERS_PAUSED', error: 'No completed transfer was found for this reference. New wallet transfers are paused. Your balance has not been changed by this request.' });
+  } catch {
+    return res.status(503).json({ success: false, error: 'Earlier transfer receipt is temporarily unavailable. Do not send again; check history or contact support.' });
+  }
 };
 /**
  * POST /api/finance/wallet/withdraw
@@ -337,36 +155,7 @@ export const getUserTransactions = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * GET /api/finance/my-qr
- * Generates user's personal UPI and APEX QR string for receiving money.
- */
-export const getMyQrPayload = async (req: Request, res: Response) => {
-  try {
-    const user = await resolveUser(req);
-    if (!user) {
-      return res.status(401).json({ success: false, error: 'Authentication required' });
-    }
-
-    const cleanPhone = (user.phone || '').replace(/[^\d]/g, '').slice(-10);
-    const userName = user.name || 'APEX User';
-    
-    const apexUri = `apex://pay?phone=${cleanPhone}&name=${encodeURIComponent(userName)}&id=${user._id}`;
-
-    res.json({
-      success: true,
-      apexUri,
-      user: {
-        _id: user._id,
-        name: user.name,
-        phone: user.phone
-      }
-    });
-  } catch (error) {
-    console.error('getMyQrPayload Error:', error);
-    res.status(500).json({ success: false, error: 'Server error generating QR code' });
-  }
-};
+export const getMyQrPayload = async (_req: Request, res: Response) => res.status(409).json({ success: false, error: 'APEX wallet receive QRs are retired. Use your bank-issued UPI ID or QR.' });
 
 
 const isUtilityCategory = (category: string) => ['mobile_recharge', 'bbps_payment'].includes(category);
@@ -413,7 +202,9 @@ const scheduleUtilityFulfillment = async (transaction: any, io: any) => {
 
 // Razorpay Order Creation (Strict)
 export const createRazorpayOrder = async (req: Request, res: Response) => {
-  let { amount, userId, category = 'add_money', serviceName, metadata } = req.body; 
+  let { amount, userId, category, serviceName, metadata } = req.body;
+  if (['add_money', 'wallet_recharge'].includes(category)) return res.status(409).json({ error: 'New wallet deposits are paused. Your existing balance remains recorded. Pay personal recipients directly in your UPI app.' });
+  if (typeof category !== 'string' || !category) return res.status(400).json({ error: 'Select a supported APEX service before checkout.' });
   
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     console.error("CRITICAL: Razorpay keys are missing from environment variables.");
@@ -428,7 +219,7 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
   if (!/^\d+(\.\d{1,2})?$/.test(amountText) || !Number.isFinite(amount) || amount < 0.01 || amount > 100000 || !Number.isSafeInteger(Math.round(amount * 100))) {
     return res.status(400).json({ error: 'Enter a valid payment amount.' });
   }
-  const supportedCategories = ['add_money', 'wallet_recharge', 'mobile_recharge', 'bbps_payment', 'matrimony', 'subscription', 'academy_enrollment', 'charity'];
+  const supportedCategories = ['mobile_recharge', 'bbps_payment', 'matrimony', 'subscription', 'academy_enrollment', 'charity'];
   if (!supportedCategories.includes(category)) {
     return res.status(400).json({ error: 'This payment service is unavailable. Pay external merchants using your UPI app.' });
   }
@@ -467,14 +258,13 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
     const order = await getRazorpay().orders.create(options);
     const utilityTransaction = await createPendingUtilityTransaction(userId, category, amount, metadata || {}, order.id);
     
-    const txType = ['add_money', 'wallet_recharge'].includes(category) ? 'credit' : 'debit';
     // Create pending transaction
     await Transaction.create({
       user: userId,
       amount,
-      type: txType,
+      type: 'debit',
       category: category,
-      referenceId: serviceName || 'wallet_topup',
+      referenceId: serviceName || category,
       status: 'pending',
       razorpayOrderId: order.id,
       metadata: {
