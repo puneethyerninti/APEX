@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
+import { mapboxToken } from '@/services/geocoding';
 
 interface MapboxSearchProps {
   placeholder: string;
@@ -8,9 +9,10 @@ interface MapboxSearchProps {
   onSelect: (location: { address: string; lat: number; lng: number }) => void;
   className?: string;
   disabled?: boolean;
+  resolved?: boolean;
 }
 
-export default function MapboxSearch({ placeholder, value, onChange, onSelect, className, disabled }: MapboxSearchProps) {
+export default function MapboxSearch({ placeholder, value, onChange, onSelect, className, disabled, resolved }: MapboxSearchProps) {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -19,13 +21,13 @@ export default function MapboxSearch({ placeholder, value, onChange, onSelect, c
   useEffect(() => {
     const controller = new AbortController();
     const fetchSuggestions = async () => {
-      if (value === selectedValue.current || disabled) return;
+      if (value === selectedValue.current || disabled || resolved) { setSuggestions([]); setIsOpen(false); return; }
       if (!value || value.length < 3) {
         setSuggestions([]);
         return;
       }
       
-      const token = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || ["pk", "eyJ1IjoicHVuZWV0aHllcm5pbnRpIiwiYSI6ImNtczc5NnFoZDAxYTkzMHF5b2pza3djaXAifQ", "Vq4KPlACKh1jbeFq1Hl3Cw"].join(".");
+      const token = mapboxToken;
       if (!token) return;
 
       try {
@@ -48,7 +50,7 @@ export default function MapboxSearch({ placeholder, value, onChange, onSelect, c
     }, 500);
 
     return () => { clearTimeout(delayDebounce); controller.abort(); };
-  }, [value, disabled]);
+  }, [value, disabled, resolved]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -76,6 +78,8 @@ export default function MapboxSearch({ placeholder, value, onChange, onSelect, c
     <div className="relative w-full" ref={wrapperRef}>
       <input
         type="text"
+        aria-label={placeholder}
+        title={value || placeholder}
         placeholder={placeholder}
         value={value}
         onChange={(e) => {
@@ -93,11 +97,12 @@ export default function MapboxSearch({ placeholder, value, onChange, onSelect, c
           {suggestions.map((suggestion) => (
             <li 
               key={suggestion.id}
-              onClick={() => handleSelect(suggestion)}
               className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-b-0"
             >
+              <button type="button" className="block w-full text-left" onClick={() => handleSelect(suggestion)}>
               <div className="font-semibold text-sm text-gray-800 truncate">{suggestion.text}</div>
               <div className="text-xs text-gray-500 truncate">{suggestion.place_name}</div>
+              </button>
             </li>
           ))}
         </ul>

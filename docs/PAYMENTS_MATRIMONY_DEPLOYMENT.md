@@ -25,6 +25,15 @@
 
 ## Acceptance checks before releasing to customers
 
+### Location and chat update
+
+- Cab pickup uses browser GPS with explicit permission and live Mapbox reverse geocoding. It preserves the measured coordinates, displays the resolved address and accuracy, and stops tracking when a manual pickup or booking takes over. A denied permission or failed lookup must not fabricate a pickup.
+- Matrimony cards and the profile form are compact at mobile widths. Profile edits still require admin review; the UI does not bypass approval or activate a membership without a captured payment.
+- Chat stores each message before confirming delivery, reuses the same reference on uncertain retries, and restores unconfirmed sends within the browser session. Authenticated private socket events refresh conversations, with a five-second HTTP polling fallback. Read receipts apply only to fetched messages; older history is paginated.
+- On a real phone, grant location permission, verify the street address and map marker, then choose a manual pickup and confirm GPS tracking stops. GPS accuracy depends on the device; reverse geocoding cannot improve the underlying measurement.
+- With two separately authenticated, approved APEX profiles and valid memberships, verify two-way messages, unread counts, read receipts, reconnect recovery, older history, and retry after a lost response. An expired or unapproved account must not gain chat access.
+- Local isolated tests do not certify production Firebase/S3 configuration, live payment settlement, device GPS, or an actual driver booking. No test profiles, simulated GPS or fixture endpoints are deployed.
+
 - Two verified APEX users: top up, transfer, retry the same reference, reload history, verify both balances and matching real ledger entries. Test insufficient balance and unregistered recipient.
 - Scan both APEX receive QR and external UPI QR; verify destination and amount before approval. External handoff must not alter APEX balance or show APEX payment success.
 - Submit/edit an APEX profile, approve it as admin, purchase each plan, verify expiry and activation from the database. Duplicate verification must not extend membership again.

@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAppStore } from '@/store/useAppStore';
-import { auth } from '@/firebase.config';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -19,6 +18,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let socketInstance: Socket | null = null;
+    let retry: ReturnType<typeof setTimeout> | undefined;
 
     const connectWithAuth = async () => {
       if (!user) return; // Don't connect if not logged in
@@ -39,9 +39,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         }
 
         socketInstance = io(socketUrl, {
-          transports: ['websocket'],
+          transports: ['polling', 'websocket'],
           autoConnect: true,
-          auth: { token } // Transmit token for backend verification
+          auth: callback => callback({ token: localStorage.getItem('apex_token') })
         });
 
         socketInstance.on('connect', () => {
@@ -51,6 +51,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         socketInstance.on('connect_error', (err) => {
           // Suppress verbose connection timeout errors in console
           setIsConnected(false);
+          // Authentication rejection stops Socket.IO's automatic retries. A refreshed
+          // HTTP session may provide a new JWT while polling keeps the UI current.
+          if (socketInstance && !socketInstance.active) {
+            clearTimeout(retry);
+            retry = setTimeout(() => socketInstance?.connect(), 10000);
+          }
         });
 
         socketInstance.on('disconnect', () => {
@@ -66,11 +72,13 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     connectWithAuth();
 
     return () => {
+      clearTimeout(retry);
       if (socketInstance) {
         socketInstance.disconnect();
       }
+      setSocket(null); setIsConnected(false);
     };
-  }, [user]); // Re-run connection logic if the user logs in or out
+  }, [user?._id, user?.uid]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

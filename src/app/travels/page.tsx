@@ -7,6 +7,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { useSocket } from '@/context/SocketContext';
 import { CabLocation, CabQuote, CabRide, cabError, payForCab } from '@/services/cabs';
 import MapboxSearch from '@/components/MapboxSearch';
+import { gpsAddress, movedMetres, reversePickup } from '@/services/geocoding';
 const TravelsMap = dynamic(() => import('@/components/TravelsMap'), { ssr: false, loading: () => <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-600" role="status">Loading map...</div> });
 const ArrowLeft = (_props: { size?: number }) => <i className="fa-solid fa-arrow-left" aria-hidden="true" />;
 const LocateFixed = (_props: { size?: number }) => <i className="fa-solid fa-location-crosshairs" aria-hidden="true" />;
@@ -30,6 +31,19 @@ export default function Page() {
   const [history, setHistory] = useState<CabRide[] | null>(null);
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [expanded, setExpanded] = useState(true);
+  const [locating, setLocating] = useState(false);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const gpsWatch = useRef<number | null>(null);
+  const gpsRequest = useRef<AbortController | null>(null);
+  const gpsPoint = useRef<{ lat: number; lng: number } | null>(null);
+  const gpsGeneration = useRef(0);
+  const stopGps = () => {
+    ++gpsGeneration.current;
+    if (gpsWatch.current !== null) navigator.geolocation?.clearWatch(gpsWatch.current);
+    gpsWatch.current = null; gpsRequest.current?.abort(); gpsPoint.current = null;
+  };
+  useEffect(() => () => stopGps(), []);
+  useEffect(() => { if (ride) { stopGps(); setLocating(false); setGpsAccuracy(null); } }, [ride?._id]);
   const rideRef = useRef<CabRide | null>(null);
   const rideRevision = useRef(0);
   const showRide = (next: CabRide | null) => {
@@ -48,6 +62,7 @@ export default function Page() {
     } catch (e) { if (revision === rideRevision.current) setError(cabError(e)); }
   };
   useEffect(() => {
+    stopGps(); setLocating(false); setGpsAccuracy(null);
     showRide(null); setQuote(null); setHistory(null); setDriverLocation(null);
     if (!user?.uid) return;
     void refresh();
@@ -92,11 +107,35 @@ export default function Page() {
   };
   const locate = () => {
     if (!navigator.geolocation) { setError('Location is unavailable. Select a pickup address.'); return; }
-    setBusy(true);
-    navigator.geolocation.getCurrentPosition(position => {
-      const p = { lat: position.coords.latitude, lng: position.coords.longitude, address: 'Current GPS pickup' };
-      setPickup(p); setPickupText(p.address); setBusy(false);
-    }, () => { setBusy(false); setError('Location permission denied. Select a pickup address.'); }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    stopGps(); setError(''); setLocating(true); setPickup(null); setPickupText(''); setGpsAccuracy(null);
+    const generation = gpsGeneration.current;
+    gpsWatch.current = navigator.geolocation.watchPosition(async position => {
+      if (generation !== gpsGeneration.current) return;
+      const p = { lat: position.coords.latitude, lng: position.coords.longitude };
+      setGpsAccuracy(Math.round(position.coords.accuracy));
+      if (gpsPoint.current && movedMetres(gpsPoint.current, p) < 25) return;
+      gpsPoint.current = p;
+      gpsRequest.current?.abort();
+      const controller = new AbortController(); gpsRequest.current = controller;
+      setPickup(null); setPickupText(gpsAddress(p.lat, p.lng)); setLocating(true);
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      try {
+        const resolved = await reversePickup(p.lat, p.lng, controller.signal);
+        if (generation !== gpsGeneration.current || gpsRequest.current !== controller) return;
+        setPickup(resolved); setPickupText(resolved.address); setError('');
+      } catch {
+        if (generation !== gpsGeneration.current || gpsRequest.current !== controller) return;
+        gpsPoint.current = null;
+        setError('Could not resolve your GPS address. Tap location again or select a pickup address.');
+      } finally {
+        clearTimeout(timeout);
+        if (generation === gpsGeneration.current && gpsRequest.current === controller) setLocating(false);
+      }
+    }, issue => {
+      if (generation !== gpsGeneration.current) return;
+      stopGps(); setLocating(false);
+      setError(issue.code === 1 ? 'Location permission denied. Select a pickup address.' : 'GPS is unavailable. Try again or select a pickup address.');
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
   };
   const terminal = ride && ['completed', 'cancelled'].includes(ride.status);
   const paid = ride?.paymentStatus === 'paid';
@@ -131,13 +170,16 @@ export default function Page() {
         {terminal && (ride.status === 'cancelled' || paid) && <button className="border rounded-lg p-3 w-full" onClick={() => { showRide(null); setDriverLocation(null); setPickup(null); setDropoff(null); setPickupText(''); setDropoffText(''); }}>Book another cab</button>}
         <button className="inline-flex w-10 h-10 items-center justify-center" title="Refresh trip" aria-label="Refresh trip" onClick={() => void refresh()}><RefreshCw size={20} /></button>
       </> : <>
-        <div className="flex items-center gap-3"><MapboxSearch placeholder="Pickup in Visakhapatnam" value={pickupText} onChange={value => { setPickupText(value); setPickup(null); }} onSelect={setPickup} /><button className="inline-flex w-10 h-10 items-center justify-center shrink-0" disabled={busy} title="Use current location" aria-label="Use current location" onClick={locate}><LocateFixed size={24} /></button></div>
-        <MapboxSearch placeholder="Destination in Visakhapatnam" value={dropoffText} onChange={value => { setDropoffText(value); setDropoff(null); }} onSelect={setDropoff} />
+        <div className="flex items-center gap-3"><MapboxSearch placeholder="Pickup in Visakhapatnam" value={pickupText} resolved={!!pickup || gpsAccuracy !== null} disabled={busy} onChange={value => { stopGps(); setLocating(false); setGpsAccuracy(null); setPickupText(value); setPickup(null); }} onSelect={setPickup} /><button className="inline-flex w-10 h-10 items-center justify-center shrink-0" disabled={busy || locating} title="Use current location" aria-label="Use current location" onClick={locate}><LocateFixed size={24} /></button></div>
+        {pickup && gpsAccuracy !== null && <p className="break-words text-xs text-gray-600">{pickup.address}</p>}
+        {(locating || gpsAccuracy !== null) && <p role="status" className="text-xs text-gray-500">{locating ? 'Finding your address...' : `Live GPS / accuracy about ${gpsAccuracy} m`}</p>}
+        <MapboxSearch placeholder="Destination in Visakhapatnam" value={dropoffText} resolved={!!dropoff} disabled={busy} onChange={value => { setDropoffText(value); setDropoff(null); }} onSelect={setDropoff} />
         <fieldset className="flex gap-3"><legend className="mb-2 text-xs font-bold text-gray-500">Choose Your Cab</legend>{(['mini', 'xl'] as const).map(type => <label className={'flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-xl border-2 p-3 ' + (vehicle === type ? 'border-violet-500 bg-violet-50' : 'border-gray-100 bg-white')} key={type}><input className="sr-only" type="radio" name="vehicle" checked={vehicle === type} onChange={() => setVehicle(type)} /><i aria-hidden="true" className={'fas text-2xl ' + (type === 'mini' ? 'fa-car-side text-violet-600' : 'fa-taxi text-amber-500')} /><span className="min-w-0"><strong className="block text-sm text-gray-900">{type === 'mini' ? 'Mini' : 'XL'}</strong><span className="block text-xs text-gray-500">{quote ? 'INR ' + quote.fares[type] : 'Select a route'}</span></span></label>)}</fieldset>
         <fieldset className="grid grid-cols-2 gap-2 text-xs"><legend className="mb-2 text-xs font-bold text-gray-500">Payment</legend>{(['cash', 'online'] as const).map(type => <label className="flex items-center gap-2 rounded-lg bg-gray-50 p-3" key={type}><input type="radio" name="payment" checked={method === type} onChange={() => setMethod(type)} /><span>{type === 'cash' ? 'Cash to driver' : 'Online after trip'}</span></label>)}</fieldset>
         {quote && <p className="text-sm text-gray-600">{(quote.distance / 1000).toFixed(1)} km / {Math.ceil(quote.duration / 60)} min estimated trip</p>}
         {!quote && pickup && dropoff && !quoting && <button onClick={() => setPickup({ ...pickup })} className="underline">Refresh route</button>}
-        <button disabled={busy || !quote || quoting || !user?.uid} className="w-full bg-violet-800 text-white p-3 rounded-lg disabled:opacity-40" onClick={() => void run(async () => {
+        <button disabled={busy || locating || !quote || quoting || !user?.uid} className="w-full bg-violet-800 text-white p-3 rounded-lg disabled:opacity-40" onClick={() => void run(async () => {
+          stopGps(); setGpsAccuracy(null);
           const { data } = await api.post('/travels/rides', { quoteId: quote!._id, vehicleType: vehicle, paymentMethod: method });
           showRide(data.ride);
         })}>{busy ? 'Please wait...' : quoting ? 'Calculating fare...' : 'Book cab'}</button>

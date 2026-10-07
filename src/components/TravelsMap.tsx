@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Map, { Marker, Source, Layer } from 'react-map-gl/mapbox';
 import type { MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { mapboxToken } from '@/services/geocoding';
 
 interface TravelsMapProps {
   cabLocation: { lat: number; lng: number } | null;
@@ -24,17 +25,21 @@ export default function TravelsMap({ cabLocation, userLocation, destination, rou
   // Default to Vizag coords if no user or cab yet
   const centerLat = cabLocation ? cabLocation.lat : userLocation ? userLocation.lat : 17.6868;
   const centerLng = cabLocation ? cabLocation.lng : userLocation ? userLocation.lng : 83.2185;
+  const cameraPadding = () => {
+    const height = mapRef.current?.getMap().getContainer().clientHeight || window.innerHeight;
+    return window.innerWidth >= 768 ? { top: 90, right: 40, bottom: 40, left: 430 } : { top: 90, right: 30, bottom: Math.round(height * 0.68), left: 30 };
+  };
 
   // Recenter map smoothly when location changes
   useEffect(() => {
-    if (mapRef.current) {
+    if (mapReady && mapRef.current) {
         if (cabLocation) {
-            mapRef.current.flyTo({ center: [cabLocation.lng, cabLocation.lat], duration: 1000 });
+            mapRef.current.flyTo({ center: [cabLocation.lng, cabLocation.lat], padding: cameraPadding(), duration: 1000 });
         } else if (userLocation) {
-            mapRef.current.flyTo({ center: [userLocation.lng, userLocation.lat], duration: 1000 });
+            mapRef.current.flyTo({ center: [userLocation.lng, userLocation.lat], padding: cameraPadding(), duration: 1000 });
         }
     }
-  }, [cabLocation, userLocation]);
+  }, [cabLocation, userLocation, mapReady]);
 
   useEffect(() => {
     const points = routeGeometry?.coordinates;
@@ -42,11 +47,9 @@ export default function TravelsMap({ cabLocation, userLocation, destination, rou
     const longitudes = points.map((p: number[]) => p[0]);
     const latitudes = points.map((p: number[]) => p[1]);
     mapRef.current.fitBounds([[Math.min(...longitudes), Math.min(...latitudes)], [Math.max(...longitudes), Math.max(...latitudes)]], {
-      padding: { top: 90, right: 45, bottom: Math.min(window.innerHeight * 0.45, 300), left: 45 }, duration: 800, maxZoom: 16
+      padding: cameraPadding(), duration: 800, maxZoom: 16
     });
   }, [mapReady, routeGeometry]);
-
-  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || ["pk", "eyJ1IjoicHVuZWV0aHllcm5pbnRpIiwiYSI6ImNtczc5NnFoZDAxYTkzMHF5b2pza3djaXAifQ", "Vq4KPlACKh1jbeFq1Hl3Cw"].join(".");
 
   if (!mapboxToken || mapError) return <div role="status" className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-600 p-4 text-center">Map unavailable. Your trip details remain below.</div>;
 
