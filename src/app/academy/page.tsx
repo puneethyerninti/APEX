@@ -5,6 +5,7 @@ import Link from 'next/link';
 import AutoCarousel from '@/components/AutoCarousel';
 import { api } from '@/services/api';
 import { loadRazorpay } from '@/services/razorpay';
+import { assertServiceCheckoutAllowed } from '@/services/checkoutPolicy';
 import { useAppStore } from '@/store/useAppStore';
 
 export default function Page() {
@@ -23,12 +24,20 @@ export default function Page() {
   }, []);
 
   const handleEnroll = (name: string, price: string) => {
+      try { assertServiceCheckoutAllowed('academy_enrollment'); } catch (error: any) {
+          window.dispatchEvent(new CustomEvent('showToast', { detail: { message: error.message, type: 'warning' } }));
+          return;
+      }
       setEnrollCourse({name, price});
       setIsSuccess(false);
   };
 
   const handlePayment = async (e: React.FormEvent) => {
       e.preventDefault();
+      try { assertServiceCheckoutAllowed('academy_enrollment'); } catch (error: any) {
+          window.dispatchEvent(new CustomEvent('showToast', { detail: { message: error.message, type: 'warning' } }));
+          return;
+      }
       if (!user?.uid || !enrollCourse) {
           window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please login to continue', type: 'warning' } }));
           return;

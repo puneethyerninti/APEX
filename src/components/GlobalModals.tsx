@@ -5,13 +5,15 @@ import { useAppStore } from '@/store/useAppStore';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
 import { loadRazorpay } from '@/services/razorpay';
-import { db } from '@/firebase.config';
+import { assertServiceCheckoutAllowed, digitalCheckoutCategories, digitalCheckoutUnavailable, usesNativeBilling } from '@/services/checkoutPolicy';
 // doc, setDoc removed as they are no longer used for profile
 
 export default function GlobalModals() {
     const [modal, setModal] = useState<string | null>(null);
     const [modalData, setModalData] = useState<any>(null);
     const [checkoutStep, setCheckoutStep] = useState<'methods' | 'qr' | 'processing'>('methods');
+    const [nativeBilling, setNativeBilling] = useState(process.env.NEXT_PUBLIC_DISTRIBUTION === 'google-play');
+    useEffect(() => setNativeBilling(usesNativeBilling()), []);
     
     // Profile Edit State
     const [editName, setEditName] = useState('');
@@ -19,9 +21,6 @@ export default function GlobalModals() {
     const [editProfilePicture, setEditProfilePicture] = useState('');
     
     // Global state
-    const walletBalance = useAppStore((state) => state.walletBalance);
-    const deductMoney = useAppStore((state) => state.deductMoney);
-    const addMoney = useAppStore((state) => state.addMoney);
     const user = useAppStore((state) => state.user);
     const updateUserProfile = useAppStore((state) => state.updateUserProfile);
     const { logout } = useAuth();
@@ -43,6 +42,8 @@ export default function GlobalModals() {
     }, []);
 
     if (!modal) return null;
+    const checkoutCategory = modalData?.category || (modalData?.plan?.includes('Matrimony') ? 'matrimony' : modalData?.metadata?.type ? 'travel_booking' : 'subscription');
+    const checkoutBlocked = nativeBilling && digitalCheckoutCategories.includes(checkoutCategory);
 
     const handleSaveProfile = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -78,19 +79,19 @@ export default function GlobalModals() {
     };
 
     const handleCheckout = async () => {
+        if (modalData?.plan === 'Wallet Top-up' || ['add_money', 'wallet_recharge'].includes(modalData?.category)) {
+            window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Wallet top-ups are paused. Your existing balance remains recorded.', type: 'warning' } }));
+            setModal(null);
+            return;
+        }
         setCheckoutStep('processing');
         try {
             if (user?.uid) {
                 const amtStr = modalData?.amount || '0';
                 const numericAmt = parseInt(amtStr.toString().replace(/[^0-9]/g, ''), 10) || 0;
                 
-                const isWalletTopup = modalData?.plan === 'Wallet Top-up';
-                let category = 'subscription';
-                if (modalData?.plan?.includes('Matrimony')) category = 'matrimony';
-                else if (isWalletTopup) category = 'add_money';
-                else if (modalData?.metadata?.type) category = 'travel_booking'; // We'll assume if there is a type it's travel, we will fix travel page to pass correct category or we just rely on page doing it. Wait, `category` is passed directly in some cases, let's just use `modalData?.category` if it exists.
-                
-                const actualCategory = modalData?.category || category;
+                const actualCategory = checkoutCategory;
+                assertServiceCheckoutAllowed(actualCategory);
                 
                 // For metadata, we merge plan and other things
                 const metadata = {
@@ -178,18 +179,6 @@ export default function GlobalModals() {
         }
     };
 
-    const handleAddMoney = async () => {
-        const amount = window.prompt("Enter amount to add to wallet (₹):", "500");
-        if (!amount || isNaN(parseInt(amount)) || parseInt(amount) <= 0) return;
-        
-        setModal('checkout');
-        setModalData({
-            amount: amount,
-            plan: 'Wallet Top-up',
-            category: 'add_money'
-        });
-    };
-
     return (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center">
             <div className="bg-white w-full max-w-md max-h-[80vh] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col animate-[slideUp_0.3s_ease-out]">
@@ -216,13 +205,13 @@ export default function GlobalModals() {
 
                             {checkoutStep === 'methods' && (
                                 <div className="mt-4 animate-[fadeIn_0.3s_ease-out]">
-                                    <button onClick={handleCheckout} className="w-full py-4 bg-violet-600 text-white font-bold rounded-xl shadow-lg shadow-violet-600/30 hover:bg-violet-700 transition-all flex items-center justify-center gap-2">
+                                    <button disabled={checkoutBlocked} onClick={handleCheckout} className="w-full py-4 bg-violet-600 text-white font-bold rounded-xl shadow-lg shadow-violet-600/30 hover:bg-violet-700 transition-all flex items-center justify-center gap-2 disabled:opacity-40">
                                         <i className="fa-solid fa-lock text-sm"></i>
                                         Proceed to Pay Securely
                                     </button>
-                                    <p className="text-[10px] text-gray-400 text-center mt-3 flex items-center justify-center gap-1">
+                                    {checkoutBlocked ? <p role="status" className="mt-3 text-center text-xs text-gray-600">{digitalCheckoutUnavailable}</p> : <p className="text-[10px] text-gray-400 text-center mt-3 flex items-center justify-center gap-1">
                                         <i className="fa-solid fa-shield-halved"></i> Payments are processed securely via Razorpay
-                                    </p>
+                                    </p>}
                                 </div>
                             )}
 

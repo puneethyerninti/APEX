@@ -2,10 +2,12 @@
 
 ## Real capabilities
 
-- Razorpay checkout collects captured payments for wallet top-ups and APEX memberships.
-- APEX wallet transfers work only between users who have signed into APEX with verified mobile OTP. Debit, credit, both ledger entries and the duplicate-transfer reference commit together in MongoDB.
+- Razorpay checkout remains available for supported APEX service purchases. New `add_money` and `wallet_recharge` orders are rejected server-side, including requests from cached older apps. Existing captured top-up payments still reconcile; disabling deposits must not lose customer funds.
+- New APEX wallet transfers and direct wallet spending are paused. The old transfer endpoint can only return an already committed, authenticated owner's matching receipt; it cannot create a new debit or credit. Previous balances and APEX transaction history remain visible and are not erased or automatically refunded.
 - External UPI QR/ID payments open a bank/UPI app. APEX does not debit its wallet, record external payment success, or know that bank payment's outcome. Check the bank app for confirmation.
-- On desktop, entering an external UPI ID and amount displays a locally generated payment QR for a phone's bank/UPI app. Receive QRs are also generated locally, without sending the receiver's phone number to a third-party QR-image server. These are not external APEX wallet payouts.
+- On desktop/iOS, entering an external UPI ID and amount displays a locally generated payment QR to scan directly from another device's bank/UPI app. On Android, Continue in UPI app uses direct intent rather than a gallery QR. The receiving app's restrictions still apply; no handoff is a confirmed receipt.
+- Receive QRs use a bank-issued UPI ID entered and ownership-confirmed by the user, not an invented address or APEX wallet QR. APEX does not verify bank ownership or link a bank account. The QR is generated locally and incoming payments must be checked in the bank app.
+- QR parsing rejects ambiguous duplicate parameters and signed QRs, preserves merchant routing/references, and keeps fixed amounts/minimums intact. Signed QRs should be scanned directly in the bank app.
 - Bank withdrawals and external wallet payouts are unavailable with the currently configured standard Razorpay product. An approved payout/regulated wallet integration is required before enabling them.
 - Complete Profile opens https://anandmatrimony.co.in/. No Anand API, shared login, payment or profile synchronization has been provided. APEX membership purchases apply only to APEX profiles and messaging.
 
@@ -23,6 +25,17 @@
 6. Audit legacy matrimony profiles and paid memberships manually before migration: older records did not reliably bind profiles to a verified owner and may have fabricated defaults. Do not bulk-enable them. New owner-bound submissions are isolated by `ownerVerified: true`.
 7. Rebuild and distribute the Android app: native UPI intent support cannot arrive through Vercel alone. Test on a real Android phone with installed UPI apps. The launcher only confirms that an app opened, never that a payment succeeded.
 
+### Android release gate
+
+For the first Google Play release, use the signed AAB workflow and unresolved release gates in [PLAY_STORE_RELEASE.md](PLAY_STORE_RELEASE.md). This is not a certification that the whole application is ready for Play production.
+
+- The APK bundles the static `out` export; it does not automatically load the deployed Vercel screens. Backend protections apply to older APKs, but the revised UPI screen requires an app update.
+- Build the export from the root application's production source with the intended public Firebase/API configuration. Do not package an isolated test build, substitute a different Firebase project, or embed any server-side secrets.
+- Sync that production export into the root Android project, which registers `UpiLauncherPlugin` and declares UPI intent visibility and camera permission. Do not use the unrelated nested `apex-app` Android project for this release.
+- An in-place update to an installed APK needs its original app-signing key and a higher `versionCode`. A first Play upload can use a new upload key with Play App Signing, but a new app-signing identity does not replace differently signed sideloaded installations. Do not assume those are interchangeable keys.
+- Release only after camera permission, recipient verification, UPI app choice, cancellation, no installed UPI app, return to APEX, and an explicitly authorized small bank payment are checked on a real phone. APEX must not record an external bank payment as completed.
+- Receiving UPI apps can reject a personal intent or apply their own restrictions. This handoff is not bank-account linking or a PhonePe-style approved UPI integration. If a target app rejects it, pay by entering the recipient or scanning their original QR directly in that UPI app; do not fall back to collecting a wallet deposit.
+
 ## Acceptance checks before releasing to customers
 
 ### Location and chat update
@@ -34,8 +47,8 @@
 - With two separately authenticated, approved APEX profiles and valid memberships, verify two-way messages, unread counts, read receipts, reconnect recovery, older history, and retry after a lost response. An expired or unapproved account must not gain chat access.
 - Local isolated tests do not certify production Firebase/S3 configuration, live payment settlement, device GPS, or an actual driver booking. No test profiles, simulated GPS or fixture endpoints are deployed.
 
-- Two verified APEX users: top up, transfer, retry the same reference, reload history, verify both balances and matching real ledger entries. Test insufficient balance and unregistered recipient.
-- Scan both APEX receive QR and external UPI QR; verify destination and amount before approval. External handoff must not alter APEX balance or show APEX payment success.
+- Reconcile existing top-ups against captured Razorpay payments, wallet credits, and historical transfers before arranging any customer refund. New funding/transfer requests must fail without ledger or balance changes. Retry an old completed reference only to retrieve its original receipt.
+- Scan an external UPI QR and enter a UPI ID; verify the actual recipient name in the bank app before authorizing. Old APEX wallet QRs must be rejected. External handoff must not alter APEX balance or show APEX payment success. Test cancellation, no installed UPI app, fixed-amount merchant QR, denied camera permission, and real Android intents.
 - Submit/edit an APEX profile, approve it as admin, purchase each plan, verify expiry and activation from the database. Duplicate verification must not extend membership again.
 - Verify chat room isolation, saved messages, refresh recovery, and inactive membership rejection.
 - Simulate a dropped verification response/restart and ensure captured wallet/membership payments reconcile without charging twice. Recovery batches use backoff; manual-review records still need support attention.

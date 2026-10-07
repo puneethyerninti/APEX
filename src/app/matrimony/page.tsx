@@ -3,6 +3,7 @@ import { useCallback, useContext, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/services/api';
 import { loadRazorpay } from '@/services/razorpay';
+import { assertServiceCheckoutAllowed, canUseServiceCheckout } from '@/services/checkoutPolicy';
 import { useAppStore } from '@/store/useAppStore';
 import { SocketContext } from '@/context/SocketContext';
 import MatrimonyChat from '@/components/MatrimonyChat';
@@ -30,6 +31,8 @@ export default function MatrimonyPage() {
   const [chat, setChat] = useState<any>(null);
   const [inbox, setInbox] = useState<any[] | null>(null);
   const [inboxLoaded, setInboxLoaded] = useState(false);
+  const [digitalCheckout, setDigitalCheckout] = useState(process.env.NEXT_PUBLIC_DISTRIBUTION !== 'google-play');
+  useEffect(() => setDigitalCheckout(canUseServiceCheckout('matrimony')), []);
   const refresh = useCallback(async () => {
     if (!uid) return;
     const own = await api.get('/matrimony/profiles/me');
@@ -84,6 +87,7 @@ export default function MatrimonyPage() {
   }
   async function checkout(plan: typeof plans[number]) {
     if (busy) return;
+    try { assertServiceCheckoutAllowed('matrimony'); } catch (e) { setError(errorText(e)); return; }
     if (!uid) { setError('Sign in before purchasing a membership.'); return; }
     if (!loaded) { setError('Your profile is still being refreshed.'); return; }
     if (profile?.status !== 'approved') {
@@ -124,7 +128,7 @@ export default function MatrimonyPage() {
         <p className="mt-1 text-xs text-rose-100">Begin your journey with Anand Matrimony.</p>
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           <a href="https://anandmatrimony.co.in/" target="_blank" rel="noopener noreferrer" className="rounded-full bg-white px-4 py-2 text-xs font-bold text-rose-600">Complete Profile</a>
-          <button onClick={() => document.getElementById('prime-plans')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="rounded-full border border-white/40 px-4 py-2 text-xs font-bold">Upgrade</button>
+          {digitalCheckout && <button onClick={() => document.getElementById('prime-plans')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="rounded-full border border-white/40 px-4 py-2 text-xs font-bold">Upgrade</button>}
         </div>
       </section>
     </div>
@@ -140,7 +144,7 @@ export default function MatrimonyPage() {
       {filterPanel && <label className="mt-4 block max-w-sm text-sm font-semibold">{filterPanel === 'location' ? 'City' : filterPanel === 'religion' ? 'Religion' : 'Community'}<select aria-label={filterPanel} className="mt-2 block w-full rounded-lg border border-gray-200 bg-white p-3" value={(filters as any)[filterPanel]} onChange={e => setFilters({ ...filters, [filterPanel]: e.target.value })}><option value="">All {filterPanel === 'location' ? 'cities' : filterPanel}</option>{[...new Set(matches.map(p => p[filterPanel]).filter(Boolean))].sort().map(value => <option key={value} value={value}>{value}</option>)}</select></label>}
       {(filters.community || filters.religion || filters.location || filters.premium) && <button onClick={() => { setFilters({ community: '', religion: '', location: '', premium: false }); setFilterPanel(''); }} className="mt-3 text-sm font-semibold text-rose-600">Clear filters</button>}
     </section>
-    <section id="prime-plans" className="mx-auto max-w-5xl scroll-mt-20 px-3 pb-4 md:px-4">
+    {digitalCheckout && <section id="prime-plans" className="mx-auto max-w-5xl scroll-mt-20 px-3 pb-4 md:px-4">
       <h2 className="mb-2 text-[11px] font-extrabold uppercase text-gray-500">Prime Plans</h2>
       <div className="grid grid-cols-3 gap-2">{plans.map((plan, index) => <div key={plan.name} className={'relative flex min-w-0 flex-col rounded-lg border p-2.5 shadow-sm sm:p-3 ' + (index === 1 ? 'border-yellow-200 bg-yellow-50' : index === 2 ? 'border-sky-100 bg-sky-50' : 'border-gray-100 bg-white')}>
         {index === 1 && <span className="absolute right-1.5 top-1.5 text-[8px] font-bold text-rose-600">Popular</span>}
@@ -148,7 +152,7 @@ export default function MatrimonyPage() {
         <h3 className="text-xs font-extrabold">{plan.name}</h3><p className="mt-0.5 text-[10px] text-gray-500">{plan.months} months</p><p className="my-2 text-sm font-extrabold text-rose-600">{'\u20b9'}{plan.amount.toLocaleString('en-IN')}</p>
         <button disabled={busy || (!!uid && !loaded)} onClick={() => void checkout(plan)} className="mt-auto min-h-9 w-full rounded-lg bg-rose-600 px-1 py-2 text-[10px] font-bold text-white disabled:opacity-40">{busy ? 'Processing' : 'Purchase'}</button>
       </div>)}</div>
-    </section>
+    </section>}
     {!uid ? <p className="mx-auto max-w-5xl px-3 text-xs"><Link href="/login" className="text-pink-700 underline">Sign in</Link> to view APEX profiles.</p> : <div className="mx-auto max-w-5xl px-3 md:px-4">
       <section id="apex-profile" className="scroll-mt-20 border-y border-gray-200 py-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-sm font-bold">My APEX Profile</h2><p className="mt-1 text-[11px] text-gray-500">{!loaded ? 'Updating profile' : profile ? 'Review: ' + profile.status : 'Not submitted'}</p>{profile?.subscription?.isActive && <p className="text-[11px] text-rose-600">{profile.subscription.plan} until {new Date(profile.subscription.expiresAt).toLocaleDateString()}</p>}</div><button disabled={!loaded || busy} onClick={() => { setForm(Object.fromEntries(Object.keys(empty).map(key => [key, String(profile?.[key] || '')])) as typeof empty); setPhotos([]); setEditing(!editing); }} className="rounded-full bg-white px-3 py-2 text-[11px] font-bold text-rose-600 shadow-sm disabled:opacity-40">{editing ? 'Cancel' : 'Edit APEX Profile'}</button></div>
         {notice && <p role="status" className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{notice}</p>}

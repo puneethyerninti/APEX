@@ -1,826 +1,181 @@
 "use client";
 
-import React, { useState, useEffect, useRef, Suspense, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { api } from '@/services/api';
-import { loadRazorpay } from '@/services/razorpay';
-import { parsePaymentPayload, makeUpiIntent, validVpa, validAmount } from '@/services/paymentPayload';
+import { PaymentPayee, parsePaymentPayload, makeUpiIntent, makeReceiveQr, validAmount } from '@/services/paymentPayload';
 import { openUpiApp } from '@/services/upiLauncher';
-import { transferWallet, pendingWalletTransfer } from '@/services/walletTransfer';
+import { pendingWalletTransfer, transferWallet } from '@/services/walletTransfer';
 import { useAppStore } from '@/store/useAppStore';
 import { useSocket } from '@/context/SocketContext';
 import PaymentQr from '@/components/PaymentQr';
 
-interface ScannedPayee {
-    pa: string;
-    pn: string;
-    am?: string;
-    tn?: string;
-    cu?: string;
-    raw: string;
-    isApex?: boolean;
-}
-
 interface TransactionItem {
-    _id: string;
-    amount: number;
-    type: 'credit' | 'debit';
-    category: string;
-    referenceId?: string;
-    status: 'pending' | 'completed' | 'failed' | 'refunded';
-    createdAt: string;
+  _id: string; amount: number; type: 'credit' | 'debit'; category: string;
+  referenceId?: string; status: string; createdAt: string;
 }
-
-function PaymentContent() {
-    const user = useAppStore((state) => state.user);
-    const walletBalance = useAppStore((state) => state.walletBalance);
-    const setWalletBalance = useAppStore((state) => state.setWalletBalance);
-    const { socket } = useSocket();
-
-    const searchParams = useSearchParams();
-    const autoScan = searchParams.get('scan') === 'true';
-
-    const [isBalanceVisible, setIsBalanceVisible] = useState(true);
-    const [transactions, setTransactions] = useState<TransactionItem[]>([]);
-    const [txLoading, setTxLoading] = useState(false);
-    const [syncError, setSyncError] = useState('');
-    const [pendingPayment, setPendingPayment] = useState('');
-    const [hasPendingTransfer, setHasPendingTransfer] = useState(false);
-    useEffect(() => {
-        if (!user) return;
-        try { setHasPendingTransfer(!!pendingWalletTransfer(user.uid || user._id!)); }
-        catch (e: any) { setSyncError(e.message); }
-    }, [user, transactions]);
-    const [activeTab, setActiveTab] = useState<'all' | 'debit' | 'credit'>('all');
-
-    const [isScannerOpen, setIsScannerOpen] = useState(autoScan);
-    const [scannerError, setScannerError] = useState<string | null>(null);
-    const scannerRef = useRef<any>(null);
-    const scannerGeneration = useRef(0);
-
-    const [scannedPayee, setScannedPayee] = useState<ScannedPayee | null>(null);
-    const [payAmount, setPayAmount] = useState('');
-    const [payNote, setPayNote] = useState('');
-    const [payLoading, setPayLoading] = useState(false);
-    const [paymentSuccess, setPaymentSuccess] = useState<any | null>(null);
-
-    const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
-    const [addAmount, setAddAmount] = useState('500');
-    const [addLoading, setAddLoading] = useState(false);
-
-    const [isSendMoneyOpen, setIsSendMoneyOpen] = useState(false);
-    const [sendPhone, setSendPhone] = useState('');
-    const [sendAmount, setSendAmount] = useState('');
-    const [sendNote, setSendNote] = useState('');
-    const [sendLoading, setSendLoading] = useState(false);
-
-    const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
-    const [withdrawMethod, setWithdrawMethod] = useState<'UPI' | 'IMPS'>('UPI');
-    const [withdrawDestination, setWithdrawDestination] = useState('');
-    const [withdrawAmount, setWithdrawAmount] = useState('');
-    const [withdrawLoading, setWithdrawLoading] = useState(false);
-
-    const [isMyQrOpen, setIsMyQrOpen] = useState(false);
-    const [myQrUpi, setMyQrUpi] = useState('');
-
-    const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') => {
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('showToast', { detail: { message, type } }));
-        }
-    };
-
-    const fetchBalance = useCallback(async () => {
-        if (!user) return;
-        try {
-            const res = await api.get(`/finance/wallet?userId=${user.uid || user._id}`);
-            if (res.data?.success && typeof res.data.balance === 'number') {
-                setWalletBalance(res.data.balance);
-            }
-        } catch (err) {
-            setSyncError('Wallet balance could not be refreshed. Retry before making a transfer.');
-            console.error('Failed to sync wallet balance:', err);
-        }
-    }, [user, setWalletBalance]);
-
-    const fetchTransactions = useCallback(async () => {
-        if (!user) return;
-        setTxLoading(true);
-        try {
-            const queryType = activeTab === 'all' ? '' : `&type=${activeTab}`;
-            const res = await api.get(`/finance/transactions?userId=${user.uid || user._id}&limit=20${queryType}`);
-            if (res.data?.success) {
-                setTransactions(res.data.transactions || []);
-                setSyncError('');
-            }
-        } catch (err) {
-            setSyncError('Payment history could not be loaded. Please refresh.');
-            console.error('Failed to fetch transactions:', err);
-        } finally {
-            setTxLoading(false);
-        }
-    }, [user, activeTab]);
-
-    useEffect(() => {
-        fetchBalance();
-        fetchTransactions();
-        const timer = setInterval(() => { if (document.visibilityState === 'visible') { void fetchBalance(); void fetchTransactions(); } }, 10000);
-        return () => clearInterval(timer);
-    }, [fetchBalance, fetchTransactions]);
-
-    useEffect(() => {
-        if (!socket) return;
-        const onWalletUpdate = (data: any) => {
-            if (typeof data.newBalance === 'number') {
-                setWalletBalance(data.newBalance);
-            }
-            if (data.message) {
-                showToast(data.message, 'success');
-            }
-            fetchTransactions();
-        };
-
-        socket.on('wallet_update', onWalletUpdate);
-        return () => {
-            socket.off('wallet_update', onWalletUpdate);
-        };
-    }, [socket, setWalletBalance, fetchTransactions]);
-
-    const parseScannedText = (decodedText: string) => {
-        try {
-            const payee = parsePaymentPayload(decodedText);
-            setScannedPayee(payee); setPayAmount(payee.am || ''); setPayNote(payee.tn || '');
-        } catch (error: any) { showToast(error.message || 'Invalid payment QR.', 'error'); }
-    };
-    const startScanner = async () => {
-        if (scannerRef.current) return;
-        const generation = ++scannerGeneration.current;
-        setIsScannerOpen(true);
-        setScannerError(null);
-
-        setTimeout(async () => {
-            try {
-                const { Html5Qrcode } = await import('html5-qrcode');
-                if (generation !== scannerGeneration.current) return;
-                const html5QrCode = new Html5Qrcode("reader");
-                scannerRef.current = html5QrCode;
-
-                await html5QrCode.start(
-                    { facingMode: "environment" },
-                    { fps: 10, qrbox: { width: 250, height: 250 } },
-                    (decodedText) => {
-                        if (generation !== scannerGeneration.current) return;
-                        stopScanner(html5QrCode);
-                        parseScannedText(decodedText);
-                    },
-                    () => {}
-                );
-                if (generation !== scannerGeneration.current) {
-                    await html5QrCode.stop().catch(() => {});
-                    html5QrCode.clear();
-                }
-            } catch (err: any) {
-                console.error("Scanner access error:", err);
-                if (generation === scannerGeneration.current) {
-                    try { scannerRef.current?.clear(); } catch { /* A failed camera start may already be stopped. */ }
-                    scannerRef.current = null;
-                    setScannerError('Unable to access device camera. Please grant camera permission.');
-                }
-            }
-        }, 50); // Reduced timeout to fix delay issue
-    };
-
-    const stopScanner = async (instance?: any) => {
-        ++scannerGeneration.current;
-        const qrCode = instance || scannerRef.current;
-        scannerRef.current = null;
-        if (qrCode) {
-            try {
-                await qrCode.stop();
-                qrCode.clear();
-            } catch (err) {}
-        }
-        setIsScannerOpen(false);
-    };
-
-    useEffect(() => {
-        if (autoScan) {
-            startScanner();
-        }
-    }, [autoScan]);
-
-    useEffect(() => {
-        return () => {
-            ++scannerGeneration.current;
-            if (scannerRef.current) {
-                scannerRef.current.stop().catch(() => {});
-            }
-        };
-    }, []);
-
-    const handlePayWithWallet = async () => {
-        if (!user || !scannedPayee?.isApex || payLoading) return;
-        const amountNum = Number(payAmount);
-        if (!validAmount(payAmount)) {
-            showToast('Please enter a valid payment amount', 'warning');
-            return;
-        }
-        if (walletBalance < amountNum) {
-            showToast(`Insufficient balance (₹${walletBalance.toFixed(2)}).`, 'error');
-            return;
-        }
-
-        setPayLoading(true);
-        try {
-            const res = await transferWallet({
-                amount: amountNum,
-                recipientPhone: scannedPayee?.pa,
-                note: payNote,
-                userId: user?.uid || user?._id
-            });
-
-            if (res.data?.success) {
-                setWalletBalance(res.data.newBalance);
-                setPaymentSuccess({
-                    amount: amountNum,
-                    payeeName: res.data.recipientName,
-                    payeeVpa: scannedPayee?.pa,
-                    txId: res.data.transaction._id,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                });
-                setScannedPayee(null);
-                fetchTransactions();
-            } else {
-                showToast(res.data?.error || 'Payment failed', 'error');
-            }
-        } catch (error: any) {
-            showToast(error.response?.data?.error || error.message || 'Failed to complete payment', 'error');
-        } finally {
-            setPayLoading(false);
-        }
-    };
-
-    const handlePayWithUpiIntent = async () => {
-        if (!scannedPayee || payLoading) return;
-        if (!/Android|iPhone|iPad/i.test(navigator.userAgent)) {
-            showToast('Use the displayed UPI QR to pay from your phone. No APEX wallet transfer has been made.', 'info');
-            return;
-        }
-        setPayLoading(true);
-        try {
-            await openUpiApp(makeUpiIntent(scannedPayee, payAmount, payNote));
-            showToast('Complete payment in your UPI app. APEX has not confirmed this payment or debited your wallet.', 'info');
-        } catch (error: any) { showToast(error.message || 'Unable to open UPI app.', 'error'); }
-        finally { setPayLoading(false); }
-    };
-
-    const handleAddMoneySubmit = async () => {
-        const amountNum = Number(addAmount);
-        if (!amountNum || amountNum < 1) {
-            showToast('Enter an amount of at least ₹1', 'warning');
-            return;
-        }
-
-        setAddLoading(true);
-        try {
-            const RazorpayCheckout = await loadRazorpay();
-            const orderRes = await api.post('/finance/razorpay/order', {
-                amount: amountNum,
-                userId: user?.uid || user?._id,
-                category: 'add_money',
-                serviceName: 'Wallet Top-up'
-            });
-
-            const { order, keyId } = orderRes.data;
-
-            const options = {
-                key: keyId,
-                amount: order.amount,
-                currency: order.currency,
-                name: "APEX Cash Wallet",
-                description: "Wallet Balance Recharge",
-                order_id: order.id,
-                handler: async function (response: any) {
-                    try {
-                        const verifyRes = await api.post('/finance/razorpay/verify', {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                            amount: amountNum,
-                            userId: user?.uid || user?._id
-                        });
-
-                        if (verifyRes.data?.success) {
-                            showToast(`₹${amountNum} added to your wallet!`, 'success');
-                            setIsAddMoneyOpen(false);
-                            fetchBalance();
-                            fetchTransactions();
-                        }
-                    } catch (e: any) {
-                        setPendingPayment('Payment confirmation is pending. Do not pay again. Payment reference: ' + response.razorpay_payment_id);
-                        showToast(e.response?.data?.error || 'Payment confirmation is pending. Your payment must be reconciled before another top-up.', 'warning');
-                    } finally {
-                        setAddLoading(false);
-                    }
-                },
-                prefill: {
-                    name: user?.name || "APEX User",
-                    contact: user?.phone || ""
-                },
-                theme: { color: "#059669" },
-                modal: {
-                    ondismiss: () => setAddLoading(false)
-                }
-            };
-
-            const rzp = new RazorpayCheckout(options);
-            rzp.open();
-        } catch (err: any) {
-            showToast(err.response?.data?.error || 'Failed to start wallet recharge', 'error');
-            setAddLoading(false);
-        }
-    };
-
-    const handleP2pTransfer = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const amountNum = Number(sendAmount);
-        const cleanPhone = sendPhone.replace(/[^\d]/g, '').slice(-10);
-
-        if (cleanPhone.length !== 10 || !amountNum || amountNum <= 0) {
-            showToast('Please enter a valid phone and amount', 'warning');
-            return;
-        }
-        if (walletBalance < amountNum) {
-            showToast(`Insufficient wallet balance`, 'error');
-            return;
-        }
-
-        setSendLoading(true);
-        try {
-            const res = await transferWallet({
-                recipientPhone: cleanPhone,
-                amount: amountNum,
-                note: sendNote,
-                userId: user?.uid || user?._id
-            });
-
-            if (res.data?.success) {
-                showToast(`₹${amountNum} transferred successfully!`, 'success');
-                setIsSendMoneyOpen(false);
-                setSendPhone('');
-                setSendAmount('');
-                setSendNote('');
-                fetchBalance();
-                fetchTransactions();
-            } else {
-                showToast(res.data?.error || 'Transfer failed', 'error');
-            }
-        } catch (err: any) {
-            showToast(err.response?.data?.error || err.message || 'Failed to transfer funds', 'error');
-        } finally {
-            setSendLoading(false);
-        }
-    };
-
-    const handleWithdrawSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (withdrawMethod !== 'UPI') {
-            showToast('Bank withdrawals are not enabled. Your APEX wallet has not been debited.', 'warning'); return;
-        }
-        try {
-            const pa = withdrawDestination.trim();
-            if (!validVpa(pa)) throw new Error('Enter a valid UPI ID.');
-            setScannedPayee({ pa, pn: pa, raw: 'upi://pay?pa=' + encodeURIComponent(pa) });
-            setPayAmount(withdrawAmount); setPayNote('');
-            setIsWithdrawOpen(false);
-        } catch (error: any) { showToast(error.message, 'error'); }
-    };
-    const handleOpenMyQr = async () => {
-        try {
-            const response = await api.get('/finance/my-qr');
-            setMyQrUpi(response.data.apexUri);
-            setIsMyQrOpen(true);
-        } catch (error: any) {
-            showToast(error.response?.data?.error || 'Unable to load your payment QR.', 'error');
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-gray-50 flex flex-col font-sans pb-24 text-gray-900">
-
-            {/* HEADER */}
-            <div className="sticky top-0 z-40 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between shadow-sm">
-                <div className="flex items-center gap-3">
-                    <Link href="/" className="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-600 transition-colors">
-                        <i className="fa-solid fa-arrow-left text-sm"></i>
-                    </Link>
-                    <h1 className="font-black text-lg text-gray-900">APEX Pay</h1>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={handleOpenMyQr} className="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-700">
-                        <i className="fa-solid fa-qrcode"></i>
-                    </button>
-                    <button onClick={startScanner} className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                        <i className="fa-solid fa-camera text-sm"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div className="p-4 max-w-md mx-auto w-full flex flex-col gap-5">
-                {syncError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-700">{syncError}</p>}
-                {pendingPayment && <p role="status" className="rounded-lg bg-amber-50 p-3 text-amber-800">{pendingPayment}</p>}
-                {hasPendingTransfer && <button disabled={sendLoading} className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-left" onClick={async () => {
-                    if (!user) return;
-                    setSendLoading(true);
-                    try {
-                        const saved = pendingWalletTransfer(user.uid || user._id!);
-                        if (!saved?.payload) throw new Error('Check history and contact support with your saved transfer reference.');
-                        const res = await transferWallet(saved.payload);
-                        if (res.data.success) { setHasPendingTransfer(false); await fetchBalance(); await fetchTransactions(); showToast('Transfer confirmed.', 'success'); }
-                    } catch (e: any) { showToast(e.response?.data?.error || e.message, 'error'); }
-                    finally { setSendLoading(false); }
-                }}>{sendLoading ? 'Checking transfer...' : 'Retry confirmation of pending APEX transfer'}</button>}
-                
-                {/* WALLET CARD */}
-                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
-                    <div className="flex items-center justify-between mb-4">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Available Balance</span>
-                        <button onClick={() => setIsBalanceVisible(!isBalanceVisible)} className="text-gray-400 hover:text-gray-600 text-xs font-bold">
-                            {isBalanceVisible ? 'Hide' : 'Show'}
-                        </button>
-                    </div>
-                    <div className="flex items-baseline gap-1 mb-6">
-                        <span className="text-xl font-black text-gray-400">₹</span>
-                        <span className="text-3xl font-black text-gray-900">
-                            {isBalanceVisible ? walletBalance.toFixed(2) : '••••••'}
-                        </span>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-2">
-                        <button onClick={startScanner} className="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors text-gray-700">
-                            <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
-                                <i className="fa-solid fa-qrcode text-emerald-600"></i>
-                            </div>
-                            <span className="text-[10px] font-bold">Scan</span>
-                        </button>
-                        <button onClick={() => setIsAddMoneyOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors text-gray-700">
-                            <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
-                                <i className="fa-solid fa-plus text-emerald-600"></i>
-                            </div>
-                            <span className="text-[10px] font-bold">Topup</span>
-                        </button>
-                        <button onClick={() => setIsSendMoneyOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors text-gray-700">
-                            <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
-                                <i className="fa-solid fa-paper-plane text-emerald-600"></i>
-                            </div>
-                            <span className="text-[10px] font-bold">To APEX User</span>
-                        </button>
-                        <button onClick={() => setIsWithdrawOpen(true)} className="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors text-gray-700">
-                            <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
-                                <i className="fa-solid fa-building-columns text-emerald-600"></i>
-                            </div>
-                            <span className="text-[10px] font-bold">UPI App</span>
-                        </button>
-                        <button onClick={handleOpenMyQr} className="flex flex-col items-center gap-1.5 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors text-gray-700">
-                            <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
-                                <i className="fa-solid fa-arrow-down-to-bracket text-emerald-600"></i>
-                            </div>
-                            <span className="text-[10px] font-bold">Receive</span>
-                        </button>
-                    </div>
-                </div>
-
-                {/* TRANSACTIONS */}
-                <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col gap-3">
-                    <div className="flex items-center justify-between mb-2">
-                        <h2 className="text-xs font-black uppercase tracking-wider text-gray-400">Recent Transactions</h2>
-                        <button onClick={fetchTransactions} className="text-gray-400 hover:text-gray-600 text-xs"><i className="fa-solid fa-rotate-right"></i></button>
-                    </div>
-
-                    <div className="flex items-center gap-2 mb-2">
-                        <button onClick={() => setActiveTab('all')} className={`text-xs px-3 py-1.5 rounded-lg font-bold ${activeTab === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500'}`}>All</button>
-                        <button onClick={() => setActiveTab('debit')} className={`text-xs px-3 py-1.5 rounded-lg font-bold ${activeTab === 'debit' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500'}`}>Paid</button>
-                        <button onClick={() => setActiveTab('credit')} className={`text-xs px-3 py-1.5 rounded-lg font-bold ${activeTab === 'credit' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500'}`}>Received</button>
-                    </div>
-
-                    <div className="flex flex-col divide-y divide-gray-50 min-h-[200px]">
-                        {transactions.length > 0 ? transactions.map((tx) => (
-                            <div key={tx._id} className="py-3 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm ${tx.type === 'credit' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                                        <i className={`fa-solid ${tx.type === 'credit' ? 'fa-arrow-down' : 'fa-arrow-up'}`}></i>
-                                    </div>
-                                    <div>
-                                        <h4 className="text-xs font-black text-gray-900 truncate max-w-[150px]">{tx.referenceId || 'Transaction'}</h4>
-                                        <p className="text-[10px] text-gray-400 font-semibold">{new Date(tx.createdAt).toLocaleDateString()}</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className={`text-sm font-black ${tx.type === 'credit' ? 'text-emerald-600' : 'text-gray-900'}`}>
-                                        {tx.type === 'credit' ? '+' : '-'} ₹{tx.amount.toFixed(2)}
-                                    </p>
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase">{tx.status}</span>
-                                </div>
-                            </div>
-                        )) : (
-                            <div className="py-8 text-center text-gray-400 text-xs font-bold">No transactions found</div>
-                        )}
-                    </div>
-                </div>
-
-            </div>
-
-            {/* SCANNER OVERLAY */}
-            {isScannerOpen && (
-                <div className="fixed inset-0 z-[100] bg-black flex flex-col animate-[fadeIn_0.2s_ease-out]">
-                    <div className="p-4 flex justify-between items-center bg-black/50 absolute top-0 w-full z-50">
-                        <button onClick={() => stopScanner()} className="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center">
-                            <i className="fa-solid fa-xmark text-lg"></i>
-                        </button>
-                        <h2 className="text-white font-black text-sm">Scan QR Code</h2>
-                        <div className="w-10"></div>
-                    </div>
-                    <div className="flex-1 w-full h-full relative flex items-center justify-center">
-                        <div id="reader" className="w-full max-w-sm h-96 bg-black flex items-center justify-center"></div>
-                        {scannerError && (
-                            <div className="absolute p-4 bg-white text-red-600 rounded-xl max-w-xs text-center mx-4 text-xs font-bold">
-                                {scannerError}
-                            </div>
-                        )}
-                    </div>
-                    <div className="p-4 bg-black/80 absolute bottom-0 w-full z-50 flex flex-col items-center pb-8 border-t border-white/10">
-                        <p className="text-white/70 text-[10px] font-bold mb-3 uppercase tracking-widest">Or enter UPI ID manually</p>
-                        <form onSubmit={(e) => {
-                            e.preventDefault();
-                            const input = (document.getElementById('manual-upi-input') as HTMLInputElement)?.value;
-                            if (input) {
-                                if (!validVpa(input.trim())) { setScannerError('Enter a valid UPI ID.'); return; }
-                                stopScanner();
-                                setScannedPayee(parsePaymentPayload('upi://pay?pa=' + encodeURIComponent(input.trim())));
-                                setPayAmount(''); setPayNote('');
-                            }
-                        }} className="w-full max-w-sm flex gap-2">
-                            <input 
-                                id="manual-upi-input"
-                                type="text" 
-                                placeholder="e.g. name@okhdfc" 
-                                className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500 placeholder-white/40 font-bold"
-                                required 
-                            />
-                            <button type="submit" className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-colors">
-                                Pay
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* PAYMENT SHEET */}
-            {scannedPayee && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-end justify-center animate-[fadeIn_0.2s_ease-out]">
-                    <div className="bg-white w-full max-w-md rounded-t-3xl p-6 flex flex-col gap-5 max-h-[90vh] overflow-y-auto pb-8 animate-[slideUp_0.3s_ease-out]">
-                        <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-emerald-600 text-xl font-black">
-                                    {scannedPayee.pn.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                    <h3 className="font-black text-gray-900 text-base line-clamp-1">{scannedPayee.pn}</h3>
-                                    <p className="text-xs text-gray-500 font-mono truncate max-w-[200px]">{scannedPayee.pa}</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setScannedPayee(null)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">
-                                <i className="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-
-                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Amount</label>
-                            <div className="relative flex items-center">
-                                <span className="absolute left-0 text-2xl font-black text-gray-400">₹</span>
-                                <input
-                                    type="number"
-                                    value={payAmount}
-                                    onChange={(e) => setPayAmount(e.target.value)}
-                                    placeholder="0"
-                                    className="w-full pl-8 py-2 bg-transparent text-3xl font-black text-gray-900 focus:outline-none"
-                                />
-                            </div>
-                        </div>
-
-                        <input
-                            type="text"
-                            value={payNote}
-                            onChange={(e) => setPayNote(e.target.value)}
-                            placeholder="Add a note (optional)"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:border-emerald-500"
-                        />
-
-                        <div className="flex flex-col gap-3">
-                            {!scannedPayee.isApex && validAmount(payAmount) && <div className="border-y border-gray-100 py-3">
-                                <PaymentQr value={makeUpiIntent(scannedPayee, payAmount, payNote)} label="UPI payment QR" />
-                                <p className="mt-2 text-center text-xs text-gray-500">Unconfirmed bank payment. APEX wallet is not debited.</p>
-                            </div>}
-                            {scannedPayee.isApex && (
-                            <button
-                                onClick={handlePayWithWallet}
-                                disabled={payLoading || !payAmount || Number(payAmount) <= 0 || walletBalance < Number(payAmount)}
-                                className={`w-full py-4 rounded-xl font-black flex items-center justify-center gap-2 transition-all ${walletBalance >= Number(payAmount || 0) && Number(payAmount || 0) > 0 ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
-                            >
-                                {payLoading ? 'Processing...' : 'Pay with Wallet'}
-                            </button>
-                            )}
-                            {!scannedPayee.isApex && (
-                            <button
-                                onClick={handlePayWithUpiIntent}
-                                disabled={payLoading || !payAmount || Number(payAmount) <= 0}
-                                className={`w-full py-4 rounded-xl border-2 font-black flex items-center justify-center gap-2 transition-all ${!payAmount || Number(payAmount) <= 0 ? 'border-gray-100 text-gray-400 cursor-not-allowed' : 'border-gray-100 text-gray-700 hover:bg-gray-50 active:scale-[0.98]'}`}
-                            >
-                                Pay with UPI App (GPay/PhonePe)
-                            </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* TOPUP MODAL */}
-            {isAddMoneyOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-end justify-center animate-[fadeIn_0.2s_ease-out]">
-                    <div className="bg-white w-full max-w-md rounded-t-3xl p-6 flex flex-col gap-4 pb-8 animate-[slideUp_0.3s_ease-out]">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="font-black text-gray-900 text-lg">Topup Wallet</h3>
-                            <button onClick={() => setIsAddMoneyOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">
-                                <i className="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            <div className="relative flex items-center">
-                                <span className="absolute left-0 text-2xl font-black text-gray-400">₹</span>
-                                <input
-                                    type="number"
-                                    value={addAmount}
-                                    onChange={(e) => setAddAmount(e.target.value)}
-                                    placeholder="500"
-                                    className="w-full pl-8 py-2 bg-transparent text-3xl font-black text-gray-900 focus:outline-none"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            {[100, 500, 1000].map(amt => (
-                                <button key={amt} onClick={() => setAddAmount(String(amt))} className="flex-1 py-2 rounded-xl bg-gray-50 text-gray-600 font-bold border border-gray-100 hover:bg-gray-100 active:scale-[0.98] transition-transform">+₹{amt}</button>
-                            ))}
-                        </div>
-                        <button
-                            onClick={handleAddMoneySubmit}
-                            disabled={addLoading || !addAmount || Number(addAmount) <= 0}
-                            className="w-full py-4 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-                        >
-                            {addLoading ? 'Loading Gateway...' : 'Proceed to Add'}
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* SEND MODAL */}
-            {isSendMoneyOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-end justify-center animate-[fadeIn_0.2s_ease-out]">
-                    <form onSubmit={handleP2pTransfer} className="bg-white w-full max-w-md rounded-t-3xl p-6 flex flex-col gap-4 pb-8 animate-[slideUp_0.3s_ease-out]">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="font-black text-gray-900 text-lg">Send Money</h3>
-                            <button type="button" onClick={() => setIsSendMoneyOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">
-                                <i className="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-                        <input
-                            type="tel"
-                            maxLength={10}
-                            value={sendPhone}
-                            onChange={(e) => setSendPhone(e.target.value)}
-                            placeholder="Mobile Number"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:border-emerald-500 font-bold"
-                            required
-                        />
-                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            <div className="relative flex items-center">
-                                <span className="absolute left-0 text-xl font-black text-gray-400">₹</span>
-                                <input
-                                    type="number"
-                                    value={sendAmount}
-                                    onChange={(e) => setSendAmount(e.target.value)}
-                                    placeholder="0"
-                                    className="w-full pl-6 py-1 bg-transparent text-2xl font-black text-gray-900 focus:outline-none"
-                                    required
-                                />
-                            </div>
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={sendLoading || !sendPhone || !sendAmount || Number(sendAmount) <= 0}
-                            className="w-full py-4 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-                        >
-                            {sendLoading ? 'Processing...' : 'Send Money'}
-                        </button>
-                    </form>
-                </div>
-            )}
-
-            {/* WITHDRAW MODAL */}
-            {isWithdrawOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-end justify-center animate-[fadeIn_0.2s_ease-out]">
-                    <form onSubmit={handleWithdrawSubmit} className="bg-white w-full max-w-md rounded-t-3xl p-6 flex flex-col gap-4 pb-8 animate-[slideUp_0.3s_ease-out]">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="font-black text-gray-900 text-lg">Pay a UPI ID</h3>
-                            <button type="button" onClick={() => setIsWithdrawOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">
-                                <i className="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                            <button type="button" onClick={() => setWithdrawMethod('UPI')} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${withdrawMethod === 'UPI' ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>UPI</button>
-                            <button type="button" disabled className="flex-1 py-2 rounded-lg text-xs border text-gray-400">Bank payout unavailable</button>
-                        </div>
-
-                        <input
-                            type="text"
-                            value={withdrawDestination}
-                            onChange={(e) => setWithdrawDestination(e.target.value)}
-                            placeholder={withdrawMethod === 'UPI' ? "Enter UPI ID (e.g. name@okhdfc)" : "Enter Bank Account Number"}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:border-emerald-500 font-bold"
-                            required
-                        />
-
-                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            <div className="relative flex items-center">
-                                <span className="absolute left-0 text-xl font-black text-gray-400">₹</span>
-                                <input
-                                    type="number"
-                                    value={withdrawAmount}
-                                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                                    placeholder="0"
-                                    className="w-full pl-6 py-1 bg-transparent text-2xl font-black text-gray-900 focus:outline-none"
-                                    required
-                                />
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">Pay from your linked bank account in a UPI app. APEX wallet funds are not used.</p>
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={withdrawLoading || !withdrawDestination || !withdrawAmount || Number(withdrawAmount) <= 0}
-                            className="w-full py-4 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-                        >
-                            {withdrawLoading ? 'Processing...' : 'Review UPI payment'}
-                        </button>
-                    </form>
-                </div>
-            )}
-
-
-            {/* MY QR MODAL */}
-            {isMyQrOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]">
-                    <div className="bg-white rounded-3xl p-6 w-full max-w-sm text-center flex flex-col items-center animate-[scaleUp_0.3s_ease-out]">
-                        <div className="flex justify-between items-center w-full mb-4">
-                            <h3 className="font-black text-gray-900 text-lg">APEX Wallet QR</h3>
-                            <button onClick={() => setIsMyQrOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">
-                                <i className="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-                        <div className="bg-white p-4 rounded-2xl border border-gray-100 mb-4 inline-block shadow-sm">
-                            <PaymentQr value={myQrUpi} label="APEX receive QR" />
-                        </div>
-                        <h4 className="font-black text-gray-900">{user?.name || 'APEX User'}</h4>
-                        <p className="text-sm text-gray-500 font-mono mb-4">{user?.phone || ''}</p>
-                    </div>
-                </div>
-            )}
-
-            {/* SUCCESS MODAL */}
-            {paymentSuccess && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[120] flex items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]">
-                    <div className="bg-white rounded-3xl p-6 w-full max-w-sm text-center flex flex-col items-center animate-[scaleUp_0.3s_ease-out]">
-                        <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mb-4">
-                            <i className="fa-solid fa-check"></i>
-                        </div>
-                        <h2 className="text-xl font-black text-gray-900 mb-1">Payment Successful</h2>
-                        <p className="text-xs text-gray-500 font-bold mb-6">₹{paymentSuccess.amount.toFixed(2)} to {paymentSuccess.payeeName}</p>
-                        <button
-                            onClick={() => { setPaymentSuccess(null); fetchBalance(); fetchTransactions(); }}
-                            className="w-full py-4 bg-gray-900 text-white font-black rounded-xl hover:bg-black active:scale-[0.98] transition-transform"
-                        >
-                            Done
-                        </button>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+function toast(message: string, type = 'info') {
+  window.dispatchEvent(new CustomEvent('showToast', { detail: { message, type } }));
 }
+const inputStyle = 'h-11 w-full min-w-0 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm outline-none focus:ring-2 focus:ring-emerald-200';
 
 export default function PaymentPage() {
-    return (
-        <Suspense fallback={<div className="min-h-screen bg-gray-50"></div>}>
-            <PaymentContent />
-        </Suspense>
-    );
+  const user = useAppStore(state => state.user);
+  const uid = user?.uid || user?._id;
+  const { socket } = useSocket();
+  const [balance, setBalance] = useState<number | null>(null);
+  const [visible, setVisible] = useState(true);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [filter, setFilter] = useState<'all' | 'debit' | 'credit'>('all');
+  const [loading, setLoading] = useState(false);
+  const [balanceError, setBalanceError] = useState('');
+  const [historyError, setHistoryError] = useState('');
+  const [pending, setPending] = useState<ReturnType<typeof pendingWalletTransfer>>(null);
+  const [checking, setChecking] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerError, setScannerError] = useState('');
+  const [manualId, setManualId] = useState('');
+  const [entryOpen, setEntryOpen] = useState(false);
+  const [payee, setPayee] = useState<PaymentPayee | null>(null);
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+  const [payError, setPayError] = useState('');
+  const [launching, setLaunching] = useState(false);
+  const [handoff, setHandoff] = useState(false);
+  const [canLaunch, setCanLaunch] = useState(false);
+  const [receiveOpen, setReceiveOpen] = useState(false);
+  const [receiveId, setReceiveId] = useState('');
+  const [receiveConfirmed, setReceiveConfirmed] = useState(false);
+  const [receiveQr, setReceiveQr] = useState('');
+  const [receiveError, setReceiveError] = useState('');
+  const account = useRef(uid);
+  account.current = uid;
+  const syncGeneration = useRef(0);
+  const launchLock = useRef(false);
+
+  const refresh = useCallback(async () => {
+    const generation = ++syncGeneration.current;
+    if (!uid) return;
+    setLoading(true);
+    const current = () => generation === syncGeneration.current && account.current === uid;
+    await Promise.all([
+      api.get('/finance/wallet').then(({ data }) => {
+        if (!data.success || typeof data.balance !== 'number' || !Number.isFinite(data.balance)) throw new Error();
+        if (current()) { setBalance(data.balance); setBalanceError(''); }
+      }).catch(() => { if (current()) setBalanceError('Balance unavailable. Your stored balance has not been changed.'); }),
+      api.get('/finance/transactions', { params: { page, limit: 20, ...(filter === 'all' ? {} : { type: filter }) } }).then(({ data }) => {
+        if (!data.success || !Array.isArray(data.transactions)) throw new Error();
+        if (current()) { setTransactions(data.transactions); setPages(Math.max(1, data.pagination?.totalPages || 1)); setHistoryError(''); }
+      }).catch(() => { if (current()) setHistoryError('APEX history could not be refreshed.'); })
+    ]);
+    if (current()) setLoading(false);
+  }, [uid, page, filter]);
+
+  useEffect(() => {
+    setBalance(null); setTransactions([]); setPage(1); setPages(1); setPending(null);
+    setBalanceError(''); setHistoryError(''); setLoading(false); setChecking(false);
+    setPayee(null); setScannerOpen(false); setEntryOpen(false); setReceiveOpen(false);
+    setManualId(''); setReceiveId(''); setReceiveQr(''); setReceiveConfirmed(false);
+    if (uid) try { setPending(pendingWalletTransfer(uid)); } catch { setHistoryError('An earlier transfer needs support review.'); }
+    return () => { ++syncGeneration.current; };
+  }, [uid]);
+
+  useEffect(() => {
+    setCanLaunch(/Android/i.test(navigator.userAgent));
+    if (new URLSearchParams(window.location.search).get('scan') === 'true') setScannerOpen(true);
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+    const update = () => { if (!document.hidden) void refresh(); };
+    const timer = setInterval(update, 10000);
+    document.addEventListener('visibilitychange', update);
+    socket?.on('wallet_update', update); socket?.on('connect', update);
+    return () => { ++syncGeneration.current; clearInterval(timer); document.removeEventListener('visibilitychange', update); socket?.off('wallet_update', update); socket?.off('connect', update); };
+  }, [refresh, socket]);
+
+  function review(raw: string) {
+    const destination = parsePaymentPayload(raw);
+    setPayee(destination); setAmount(destination.am || ''); setNote(destination.tn || '');
+    setPayError(''); setHandoff(false); setEntryOpen(false); setScannerOpen(false);
+  }
+
+  useEffect(() => {
+    if (!scannerOpen) return;
+    let active = true, scanner: any;
+    setScannerError('');
+    void import('html5-qrcode').then(async ({ Html5Qrcode }) => {
+      if (!active) return;
+      scanner = new Html5Qrcode('payment-reader');
+      await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 220, height: 220 } }, (raw: string) => {
+        if (!active) return;
+        try { review(raw); active = false; } catch (e: any) { setScannerError(e.message); }
+      }, () => {});
+      if (!active) { await scanner.stop().catch(() => {}); scanner.clear(); }
+    }).catch(() => { if (active) setScannerError('Camera unavailable. Allow camera access or enter a UPI ID.'); });
+    return () => { active = false; if (scanner?.isScanning) void scanner.stop().then(() => scanner.clear()).catch(() => {}); };
+  }, [scannerOpen]);
+
+  let paymentUri = '';
+  if (payee && validAmount(amount)) try { paymentUri = makeUpiIntent(payee, amount, note); } catch { /* Conflicting QR requirements keep the pay button unavailable. */ }
+  async function launch() {
+    if (!paymentUri || launchLock.current) return;
+    launchLock.current = true; setLaunching(true); setPayError('');
+    try { await openUpiApp(paymentUri); setHandoff(true); }
+    catch (e: any) { setPayError(e.message || 'Unable to open a UPI app. No payment has been confirmed.'); }
+    finally { launchLock.current = false; setLaunching(false); }
+  }
+  async function checkOldTransfer() {
+    if (!uid || checking || !pending?.payload) return;
+    setChecking(true);
+    try {
+      const { data } = await transferWallet(pending.payload);
+      if (account.current !== uid) return;
+      if (data.success) { setPending(null); toast('Earlier APEX transfer confirmed from the stored receipt.'); void refresh(); }
+    } catch (e: any) { if (account.current === uid) toast(e.response?.data?.error || 'Unable to check the earlier transfer. Contact support.', 'warning'); }
+    finally { if (account.current === uid) setChecking(false); }
+  }
+  const close = (label: string, action: () => void) => <button type="button" title={label} aria-label={label} onClick={action} className="h-9 w-9 shrink-0 rounded-full bg-gray-100 text-gray-600"><i className="fas fa-times" /></button>;
+
+  return <div className="min-h-screen bg-gray-50 pb-24 text-gray-900">
+    <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3 shadow-sm">
+      <div className="flex items-center gap-3"><Link href="/" aria-label="Home" className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-50"><i className="fas fa-arrow-left" /></Link><h1 className="text-lg font-black">APEX Pay</h1></div>
+      <button title="Scan UPI QR" aria-label="Scan UPI QR" onClick={() => setScannerOpen(true)} className="h-9 w-9 rounded-full bg-emerald-50 text-emerald-600"><i className="fas fa-camera" /></button>
+    </header>
+    <main className="mx-auto flex w-full max-w-md flex-col gap-5 p-4">
+      <section className="py-2">
+        <h2 className="mb-3 text-sm font-bold">UPI Payments</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {[{ label: 'Scan & Pay', icon: 'fa-qrcode', action: () => setScannerOpen(true) }, { label: 'Pay UPI ID', icon: 'fa-paper-plane', action: () => { setEntryOpen(true); setPayError(''); } }, { label: 'Receive', icon: 'fa-arrow-down', action: () => { setReceiveOpen(true); setReceiveQr(''); setReceiveError(''); } }].map(item => <button key={item.label} onClick={item.action} className="flex min-h-24 min-w-0 flex-col items-center justify-center gap-2 rounded-lg border border-gray-100 bg-white p-2 shadow-sm"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600"><i className={'fas ' + item.icon} /></span><span className="text-xs font-bold">{item.label}</span></button>)}
+        </div>
+        <p className="mt-3 text-xs text-gray-500">Pay from your bank in a UPI app. No APEX top-up required.</p>
+      </section>
+      <section className="border-y border-gray-200 py-4">
+        <div className="flex items-center justify-between"><h2 className="text-xs font-bold text-gray-500">Previous APEX Balance</h2><button title={visible ? 'Hide balance' : 'Show balance'} aria-label={visible ? 'Hide balance' : 'Show balance'} onClick={() => setVisible(!visible)} className="h-8 w-8 text-gray-500"><i className={'fas ' + (visible ? 'fa-eye-slash' : 'fa-eye')} /></button></div>
+        <p className="mt-1 text-2xl font-black">{!uid ? '--' : !visible ? '****' : balance === null ? '--' : 'INR ' + balance.toFixed(2)}</p>
+        <p className="mt-2 text-xs text-gray-500">Not your bank balance. New top-ups and wallet transfers are paused. Existing funds remain recorded.</p>
+        {balanceError && <p role="alert" className="mt-2 text-xs text-red-700">{balanceError}</p>}
+        <a href="https://wa.me/919494273763" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-emerald-700"><i className="fab fa-whatsapp" />Balance support</a>
+        {pending && <div className="mt-3 border-t border-amber-200 pt-3 text-xs text-amber-800"><p>Earlier transfer reference: <span className="break-all">{pending.key}</span></p><button disabled={checking} onClick={() => void checkOldTransfer()} className="mt-2 font-bold disabled:opacity-40">{checking ? 'Checking...' : 'Check saved transfer'}</button></div>}
+      </section>
+      <section>
+        <div className="flex items-center justify-between"><h2 className="text-sm font-bold">APEX History</h2><button title="Refresh APEX history" aria-label="Refresh APEX history" disabled={loading} onClick={() => void refresh()} className="h-9 w-9 text-gray-500 disabled:opacity-40"><i className="fas fa-rotate-right" /></button></div>
+        <p className="mb-3 text-xs text-gray-500">Bank-to-bank UPI receipts are in your UPI app.</p>
+        <div role="tablist" aria-label="APEX transaction filter" className="mb-3 flex gap-2">{(['all', 'debit', 'credit'] as const).map(type => <button key={type} role="tab" aria-selected={filter === type} onClick={() => { setFilter(type); setPage(1); }} className={'rounded-lg px-3 py-1.5 text-xs font-bold ' + (filter === type ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500')}>{type === 'all' ? 'All' : type === 'debit' ? 'Debits' : 'Credits'}</button>)}</div>
+        {historyError && <p role="alert" className="py-2 text-xs text-red-700">{historyError}</p>}
+        {!uid ? <Link href="/login" className="text-sm text-emerald-700">Sign in to view APEX history</Link> : <div className="divide-y divide-gray-200">{transactions.map(tx => <div key={tx._id} className="flex items-start justify-between gap-3 py-3"><div className="min-w-0"><p className="break-words text-xs font-bold">{tx.referenceId || tx.category}</p><p className="mt-1 text-[10px] text-gray-500">{new Date(tx.createdAt).toLocaleString()}</p></div><div className="shrink-0 text-right"><p className="text-sm font-bold">{tx.type === 'credit' ? '+' : '-'} INR {tx.amount.toFixed(2)}</p><p className="text-[10px] text-gray-500">{tx.status}</p></div></div>)}{!transactions.length && !historyError && <p className="py-8 text-center text-xs text-gray-500">{loading ? 'Refreshing history...' : 'No APEX transactions'}</p>}</div>}
+        {pages > 1 && <div className="mt-3 flex items-center justify-between"><button title="Previous page" aria-label="Previous page" disabled={page <= 1 || loading} onClick={() => setPage(page - 1)} className="h-9 w-9 disabled:opacity-30"><i className="fas fa-chevron-left" /></button><span className="text-xs">{page} / {pages}</span><button title="Next page" aria-label="Next page" disabled={page >= pages || loading} onClick={() => setPage(page + 1)} className="h-9 w-9 disabled:opacity-30"><i className="fas fa-chevron-right" /></button></div>}
+      </section>
+    </main>
+
+    {scannerOpen && <div role="dialog" aria-modal="true" aria-label="Scan bank UPI QR" className="fixed inset-0 z-[110] flex flex-col bg-black p-4 text-white"><div className="flex items-center justify-between"><h2 className="text-sm font-bold">Scan bank UPI QR</h2>{close('Close scanner', () => setScannerOpen(false))}</div><div id="payment-reader" className="mx-auto mt-8 w-full max-w-sm overflow-hidden" />{scannerError && <p role="alert" className="mt-4 text-center text-sm text-red-300">{scannerError}</p>}<button className="mx-auto mt-5 text-sm font-bold" onClick={() => { setScannerOpen(false); setEntryOpen(true); setPayError(''); }}>Enter UPI ID instead</button></div>}
+
+    {entryOpen && <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/60 p-3 sm:items-center"><form role="dialog" aria-modal="true" aria-label="Pay a UPI ID" onSubmit={e => { e.preventDefault(); try { review(makeReceiveQr(manualId)); } catch (err: any) { setPayError(err.message); } }} className="w-full max-w-md rounded-lg bg-white p-4"><div className="mb-4 flex items-center justify-between"><h2 className="text-base font-bold">Pay a UPI ID</h2>{close('Close UPI entry', () => setEntryOpen(false))}</div><label className="mb-1 block text-xs font-bold" htmlFor="recipient-upi">Recipient UPI ID</label><input id="recipient-upi" autoComplete="off" autoCapitalize="none" spellCheck={false} required value={manualId} onChange={e => setManualId(e.target.value)} placeholder="name@bank" className={inputStyle} /><p className="mt-2 text-xs text-gray-500">Use the recipient's bank-issued UPI ID, not just their mobile number.</p>{payError && <p role="alert" className="mt-2 text-xs text-red-700">{payError}</p>}<button className="mt-4 h-11 w-full rounded-lg bg-emerald-600 text-sm font-bold text-white">Review recipient</button></form></div>}
+
+    {payee && <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/60 p-3 sm:items-center"><div role="dialog" aria-modal="true" aria-label="Review UPI payment" className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-4"><div className="mb-4 flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="break-words text-base font-bold">Review UPI payment</h2><p className="mt-2 break-all text-sm font-bold">{payee.pa}</p>{payee.pn !== payee.pa && <p className="break-words text-xs text-gray-500">QR label: {payee.pn}</p>}<p className="mt-1 text-xs text-gray-500">Verify the account holder in your UPI app.</p></div>{close('Close payment review', () => setPayee(null))}</div><label htmlFor="upi-amount" className="mb-1 block text-xs font-bold">Amount (INR)</label><input id="upi-amount" inputMode="decimal" type="text" readOnly={!!payee.am || handoff} value={amount} onChange={e => { setAmount(e.target.value); setHandoff(false); }} placeholder="0.00" className={inputStyle} /><label htmlFor="upi-note" className="mb-1 mt-3 block text-xs font-bold">Note (optional)</label><input id="upi-note" value={note} onChange={e => setNote(e.target.value)} maxLength={100} className={inputStyle} />{!canLaunch && paymentUri && <div className="mt-4"><PaymentQr value={paymentUri} label="Bank UPI payment QR" /><p className="mt-2 text-center text-xs text-gray-500">Scan directly with your bank app on another device.</p></div>}{canLaunch && <button disabled={!paymentUri || launching || handoff} onClick={() => void launch()} className="mt-4 h-11 w-full rounded-lg bg-emerald-600 text-sm font-bold text-white disabled:opacity-40">{launching ? 'Opening UPI app...' : handoff ? 'Check your UPI app' : 'Continue in UPI app'}</button>}<p className="mt-3 text-xs text-gray-500">Paid from your bank, not your previous APEX balance. APEX cannot confirm this bank payment.</p>{handoff && <p role="status" className="mt-3 border-t border-gray-200 pt-3 text-sm">Complete or check payment in your UPI app. No payment success is recorded in APEX.</p>}{payError && <p role="alert" className="mt-3 text-xs text-red-700">{payError}</p>}{!paymentUri && amount && <p role="alert" className="mt-2 text-xs text-red-700">Enter a valid amount that matches the QR requirements.</p>}</div></div>}
+
+    {receiveOpen && <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/60 p-3 sm:items-center"><form role="dialog" aria-modal="true" aria-label="Receive to your bank" onSubmit={e => { e.preventDefault(); try { if (!receiveConfirmed) throw new Error('Confirm this UPI ID belongs to you.'); setReceiveQr(makeReceiveQr(receiveId)); setReceiveError(''); } catch (err: any) { setReceiveError(err.message); } }} className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-4"><div className="mb-4 flex items-center justify-between"><h2 className="text-base font-bold">Receive to your bank</h2>{close('Close receive QR', () => setReceiveOpen(false))}</div><label htmlFor="receive-upi" className="mb-1 block text-xs font-bold">Your UPI ID</label><input id="receive-upi" required autoComplete="off" autoCapitalize="none" spellCheck={false} value={receiveId} onChange={e => { setReceiveId(e.target.value); setReceiveQr(''); setReceiveConfirmed(false); }} placeholder="Your ID from your bank or UPI app" className={inputStyle} /><label className="mt-3 flex items-start gap-2 text-xs"><input type="checkbox" className="mt-0.5" checked={receiveConfirmed} onChange={e => { setReceiveConfirmed(e.target.checked); setReceiveQr(''); }} />I checked this UPI ID belongs to my bank account.</label><button disabled={!receiveConfirmed} className="mt-4 h-11 w-full rounded-lg bg-emerald-600 text-sm font-bold text-white disabled:opacity-40">Show receive QR</button>{receiveError && <p role="alert" className="mt-2 text-xs text-red-700">{receiveError}</p>}{receiveQr && <div className="mt-4"><PaymentQr value={receiveQr} label="Your bank UPI receive QR" /><p className="mt-2 break-all text-center text-sm font-bold">{receiveId.trim()}</p></div>}<p className="mt-3 text-xs text-gray-500">UPI ID entered by you, not verified by APEX. Check incoming payments in your bank app.</p></form></div>}
+  </div>;
 }

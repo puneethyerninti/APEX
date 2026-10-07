@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+def releaseCode = System.getenv('APEX_VERSION_CODE')
+def releaseName = System.getenv('APEX_VERSION_NAME')
+def uploadStore = System.getenv('APEX_KEYSTORE_PATH')
+def uploadAlias = System.getenv('APEX_KEY_ALIAS')
+def uploadStorePassword = System.getenv('APEX_STORE_PASSWORD')
+def uploadKeyPassword = System.getenv('APEX_KEY_PASSWORD')
+def hasUploadKey = [uploadStore, uploadAlias, uploadStorePassword, uploadKeyPassword].every { it }
+
 android {
     namespace = "com.apex.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +15,8 @@ android {
         applicationId "com.apex.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode releaseCode ? releaseCode.toInteger() : 1
+        versionName releaseName ?: "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +24,38 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasUploadKey) {
+            release {
+                storeFile file(uploadStore)
+                storePassword uploadStorePassword
+                keyAlias uploadAlias
+                keyPassword uploadKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
+            if (hasUploadKey) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    if (graph.allTasks.any { it.name.endsWith('Release') }) {
+        if (!releaseCode || !releaseName || android.defaultConfig.versionCode < 1 || android.defaultConfig.versionCode > 2100000000) {
+            throw new GradleException('Set an explicit APEX_VERSION_CODE and APEX_VERSION_NAME for release.')
+        }
+        if (!hasUploadKey || !file(uploadStore).isFile()) {
+            throw new GradleException('Configure the private upload keystore using APEX signing environment variables. No unsigned release is permitted.')
+        }
+        def markerFile = file('src/main/assets/public/apex-release.json')
+        if (!markerFile.isFile()) throw new GradleException('Run scripts/build-play-store.ps1 to build and sync production web assets first.')
+        def marker = new groovy.json.JsonSlurper().parse(markerFile)
+        if (marker.distribution != 'google-play' || marker.versionCode != android.defaultConfig.versionCode) {
+            throw new GradleException('Web release metadata does not match this Google Play build.')
         }
     }
 }
