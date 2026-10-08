@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import http from 'http';
-import { getAuth } from 'firebase-admin/auth';
-import User from '../models/User';
+import { validateApplicationSession } from '../services/authSession';
+import { allowedOrigins } from '../services/allowedOrigins';
 
 export interface AuthenticatedSocket extends Socket {
   user?: {
@@ -16,16 +16,12 @@ let io: Server;
 
 export const initSocket = (server: http.Server) => {
   // Strict CORS for Production Fintech App
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'https://apextc.shop',
-    'https://www.apextc.shop'
-  ];
+  const origins = allowedOrigins();
 
   io = new Server(server, {
     cors: {
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (!origin || origins.includes(origin)) {
           callback(null, true);
         } else {
           callback(new Error('Not allowed by CORS'));
@@ -44,35 +40,41 @@ export const initSocket = (server: http.Server) => {
         return next(new Error('Authentication Error: Missing Token'));
       }
 
-      // Verify custom JWT token
-      const jwt = require('jsonwebtoken');
-      const decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as any;
-      if (decodedToken.authVersion !== 2) return next(new Error('Please sign in again'));
-      
-      // Fetch user from DB to get the MongoDB _id and roles
-      const dbUser = await User.findById(decodedToken.id);
-      if (!dbUser) {
-        return next(new Error('Authentication Error: User not found in database'));
-      }
+      const identity = await validateApplicationSession(token);
 
       // Attach secure user payload to the socket object
       socket.user = {
-        uid: dbUser.email, // Custom backend doesn't use firebaseUid, use email or id
-        dbId: dbUser._id.toString(),
-        isAdmin: dbUser.role === 'admin',
-        role: dbUser.role
+        uid: identity.id,
+        dbId: identity.id,
+        isAdmin: identity.role === 'admin',
+        role: identity.role
       };
 
       // SERVER-AUTHORITATIVE ROOM JOINING
       // Prevent client spoofing by forcing room joins here
       socket.join(`user_${socket.user.dbId}`);
+      socket.join(`session_${identity.tokenId}`);
       if (socket.user.isAdmin) {
         socket.join('admin_room');
       }
 
+      const revalidate = async () => {
+        const current = await validateApplicationSession(token);
+        if (!socket.user) throw new Error('Session unavailable');
+        socket.user.role = current.role;
+        socket.user.isAdmin = current.role === 'admin';
+        if (!socket.user.isAdmin) await socket.leave('admin_room');
+        return current;
+      };
+      socket.use((_packet, done) => {
+        void revalidate().then(() => done()).catch(() => { done(new Error('Session expired.')); socket.disconnect(true); });
+      });
+      const timer = setInterval(() => { void revalidate().catch(() => socket.disconnect(true)); }, 30000);
+      const expiry = setTimeout(() => socket.disconnect(true), Math.max(1, identity.exp * 1000 - Date.now()));
+      socket.once('disconnect', () => { clearInterval(timer); clearTimeout(expiry); });
       next();
     } catch (err: any) {
-      console.error('Socket Auth Error:', err.message);
+      console.error('Socket authentication rejected');
       next(new Error('Authentication Error: Invalid Token'));
     }
   });

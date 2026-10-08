@@ -6,9 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllProperties = exports.getPropertiesNearMe = exports.createProperty = exports.submitInquiry = void 0;
 const notificationController_1 = require("./notificationController");
 const Lead_1 = __importDefault(require("../models/Lead"));
+const User_1 = __importDefault(require("../models/User"));
 const submitInquiry = async (req, res) => {
     try {
-        const { propertyId, propertyTitle, userId, contactData } = req.body;
+        const { propertyId, propertyTitle, contactData } = req.body;
+        const userId = req.user.id;
         // Find the property to get the owner
         let ownerId = null;
         if (propertyId) {
@@ -46,10 +48,13 @@ exports.submitInquiry = submitInquiry;
 const Property_1 = __importDefault(require("../models/Property"));
 const createProperty = async (req, res) => {
     try {
-        const { userId, listingType, propertyType, title, price, description, phone, longitude, latitude } = req.body;
+        const { listingType, propertyType, title, price, description, phone, longitude, latitude, images } = req.body;
+        const userId = req.user.id;
         if (!userId || !listingType || !propertyType || !title || !price || !description || !phone) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
+        const user = await User_1.default.findById(userId);
+        const status = user?.role === 'admin' ? 'active' : 'pending';
         const newProperty = new Property_1.default({
             user: userId,
             listingType,
@@ -58,6 +63,8 @@ const createProperty = async (req, res) => {
             price,
             description,
             phone,
+            images: images || [],
+            status,
             location: (longitude !== undefined && latitude !== undefined) ? {
                 type: 'Point',
                 coordinates: [Number(longitude), Number(latitude)]

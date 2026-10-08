@@ -22,7 +22,7 @@ const quoteId = new mongoose.Types.ObjectId();
 function stub(obj, key, value) { const old = obj[key]; obj[key] = value; restores.push(() => obj[key] = old); }
 afterEach(() => { while (restores.length) restores.pop()(); });
 function query(value) { return { session() { return this; }, populate() { return this; }, sort() { return this; }, limit() { return this; }, then(resolve, reject) { return Promise.resolve(value).then(resolve, reject); } }; }
-function response() { return { code: 200, status(code) { this.code = code; return this; }, json(body) { this.body = body; return this; } }; }
+function response() { return { code: 200, setHeader() {}, status(code) { this.code = code; return this; }, json(body) { this.body = body; return this; } }; }
 function request(body = {}, id = rider) { return { user: { id: String(id) }, body, params: { id: String(rideId) }, query: {}, headers: {}, app: { get() {} } }; }
 function sessionSetup() {
   const session = { async withTransaction(cb) { await cb(); }, async endSession() {} };
@@ -50,10 +50,10 @@ test('trip transition graph disallows skips, strangers and terminal reopening', 
   assert.equal(policy.canTransition('accepted', 'arrived', false, false), false);
   assert.equal(policy.canTransition('in_progress', 'cancelled', false, true), false);
 });
-test('authentication rejects phone-issued legacy JWTs', () => {
+test('authentication rejects phone-issued legacy JWTs', async () => {
   process.env.JWT_SECRET = 'test-only-secret';
   const res = response(); let called = false;
-  requireAuth({ headers: { authorization: 'Bearer ' + jwt.sign({ id: rider }, process.env.JWT_SECRET) } }, res, () => called = true);
+  await requireAuth({ headers: { authorization: 'Bearer ' + jwt.sign({ id: rider }, process.env.JWT_SECRET) } }, res, () => called = true);
   assert.equal(res.code, 401); assert.equal(called, false);
 });
 test('every travels route requires authentication', async () => {
@@ -189,15 +189,16 @@ test('verified Firebase proof creates only a normal user and issues a versioned 
   if (!getApps().length) initializeApp({ projectId: 'cab-test-fixture' });
   stub(getAuth(), 'verifyIdToken', async (token, revoked) => {
     assert.equal(token, 'verified-fixture'); assert.equal(revoked, true);
-    return { uid: 'firebase-fixture', phone_number: '+919999999999' };
+    return { uid: 'firebase-fixture', phone_number: '+919999999999', firebase: { sign_in_provider: 'phone' }, auth_time: Math.floor(Date.now() / 1000) };
   });
-  stub(User, 'findOne', async () => null);
+  stub(User, 'find', () => query([]));
+  stub(require('../dist/models/AuthSession').default, 'create', async value => value);
   stub(User, 'create', async value => { assert.equal(value.role, 'user'); assert.equal(value.firebaseUid, 'firebase-fixture'); return { ...value, _id: rider, apexPlan: 'Free' }; });
   const req = request({ role: 'admin', name: 'Test Rider' }); req.headers.authorization = 'Bearer verified-fixture';
   const res = response(); await users.exchangeFirebaseSession(req, res);
   assert.equal(res.code, 200); assert.equal(res.body.user.role, 'user');
   const payload = jwt.verify(res.body.token, process.env.JWT_SECRET);
-  assert.equal(payload.authVersion, 2); assert.equal(payload.role, 'user');
+  assert.equal(payload.authVersion, 3); assert.equal(payload.role, undefined); assert.ok(payload.jti);
 });
 test('invalid Firebase proof never loads or creates an account', async () => {
   const { getAuth } = require('firebase-admin/auth');

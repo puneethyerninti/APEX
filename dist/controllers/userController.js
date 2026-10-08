@@ -3,19 +3,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleAPEXPlanUpgrade = exports.saveFCMToken = exports.sendEmailNotification = exports.updateUserProfile = exports.getUserProfile = exports.exchangeFirebaseSession = void 0;
+exports.handleAPEXPlanUpgrade = exports.saveFCMToken = exports.sendEmailNotification = exports.updateUserProfile = exports.logoutSession = exports.getUserProfile = exports.exchangeFirebaseSession = void 0;
 const User_1 = __importDefault(require("../models/User"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const AuthSession_1 = __importDefault(require("../models/AuthSession"));
+const authSession_1 = require("../services/authSession");
+const socketManager_1 = require("../utils/socketManager");
 const auth_1 = require("firebase-admin/auth");
 const resend_1 = require("resend");
 const notificationController_1 = require("./notificationController");
 const resend = new resend_1.Resend(process.env.RESEND_API_KEY || 'mock_key');
 const publicProfile = (user) => ({
-    _id: user._id, name: user.name, email: user.email, phone: user.phone,
+    _id: user._id, name: user.name, email: user.email?.endsWith('@apex.local') ? '' : user.email, phone: user.phone,
     profilePicture: user.profilePicture, role: user.role, walletBalance: user.walletBalance,
     apexPlan: user.apexPlan, isPremium: user.apexPlan !== 'Free'
 });
 const exchangeFirebaseSession = async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
     const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null;
     if (!token)
         return res.status(401).json({ error: 'Verified phone login is required.' });
@@ -23,22 +26,46 @@ const exchangeFirebaseSession = async (req, res) => {
     try {
         const identity = await (0, auth_1.getAuth)().verifyIdToken(token, true);
         const phone = identity.phone_number;
-        if (!phone || !/^\+91[6-9]\d{9}$/.test(phone))
+        if (!phone || !/^\+91[6-9]\d{9}$/.test(phone) || identity.firebase?.sign_in_provider !== 'phone')
             return res.status(403).json({ error: 'An Indian phone OTP login is required.' });
         stage = 'account_lookup';
-        let user = await User_1.default.findOne({ $or: [{ firebaseUid: identity.uid }, { phone }, { phone: phone.slice(3) }] });
-        if (user?.firebaseUid && user.firebaseUid !== identity.uid)
+        const matches = await User_1.default.find({ $or: [{ firebaseUid: identity.uid }, { phone }, { phone: phone.slice(3) }] }).limit(2);
+        if (matches.length > 1)
+            return res.status(409).json({ error: 'Account needs verification by support.' });
+        let user = matches[0];
+        if (user && ((user.firebaseUid && user.firebaseUid !== identity.uid) || (user.phone && user.phone !== phone && user.phone !== phone.slice(3))))
             return res.status(403).json({ error: 'Account identity mismatch. Contact support.' });
+        if (user?.isDisabled)
+            return res.status(403).json({ error: 'Account access is unavailable. Contact support.' });
+        if (req.body?.intent === 'admin' && user?.role !== 'admin')
+            return res.status(403).json({ error: 'Access denied. Admin only.' });
         if (!user) {
-            user = await User_1.default.create({ firebaseUid: identity.uid, phone, name: String(req.body?.name || 'APEX User').trim().slice(0, 100) || 'APEX User',
-                email: `${phone.slice(1)}@apex.local`, role: 'user' });
+            if (req.body?.name === undefined)
+                return res.json({ registrationRequired: true, phone });
+            const name = req.body.name;
+            if (typeof name !== 'string' || name.trim().length < 2 || name.length > 100 || /[\x00-\x1f\x7f]/.test(name))
+                return res.status(400).json({ error: 'Enter your full name (2 to 100 characters).' });
+            if (!identity.auth_time || Date.now() / 1000 - identity.auth_time > 900 || identity.auth_time > Date.now() / 1000 + 60)
+                return res.status(401).json({ error: 'Verify your phone again to create an account.' });
+            try {
+                user = await User_1.default.create({ firebaseUid: identity.uid, phone, name: name.trim(), email: `${phone.slice(1)}@apex.local`, role: 'user' });
+            }
+            catch (error) {
+                if (error.code !== 11000)
+                    throw error;
+                user = (await User_1.default.findOne({ firebaseUid: identity.uid, phone }));
+                if (!user || user.isDisabled)
+                    return res.status(409).json({ error: 'Account needs verification by support.' });
+            }
         }
         else if (!user.firebaseUid) {
-            user.firebaseUid = identity.uid;
-            await user.save();
+            // Claim legacy accounts atomically; never overwrite another Firebase identity.
+            user = (await User_1.default.findOneAndUpdate({ _id: user._id, $or: [{ firebaseUid: { $exists: false } }, { firebaseUid: null }] }, { $set: { firebaseUid: identity.uid } }, { new: true }));
+            if (!user)
+                return res.status(409).json({ error: 'Account changed. Please sign in again.' });
         }
         stage = 'session_signing';
-        const session = jsonwebtoken_1.default.sign({ id: user._id, phone: user.phone, role: user.role, authVersion: 2 }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        const session = await (0, authSession_1.issueApplicationSession)(user);
         return res.json({ user: publicProfile(user), token: session });
     }
     catch (error) {
@@ -64,6 +91,24 @@ const getUserProfile = async (req, res) => {
     }
 };
 exports.getUserProfile = getUserProfile;
+const logoutSession = async (req, res) => {
+    try {
+        const identity = req.user;
+        await AuthSession_1.default.deleteOne({ tokenId: identity.tokenId, userId: identity.id });
+        if (typeof req.body?.fcmToken === 'string' && req.body.fcmToken.length <= 4096) {
+            await User_1.default.updateOne({ _id: identity.id }, { $pull: { fcmTokens: req.body.fcmToken } });
+        }
+        try {
+            (0, socketManager_1.getIO)().in(`session_${identity.tokenId}`).disconnectSockets(true);
+        }
+        catch { /* HTTP-only processes have no socket server. */ }
+        return res.json({ success: true });
+    }
+    catch {
+        return res.status(503).json({ error: 'Unable to revoke session. Please retry.' });
+    }
+};
+exports.logoutSession = logoutSession;
 const updateUserProfile = async (req, res) => {
     try {
         const user = await User_1.default.findById(req.user?.id);
@@ -71,7 +116,7 @@ const updateUserProfile = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         const { name, email, profilePicture } = req.body;
         if (name !== undefined) {
-            if (typeof name !== 'string' || name.trim().length < 2 || name.length > 100)
+            if (typeof name !== 'string' || name.trim().length < 2 || name.length > 100 || /[\x00-\x1f\x7f]/.test(name))
                 return res.status(400).json({ error: 'Enter a valid name.' });
             user.name = name.trim();
         }
@@ -81,14 +126,16 @@ const updateUserProfile = async (req, res) => {
             user.email = email.trim() || `${String(user.phone).replace(/\D/g, '')}@apex.local`;
         }
         if (profilePicture !== undefined) {
-            if (typeof profilePicture !== 'string' || profilePicture.length > 2000000)
-                return res.status(400).json({ error: 'Invalid profile picture.' });
+            if (typeof profilePicture !== 'string' || profilePicture.length > 2000000 || (profilePicture && !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(profilePicture)))
+                return res.status(400).json({ error: 'Choose a JPEG, PNG or WebP profile picture.' });
             user.profilePicture = profilePicture;
         }
         await user.save();
         return res.json({ user: publicProfile(user), message: 'Profile updated.' });
     }
-    catch {
+    catch (error) {
+        if (error.code === 11000)
+            return res.status(409).json({ error: 'That email is already linked to another account.' });
         return res.status(500).json({ error: 'Unable to update profile.' });
     }
 };
@@ -131,6 +178,8 @@ const saveFCMToken = async (req, res) => {
             user.fcmTokens = [];
         }
         if (!user.fcmTokens.includes(token)) {
+            // A shared device must not continue receiving another account's private notifications.
+            await User_1.default.updateMany({ _id: { $ne: user._id }, fcmTokens: token }, { $pull: { fcmTokens: token } });
             user.fcmTokens.push(token);
             await user.save();
         }

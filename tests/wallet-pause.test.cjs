@@ -46,8 +46,12 @@ test('incomplete old receipt and database outage do not invent success or disclo
 test('actual authenticated HTTP routes reject old funding clients without any money writes', async () => {
   const express = require('express'); const jwt = require('jsonwebtoken');
   process.env.JWT_SECRET = 'isolated-test-secret';
-  const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + jwt.sign({ id, authVersion: 2 }, process.env.JWT_SECRET) };
-  stub(User, 'findById', () => { throw new Error('must not query for new deposit'); });
+  const AuthSession = require('../dist/models/AuthSession').default;
+  stub(AuthSession, 'create', async value => value);
+  stub(AuthSession, 'findOne', async () => ({ userId: id }));
+  stub(User, 'findById', async () => ({ _id: id, role: 'user' }));
+  const token = await require('../dist/services/authSession').issueApplicationSession({ _id: id });
+  const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
   stub(mongoose, 'startSession', () => { throw new Error('must not start'); });
   stub(WalletTransfer, 'findOne', async () => null);
   stub(Transaction, 'create', () => { throw new Error('must not create'); });

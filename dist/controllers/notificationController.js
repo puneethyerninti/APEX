@@ -36,6 +36,8 @@ const sendEmailNotification = async (req, res) => {
 exports.sendEmailNotification = sendEmailNotification;
 const getUserNotifications = async (req, res) => {
     const { userId } = req.params;
+    if (userId !== req.user.id)
+        return res.status(404).json({ error: 'Notifications not found.' });
     try {
         const notifications = await Notification_1.default.find({ user: userId })
             .sort({ createdAt: -1 })
@@ -51,7 +53,9 @@ exports.getUserNotifications = getUserNotifications;
 const markAsRead = async (req, res) => {
     const { id } = req.params;
     try {
-        const notification = await Notification_1.default.findByIdAndUpdate(id, { isRead: true }, { new: true });
+        const notification = await Notification_1.default.findOneAndUpdate({ _id: id, user: req.user.id }, { isRead: true }, { new: true });
+        if (!notification)
+            return res.status(404).json({ error: 'Notification not found.' });
         res.json({ success: true, notification });
     }
     catch (error) {
@@ -61,9 +65,9 @@ const markAsRead = async (req, res) => {
 };
 exports.markAsRead = markAsRead;
 const markAllAsRead = async (req, res) => {
-    const { userId } = req.body;
-    if (!userId)
-        return res.status(400).json({ error: 'userId is required' });
+    const userId = req.user.id;
+    if (req.body?.userId && req.body.userId !== userId)
+        return res.status(404).json({ error: 'Notifications not found.' });
     try {
         await Notification_1.default.updateMany({ user: userId, isRead: false }, { $set: { isRead: true } });
         res.json({ success: true, message: 'All marked as read' });

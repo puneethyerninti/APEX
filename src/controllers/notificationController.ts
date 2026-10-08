@@ -35,6 +35,7 @@ export const sendEmailNotification = async (req: Request, res: Response) => {
 
 export const getUserNotifications = async (req: Request, res: Response) => {
   const { userId } = req.params;
+  if (userId !== (req as any).user.id) return res.status(404).json({ error: 'Notifications not found.' });
   try {
     const notifications = await Notification.find({ user: userId })
       .sort({ createdAt: -1 })
@@ -49,11 +50,12 @@ export const getUserNotifications = async (req: Request, res: Response) => {
 export const markAsRead = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const notification = await Notification.findByIdAndUpdate(
-      id,
+    const notification = await Notification.findOneAndUpdate(
+      { _id: id, user: (req as any).user.id },
       { isRead: true },
       { new: true }
     );
+    if (!notification) return res.status(404).json({ error: 'Notification not found.' });
     res.json({ success: true, notification });
   } catch (error) {
     console.error('Error marking notification read:', error);
@@ -62,8 +64,8 @@ export const markAsRead = async (req: Request, res: Response) => {
 };
 
 export const markAllAsRead = async (req: Request, res: Response) => {
-  const { userId } = req.body;
-  if (!userId) return res.status(400).json({ error: 'userId is required' });
+  const userId = (req as any).user.id;
+  if (req.body?.userId && req.body.userId !== userId) return res.status(404).json({ error: 'Notifications not found.' });
 
   try {
     await Notification.updateMany(

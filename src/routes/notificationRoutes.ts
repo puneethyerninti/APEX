@@ -1,4 +1,5 @@
 import express from 'express';
+import { requireAuth, requireAdmin } from '../middleware/authMiddleware';
 import { 
   sendEmailNotification, 
   getUserNotifications, 
@@ -9,7 +10,8 @@ import {
 const router = express.Router();
 
 // Email routes
-router.post('/email', sendEmailNotification);
+router.post('/email', requireAdmin, sendEmailNotification);
+router.use(requireAuth);
 
 // App notification routes
 router.get('/user/:userId', getUserNotifications);

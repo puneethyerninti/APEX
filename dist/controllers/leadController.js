@@ -8,7 +8,8 @@ const Lead_1 = __importDefault(require("../models/Lead"));
 const notificationController_1 = require("./notificationController");
 const createLead = async (req, res) => {
     try {
-        const { name, mobile, serviceType, userId } = req.body;
+        const { name, mobile, serviceType } = req.body;
+        const userId = req.user.id;
         if (!name || !mobile || !serviceType) {
             return res.status(400).json({ error: 'Name, mobile, and service type are required' });
         }

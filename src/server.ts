@@ -2,6 +2,8 @@ import express from 'express';
 import http from 'http';
 import { initSocket } from './utils/socketManager';
 import cors from 'cors';
+import AuthSession from './models/AuthSession';
+import { allowedOrigins } from './services/allowedOrigins';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -45,6 +47,8 @@ initFirebaseAdmin();
 
 const app = express();
 const server = http.createServer(app);
+app.set('trust proxy', 1);
+app.use(cors({ origin: (origin, callback) => callback(null, !origin || allowedOrigins().includes(origin)) }));
 
 // Global Security Middleware
 app.use(helmet());
@@ -56,7 +60,6 @@ const globalLimiter = rateLimit({
 app.use(globalLimiter);
 
 // Middleware
-app.use(cors());
 app.use(express.json({
   limit: '10mb',
   verify: (req: any, _res, buf) => {
@@ -177,7 +180,7 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 const start = async () => {
   await connectDB();
-  await Promise.all([Ride.init(), CabQuote.init(), RideSlot.init(), User.init(), WalletTransfer.init(), MatrimonyProfile.init(), Message.init()]);
+  await Promise.all([AuthSession.init(), Ride.init(), CabQuote.init(), RideSlot.init(), User.init(), WalletTransfer.init(), MatrimonyProfile.init(), Message.init()]);
   server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 };
 start().catch(() => { console.error('Backend startup failed. Check database configuration and indexes.'); process.exit(1); });

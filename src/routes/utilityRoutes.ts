@@ -1,4 +1,5 @@
 import express from 'express';
+import { requireAuth } from '../middleware/authMiddleware';
 import { 
     payBill, 
     getPlans,
@@ -12,6 +13,7 @@ import {
 } from '../controllers/utilityController';
 
 const router = express.Router();
+router.use(requireAuth);
 
 // BBPS Discovery Endpoints
 router.get('/bbps/categories', getCategories);
@@ -21,7 +23,7 @@ router.get('/bbps/operator/:id/parameters', getOperatorParams);
 
 // BBPS Bill Fetch & Pay
 router.post('/bbps/fetch-bill', fetchBBPSBill);
-router.post('/pay', payBill);
+router.post('/pay', (_req, res) => res.status(409).json({ error: 'Direct utility payment is unavailable. Use the verified payment checkout.' }));
 router.get('/transactions/:id/status', getUtilityTransactionStatus);
 router.get('/history/:userId', getUserUtilityHistory);
 

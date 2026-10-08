@@ -7,7 +7,8 @@ import User from '../models/User';
 
 export const submitInquiry = async (req: Request, res: Response) => {
   try {
-    const { propertyId, propertyTitle, userId, contactData } = req.body;
+    const { propertyId, propertyTitle, contactData } = req.body;
+    const userId = (req as any).user.id;
     
     // Find the property to get the owner
     let ownerId = null;
@@ -59,7 +60,8 @@ import Property from '../models/Property';
 
 export const createProperty = async (req: Request, res: Response) => {
   try {
-    const { userId, listingType, propertyType, title, price, description, phone, longitude, latitude, images } = req.body;
+    const { listingType, propertyType, title, price, description, phone, longitude, latitude, images } = req.body;
+    const userId = (req as any).user.id;
 
     if (!userId || !listingType || !propertyType || !title || !price || !description || !phone) {
       return res.status(400).json({ error: 'Missing required fields' });

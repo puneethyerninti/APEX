@@ -9,7 +9,7 @@ const notificationController_1 = require("./notificationController");
 // Get all jobs
 const getJobs = async (req, res) => {
     try {
-        const jobs = await Job_1.default.find().sort({ createdAt: -1 });
+        const jobs = await Job_1.default.find({ status: 'approved', type: { $ne: 'Application' } }).sort({ createdAt: -1 });
         res.json(jobs);
     }
     catch (error) {
@@ -17,7 +17,7 @@ const getJobs = async (req, res) => {
     }
 };
 exports.getJobs = getJobs;
-// Create a new job (Admin only in real app, open for demo)
+// Administrative job publishing.
 const createJob = async (req, res) => {
     try {
         const { title, company, location, type, salary, description } = req.body;
@@ -28,6 +28,8 @@ const createJob = async (req, res) => {
             type,
             salary,
             description,
+            status: 'approved',
+            postedBy: req.user.id,
         });
         // Emit live event to admin dashboard
         const io = req.app.get('io');
@@ -45,7 +47,8 @@ exports.createJob = createJob;
 // Apply for a job (Real File Upload to S3)
 const applyJob = async (req, res) => {
     try {
-        const { fullName, email, jobRole, userId } = req.body;
+        const { fullName, email, jobRole } = req.body;
+        const userId = req.user.id;
         // multer-s3 attaches the S3 URL to req.file.location
         const file = req.file;
         const resumeUrl = file ? file.location : 'No file attached';
@@ -56,6 +59,7 @@ const applyJob = async (req, res) => {
             company: fullName, // Store name in company field for admin visibility
             location: email, // Store email in location
             type: 'Application',
+            postedBy: userId,
             salary: 'N/A',
             description: `Resume Link: ${resumeUrl}`,
             status: 'pending'

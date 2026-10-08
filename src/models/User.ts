@@ -7,6 +7,7 @@ export interface IUser extends Document {
   phone?: string;
   role: 'user' | 'admin' | 'driver';
   firebaseUid?: string;
+  isDisabled?: boolean;
   walletBalance: number;
   profilePicture?: string;
   fcmTokens?: string[];
@@ -34,9 +35,10 @@ const UserSchema = new Schema<IUser>(
     email: { type: String, required: true, unique: true },
     password: { type: String },
     name: { type: String, required: true },
-    phone: { type: String },
+    phone: { type: String, index: true },
     role: { type: String, enum: ['user', 'admin', 'driver'], default: 'user' },
     firebaseUid: { type: String, unique: true, sparse: true },
+    isDisabled: { type: Boolean, default: false },
     walletBalance: { type: Number, default: 0 },
     profilePicture: { type: String },
     fcmTokens: [{ type: String }],

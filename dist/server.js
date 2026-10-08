@@ -7,6 +7,8 @@ const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
 const socketManager_1 = require("./utils/socketManager");
 const cors_1 = __importDefault(require("cors"));
+const AuthSession_1 = __importDefault(require("./models/AuthSession"));
+const allowedOrigins_1 = require("./services/allowedOrigins");
 const dotenv_1 = __importDefault(require("dotenv"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
@@ -43,6 +45,8 @@ dotenv_1.default.config();
 (0, firebaseAdmin_1.initFirebaseAdmin)();
 const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
+app.set('trust proxy', 1);
+app.use((0, cors_1.default)({ origin: (origin, callback) => callback(null, !origin || (0, allowedOrigins_1.allowedOrigins)().includes(origin)) }));
 // Global Security Middleware
 app.use((0, helmet_1.default)());
 const globalLimiter = (0, express_rate_limit_1.default)({
@@ -52,7 +56,6 @@ const globalLimiter = (0, express_rate_limit_1.default)({
 });
 app.use(globalLimiter);
 // Middleware
-app.use((0, cors_1.default)());
 app.use(express_1.default.json({
     limit: '10mb',
     verify: (req, _res, buf) => {
@@ -160,7 +163,7 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 const start = async () => {
     await (0, db_1.connectDB)();
-    await Promise.all([Ride_1.default.init(), CabQuote_1.default.init(), RideSlot_1.default.init(), User_1.default.init(), WalletTransfer_1.default.init(), MatrimonyProfile_1.default.init(), Message_1.default.init()]);
+    await Promise.all([AuthSession_1.default.init(), Ride_1.default.init(), CabQuote_1.default.init(), RideSlot_1.default.init(), User_1.default.init(), WalletTransfer_1.default.init(), MatrimonyProfile_1.default.init(), Message_1.default.init()]);
     server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 };
 start().catch(() => { console.error('Backend startup failed. Check database configuration and indexes.'); process.exit(1); });

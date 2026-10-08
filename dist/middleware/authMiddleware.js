@@ -1,49 +1,30 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requireAdmin = exports.requireAuth = void 0;
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const User_1 = __importDefault(require("../models/User"));
-const requireAuth = (req, res, next) => {
+const authSession_1 = require("../services/authSession");
+const requireAuth = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Authentication required' });
     }
     const token = authHeader.split(' ')[1];
     try {
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
-        if (decoded.authVersion !== 2 || !decoded.id)
-            return res.status(401).json({ error: 'Please sign in again.' });
-        req.user = decoded;
-        next();
+        req.user = await (0, authSession_1.validateApplicationSession)(token);
+        res.setHeader('Cache-Control', 'no-store');
+        return next();
     }
     catch (error) {
-        return res.status(401).json({ error: 'Invalid or expired token' });
+        const failure = error instanceof authSession_1.SessionError ? error : new authSession_1.SessionError(503, 'Sign-in service is temporarily unavailable.');
+        return res.status(failure.status).json({ error: failure.message });
     }
 };
 exports.requireAuth = requireAuth;
 const requireAdmin = async (req, res, next) => {
-    // First ensure they are authenticated
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Authentication required' });
-    }
-    const token = authHeader.split(' ')[1];
-    try {
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
-        if (decoded.authVersion !== 2 || !decoded.id)
-            return res.status(401).json({ error: 'Please sign in again.' });
-        req.user = decoded;
-        const user = await User_1.default.findById(decoded.id);
-        if (user?.role !== 'admin') {
+    return (0, exports.requireAuth)(req, res, () => {
+        if (req.user?.role !== 'admin') {
             return res.status(403).json({ error: 'Access denied. Admin only.' });
         }
-        next();
-    }
-    catch (error) {
-        return res.status(401).json({ error: 'Invalid or expired token' });
-    }
+        return next();
+    });
 };
 exports.requireAdmin = requireAdmin;

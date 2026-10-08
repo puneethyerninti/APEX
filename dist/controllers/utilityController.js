@@ -524,7 +524,7 @@ const handleBBPSPayment = async (userId, metadata) => {
 exports.handleBBPSPayment = handleBBPSPayment;
 const getUtilityTransactionStatus = async (req, res) => {
     try {
-        const transaction = await UtilityTransaction_1.default.findById(req.params.id).lean();
+        const transaction = await UtilityTransaction_1.default.findOne({ _id: req.params.id, userId: req.user.id }).lean();
         if (!transaction) {
             return res.status(404).json({ success: false, message: 'Utility transaction not found' });
         }
@@ -546,7 +546,7 @@ const getUtilityTransactionStatus = async (req, res) => {
         });
     }
     catch (error) {
-        res.status(500).json({ success: false, message: error.message || 'Failed to get transaction status' });
+        res.status(500).json({ success: false, message: 'Failed to get transaction status' });
     }
 };
 exports.getUtilityTransactionStatus = getUtilityTransactionStatus;
@@ -555,6 +555,8 @@ const getUserUtilityHistory = async (req, res) => {
         const { userId } = req.params;
         if (!userId)
             return res.status(400).json({ success: false, message: 'User ID required' });
+        if (userId !== req.user.id)
+            return res.status(404).json({ success: false, message: 'History not found.' });
         const history = await UtilityTransaction_1.default.find({ userId })
             .sort({ createdAt: -1 })
             .limit(50);

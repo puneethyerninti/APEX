@@ -87,7 +87,8 @@ export const seedMutualFunds = async (req: Request, res: Response) => {
 };
 
 export const logInvestIntent = async (req: Request, res: Response) => {
-  const { userId, amcName } = req.body;
+  const { amcName } = req.body;
+  const userId = (req as any).user.id;
 
   if (!userId || !amcName) {
     return res.status(400).json({ error: 'Missing required fields' });

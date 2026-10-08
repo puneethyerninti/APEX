@@ -34,34 +34,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const UserSchema = new mongoose_1.Schema({
-    email: { type: String, required: true, unique: true },
-    password: { type: String },
-    name: { type: String, required: true },
-    phone: { type: String, index: true },
-    role: { type: String, enum: ['user', 'admin', 'driver'], default: 'user' },
-    firebaseUid: { type: String, unique: true, sparse: true },
-    isDisabled: { type: Boolean, default: false },
-    walletBalance: { type: Number, default: 0 },
-    profilePicture: { type: String },
-    fcmTokens: [{ type: String }],
-    apexPlan: { type: String, enum: ['Free', 'APEX Plus', 'APEX Prime'], default: 'Free' },
-    portfolioInvested: { type: Number, default: 0 },
-    portfolioReturns: { type: Number, default: 0 },
-    // Driver fields
-    isOnline: { type: Boolean, default: false },
-    vehicleDetails: {
-        type: { type: String, enum: ['mini', 'xl'] },
-        make: String,
-        model: String,
-        plate: String,
-        color: String
-    },
-    currentLocation: {
-        lat: Number,
-        lng: Number,
-        heading: Number,
-        updatedAt: Date
-    }
+const schema = new mongoose_1.Schema({
+    tokenId: { type: String, required: true, unique: true },
+    userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+    expiresAt: { type: Date, required: true }
 }, { timestamps: true });
-exports.default = mongoose_1.default.model('User', UserSchema);
+schema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+exports.default = mongoose_1.default.model('AuthSession', schema);
