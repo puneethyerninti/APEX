@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAppStore } from '@/store/useAppStore';
+import { api } from '@/services/api';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -19,6 +20,13 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let socketInstance: Socket | null = null;
     let retry: ReturnType<typeof setTimeout> | undefined;
+    let disposed = false;
+    const recoverSession = () => {
+      clearTimeout(retry);
+      retry = setTimeout(() => {
+        void api.get('/user/profile').then(() => { if (!disposed) socketInstance?.connect(); }).catch(() => { if (!disposed) recoverSession(); });
+      }, 10000);
+    };
 
     const connectWithAuth = async () => {
       if (!user) return; // Don't connect if not logged in
@@ -54,13 +62,13 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           // Authentication rejection stops Socket.IO's automatic retries. A refreshed
           // HTTP session may provide a new JWT while polling keeps the UI current.
           if (socketInstance && !socketInstance.active) {
-            clearTimeout(retry);
-            retry = setTimeout(() => socketInstance?.connect(), 10000);
+            recoverSession();
           }
         });
 
-        socketInstance.on('disconnect', () => {
+        socketInstance.on('disconnect', reason => {
           setIsConnected(false);
+          if (reason === 'io server disconnect' && !disposed) recoverSession();
         });
 
         setSocket(socketInstance);
@@ -72,6 +80,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     connectWithAuth();
 
     return () => {
+      disposed = true;
       clearTimeout(retry);
       if (socketInstance) {
         socketInstance.disconnect();

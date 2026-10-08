@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
@@ -19,6 +19,9 @@ export default function GlobalModals() {
     const [editName, setEditName] = useState('');
     const [editEmail, setEditEmail] = useState('');
     const [editProfilePicture, setEditProfilePicture] = useState('');
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileError, setProfileError] = useState('');
+    const profileSaveLock = useRef(false);
     
     // Global state
     const user = useAppStore((state) => state.user);
@@ -47,29 +50,34 @@ export default function GlobalModals() {
 
     const handleSaveProfile = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user?.phone) return;
-        
-        // Optimistic UI Update: Instantly update local store and close modal
-        updateUserProfile({ name: editName, email: editEmail, profilePicture: editProfilePicture });
-        setModal('account'); 
-        
-        // Background sync to Node.js Backend API
+        if (!user?.uid || profileSaveLock.current) return;
+        const owner = user.uid;
+        profileSaveLock.current = true; setProfileSaving(true); setProfileError('');
         try {
-            await api.post('/user/profile', {
-                phone: user.phone,
+            const response = await api.post('/user/profile', {
                 name: editName,
                 email: editEmail,
                 profilePicture: editProfilePicture,
             });
-        } catch (error) {
-            console.error("Failed to update profile", error);
-            // Optionally could revert the store update here if it failed
+            if (useAppStore.getState().user?.uid !== owner) return;
+            const saved = response.data.user;
+            if (saved?._id !== owner) throw new Error('Invalid profile response.');
+            updateUserProfile({ name: saved.name, email: saved.email, profilePicture: saved.profilePicture });
+            setModal('account');
+        } catch (error: any) {
+            setProfileError(error.response?.data?.error || 'Profile was not saved. Please try again.');
+        } finally {
+            profileSaveLock.current = false; setProfileSaving(false);
         }
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 1400000) {
+                setProfileError('Choose a JPEG, PNG or WebP picture smaller than 1.4 MB.'); return;
+            }
+            setProfileError('');
             const reader = new FileReader();
             reader.onloadend = () => {
                 setEditProfilePicture(reader.result as string);
@@ -302,7 +310,7 @@ export default function GlobalModals() {
                                     )}
                                     <label className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                                         <i className="fa-solid fa-camera text-white text-xl"></i>
-                                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                                        <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageUpload} disabled={profileSaving} />
                                     </label>
                                 </div>
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Tap to change photo</p>
@@ -313,6 +321,9 @@ export default function GlobalModals() {
                                 <input 
                                     type="text" 
                                     value={editName}
+                                    maxLength={100}
+                                    minLength={2}
+                                    disabled={profileSaving}
                                     onChange={(e) => setEditName(e.target.value)}
                                     placeholder="Enter your name"
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
@@ -324,18 +335,21 @@ export default function GlobalModals() {
                                 <input 
                                     type="email" 
                                     value={editEmail}
+                                    maxLength={254}
+                                    disabled={profileSaving}
                                     onChange={(e) => setEditEmail(e.target.value)}
                                     placeholder="Enter your email"
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
                                 />
                             </div>
                             
+                            {profileError && <p role="alert" className="text-xs text-red-600">{profileError}</p>}
                             <div className="flex gap-3 mt-4">
                                 <button type="button" onClick={() => setModal('account')} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold text-sm rounded-xl hover:bg-gray-200 transition-colors">
                                     Cancel
                                 </button>
-                                <button type="submit" className="flex-1 py-3 bg-[#6C3FC5] text-white font-bold text-sm rounded-xl hover:bg-[#5a34a8] transition-colors flex justify-center items-center gap-2">
-                                    Save Profile
+                                <button type="submit" disabled={profileSaving} className="flex-1 py-3 bg-[#6C3FC5] text-white font-bold text-sm rounded-xl hover:bg-[#5a34a8] disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                    {profileSaving ? 'Saving...' : 'Save Profile'}
                                 </button>
                             </div>
                         </form>

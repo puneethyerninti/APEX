@@ -1,13 +1,22 @@
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import type { PluginListenerHandle } from '@capacitor/core';
 import { auth } from '@/firebase.config';
 import { api } from '@/services/api';
+
+let registeredPushToken: string | null = null;
+export const getRegisteredPushToken = () => registeredPushToken;
+export const clearRegisteredPushToken = () => { registeredPushToken = null; };
+export const unregisterDevicePush = async () => {
+  if (Capacitor.isNativePlatform()) await PushNotifications.unregister();
+};
 
 export const usePushNotifications = (isAuthenticated: boolean) => {
   useEffect(() => {
     if (!isAuthenticated) return;
+    let active = true;
+    const listeners: PluginListenerHandle[] = [];
 
     const registerPush = async () => {
       try {
@@ -27,24 +36,17 @@ export const usePushNotifications = (isAuthenticated: boolean) => {
             return;
           }
 
-          await PushNotifications.register();
-
-          PushNotifications.addListener('registration', async (token) => {
-            console.log('Android FCM Token:', token.value);
-            // Save to backend
-            await api.post('/user/fcm-token', {
-              phone: currentUser.phoneNumber,
-              token: token.value
+          if (!active || auth.currentUser?.uid !== currentUser.uid) return;
+          const listener = await PushNotifications.addListener('registration', token => {
+            if (!active || auth.currentUser?.uid !== currentUser.uid) return;
+            registeredPushToken = token.value;
+            void api.post('/user/fcm-token', { token: token.value }).catch(() => {
+              if (active) console.warn('Could not register device notifications.');
             });
           });
-
-          PushNotifications.addListener('pushNotificationReceived', (notification) => {
-            console.log('Push received: ', notification);
-          });
-
-          PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-            console.log('Push action performed: ', notification);
-          });
+          if (!active) { await listener.remove(); return; }
+          listeners.push(listener);
+          await PushNotifications.register();
 
         } else {
           // --- WEB PUSH NOTIFICATIONS ---
@@ -61,5 +63,6 @@ export const usePushNotifications = (isAuthenticated: boolean) => {
     };
 
     registerPush();
+    return () => { active = false; for (const listener of listeners) void listener.remove(); };
   }, [isAuthenticated]);
 };
