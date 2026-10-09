@@ -128,7 +128,7 @@ export default function Header() {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+        <div className="hidden md:flex items-center gap-4 lg:gap-8 absolute left-1/2 -translate-x-1/2">
           <Link href="/matrimony" className="text-violet-100 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
             <i className="fa-solid fa-heart text-pink-400"></i> Matrimony
           </Link>
