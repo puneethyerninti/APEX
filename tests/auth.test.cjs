@@ -19,7 +19,7 @@ if (!getApps().length) initializeApp({ projectId: 'isolated-auth-tests' });
 const undo = [];
 function stub(object, key, value) { const old = object[key]; object[key] = value; undo.push(() => object[key] = old); }
 afterEach(() => { while (undo.length) undo.pop()(); });
-const query = value => ({ limit() { return this; }, sort() { return this; }, lean() { return this; }, then(resolve, reject) { return Promise.resolve(value).then(resolve, reject); } });
+const query = value => ({ select() { return this; }, limit() { return this; }, sort() { return this; }, lean() { return this; }, then(resolve, reject) { return Promise.resolve(value).then(resolve, reject); } });
 const response = () => ({ code: 200, headers: {}, setHeader(key, value) { this.headers[key] = value; }, status(value) { this.code = value; return this; }, json(body) { this.body = body; return this; } });
 const proof = extra => ({ uid: 'verified-uid', phone_number: '+919999999999', auth_time: Math.floor(Date.now() / 1000), firebase: { sign_in_provider: 'phone' }, ...extra });
 function fixture(existing = [], identity = proof()) {
@@ -84,6 +84,43 @@ test('admin portal never creates users or grants privileges based on a submitted
 });
 test('disabled accounts cannot exchange Firebase proof for an application session', async () => {
   fixture([account({ isDisabled: true })]); assert.equal((await exchange()).code, 403);
+});
+
+test('admin OTP eligibility accepts only one active database admin, with canonical or legacy phone', async () => {
+  for (const [rows, expected] of [[[], 403], [[account()], 403], [[account({ role: 'driver' })], 403],
+    [[account({ role: 'admin', isDisabled: true })], 403], [[account({ role: 'admin' }), account()], 403],
+    [[account({ role: 'admin' })], 200]]) {
+    stub(User, 'find', filter => {
+      assert.deepEqual(filter, { phone: { $in: ['+919999999999', '9999999999'] } });
+      return { ...query(rows), select(fields) { assert.equal(fields, 'role isDisabled'); return this; }, limit(count) { assert.equal(count, 2); return this; } };
+    });
+    stub(User, 'create', () => { throw new Error('No account creation before OTP'); });
+    stub(AuthSession, 'create', () => { throw new Error('No session creation before OTP'); });
+    const res = response(); await controller.checkAdminOtpEligibility({ body: { phone: '+919999999999', role: 'admin' } }, res);
+    assert.equal(res.code, expected); assert.equal(res.headers['Cache-Control'], 'no-store');
+    if (expected === 200) assert.deepEqual(res.body, { success: true });
+    else assert.doesNotMatch(JSON.stringify(res.body), /Saved Full Name|token|firebase-proof/);
+  }
+});
+test('malformed admin OTP requests and database failures cannot approve sending an SMS', async () => {
+  stub(User, 'find', () => { throw new Error('Database private detail'); });
+  for (const phone of [undefined, {}, 9999999999, '9999999999', '+911234567890', '+919999999999x']) {
+    const res = response(); await controller.checkAdminOtpEligibility({ body: { phone } }, res); assert.equal(res.code, 400);
+  }
+  const res = response(); await controller.checkAdminOtpEligibility({ body: { phone: '+919999999999' } }, res);
+  assert.equal(res.code, 503); assert.doesNotMatch(JSON.stringify(res.body), /private detail/);
+});
+test('public admin OTP eligibility endpoint rate-limits unauthenticated attempts', async () => {
+  const routes = require('../dist/routes/userRoutes').default;
+  const app = express(); app.use(express.json()); app.use('/api/user', routes);
+  const server = app.listen(0, '127.0.0.1'); await new Promise(resolve => server.once('listening', resolve));
+  try {
+    const url = `http://127.0.0.1:${server.address().port}/api/user/admin-otp/eligibility`;
+    for (let index = 0; index < 6; index++) {
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: 'invalid' }) });
+      assert.equal(res.status, index < 5 ? 400 : 429);
+    }
+  } finally { await new Promise(resolve => server.close(resolve)); }
 });
 test('invalid Firebase proof is unauthorized and configuration errors are sanitized unavailable responses', async () => {
   fixture();

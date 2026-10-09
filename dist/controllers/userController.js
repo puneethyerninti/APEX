@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleAPEXPlanUpgrade = exports.saveFCMToken = exports.sendEmailNotification = exports.updateUserProfile = exports.logoutSession = exports.getUserProfile = exports.exchangeFirebaseSession = void 0;
+exports.handleAPEXPlanUpgrade = exports.saveFCMToken = exports.sendEmailNotification = exports.updateUserProfile = exports.logoutSession = exports.getUserProfile = exports.exchangeFirebaseSession = exports.checkAdminOtpEligibility = void 0;
 const User_1 = __importDefault(require("../models/User"));
 const AuthSession_1 = __importDefault(require("../models/AuthSession"));
 const authSession_1 = require("../services/authSession");
@@ -17,6 +17,25 @@ const publicProfile = (user) => ({
     profilePicture: user.profilePicture, role: user.role, walletBalance: user.walletBalance,
     apexPlan: user.apexPlan, isPremium: user.apexPlan !== 'Free'
 });
+const checkAdminOtpEligibility = async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const phone = req.body?.phone;
+    if (typeof phone !== 'string' || !/^\+91[6-9]\d{9}$/.test(phone)) {
+        return res.status(400).json({ error: 'Enter a valid Indian mobile number.' });
+    }
+    try {
+        // This permits a portal SMS request only; verified identity and role are checked again at session exchange.
+        const matches = await User_1.default.find({ phone: { $in: [phone, phone.slice(3)] } }).select('role isDisabled').limit(2);
+        if (matches.length !== 1 || matches[0].role !== 'admin' || matches[0].isDisabled) {
+            return res.status(403).json({ error: 'Admin sign-in is unavailable for this number. Use User Login or contact support.' });
+        }
+        return res.json({ success: true });
+    }
+    catch {
+        return res.status(503).json({ error: 'Admin sign-in is temporarily unavailable. No OTP has been requested.' });
+    }
+};
+exports.checkAdminOtpEligibility = checkAdminOtpEligibility;
 const exchangeFirebaseSession = async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null;

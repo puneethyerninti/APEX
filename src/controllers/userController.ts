@@ -17,6 +17,24 @@ const publicProfile = (user: any) => ({
   apexPlan: user.apexPlan, isPremium: user.apexPlan !== 'Free'
 });
 
+export const checkAdminOtpEligibility = async (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const phone = req.body?.phone;
+  if (typeof phone !== 'string' || !/^\+91[6-9]\d{9}$/.test(phone)) {
+    return res.status(400).json({ error: 'Enter a valid Indian mobile number.' });
+  }
+  try {
+    // This permits a portal SMS request only; verified identity and role are checked again at session exchange.
+    const matches = await User.find({ phone: { $in: [phone, phone.slice(3)] } }).select('role isDisabled').limit(2);
+    if (matches.length !== 1 || matches[0].role !== 'admin' || matches[0].isDisabled) {
+      return res.status(403).json({ error: 'Admin sign-in is unavailable for this number. Use User Login or contact support.' });
+    }
+    return res.json({ success: true });
+  } catch {
+    return res.status(503).json({ error: 'Admin sign-in is temporarily unavailable. No OTP has been requested.' });
+  }
+};
+
 export const exchangeFirebaseSession = async (req: Request, res: Response) => {
   res.setHeader('Cache-Control', 'no-store');
   const token = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null;

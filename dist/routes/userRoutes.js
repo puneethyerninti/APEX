@@ -8,6 +8,8 @@ const userController_1 = require("../controllers/userController");
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = express_1.default.Router();
+router.post('/admin-otp/eligibility', (0, express_rate_limit_1.default)({ windowMs: 60000, max: 5, standardHeaders: true, legacyHeaders: false,
+    message: { error: 'Too many admin sign-in attempts. Please wait a minute.' } }), userController_1.checkAdminOtpEligibility);
 router.post('/session', (0, express_rate_limit_1.default)({ windowMs: 60000, max: 30, standardHeaders: true, legacyHeaders: false,
     message: { error: 'Too many sign-in attempts. Please wait a minute.' } }), userController_1.exchangeFirebaseSession);
 router.post('/logout', authMiddleware_1.requireAuth, userController_1.logoutSession);
