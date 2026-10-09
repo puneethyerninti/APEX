@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { APEX_PAY_ENABLED } from "@/config/apexPay";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -26,8 +27,7 @@ export default function BottomNav() {
         <i className="fa-solid fa-chart-line text-base"></i>
         <span>Invest</span>
       </Link>
-      {/* Center Scan Link */}
-      <Link
+      {APEX_PAY_ENABLED && <Link
         href="/payment?scan=true"
         className="flex flex-col items-center justify-center gap-1"
       >
@@ -35,16 +35,16 @@ export default function BottomNav() {
           <i className="fa-solid fa-qrcode text-base"></i>
         </div>
         <span className="font-bold text-[9px] text-gray-400">Scan</span>
-      </Link>
+      </Link>}
 
       <Link
-        href="/payment"
+        href={APEX_PAY_ENABLED ? "/payment" : "/apex-tv"}
         className={`flex flex-col items-center gap-0.5 font-bold text-[9px] transition-colors ${
-          pathname === "/payment" ? "text-apex-purple font-black" : "text-gray-400 hover:text-apex-purple"
+          pathname === "/payment" || (!APEX_PAY_ENABLED && pathname === "/apex-tv") ? "text-apex-purple font-black" : "text-gray-400 hover:text-apex-purple"
         }`}
       >
-        <i className="fa-solid fa-indian-rupee-sign text-base"></i>
-        <span>Payments</span>
+        <i className={`fa-solid ${APEX_PAY_ENABLED ? "fa-indian-rupee-sign" : "fa-tv"} text-base`}></i>
+        <span>{APEX_PAY_ENABLED ? "Payments" : "APEX TV"}</span>
       </Link>
       <button
         onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'account' }))}

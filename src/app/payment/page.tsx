@@ -9,6 +9,8 @@ import { pendingWalletTransfer, transferWallet } from '@/services/walletTransfer
 import { useAppStore } from '@/store/useAppStore';
 import { useSocket } from '@/context/SocketContext';
 import PaymentQr from '@/components/PaymentQr';
+import ApexTv from '@/components/ApexTv';
+import { APEX_PAY_ENABLED } from '@/config/apexPay';
 
 interface TransactionItem {
   _id: string; amount: number; type: 'credit' | 'debit'; category: string;
@@ -20,6 +22,10 @@ function toast(message: string, type = 'info') {
 const inputStyle = 'h-11 w-full min-w-0 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm outline-none focus:ring-2 focus:ring-emerald-200';
 
 export default function PaymentPage() {
+  return APEX_PAY_ENABLED ? <ApexPay /> : <ApexTv />;
+}
+
+function ApexPay() {
   const user = useAppStore(state => state.user);
   const uid = user?.uid || user?._id;
   const { socket } = useSocket();

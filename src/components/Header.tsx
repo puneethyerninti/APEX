@@ -20,6 +20,7 @@ const SEARCH_CATALOG = [
   { title: "Charity Foundation", category: "Foundation", icon: "fa-hand-holding-heart", href: "/charity" },
   { title: "Job Portal", category: "Jobs", icon: "fa-briefcase", href: "/jobs" },
   { title: "Store & Groceries", category: "Shop", icon: "fa-store", href: "/store" },
+  { title: "APEX TV", category: "YouTube", icon: "fa-tv", href: "/apex-tv" },
 ];
 
 export default function Header() {
@@ -136,6 +137,9 @@ export default function Header() {
           </Link>
           <Link href="/charity" className="text-violet-100 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
             <i className="fa-solid fa-hand-holding-heart text-green-400"></i> Charity
+          </Link>
+          <Link href="/apex-tv" className="text-violet-100 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
+            <i className="fa-solid fa-tv text-red-300"></i> APEX TV
           </Link>
         </div>
 

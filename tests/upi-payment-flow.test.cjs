@@ -68,7 +68,8 @@ test('payment layout is server-rendered immediately without a session or full-sc
     '@/services/api': { api: {} }, '@/services/paymentPayload': payload,
     '@/services/upiLauncher': {}, '@/services/walletTransfer': {},
     '@/store/useAppStore': { useAppStore: selector => selector({ user: null }) },
-    '@/context/SocketContext': { useSocket: () => ({ socket: null }) }, '@/components/PaymentQr': {}
+    '@/context/SocketContext': { useSocket: () => ({ socket: null }) }, '@/components/PaymentQr': {},
+    '@/config/apexPay': { APEX_PAY_ENABLED: true }, '@/components/ApexTv': {}
   };
   mod.require = name => Object.hasOwn(dependencies, name) ? dependencies[name] : require(name);
   mod._compile(code, __filename);

@@ -11,6 +11,7 @@ import { createSessionGate } from '@/services/sessionGate';
 import { resetSessionReadiness, settleSessionReadiness } from '@/services/sessionReadiness';
 import { applyApplicationSession, clearApplicationSession } from '@/services/applicationSession';
 import { isProfileName } from '@/services/phoneSignIn';
+import { isPublicApexTvPath } from '@/config/apexPay';
 
 interface AuthContextType {
   isAuthenticated: boolean; isLoading: boolean; error: string;
@@ -95,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isLoading || error) return;
-    if (!isAuthenticated && !['/login', '/admin-login'].includes(pathname)) router.replace('/login');
+    if (!isAuthenticated && !['/login', '/admin-login'].includes(pathname) && !isPublicApexTvPath(pathname)) router.replace('/login');
     if (isAuthenticated && pathname === '/login') router.replace('/');
     if (isAuthenticated && pathname === '/admin-login') router.replace(role === 'admin' ? '/admin-dashboard' : '/');
     if (isAuthenticated && pathname.startsWith('/admin-dashboard') && role !== 'admin') router.replace('/');
@@ -124,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   return <AuthContext.Provider value={{ isAuthenticated, isLoading, error, registrationRequired: !!registrationPhone, registrationPhone,
     completeRegistration, retrySession: () => setRetry(value => value + 1), logout }}>
-    {error && !['/login', '/admin-login'].includes(pathname) && <div role="alert" className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">Sign-in is temporarily unavailable. Your account and payments remain protected.</div>}
+    {error && !['/login', '/admin-login'].includes(pathname) && !isPublicApexTvPath(pathname) && <div role="alert" className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">Sign-in is temporarily unavailable. Your account and payments remain protected.</div>}
     {children}
   </AuthContext.Provider>;
 }
