@@ -19,7 +19,7 @@ function screen(session = {}, adminPortal = false) {
   const { default: PhoneSignIn } = load('src/components/PhoneSignIn.tsx', {
     'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children) },
     '@/context/AuthContext': { useAuth: () => ({ isLoading: false, registrationRequired: false, error: '', ...session }) },
-    '@/firebase.config': { auth: {} }, 'firebase/auth': {}, '@/services/phoneSignIn': policy
+    '@/firebase.config': { auth: {} }, 'firebase/auth': {}, '@/services/phoneSignIn': policy, '@/services/phoneOtp': {}
   });
   return renderToStaticMarkup(React.createElement(PhoneSignIn, { adminPortal }));
 }

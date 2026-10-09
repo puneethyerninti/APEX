@@ -4,6 +4,8 @@ export const resendSeconds = (deadline: number, now = Date.now()) => Math.max(0,
 
 export function phoneSignInError(error: { code?: string }) {
   switch (error.code) {
+    case 'admin/not-authorized': return 'Admin sign-in is unavailable for this number. Please use User Login or contact support.';
+    case 'admin/unavailable': return 'Admin sign-in is temporarily unavailable. No OTP has been requested.';
     case 'auth/invalid-verification-code': return 'That OTP is incorrect. Please try again.';
     case 'auth/code-expired': case 'auth/session-expired': return 'Your OTP has expired. Request a new one.';
     case 'auth/too-many-requests': case 'auth/quota-exceeded': return 'Too many attempts. Please wait before trying again.';

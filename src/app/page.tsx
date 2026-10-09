@@ -3,6 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import CreditCardCarousel from '@/components/CreditCardCarousel';
+import StorePromotions from '@/components/StorePromotions';
 import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/services/api';
 export default function Home() {
@@ -98,48 +99,8 @@ export default function Home() {
         }
 
 
-        // 3. Realty & Academy Auto Carousels
-        const realtyTrack = document.getElementById('realty-carousel-track');
+        // Academy Auto Carousel
         const academyTrack = document.getElementById('academy-carousel-track');
-        const realtyPrev = document.getElementById('realty-prev');
-        const realtyNext = document.getElementById('realty-next');
-
-        const handlePrev = () => {
-            if (realtyTrack) {
-                const card = realtyTrack.querySelector('.carousel-card');
-                if (card) {
-                    const cardWidth = card.getBoundingClientRect().width + 12; // width + mr-3 gap
-                    realtyTrack.scrollBy({ left: -cardWidth, behavior: 'smooth' });
-                }
-            }
-        };
-
-        const handleNext = () => {
-            if (realtyTrack) {
-                const card = realtyTrack.querySelector('.carousel-card');
-                if (card) {
-                    const cardWidth = card.getBoundingClientRect().width + 12; // width + mr-3 gap
-                    realtyTrack.scrollBy({ left: cardWidth, behavior: 'smooth' });
-                }
-            }
-        };
-
-        if (realtyPrev) realtyPrev.addEventListener('click', handlePrev);
-        if (realtyNext) realtyNext.addEventListener('click', handleNext);
-
-        let realtyDir = 1;
-        const realtyTimer = setInterval(() => {
-            if (!realtyTrack) return;
-            const maxScroll = realtyTrack.scrollWidth - realtyTrack.clientWidth;
-            if (realtyTrack.scrollLeft >= maxScroll - 5) realtyDir = -1;
-            else if (realtyTrack.scrollLeft <= 5) realtyDir = 1;
-
-            const card = realtyTrack.querySelector('.carousel-card');
-            if (card) {
-                const cardWidth = card.getBoundingClientRect().width + 12;
-                realtyTrack.scrollBy({ left: cardWidth * realtyDir, behavior: 'smooth' });
-            }
-        }, 3000);
 
         let academyDir = 1;
         const academyTimer = setInterval(() => {
@@ -185,11 +146,8 @@ export default function Home() {
         // Cleanup
         return () => {
             if (countdownInterval) clearInterval(countdownInterval);
-            if (realtyTimer) clearInterval(realtyTimer);
             if (academyTimer) clearInterval(academyTimer);
             if (primeTimer) clearInterval(primeTimer);
-            if (realtyPrev) realtyPrev.removeEventListener('click', handlePrev);
-            if (realtyNext) realtyNext.removeEventListener('click', handleNext);
             observer.disconnect();
         };
     }, []);
@@ -298,6 +256,8 @@ export default function Home() {
                     </div>
                 </section>
 
+
+                <StorePromotions />
 
                 {/* Flipkart-style Categories Compact Grid */}
                 <div className="grid grid-cols-4 md:grid-cols-8 gap-y-3 gap-x-2 md:gap-x-4 px-4 py-3 md:py-5 bg-white shadow-xs border-b border-gray-100 max-w-7xl mx-auto">
@@ -675,85 +635,7 @@ export default function Home() {
                     </div>
                 </section>
 
-                {/* ═══ 7. REAL ESTATE CAROUSEL ═══ */}
-                <section id="realty" className="py-6 bg-white border-b border-gray-100">
-                    <div className="px-4">
-                        <div className="flex items-center justify-between mb-4.5 reveal-up">
-                            <div>
-                                <h2 className="text-xs font-black text-gray-400 uppercase tracking-wider">Premium Real Estate</h2>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <button id="realty-prev" type="button" className="w-7 h-7 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:border-apex-purple hover:text-apex-purple transition-colors" aria-label="Prev"><i className="fa-solid fa-chevron-left text-xs"></i></button>
-                                <button id="realty-next" type="button" className="w-7 h-7 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:border-apex-purple hover:text-apex-purple transition-colors" aria-label="Next"><i className="fa-solid fa-chevron-right text-xs"></i></button>
-                            </div>
-                        </div>
-                        <div className="carousel-viewport reveal-zoom delay-100">
-                            <div className="carousel-track scrollbar-none overflow-x-auto flex flex-nowrap pb-1" id="realty-carousel-track">
 
-                                <div className="carousel-card flex-shrink-0 group cursor-pointer w-64 mr-3" onClick={() => window.location.href = '/realty'}>
-                                    <div className="relative overflow-hidden rounded-xl mb-2 h-36">
-                                        <img src="/property.jpeg" alt="Simplex Property" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                        <div className="absolute top-2 left-2 bg-black text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">Premium</div>
-                                    </div>
-                                    <div className="p-1">
-                                        <h3 className="text-xs font-bold text-gray-800 mb-0.5">Simplex Property</h3>
-                                        <p className="text-gray-400 text-[10px] mb-2 flex items-center gap-1"><i className="fa-solid fa-location-dot text-apex-purple"></i>Prime Location</p>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-apex-purple font-black text-sm">₹46 Lakhs</span>
-                                            <span className="text-[9px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded"><i className="fa-solid fa-vector-square mr-1 text-[8px]"></i>2 BHK</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="carousel-card flex-shrink-0 group cursor-pointer w-64 mr-3">
-                                    <div className="relative overflow-hidden rounded-xl mb-2 h-36">
-                                        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&amp;q=80&amp;auto=format&amp;fit=crop" alt="The Crown Villas" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                        <div className="absolute top-2 left-2 bg-black text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">For Sale</div>
-                                    </div>
-                                    <div className="p-1">
-                                        <h3 className="text-xs font-bold text-gray-800 mb-0.5">The Crown Villas</h3>
-                                        <p className="text-gray-400 text-[10px] mb-2 flex items-center gap-1"><i className="fa-solid fa-location-dot text-apex-purple"></i>Banjara Hills, Hyderabad</p>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-apex-purple font-black text-sm">₹15.5 Cr</span>
-                                            <span className="text-[9px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded"><i className="fa-solid fa-vector-square mr-1 text-[8px]"></i>8500 sqft</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="carousel-card flex-shrink-0 group cursor-pointer w-64 mr-3">
-                                    <div className="relative overflow-hidden rounded-xl mb-2 h-36">
-                                        <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&amp;q=80&amp;auto=format&amp;fit=crop" alt="Skyline Penthouses" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                        <div className="absolute top-2 left-2 bg-emerald-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">Pre-Launch</div>
-                                    </div>
-                                    <div className="p-1">
-                                        <h3 className="text-xs font-bold text-gray-800 mb-0.5">Skyline Penthouses</h3>
-                                        <p className="text-gray-400 text-[10px] mb-2 flex items-center gap-1"><i className="fa-solid fa-location-dot text-apex-purple"></i>Worli Sea Face, Mumbai</p>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-apex-purple font-black text-sm">₹8.2 Cr</span>
-                                            <span className="text-[9px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded"><i className="fa-solid fa-vector-square mr-1 text-[8px]"></i>4200 sqft</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="carousel-card flex-shrink-0 group cursor-pointer w-64 mr-3">
-                                    <div className="relative overflow-hidden rounded-xl mb-2 h-36">
-                                        <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&amp;q=80&amp;auto=format&amp;fit=crop" alt="APEX Tech Park" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                        <div className="absolute top-2 left-2 bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">Commercial</div>
-                                    </div>
-                                    <div className="p-1">
-                                        <h3 className="text-xs font-bold text-gray-800 mb-0.5">APEX Tech Park</h3>
-                                        <p className="text-gray-400 text-[10px] mb-2 flex items-center gap-1"><i className="fa-solid fa-location-dot text-apex-purple"></i>Whitefield, Bangalore</p>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-apex-purple font-black text-sm">Lease</span>
-                                            <span className="text-[9px] text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded"><i className="fa-solid fa-vector-square mr-1 text-[8px]"></i>1M+ sqft</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-                </section>
 
                 {/* ═══ 8. APEX ACADEMY ═══ */}
                 <section id="academy" className="py-6 bg-[#F4F6FB] border-b border-gray-100">
