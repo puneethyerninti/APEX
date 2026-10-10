@@ -570,20 +570,6 @@ export default function Home() {
                 </section>
 
 
-                {/* ═══ TRAVELS ═══ */}
-                <section id="travels" className="py-5 bg-white border-b border-gray-100">
-                    <div className="px-4">
-                        <h2 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-4.5 reveal-up">Travels</h2>
-                        <div className="grid grid-cols-4 gap-2 reveal-up delay-100">
-                            <Link href="/travels" className="quick-action group">
-                                <div className="quick-action-icon hover:scale-105 active:scale-95 transition-transform shadow-sm border border-rose-50" style={{ background: "linear-gradient(135deg,#fff1f2,#ffe4e6)", color: "#e11d48" }}>
-                                    <i className="fa-solid fa-taxi text-lg"></i></div>
-                                <span className="text-[9px] font-bold text-gray-700 mt-1.5">Cab</span>
-                            </Link>
-                        </div>
-                    </div>
-                </section>
-
                 {/* ═══ 4. APEX PRIME SUBSCRIPTION ═══ */}
                 <section id="prime" className="py-6 bg-[#F4F6FB] border-b border-gray-100">
                     <div className="px-4">

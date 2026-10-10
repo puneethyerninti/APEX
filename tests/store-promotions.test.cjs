@@ -27,6 +27,9 @@ test('home places advertisements below Store and removes only the specified prop
   assert.ok(home.indexOf('<StorePromotions />') < home.indexOf('Flipkart-style Categories Compact Grid'));
   assert.doesNotMatch(home, /Premium Real Estate|Simplex Property|The Crown Villas|Skyline Penthouses|APEX Tech Park|realty-carousel-track|realtyTimer/);
   assert.match(home, /href="\/realty"/); assert.match(home, /academyTimer/); assert.match(home, /primeTimer/);
+  assert.doesNotMatch(home, /<section id="travels"/);
+  assert.match(home, /href="\/travels"/);
+  assert.match(home, /<section id="prime"/);
 });
 
 test('autoplay, visibility, pause, reduced motion, swipe and timer cleanup behave correctly', () => {
