@@ -17,6 +17,28 @@
 4. Confirm Render reports successful Firebase Admin initialization for the same project used by Vercel. Never use a client API key as a Firebase Admin credential.
 5. Test the published domain with one existing and one new consenting user. Verify a genuine SMS, name-only-after-OTP registration, persisted name after logout/login, denied admin access for ordinary accounts, and logout revocation. Do not use test phone numbers as evidence of real SMS delivery.
 
+## Login latency
+
+Render Free services sleep after 15 minutes without traffic and can take about a minute to resume.
+For the published app, move APEX-Backend to an always-on paid compute instance:
+Render Dashboard -> APEX-Backend -> Compute -> Edit -> select a paid plan -> Save.
+Changing the workspace plan alone does not change this service's compute plan.
+See [Render Free limitations](https://render.com/docs/free) and [changing compute plans](https://render.com/docs/compute-plans).
+
+The login page makes one non-blocking anonymous request to the existing backend root when opened,
+deduplicated across mounts and limited to once per minute. It is not a periodic keep-alive service,
+does not authenticate anyone, and cannot eliminate Free-instance cold starts.
+Customer phone-field focus pre-renders Firebase reCAPTCHA and reuses that widget for Get OTP;
+it never sends an SMS or solves a challenge automatically. Admin reCAPTCHA/SMS remains gated
+behind the backend's active-admin eligibility check. Errors and unmount discard the prepared widget.
+See [Firebase CAPTCHA pre-rendering](https://firebase.google.com/docs/auth/web/phone-auth).
+
+Keep provider token revocation, live account-role checks and session deadlines enabled.
+The 30-second HTTP and 35-second session deadlines are upper bounds, not intentional waiting periods.
+Carrier SMS delivery and network/provider latency remain external dependencies.
+Measure a real consenting user's OTP request and verification separately from server cold-start delay;
+an anonymous health/root request is not an end-to-end login benchmark.
+
 ## Required configuration
 
 Render: a strong `JWT_SECRET`, `MONGO_URI`, and valid `FIREBASE_SERVICE_ACCOUNT_JSON` or `FIREBASE_SERVICE_ACCOUNT_BASE64` for the frontend Firebase project. Existing Firebase Admin initialization supports both formats. Do not commit these values.

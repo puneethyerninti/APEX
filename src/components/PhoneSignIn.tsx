@@ -6,6 +6,7 @@ import { auth } from '@/firebase.config';
 import { useAuth } from '@/context/AuthContext';
 import { isIndianMobile, isProfileName, phoneSignInError, resendSeconds } from '@/services/phoneSignIn';
 import { requestPhoneOtp } from '@/services/phoneOtp';
+import { createRecaptchaPreparation, warmAuthBackend } from '@/services/authPreparation';
 
 export default function PhoneSignIn({ adminPortal = false }: { adminPortal?: boolean }) {
   const session = useAuth();
@@ -17,7 +18,7 @@ export default function PhoneSignIn({ adminPortal = false }: { adminPortal?: boo
   const [error, setError] = useState('');
   const [deadline, setDeadline] = useState(0);
   const [remaining, setRemaining] = useState(0);
-  const verifier = useRef<RecaptchaVerifier | null>(null);
+  const verifier = useRef<ReturnType<typeof createRecaptchaPreparation> | null>(null);
   const container = useRef<HTMLDivElement>(null);
   const confirmation = useRef<ConfirmationResult | null>(null);
   const locked = useRef(false);
@@ -26,7 +27,10 @@ export default function PhoneSignIn({ adminPortal = false }: { adminPortal?: boo
   const verified = useRef(false);
   const [otpVerified, setOtpVerified] = useState(false);
 
+  const recaptcha = () => verifier.current || (verifier.current = createRecaptchaPreparation(() =>
+    new RecaptchaVerifier(auth, container.current!, { size: 'invisible' })));
   const clearVerifier = () => { verifier.current?.clear(); verifier.current = null; };
+  useEffect(() => { void warmAuthBackend(); }, []);
   useEffect(() => () => { generation.current++; clearVerifier(); }, []);
   useEffect(() => {
     const tick = () => setRemaining(resendSeconds(deadline));
@@ -40,11 +44,7 @@ export default function PhoneSignIn({ adminPortal = false }: { adminPortal?: boo
     locked.current = true; setBusy(true); setError('');
     const request = ++generation.current;
     try {
-      const result = await requestPhoneOtp(phone, adminPortal, () => {
-        clearVerifier();
-        verifier.current = new RecaptchaVerifier(auth, container.current!, { size: 'invisible' });
-        return verifier.current;
-      }, () => request === generation.current);
+      const result = await requestPhoneOtp(phone, adminPortal, () => recaptcha().get(), () => request === generation.current);
       if (request !== generation.current) return;
       confirmation.current = result; verified.current = false; setOtpVerified(false);
       setStep('otp'); setOtp(''); setDeadline(Date.now() + 60000);
@@ -94,7 +94,7 @@ export default function PhoneSignIn({ adminPortal = false }: { adminPortal?: boo
       </form> : step === 'phone' ? <form className="space-y-5" onSubmit={e => { e.preventDefault(); void sendOtp(); }}>
         <div><label htmlFor="login-phone" className="block text-xs font-bold text-gray-700 mb-2">{adminPortal ? 'Admin Mobile Number' : 'Mobile Number'}</label>
           <div className="relative"><span className="absolute left-4 top-3.5 text-sm text-gray-500">+91</span>
-            <input id="login-phone" type="tel" inputMode="numeric" autoComplete="tel-national" className={field + ' pl-14'} value={phone} maxLength={10} onChange={e => setPhone(e.target.value.replace(/\D/g, ''))} placeholder="Enter 10-digit number" required disabled={busy} /></div></div>
+            <input id="login-phone" type="tel" inputMode="numeric" autoComplete="tel-national" className={field + ' pl-14'} value={phone} maxLength={10} onFocus={() => { if (!adminPortal) void recaptcha().prepare(); }} onChange={e => setPhone(e.target.value.replace(/\D/g, ''))} placeholder="Enter 10-digit number" required disabled={busy} /></div></div>
         <button className={button} disabled={!isIndianMobile(phone) || busy || remaining > 0}>{busy ? 'Sending OTP...' : remaining ? `Get OTP in ${remaining}s` : 'Get OTP'}</button>
         <p className="text-[11px] text-gray-500 text-center">{adminPortal ? 'Only registered administrators can request an OTP here.' : 'Continue with your mobile number to sign in or register.'}</p>
         <p className="text-[11px] text-gray-500">By choosing Get OTP, you consent to a verification SMS and Google processing this number for fraud prevention.</p>
