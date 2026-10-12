@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { APEX_TV_CHANNEL_URL } from '@/config/apexPay';
+import { APEX_TV_CHANNEL_URL, APEX_ACADEMY_CHANNEL_URL } from '@/config/apexPay';
 
 export default function ApexTv() {
   return (
@@ -21,6 +21,19 @@ export default function ApexTv() {
           <h2 className="mt-5 text-xl font-black">@Apexstore007</h2>
           <p className="mt-2 text-sm text-gray-500">APEX updates &amp; advertisements</p>
           <a href={APEX_TV_CHANNEL_URL} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-red-600">
+            <i aria-hidden="true" className="fa-brands fa-youtube text-lg" />
+            <span>Watch on YouTube</span>
+            <i aria-hidden="true" className="fa-solid fa-arrow-up-right-from-square text-xs" />
+          </a>
+        </section>
+        <section aria-labelledby="academy-channel-title" className="mt-8 flex flex-col items-center border-t border-gray-200 pt-8 text-center">
+          <p className="text-xs font-bold text-apex-purple">Channel 2</p>
+          <a href={APEX_ACADEMY_CHANNEL_URL} target="_blank" rel="noopener noreferrer" aria-label="Visit APEX Academy India on YouTube" className="mt-4 block focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-red-600">
+            <img src="/apex-academy-india.png" alt="APEX Academy India" width={222} height={290} style={{ objectFit: 'contain' }} className="h-24 w-24 rounded-lg bg-[#101010]" />
+          </a>
+          <h2 id="academy-channel-title" className="mt-4 text-lg font-black">APEX Academy India</h2>
+          <p className="mt-1 text-sm text-gray-500">@APEXGROUPS</p>
+          <a href={APEX_ACADEMY_CHANNEL_URL} target="_blank" rel="noopener noreferrer" aria-label="Watch APEX Academy India on YouTube" className="mt-5 inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-red-600">
             <i aria-hidden="true" className="fa-brands fa-youtube text-lg" />
             <span>Watch on YouTube</span>
             <i aria-hidden="true" className="fa-solid fa-arrow-up-right-from-square text-xs" />

@@ -25,6 +25,7 @@ const tv = compile('components/ApexTv.tsx', { 'next/link': link, '@/config/apexP
 test('production switch defaults to TV and the exact supplied channel', () => {
   assert.equal(config.APEX_PAY_ENABLED, false);
   assert.equal(config.APEX_TV_CHANNEL_URL, 'https://www.youtube.com/@Apexstore007');
+  assert.equal(config.APEX_ACADEMY_CHANNEL_URL, 'https://www.youtube.com/@APEXGROUPS');
 });
 
 test('only exact public TV routes bypass the frontend sign-in redirect', () => {
@@ -51,8 +52,18 @@ test('TV renders immediately with real branding and safe channel links, not inve
   assert.match(html, /Watch on YouTube/);
   assert.match(html, /src="\/APEX logo.jpeg"/);
   assert.equal((html.match(/href="https:\/\/www.youtube.com\/@Apexstore007"/g) || []).length, 2);
-  assert.equal((html.match(/rel="noopener noreferrer"/g) || []).length, 2);
+  assert.equal((html.match(/rel="noopener noreferrer"/g) || []).length, 4);
   assert.doesNotMatch(html, /iframe|Verifying session|Loading|upi:\/\/|wallet|payment-reader/);
+});
+
+test('Channel 2 uses the supplied academy logo and links to the exact educational channel', () => {
+  const html = renderToStaticMarkup(React.createElement(tv.default));
+  assert.match(html, /Channel 2/); assert.match(html, /APEX Academy India/); assert.match(html, /@APEXGROUPS/);
+  assert.match(html, /src="\/apex-academy-india.png"/);
+  assert.match(html, /style="object-fit:contain"/);
+  assert.equal((html.match(/href="https:\/\/www.youtube.com\/@APEXGROUPS"/g) || []).length, 2);
+  assert.ok(html.indexOf('@Apexstore007') < html.indexOf('Channel 2'));
+  assert.ok(fs.statSync(path.join(__dirname, '../public/apex-academy-india.png')).size > 0);
 });
 
 test('old payment and scan links render TV without mounting any payment services', () => {
@@ -65,6 +76,7 @@ test('old payment and scan links render TV without mounting any payment services
   });
   const html = renderToStaticMarkup(React.createElement(page.default));
   assert.match(html, /APEX TV/);
+  assert.match(html, /APEX Academy India/);
   assert.doesNotMatch(html, /APEX Pay|Scan &amp; Pay|Previous APEX Balance|payment-reader/);
   const source = fs.readFileSync(path.join(__dirname, '../src/app/payment/page.tsx'), 'utf8');
   assert.match(source, /return APEX_PAY_ENABLED \? <ApexPay \/> : <ApexTv \/>/);

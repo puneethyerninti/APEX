@@ -1,7 +1,10 @@
 # Temporary APEX Pay Replacement
 
 APEX TV is available at `/apex-tv` and links to
-`https://www.youtube.com/@Apexstore007`.
+`https://www.youtube.com/@Apexstore007`. Channel 2, APEX Academy India, appears
+below it with the supplied academy logo and links to
+`https://www.youtube.com/@APEXGROUPS`. Both channels are also available through
+the paused `/payment` page. No videos or live broadcasts are fabricated.
 
 `src/config/apexPay.ts` sets `APEX_PAY_ENABLED` to `false`. The navigation
 replaces Payments with APEX TV and hides Scan. Old `/payment` links, including
