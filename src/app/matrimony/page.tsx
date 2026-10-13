@@ -7,6 +7,7 @@ import { assertServiceCheckoutAllowed, canUseServiceCheckout } from '@/services/
 import { useAppStore } from '@/store/useAppStore';
 import { SocketContext } from '@/context/SocketContext';
 import MatrimonyChat from '@/components/MatrimonyChat';
+import MemberSafety from '@/components/MemberSafety';
 
 const plans = [{ name: 'Silver', amount: 5000, months: 3 }, { name: 'Gold', amount: 10000, months: 6 }, { name: 'Diamond', amount: 20000, months: 12 }];
 const empty = { age: '', height: '', religion: '', community: '', profession: '', location: '', bio: '' };
@@ -26,6 +27,7 @@ export default function MatrimonyPage() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(empty);
   const [photos, setPhotos] = useState<File[]>([]);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [filters, setFilters] = useState({ community: '', religion: '', location: '', premium: false });
   const [filterPanel, setFilterPanel] = useState('');
   const [chat, setChat] = useState<any>(null);
@@ -77,6 +79,7 @@ export default function MatrimonyPage() {
     e.preventDefault(); setBusy(true); setError('');
     try {
       const body = new FormData();
+      body.append('acceptedTerms', String(acceptedTerms));
       Object.entries(form).forEach(([key, value]) => body.append(key, value));
       photos.forEach(photo => body.append('images', photo));
       const res = await api.post('/matrimony/profile', body, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -157,6 +160,7 @@ export default function MatrimonyPage() {
       <section id="apex-profile" className="scroll-mt-20 border-y border-gray-200 py-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-sm font-bold">My APEX Profile</h2><p className="mt-1 text-[11px] text-gray-500">{!loaded ? 'Updating profile' : profile ? 'Review: ' + profile.status : 'Not submitted'}</p>{profile?.subscription?.isActive && <p className="text-[11px] text-rose-600">{profile.subscription.plan} until {new Date(profile.subscription.expiresAt).toLocaleDateString()}</p>}</div><button disabled={!loaded || busy} onClick={() => { setForm(Object.fromEntries(Object.keys(empty).map(key => [key, String(profile?.[key] || '')])) as typeof empty); setPhotos([]); setEditing(!editing); }} className="rounded-full bg-white px-3 py-2 text-[11px] font-bold text-rose-600 shadow-sm disabled:opacity-40">{editing ? 'Cancel' : 'Edit APEX Profile'}</button></div>
         {notice && <p role="status" className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{notice}</p>}
         {editing && <form onSubmit={saveProfile} className="mt-4 max-w-2xl space-y-4">
+          <label className="flex items-start gap-2 text-xs"><input required type="checkbox" checked={acceptedTerms} onChange={e => setAcceptedTerms(e.target.checked)} />I am 18 or older and accept the <Link href="/terms" className="text-rose-600 underline">terms</Link> and <Link href="/safety" className="text-rose-600 underline">safety rules</Link>.</label>
           {profile?.status === 'approved' && <p className="text-xs text-amber-800">Changes need a new review before your profile is published again.</p>}
           <fieldset disabled={busy} className="grid grid-cols-2 gap-x-3 gap-y-3"><legend className="mb-2 text-xs font-bold text-gray-700">Personal Details</legend>{[
             { key: 'age', label: 'Age', placeholder: '18 or older', required: true },
@@ -175,7 +179,7 @@ export default function MatrimonyPage() {
           <div className="flex items-center justify-end gap-2 border-t border-gray-200 pt-3"><button type="button" disabled={busy} onClick={() => setEditing(false)} className="px-3 py-2 text-xs font-semibold text-gray-500">Cancel</button><button disabled={busy} className="rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">{busy ? 'Saving...' : 'Submit for Review'}</button></div>
         </form>}
       </section>
-      <section className="py-4"><h2 className="mb-2 text-[11px] font-extrabold uppercase text-gray-500">New Matches</h2>{loaded && !filtered.length && <p className="text-xs text-gray-500">No approved profiles match your filters.</p>}<div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">{filtered.map(p => <article key={p._id} className="min-w-0 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">{p.images?.[0] ? <img alt={p.user?.name || 'Profile'} src={p.images[0]} className="aspect-[4/5] w-full object-cover" /> : <div className="flex aspect-[4/5] items-center justify-center bg-rose-50 text-4xl text-rose-300"><i aria-hidden="true" className="fas fa-user" /></div>}<div className="p-3"><h3 className="break-words text-sm font-extrabold">{p.user?.name || 'APEX Member'}</h3><p className="mt-1 break-words text-xs text-gray-500">{p.age} years, {p.location}</p><p className="mt-1 break-words text-xs text-gray-500">{p.profession}</p><button disabled={!profile?.subscription?.isActive} onClick={() => { setError(''); setChat(p); }} className="mt-3 w-full rounded-lg bg-rose-50 py-2 text-xs font-bold text-rose-600 disabled:opacity-40">Message</button></div></article>)}</div></section>
+      <section className="py-4"><h2 className="mb-2 text-[11px] font-extrabold uppercase text-gray-500">New Matches</h2>{loaded && !filtered.length && <p className="text-xs text-gray-500">No approved profiles match your filters.</p>}<div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">{filtered.map(p => <article key={p._id} className="min-w-0 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">{p.images?.[0] ? <img alt={p.user?.name || 'Profile'} src={p.images[0]} className="aspect-[4/5] w-full object-cover" /> : <div className="flex aspect-[4/5] items-center justify-center bg-rose-50 text-4xl text-rose-300"><i aria-hidden="true" className="fas fa-user" /></div>}<div className="p-3"><MemberSafety userId={accountId(p)} onBlocked={() => { setMatches(old => old.filter(item => accountId(item) !== accountId(p))); void refresh(); }} /><h3 className="break-words text-sm font-extrabold">{p.user?.name || 'APEX Member'}</h3><p className="mt-1 break-words text-xs text-gray-500">{p.age} years, {p.location}</p><p className="mt-1 break-words text-xs text-gray-500">{p.profession}</p><button disabled={!profile?.subscription?.isActive} onClick={() => { setError(''); setChat(p); }} className="mt-3 w-full rounded-lg bg-rose-50 py-2 text-xs font-bold text-rose-600 disabled:opacity-40">Message</button></div></article>)}</div></section>
     </div>}
     {inbox && <div role="dialog" aria-label="Inbox" aria-modal="true" className="fixed inset-0 z-50 overflow-auto bg-white p-4"><div className="mx-auto max-w-xl"><button onClick={() => setInbox(null)} className="float-right h-10 w-10" aria-label="Close inbox" title="Close inbox"><i className="fas fa-times" /></button><h2 className="py-2 text-base font-bold">Messages</h2>{error && <p role="alert" className="py-2 text-xs text-red-700">{error}</p>}{inboxLoaded && !inbox.length && <p className="py-5 text-xs text-gray-500">No conversations yet.</p>}{inbox.map(item => <button key={item.latestMessage.roomId} onClick={() => { setInbox(null); setError(''); setChat(item.profile); }} className="block w-full border-b border-gray-100 py-3 text-left"><span className="flex items-center justify-between gap-2"><strong className="text-sm">{item.profile.user?.name || 'APEX Member'}</strong>{item.unreadCount > 0 && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] text-white">{item.unreadCount} unread</span>}</span><p className="mt-1 truncate text-xs text-gray-500">{item.latestMessage.text}</p></button>)}</div></div>}
     {chat && uid && <MatrimonyChat key={uid + ':' + accountId(chat)} uid={uid} profile={chat} socket={socket} onClose={() => setChat(null)} />}

@@ -12,6 +12,10 @@ export default function Page() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [propertyType, setPropertyType] = useState('');
+  const [listingType, setListingType] = useState('sell');
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -25,36 +29,15 @@ export default function Page() {
   }, []);
 
   const fetchProperties = async () => {
-    // Overriding dynamic DB fetch with client's requested premium listings
-    const mockProperties = [
-      {
-        _id: '1',
-        title: 'Agriculture land Anand puram 1km',
-        price: 5000000,
-        propertyType: 'Agriculture Land',
-        listingType: 'sell',
-        images: ['/realty/Agriculture land.jpeg']
-      },
-      {
-        _id: '2',
-        title: 'FARM LAND',
-        price: 8500000,
-        propertyType: 'Farm Land',
-        listingType: 'sell',
-        images: ['/realty/Farm land.jpeg']
-      },
-      {
-        _id: '3',
-        title: 'Open plot ACHUTAPU RAM',
-        price: 3200000,
-        propertyType: 'Open Plot',
-        listingType: 'sell',
-        images: ['/realty/plot.jpeg']
-      }
-    ];
-    setProperties(mockProperties);
-    setLoading(false);
+    setLoading(true); setError('');
+    try {
+      const { data } = await api.get('/realty/property/all');
+      if (!Array.isArray(data.properties)) throw new Error('Invalid property response');
+      setProperties(data.properties);
+    } catch { setError('Properties could not be refreshed. Please try again.'); }
+    finally { setLoading(false); }
   };
+  const visible = properties.filter(p => p.listingType === listingType && (!propertyType || p.propertyType === propertyType) && `${p.title} ${p.description || ''}`.toLowerCase().includes(search.toLowerCase()));
 
   const openInquiry = (propertyId: string, propertyTitle: string) => {
     setSelectedPropertyId(propertyId);
@@ -112,8 +95,8 @@ export default function Page() {
             </Link>
             <h1 className="font-black text-lg text-gray-900">APEX Realty</h1>
         </div>
-        <button className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <i className="fa-solid fa-heart"></i>
+        <button onClick={() => void fetchProperties()} title="Refresh properties" aria-label="Refresh properties" className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <i className="fa-solid fa-rotate-right"></i>
         </button>
     </div>
 
@@ -133,17 +116,17 @@ export default function Page() {
         
         <div className="relative z-10">
             <h2 className="text-white text-xl font-black mb-1">Find your dream home</h2>
-            <p className="text-emerald-100 text-xs mb-4">Over 10,000+ premium properties.</p>
+            <p className="text-emerald-100 text-xs mb-4">APEX Realty listings</p>
             
             <div className="bg-white p-2 rounded-2xl shadow-lg">
                 <div className="flex border-b border-gray-100 mb-2">
-                    <button className="flex-1 py-1.5 text-xs font-bold text-emerald-600 border-b-2 border-emerald-600">Buy</button>
-                    <Link href="/realty/post" className="flex-1 text-center py-1.5 text-xs font-bold text-gray-400 hover:text-emerald-600">Rent</Link>
+                    <button onClick={() => setListingType('sell')} aria-pressed={listingType === 'sell'} className="flex-1 py-1.5 text-xs font-bold text-emerald-600">Buy</button>
+                    <button onClick={() => setListingType('rent')} aria-pressed={listingType === 'rent'} className="flex-1 text-center py-1.5 text-xs font-bold text-emerald-600">Rent</button>
                     <Link href="/realty/post" className="flex-1 text-center py-1.5 text-xs font-bold text-gray-400 hover:text-emerald-600">Sell</Link>
                 </div>
                 <div className="relative">
                     <i className="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
-                    <input type="text" onChange={() => {}} placeholder="Search City, Locality or Landmark" className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-8 pr-4 py-2 text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+                    <input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search properties" aria-label="Search properties" className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-8 pr-4 py-2 text-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
                 </div>
             </div>
         </div>
@@ -153,19 +136,19 @@ export default function Page() {
     <div className="px-4 mt-6 mb-6">
         <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Explore Properties</h3>
         <div className="grid grid-cols-4 gap-3">
-            <button onClick={() => {}} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
+            <button onClick={() => setPropertyType(propertyType === 'apartment' ? '' : 'apartment')} aria-pressed={propertyType === 'apartment'} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
                 <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-leaf"></i></div>
-                <span className="text-[9px] font-bold text-gray-600">Farm Land</span>
+                <span className="text-[9px] font-bold text-gray-600">Apartments</span>
             </button>
-            <button onClick={() => {}} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
+            <button onClick={() => setPropertyType(propertyType === 'villa' ? '' : 'villa')} aria-pressed={propertyType === 'villa'} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
                 <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-teal-600 text-lg"><i className="fa-solid fa-tractor"></i></div>
-                <span className="text-[9px] font-bold text-gray-600">Agri Land</span>
+                <span className="text-[9px] font-bold text-gray-600">Villas</span>
             </button>
-            <button onClick={() => {}} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
+            <button onClick={() => setPropertyType(propertyType === 'plot' ? '' : 'plot')} aria-pressed={propertyType === 'plot'} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
                 <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-emerald-600 text-lg"><i className="fa-solid fa-map-location-dot"></i></div>
                 <span className="text-[9px] font-bold text-gray-600">Open Plots</span>
             </button>
-            <button onClick={() => {}} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
+            <button onClick={() => setPropertyType(propertyType === 'commercial' ? '' : 'commercial')} aria-pressed={propertyType === 'commercial'} className="flex flex-col items-center text-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
                 <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-teal-600 text-lg"><i className="fa-solid fa-city"></i></div>
                 <span className="text-[9px] font-bold text-gray-600">Commercial</span>
             </button>
@@ -176,14 +159,16 @@ export default function Page() {
     <div className="mb-5">
         <div className="px-4 flex justify-between items-end mb-3">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Premium Collections</h3>
-            <Link href="#" className="text-[9px] font-bold text-emerald-600">View All</Link>
+            <button onClick={() => { setSearch(''); setPropertyType(''); }} className="text-[9px] font-bold text-emerald-600">Clear Filters</button>
         </div>
         <div className="px-4 mb-2">
+            {error && <p role="alert" className="mb-3 text-xs text-red-700">{error}</p>}
+            {!loading && !error && !visible.length && <p className="py-4 text-xs text-gray-500">No available properties match this search.</p>}
             <AutoCarousel interval={4000}>
-                {properties.map((prop) => (
+                {visible.map((prop) => (
                     <div key={prop._id} className="realty-card bg-white border border-gray-100 w-full overflow-hidden group cursor-pointer" onClick={() => openInquiry(prop._id, prop.title)}>
                         <div className="h-48 w-full bg-gray-200 overflow-hidden relative">
-                            <img src={prop.images[0]} alt={prop.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            {prop.images?.[0] && <img src={prop.images[0]} alt={prop.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />}
                             <span className="absolute top-3 left-3 bg-black/60 text-white text-[10px] font-bold px-3 py-1 rounded uppercase tracking-wider">{prop.listingType}</span>
                         </div>
                         <div className="p-4">

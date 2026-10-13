@@ -46,6 +46,8 @@ export default function FinancePage() {
           });
       } catch (error) {
           console.error('Failed to post lead', error);
+          window.dispatchEvent(new CustomEvent('showToast', { detail: { type: 'error', message: 'Your request was not saved. Please retry.' } }));
+          return;
       }
 
       const message = `Hi APEX, I am interested in ${leadServiceType}.\nName: ${leadName}\nMobile: ${leadMobile}`;

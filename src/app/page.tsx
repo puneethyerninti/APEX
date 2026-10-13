@@ -6,6 +6,7 @@ import CreditCardCarousel from '@/components/CreditCardCarousel';
 import StorePromotions from '@/components/StorePromotions';
 import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/services/api';
+import { canUseServiceCheckout } from '@/services/checkoutPolicy';
 export default function Home() {
     const user = useAppStore((state) => state.user);
     const updateUserProfile = useAppStore((state) => state.updateUserProfile);
@@ -14,6 +15,8 @@ export default function Home() {
     const [leadServiceType, setLeadServiceType] = React.useState('');
     const [leadName, setLeadName] = React.useState('');
     const [leadMobile, setLeadMobile] = React.useState('');
+    const [digitalPurchases, setDigitalPurchases] = React.useState(process.env.NEXT_PUBLIC_DISTRIBUTION !== 'google-play');
+    React.useEffect(() => setDigitalPurchases(canUseServiceCheckout('subscription')), []);
 
     const triggerPrimeCheckout = (planName: string, amount: string) => {
         if (!user) {
@@ -66,6 +69,8 @@ export default function Home() {
             });
         } catch (error) {
             console.error('Failed to post lead', error);
+            window.dispatchEvent(new CustomEvent('showToast', { detail: { type: 'error', message: 'Your request was not saved. Please retry.' } }));
+            return;
         }
 
         const message = `Hi APEX, I am interested in ${leadServiceType}.\nName: ${leadName}\nMobile: ${leadMobile}`;
@@ -83,20 +88,6 @@ export default function Home() {
     };
 
     React.useEffect(() => {
-        // 1. Deals of the day countdown
-        const countdownEl = document.getElementById('countdown-timer');
-        let countdownInterval: NodeJS.Timeout | null = null;
-        if (countdownEl) {
-            let timeLeft = 23 * 3600 + 42 * 60 + 15; // 23h 42m 15s
-            countdownInterval = setInterval(() => {
-                if (timeLeft <= 0) return;
-                timeLeft--;
-                const h = Math.floor(timeLeft / 3600);
-                const m = Math.floor((timeLeft % 3600) / 60);
-                const s = timeLeft % 60;
-                countdownEl.innerText = `${String(h).padStart(2, '0')}h : ${String(m).padStart(2, '0')}m : ${String(s).padStart(2, '0')}s left`;
-            }, 1000);
-        }
 
 
         // Academy Auto Carousel
@@ -145,7 +136,6 @@ export default function Home() {
 
         // Cleanup
         return () => {
-            if (countdownInterval) clearInterval(countdownInterval);
             if (academyTimer) clearInterval(academyTimer);
             if (primeTimer) clearInterval(primeTimer);
             observer.disconnect();
@@ -571,13 +561,13 @@ export default function Home() {
 
 
                 {/* ═══ 4. APEX PRIME SUBSCRIPTION ═══ */}
-                <section id="prime" className="py-6 bg-[#F4F6FB] border-b border-gray-100">
+                {digitalPurchases && <section id="prime" className="py-6 bg-[#F4F6FB] border-b border-gray-100">
                     <div className="px-4">
                         <div className="flex items-center justify-between mb-4.5 reveal-up">
                             <div>
                                 <h2 className="text-xs font-black text-gray-400 uppercase tracking-wider">Prime Plans</h2>
                             </div>
-                            <Link href="#" className="text-apex-purple font-bold text-[10px] hover:underline uppercase tracking-wide">Compare</Link>
+                            <a href="#prime-carousel-track" className="text-apex-purple font-bold text-[10px] hover:underline uppercase tracking-wide">Compare</a>
                         </div>
 
                         {/* Swipeable Cards */}
@@ -619,7 +609,7 @@ export default function Home() {
                             </div>
                         </div>
                     </div>
-                </section>
+                </section>}
 
 
 
@@ -629,7 +619,7 @@ export default function Home() {
                         <div className="flex items-center justify-between mb-4.5 reveal-up">
                             <div>
                             </div>
-                            <Link href="#" className="text-apex-purple font-bold text-[10px] hover:underline uppercase tracking-wide">View All</Link>
+                            <Link href="/academy" className="text-apex-purple font-bold text-[10px] hover:underline uppercase tracking-wide">View All</Link>
                         </div>
 
                         {/* Horizontal Scroll Academy Deck */}
@@ -678,7 +668,7 @@ export default function Home() {
                     <div className="px-4">
                         <div className="flex items-center justify-between mb-4.5 reveal-up">
                             <div>
-                                <h2 className="text-xs font-black text-gray-400 uppercase tracking-wider">Top Offers For You</h2>
+                                <h2 className="text-xs font-black text-gray-400 uppercase tracking-wider">Explore APEX</h2>
                             </div>
                             <Link href="#" className="text-apex-purple font-bold text-[10px] hover:underline uppercase tracking-wide">View All</Link>
                         </div>
@@ -688,24 +678,21 @@ export default function Home() {
                                 <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-base shadow-sm flex-shrink-0"><i className="fa-solid fa-store text-xs"></i></div>
                                 <div className="min-w-0">
                                     <span className="text-[8px] font-bold text-orange-600 uppercase tracking-wider block">APEX Store</span>
-                                    <h3 className="font-extrabold text-gray-900 text-xs truncate">Flat ₹200 Off</h3>
-                                    <p className="text-[9px] text-gray-400 truncate">Min ₹999 order</p>
+                                    <Link href="/store" className="font-extrabold text-gray-900 text-xs">Visit Store</Link>
                                 </div>
                             </div>
                             <div className="offer-card w-44 flex-shrink-0 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-3 flex items-center gap-3 reveal-zoom delay-200">
                                 <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-base shadow-sm flex-shrink-0"><i className="fa-solid fa-chart-line text-xs"></i></div>
                                 <div className="min-w-0">
                                     <span className="text-[8px] font-bold text-blue-600 uppercase tracking-wider block">Finance</span>
-                                    <h3 className="font-extrabold text-gray-900 text-xs truncate">Zero Brokerage</h3>
-                                    <p className="text-[9px] text-gray-400 truncate">On Investments</p>
+                                    <Link href="/finance" className="font-extrabold text-gray-900 text-xs">Service Inquiries</Link>
                                 </div>
                             </div>
                             <div className="offer-card w-44 flex-shrink-0 bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 rounded-xl p-3 flex items-center gap-3 reveal-zoom delay-300">
                                 <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-base shadow-sm flex-shrink-0"><i className="fa-solid fa-user-graduate text-xs"></i></div>
                                 <div className="min-w-0">
                                     <span className="text-[8px] font-bold text-violet-600 uppercase tracking-wider block">Academy</span>
-                                    <h3 className="font-extrabold text-gray-900 text-xs truncate">Upto 30% Off</h3>
-                                    <p className="text-[9px] text-gray-400 truncate">Selected Courses</p>
+                                    <Link href="/academy" className="font-extrabold text-gray-900 text-xs">Browse Courses</Link>
                                 </div>
                             </div>
                         </div>
@@ -840,10 +827,10 @@ export default function Home() {
                                         <i className="fa-solid fa-headset mr-2"></i>9494273763
                                         <span className="text-[9px] text-apex-purple ml-1 font-bold uppercase tracking-widest">(24/7 Support)</span>
                                     </Link>
-                                    <Link href="#" className="text-gray-500 hover:text-apex-purple text-xs transition-colors mt-1">Terms of Service</Link>
-                                    <Link href="#" className="text-gray-500 hover:text-apex-purple text-xs transition-colors mt-1">Privacy Policy</Link>
-                                    <Link href="#" className="text-gray-500 hover:text-apex-purple text-xs transition-colors">Refund Policy</Link>
-                                    <Link href="#" className="text-gray-500 hover:text-apex-purple text-xs transition-colors">Help Center</Link>
+                                    <Link href="/terms" className="text-gray-500 hover:text-apex-purple text-xs transition-colors mt-1">Terms of Service</Link>
+                                    <Link href="/privacy" className="text-gray-500 hover:text-apex-purple text-xs transition-colors mt-1">Privacy Policy</Link>
+                                    <Link href="/refunds" className="text-gray-500 hover:text-apex-purple text-xs transition-colors">Refund Policy</Link>
+                                    <Link href="/support" className="text-gray-500 hover:text-apex-purple text-xs transition-colors">Help Center</Link>
                                 </div>
                             </div>
                         </div>

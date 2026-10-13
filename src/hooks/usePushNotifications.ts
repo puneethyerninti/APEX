@@ -9,7 +9,7 @@ let registeredPushToken: string | null = null;
 export const getRegisteredPushToken = () => registeredPushToken;
 export const clearRegisteredPushToken = () => { registeredPushToken = null; };
 export const unregisterDevicePush = async () => {
-  if (Capacitor.isNativePlatform()) await PushNotifications.unregister();
+  if (Capacitor.isNativePlatform() && process.env.NEXT_PUBLIC_NATIVE_PUSH_ENABLED === 'true') await PushNotifications.unregister();
 };
 
 export const usePushNotifications = (isAuthenticated: boolean) => {
@@ -24,6 +24,7 @@ export const usePushNotifications = (isAuthenticated: boolean) => {
         if (!currentUser?.phoneNumber) return;
 
         if (Capacitor.isNativePlatform()) {
+          if (process.env.NEXT_PUBLIC_NATIVE_PUSH_ENABLED !== 'true') return;
           // --- ANDROID PUSH NOTIFICATIONS ---
           let permStatus = await PushNotifications.checkPermissions();
 

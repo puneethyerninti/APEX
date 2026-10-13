@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 export default function AutoCarousel({ children, interval = 3000 }: { children: React.ReactNode[], interval?: number }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const count = React.Children.count(children);
+    const visibleIndex = Math.min(currentIndex, Math.max(0, count - 1));
 
     useEffect(() => {
         if (count <= 1) return;
@@ -18,7 +19,7 @@ export default function AutoCarousel({ children, interval = 3000 }: { children: 
         <div className="relative w-full overflow-hidden rounded-xl shadow-sm">
             <div 
                 className="flex transition-transform duration-700 ease-in-out" 
-                style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+                style={{ transform: `translateX(-${visibleIndex * 100}%)` }}
             >
                 {React.Children.map(children, (child, index) => (
                     <div key={index} className="w-full flex-shrink-0">
@@ -33,7 +34,7 @@ export default function AutoCarousel({ children, interval = 3000 }: { children: 
                     {Array.from({ length: count }).map((_, idx) => (
                         <div 
                             key={idx} 
-                            className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-4 bg-white/90' : 'w-1.5 bg-white/40'}`}
+                            className={`h-1.5 rounded-full transition-all duration-300 ${idx === visibleIndex ? 'w-4 bg-white/90' : 'w-1.5 bg-white/40'}`}
                         />
                     ))}
                 </div>

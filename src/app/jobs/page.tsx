@@ -19,6 +19,7 @@ export default function JobsPage() {
   const [fileName, setFileName] = useState('');
   const [isRegistered, setIsRegistered] = useState(false);
   const [jobsList, setJobsList] = useState<any[]>([]);
+  const [loadError, setLoadError] = useState('');
   const user = useAppStore((state) => state.user);
 
   useEffect(() => {
@@ -27,7 +28,7 @@ export default function JobsPage() {
               // Filter out applications, keep only actual job postings
               setJobsList(res.data.filter(j => j.type !== 'Application'));
           }
-      }).catch(e => console.error(e));
+      }).catch(() => setLoadError('Jobs could not be refreshed. Please try again.'));
   }, []);
 
   const {
@@ -43,6 +44,9 @@ export default function JobsPage() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files.length > 0) {
+          const file = e.target.files[0];
+          if (file.size > 5 * 1024 * 1024 || !/\.(pdf|doc|docx)$/i.test(file.name)) { setLoadError('Choose a PDF, DOC or DOCX resume under 5 MB.'); e.target.value = ''; return; }
+          setLoadError('');
           setFileName(e.target.files[0].name);
           setSelectedFile(e.target.files[0]);
       }
@@ -91,12 +95,11 @@ export default function JobsPage() {
       <div className="p-4 animate-[fadeIn_0.3s_ease-out]">
           <div className="bg-gradient-to-br from-cyan-600 to-blue-700 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden flex items-center mb-6">
               <div className="relative z-10 flex-1">
-                  <p className="text-cyan-100 text-[9px] font-bold uppercase tracking-widest mb-1">Your Profile Strength</p>
+                  <p className="text-cyan-100 text-[9px] font-bold uppercase tracking-widest mb-1">APEX Jobs</p>
                   <div className="flex items-center gap-2 mb-2">
-                      <h2 className="text-3xl font-black">92%</h2>
-                      <span className="bg-white/20 text-white text-[8px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Excellent</span>
+                      <h2 className="text-lg font-black">Your Next Opportunity</h2>
                   </div>
-                  <p className="text-[10px] text-cyan-100 mb-3">You are in the top 5% of candidates for <strong>Frontend Developer</strong> roles.</p>
+                  <p className="text-[10px] text-cyan-100 mb-3">Submit your details for available roles.</p>
                   <label htmlFor="resumeUpload" className="inline-block cursor-pointer bg-white text-cyan-700 text-[10px] font-black px-4 py-1.5 rounded-full shadow-sm hover:bg-cyan-50 transition-colors">Update Resume</label>
               </div>
               <div className="relative z-10">
@@ -115,7 +118,7 @@ export default function JobsPage() {
                       <div className="w-12 h-12 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 mb-3 group-hover:scale-110 transition-transform">
                           <i className="fa-solid fa-cloud-arrow-up text-xl"></i>
                       </div>
-                      <h4 className="font-bold text-xs text-gray-800 mb-1">Click to browse or drag file here</h4>
+                      <h4 className="font-bold text-xs text-gray-800 mb-1">Choose Resume</h4>
                       <p className="text-[9px] text-gray-400 mb-3">Supported formats: PDF, DOC, DOCX (Max 5MB)</p>
                       {fileName && (
                           <div className="text-[10px] font-bold text-cyan-700 bg-white border border-cyan-100 px-3 py-1.5 rounded-lg shadow-sm w-full overflow-hidden text-ellipsis whitespace-nowrap">
@@ -206,9 +209,10 @@ export default function JobsPage() {
           <div className="mb-5">
               <div className="flex justify-between items-end mb-3">
                   <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Recommended Jobs</h3>
-                  <Link href="#" className="text-[9px] font-bold text-cyan-600">View All</Link>
+                  <span className="text-[9px] text-cyan-600">{jobsList.length} available</span>
               </div>
               <div className="flex gap-3 overflow-x-auto scrollbar-none flex-nowrap pb-2">
+                  {loadError && <p role="alert" className="text-xs text-red-700">{loadError}</p>}
                   {jobsList.length === 0 ? (
                       <div className="text-xs text-gray-500 italic p-3">No jobs posted yet. Check back soon!</div>
                   ) : (

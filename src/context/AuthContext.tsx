@@ -12,6 +12,7 @@ import { resetSessionReadiness, settleSessionReadiness } from '@/services/sessio
 import { applyApplicationSession, clearApplicationSession } from '@/services/applicationSession';
 import { isProfileName } from '@/services/phoneSignIn';
 import { isPublicApexTvPath } from '@/config/apexPay';
+import { isPublicInformationPath } from '@/config/publicPaths';
 
 interface AuthContextType {
   isAuthenticated: boolean; isLoading: boolean; error: string;
@@ -96,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isLoading || error) return;
-    if (!isAuthenticated && !['/login', '/admin-login'].includes(pathname) && !isPublicApexTvPath(pathname)) router.replace('/login');
+    if (!isAuthenticated && !['/login', '/admin-login'].includes(pathname) && !isPublicApexTvPath(pathname) && !isPublicInformationPath(pathname)) router.replace('/login');
     if (isAuthenticated && pathname === '/login') router.replace('/');
     if (isAuthenticated && pathname === '/admin-login') router.replace(role === 'admin' ? '/admin-dashboard' : '/');
     if (isAuthenticated && pathname.startsWith('/admin-dashboard') && role !== 'admin') router.replace('/');

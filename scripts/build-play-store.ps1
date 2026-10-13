@@ -2,11 +2,21 @@ param(
     [Parameter(Mandatory = $true)][ValidateRange(1, 2100000000)][int]$VersionCode,
     [Parameter(Mandatory = $true)][ValidatePattern('^[0-9]+\.[0-9]+(\.[0-9]+)?$')][string]$VersionName,
     [Parameter(Mandatory = $true)][string]$KeyStorePath,
-    [string]$KeyAlias = 'apex-upload'
+    [string]$KeyAlias = 'apex-upload',
+    [string]$SigningCredentialPath
 )
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
+$originalStorePassword = $env:APEX_STORE_PASSWORD
+$originalKeyPassword = $env:APEX_KEY_PASSWORD
+try {
+if ($SigningCredentialPath) {
+    $credential = Import-Clixml -LiteralPath $SigningCredentialPath
+    if ($credential -isnot [Management.Automation.PSCredential] -or $credential.UserName -ne $KeyAlias) { throw 'Signing credential does not match the upload alias.' }
+    $env:APEX_STORE_PASSWORD = $credential.GetNetworkCredential().Password
+    $env:APEX_KEY_PASSWORD = $env:APEX_STORE_PASSWORD
+}
 $required = @(
     'NEXT_PUBLIC_API_URL', 'NEXT_PUBLIC_SOCKET_URL',
     'NEXT_PUBLIC_FIREBASE_API_KEY', 'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
@@ -29,6 +39,10 @@ if (!(Test-Path -LiteralPath $KeyStorePath -PathType Leaf)) { throw 'The upload 
 if (!(Test-Path -LiteralPath (Join-Path $root 'node_modules/.bin/cap.cmd'))) { throw 'Install root project dependencies with npm ci before the release build.' }
 if (!(Test-Path -LiteralPath (Join-Path $root 'node_modules/.bin/next.cmd'))) { throw 'Root Next.js dependencies are missing.' }
 if (!(Get-Command java -ErrorAction SilentlyContinue)) { throw 'Configure a compatible JDK before building Android.' }
+if ($env:NEXT_PUBLIC_NATIVE_PUSH_ENABLED -eq 'true') {
+    $nativeConfig = Get-Content -Raw -LiteralPath (Join-Path $root 'android/app/google-services.json') | ConvertFrom-Json
+    if ($nativeConfig.project_info.project_id -ne 'apex-5b654' -or !($nativeConfig.client | Where-Object { $_.client_info.android_client_info.package_name -eq 'com.apex.app' })) { throw 'Native push requires the correct APEX Android Firebase configuration.' }
+}
 
 $settings = @{
     NEXT_PUBLIC_DISTRIBUTION = 'google-play'
@@ -65,4 +79,8 @@ try {
 } finally {
     Pop-Location
     foreach ($key in $settings.Keys) { [Environment]::SetEnvironmentVariable($key, $old[$key], 'Process') }
+}
+} finally {
+    $env:APEX_STORE_PASSWORD = $originalStorePassword
+    $env:APEX_KEY_PASSWORD = $originalKeyPassword
 }

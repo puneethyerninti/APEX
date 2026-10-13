@@ -82,9 +82,12 @@ apply from: 'capacitor.build.gradle'
 
 try {
     def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
+    if (System.getenv('NEXT_PUBLIC_NATIVE_PUSH_ENABLED') == 'true' && servicesJSON.text) {
+        def services = new groovy.json.JsonSlurper().parse(servicesJSON)
+        if (services.project_info.project_id != 'apex-5b654') throw new GradleException('Native notifications require the APEX Firebase project, not a legacy project.')
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    if (System.getenv('NEXT_PUBLIC_NATIVE_PUSH_ENABLED') == 'true') throw e
+    logger.info('Native push is disabled for this release.')
 }

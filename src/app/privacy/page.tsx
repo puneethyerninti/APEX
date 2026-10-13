@@ -1,0 +1,12 @@
+import PolicyPage from '@/components/PolicyPage';
+export default function PrivacyPage() {
+  return <PolicyPage title="APEX Privacy Policy">
+    <p>APEX at apextc.shop uses your phone number for OTP sign-in and stores your account name and profile details. Contact APEX support at +91 9494273763 for privacy or deletion questions.</p>
+    <h2 className="font-bold">Information Used</h2><p>We process account identifiers, service requests, payment and fulfillment references, support requests, and optional profile photos, resumes and matrimony messages. Profile content you submit for publication may be visible to other signed-in members after review. Do not include sensitive financial credentials in profiles or messages.</p>
+    <p>Location is requested for cab pickup and routing while you use those features. Camera or selected photos are used only when you choose a feature that needs them. Notification permission and device tokens are used for service updates. You can refuse these permissions in your device settings.</p>
+    <h2 className="font-bold">Service Providers</h2><p>Firebase supports sign-in and notifications. The backend runs on Render with MongoDB storage. Razorpay processes supported merchant payments; Eko handles supported utility requests. Mapbox supports maps, location search and routing. Uploaded files may be stored with Amazon S3. These services receive data needed for their function. APEX does not ask for or store your UPI PIN, card PIN or OTP from your bank.</p>
+    <p>Opening linked stores, Anand Matrimony, YouTube or WhatsApp takes you to services governed by their own policies. APEX does not claim to synchronize profiles or purchases with those sites.</p>
+    <h2 className="font-bold">Retention And Deletion</h2><p>You can request deletion from Account or the Delete Account page without paying a fee. Support reviews the request, settles outstanding service/payment issues, and removes the account and associated personal content, including uploaded files, when processing is complete. Financial, dispute, security or legal records may need to be retained for applicable obligations; support will explain any exception. A request receipt is not confirmation of completed deletion.</p>
+    <p>Connections use HTTPS and private service access requires authenticated authorization. No system can guarantee absolute security. Report concerns to support promptly.</p>
+  </PolicyPage>;
+}

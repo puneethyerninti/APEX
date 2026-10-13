@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import { api } from '@/services/api';
+import MemberSafety from '@/components/MemberSafety';
 import { ChatMessage, PendingMessage, mergeMessages, readPending } from '@/services/matrimonyChat';
 
 export default function MatrimonyChat({ uid, profile, socket, onClose }: { uid: string; profile: any; socket?: Socket | null; onClose: () => void }) {
@@ -109,7 +110,7 @@ export default function MatrimonyChat({ uid, profile, socket, onClose }: { uid: 
   return <div role="dialog" aria-label="Conversation" aria-modal="true" className="fixed inset-0 z-50 flex flex-col bg-[#F4F6FB]">
     <header className="flex shrink-0 items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
       <div className="min-w-0"><h2 className="truncate text-sm font-bold">{profile.user?.name || 'APEX Member'}</h2><p className="text-[11px] text-gray-500">{profile.location}</p></div>
-      <button disabled={sending} onClick={onClose} aria-label="Close chat" title="Close chat" className="h-10 w-10 shrink-0 rounded-full text-gray-500 disabled:opacity-40"><i className="fas fa-times" /></button>
+      <div className="flex"><MemberSafety userId={other} onBlocked={onClose} /><button disabled={sending} onClick={onClose} aria-label="Close chat" title="Close chat" className="h-10 w-10 shrink-0 rounded-full text-gray-500 disabled:opacity-40"><i className="fas fa-times" /></button></div>
     </header>
     {error && <p role="alert" className="mx-auto w-full max-w-xl px-4 py-2 text-xs text-red-700">{error}</p>}
     {pending && !sending && <p role="status" className="mx-auto w-full max-w-xl px-4 py-2 text-xs text-amber-800">Unconfirmed message saved. Retry before sending another.</p>}

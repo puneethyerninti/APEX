@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
@@ -290,6 +291,7 @@ export default function GlobalModals() {
                                 )}
                             </div>
                             
+                            <div className="flex flex-wrap gap-4 py-3 text-xs"><Link onClick={() => setModal(null)} href="/privacy">Privacy</Link><Link onClick={() => setModal(null)} href="/support">Support</Link><Link onClick={() => setModal(null)} href="/account-deletion">Delete Account</Link></div>
                             <button onClick={() => { logout(); setModal(null); }} className="w-full mt-2 py-3 bg-red-50 text-red-600 font-bold text-sm rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
                                 <i className="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
                             </button>

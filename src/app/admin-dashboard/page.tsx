@@ -340,6 +340,7 @@ export default function AdminDashboardPage() {
 
         {/* Scrollable Dashboard */}
         <main className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8">
+          <Link href="/admin-dashboard/support" className="mb-4 inline-block text-sm font-bold text-purple-700">Support And Safety Queue</Link>
             <div className="max-w-[1600px] mx-auto w-full animate-[slideUp_0.4s_ease-out]">
                 
                 {/* Header Row */}

@@ -22,6 +22,10 @@ export default function PostPropertyPage() {
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const files = Array.from(e.target.files).slice(0, 3 - images.length);
+            if (files.some(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 1024 * 1024)) {
+                window.dispatchEvent(new CustomEvent('showToast', { detail: { type: 'error', message: 'Choose JPEG, PNG or WebP photos under 1 MB each.' } }));
+                e.target.value = ''; return;
+            }
             files.forEach(file => {
                 const reader = new FileReader();
                 reader.onloadend = () => {
@@ -53,9 +57,6 @@ export default function PostPropertyPage() {
                 images
             });
             setIsSuccess(true);
-            setTimeout(() => {
-                window.location.href = '/realty';
-            }, 3000);
         } catch (error) {
             console.error('Error posting property:', error);
             window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Failed to post property. Try again.', type: 'error' } }));
@@ -84,12 +85,12 @@ export default function PostPropertyPage() {
                         </div>
                         <h2 className="text-xl font-black mb-2">Property Posted!</h2>
                         <p className="text-sm font-medium text-emerald-700">Your classified has been successfully submitted and will be reviewed shortly.</p>
-                        <p className="text-xs mt-4 text-emerald-600">Redirecting back to Realty...</p>
+                        <Link href="/realty" className="mt-4 block text-xs text-emerald-600">Back To Realty</Link>
                     </div>
                 ) : (
                     <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
                         <h2 className="text-xl font-black text-gray-900 mb-1">Sell or Rent your Property</h2>
-                        <p className="text-xs text-gray-500 mb-6 font-medium">Post your classified for free and reach thousands of buyers.</p>
+                        <p className="text-xs text-gray-500 mb-6 font-medium">Submit your property for review.</p>
                         
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>

@@ -1,0 +1,3 @@
+import PolicyPage from '@/components/PolicyPage';
+import SupportForm from '@/components/SupportForm';
+export default function DeletionPage() { return <PolicyPage title="Delete Your APEX Account"><p>Submit a deletion request here or contact +91 9494273763. Support will verify ownership, review outstanding balances, trips and payments, and process account and personal-content deletion. No fee is charged. Any legally required record retention will be explained. This form creates a real support request; it does not claim that deletion has already happened.</p><SupportForm deletion /></PolicyPage>; }

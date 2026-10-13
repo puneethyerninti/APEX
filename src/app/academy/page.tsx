@@ -1,358 +1,42 @@
-
 "use client";
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import AutoCarousel from '@/components/AutoCarousel';
 import { api } from '@/services/api';
 import { loadRazorpay } from '@/services/razorpay';
-import { assertServiceCheckoutAllowed } from '@/services/checkoutPolicy';
+import { assertServiceCheckoutAllowed, canUseServiceCheckout } from '@/services/checkoutPolicy';
 import { useAppStore } from '@/store/useAppStore';
-
-export default function Page() {
-  const [enrollCourse, setEnrollCourse] = useState<{name: string, price: string} | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [courses, setCourses] = useState<any[]>([]);
-  const user = useAppStore(state => state.user);
-
-  useEffect(() => {
-    api.get('/academy/courses').then(res => {
-        if (Array.isArray(res.data)) {
-            setCourses(res.data);
-        }
-    }).catch(e => console.error(e));
-  }, []);
-
-  const handleEnroll = (name: string, price: string) => {
-      try { assertServiceCheckoutAllowed('academy_enrollment'); } catch (error: any) {
-          window.dispatchEvent(new CustomEvent('showToast', { detail: { message: error.message, type: 'warning' } }));
-          return;
-      }
-      setEnrollCourse({name, price});
-      setIsSuccess(false);
+export default function AcademyPage() {
+  const user = useAppStore(s => s.user);
+  const [courses, setCourses] = useState<any[]>([]), [enrollments, setEnrollments] = useState<any[]>([]);
+  const [error, setError] = useState(''), [loaded, setLoaded] = useState(false), [busy, setBusy] = useState(false);
+  const [purchases, setPurchases] = useState(process.env.NEXT_PUBLIC_DISTRIBUTION !== 'google-play');
+  const refresh = async () => {
+    setError('');
+    try {
+      const { data } = await api.get('/academy/courses'); setCourses(data);
+      if (user?._id || user?.uid) { const owned = await api.get('/academy/enrollments'); setEnrollments(owned.data); }
+      setLoaded(true);
+    } catch { setError('Academy could not be refreshed. Please try again.'); }
   };
-
-  const handlePayment = async (e: React.FormEvent) => {
-      e.preventDefault();
-      try { assertServiceCheckoutAllowed('academy_enrollment'); } catch (error: any) {
-          window.dispatchEvent(new CustomEvent('showToast', { detail: { message: error.message, type: 'warning' } }));
-          return;
-      }
-      if (!user?.uid || !enrollCourse) {
-          window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Please login to continue', type: 'warning' } }));
-          return;
-      }
-      setIsSubmitting(true);
-      
-      try {
-          const amountValue = parseInt(enrollCourse.price.replace(/[^0-9]/g, ''), 10) || 500;
-          const RazorpayCheckout = await loadRazorpay();
-          const orderRes = await api.post('/finance/razorpay/order', {
-              amount: amountValue,
-              userId: user.uid,
-              category: 'academy_enrollment',
-              serviceName: `Academy - ${enrollCourse.name}`,
-              metadata: {
-                  courseName: enrollCourse.name,
-                  amount: enrollCourse.price
-              }
-          });
-          
-          const { order, keyId } = orderRes.data;
-          
-          const options = {
-              key: keyId,
-              amount: order.amount,
-              currency: order.currency,
-              name: "APEX App",
-              description: `Enroll in ${enrollCourse.name}`,
-              order_id: order.id,
-              handler: async function (response: any) {
-                  try {
-                      const verifyRes = await api.post('/finance/razorpay/verify', {
-                          razorpay_order_id: response.razorpay_order_id,
-                          razorpay_payment_id: response.razorpay_payment_id,
-                          razorpay_signature: response.razorpay_signature,
-                          amount: amountValue,
-                          userId: user.uid
-                      });
-                      
-                      if (verifyRes.data.success) {
-                          setIsSuccess(true);
-                      }
-                  } catch (e) {
-                      console.error("Verification failed", e);
-                      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Verification failed', type: 'error' } }));
-                      setIsSubmitting(false);
-                  }
-              },
-              prefill: {
-                  name: user.name || "APEX User",
-                  contact: user.phone || ""
-              },
-              theme: {
-                  color: "#2D1B69"
-              },
-              modal: {
-                  ondismiss: function() {
-                      setIsSubmitting(false);
-                  }
-              }
-          };
-          
-          const rzp = new RazorpayCheckout(options);
-          rzp.open();
-      } catch (error) {
-          console.error("Enrollment failed:", error);
-          window.dispatchEvent(new CustomEvent('showToast', { detail: { message: 'Enrollment failed. Please try again.', type: 'error' } }));
-          setIsSubmitting(false);
-      }
-  };
-  return (
-    <>
-      
-    
-    {/* HEADER */}
-    <div className="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-            <Link href="/" className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
-                <i className="fa-solid fa-arrow-left"></i>
-            </Link>
-            <h1 className="font-black text-lg text-gray-900">APEX Academy</h1>
-        </div>
-        <div className="flex gap-2">
-            <button onClick={() => {}} className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
-                <i className="fa-solid fa-magnifying-glass"></i>
-            </button>
-            <button onClick={() => {}} className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
-                <i className="fa-solid fa-bookmark"></i>
-            </button>
-        </div>
-    </div>
-
-    {/* HERO DASHBOARD */}
-    <div className="p-4 max-w-7xl mx-auto w-full">
-        <h2 className="text-sm font-black text-gray-800 mb-2">Continue Learning</h2>
-        <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex gap-3 items-center">
-            <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 text-xl flex-shrink-0">
-                <i className="fa-brands fa-python"></i>
-            </div>
-            <div className="flex-1">
-                <h3 className="font-bold text-gray-900 text-xs mb-1">Advanced Python Masterclass</h3>
-                <p className="text-[9px] text-gray-500 mb-2">Instructor: Dr. Sarah Jenkins</p>
-                <div className="w-full bg-gray-100 rounded-full h-1.5 mb-1">
-                    <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: "65%" }}></div>
-                </div>
-                <p className="text-[8px] font-bold text-gray-400 text-right">65% Completed</p>
-            </div>
-        </div>
-    </div>
-
-    {/* COURSES SECTION */}
-    <div className="mb-6 max-w-7xl mx-auto w-full">
-        <div className="px-4 flex justify-between items-end mb-3">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Courses</h3>
-            <Link href="#" className="text-[9px] font-bold text-purple-600">View All</Link>
-        </div>
-        <div className="flex gap-3 md:gap-6 overflow-x-auto px-4 scrollbar-none flex-nowrap md:flex-wrap pb-2 snap-x snap-mandatory">
-            {courses.length === 0 ? (
-                <div className="text-xs text-gray-500 italic">Courses coming soon...</div>
-            ) : (
-                courses.map((course) => (
-                    <div key={course._id} onClick={() => handleEnroll(course.title, `₹${course.price}`)} className="bg-white rounded-xl shadow-sm border border-gray-100 w-36 md:w-48 flex-shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-shadow snap-start">
-                        <div className="h-24 md:h-32 bg-purple-50 relative flex items-center justify-center text-purple-500 text-3xl overflow-hidden">
-                            {course.thumbnailUrl ? (
-                                <img src={course.thumbnailUrl} alt={course.title} className="w-full h-full object-cover" />
-                            ) : (
-                                <i className="fa-solid fa-book-open-reader"></i>
-                            )}
-                        </div>
-                        <div className="p-3 md:p-4">
-                            <h4 className="font-black text-[10px] md:text-xs text-gray-900 truncate mb-1">{course.title}</h4>
-                            <p className="text-[9px] md:text-[10px] text-gray-500 mb-2 truncate">{course.description || course.category}</p>
-                            <span className="text-purple-600 font-black text-xs md:text-sm">₹{course.price}</span>
-                        </div>
-                    </div>
-                ))
-            )}
-        </div>
-    </div>
-
-    {/* JOB ORIENTED COURSES */}
-    <div className="mb-8 max-w-7xl mx-auto w-full">
-        <div className="px-4 flex justify-between items-end mb-3">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Job Oriented Courses</h3>
-            <Link href="#" className="text-[9px] font-bold text-purple-600">View All</Link>
-        </div>
-        <div className="px-4 mb-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 flex flex-col gap-4">
-            <AutoCarousel interval={3500}>
-                {/* Full Stack */}
-                <div className="bg-white border border-gray-100 w-full overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
-                    <div className="h-40 relative bg-gray-200">
-                        <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&amp;fit=crop&amp;q=80" alt="Coding" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/30"></div>
-                        <div className="absolute top-2 right-2 bg-red-500 text-white text-[8px] font-bold px-2 py-0.5 rounded">HOT</div>
-                        <div className="absolute inset-0 flex items-center justify-center text-white/80 text-4xl">
-                            <i className="fa-solid fa-code"></i>
-                        </div>
-                    </div>
-                    <div className="p-4">
-                        <h4 className="font-black text-sm text-gray-900 truncate mb-1">Full-Stack Web Development</h4>
-                        <p className="text-xs text-gray-500 mb-3">HTML, CSS, JS, React, Node.js &amp; More. 100% Placement Assistance.</p>
-                        <div className="flex items-center justify-between">
-                            <span className="text-purple-600 font-black text-lg">₹9,999</span>
-                            <button onClick={() => handleEnroll('Full-Stack Web Development', '₹9,999')} className="bg-purple-100 text-purple-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-purple-200 transition-colors">Enroll Now</button>
-                        </div>
-                    </div>
-                </div>
-                
-                {/* Data Science */}
-                <div className="bg-white border border-gray-100 w-full overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
-                    <div className="h-40 relative bg-gray-200">
-                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&amp;fit=crop&amp;q=80" alt="Data Science" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/30"></div>
-                        <div className="absolute inset-0 flex items-center justify-center text-white/80 text-4xl">
-                            <i className="fa-solid fa-database"></i>
-                        </div>
-                    </div>
-                    <div className="p-4">
-                        <h4 className="font-black text-sm text-gray-900 truncate mb-1">Data Science &amp; AI/ML</h4>
-                        <p className="text-xs text-gray-500 mb-3">Python, Pandas, Machine Learning. Build your career in AI.</p>
-                        <div className="flex items-center justify-between">
-                            <span className="text-purple-600 font-black text-lg">₹12,499</span>
-                            <button onClick={() => handleEnroll('Data Science & AI/ML', '₹12,499')} className="bg-purple-100 text-purple-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-purple-200 transition-colors">Enroll Now</button>
-                        </div>
-                    </div>
-                </div>
-                
-                {/* Mobile App Dev */}
-                <div className="bg-white border border-gray-100 w-full overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
-                    <div className="h-40 relative bg-gray-200">
-                        <img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&amp;fit=crop&amp;q=80" alt="Mobile App" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/30"></div>
-                        <div className="absolute inset-0 flex items-center justify-center text-white/80 text-4xl">
-                            <i className="fa-brands fa-app-store-ios"></i>
-                        </div>
-                    </div>
-                    <div className="p-4">
-                        <h4 className="font-black text-sm text-gray-900 truncate mb-1">Mobile App Development</h4>
-                        <p className="text-xs text-gray-500 mb-3">Learn Flutter &amp; React Native. Build iOS and Android apps.</p>
-                        <div className="flex items-center justify-between">
-                            <span className="text-purple-600 font-black text-lg">₹20,000</span>
-                            <button onClick={() => handleEnroll('Mobile App Development', '₹20,000')} className="bg-purple-100 text-purple-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-purple-200 transition-colors">Enroll Now</button>
-                        </div>
-                    </div>
-                </div>
-                
-                {/* Digital Marketing */}
-                <div className="bg-white border border-gray-100 w-full overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
-                    <div className="h-40 relative bg-gray-200">
-                        <img src="https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&amp;fit=crop&amp;q=80" alt="Digital Marketing" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/30"></div>
-                        <div className="absolute inset-0 flex items-center justify-center text-white/80 text-4xl">
-                            <i className="fa-solid fa-bullhorn"></i>
-                        </div>
-                    </div>
-                    <div className="p-4">
-                        <h4 className="font-black text-sm text-gray-900 truncate mb-1">Digital Marketing Masterclass</h4>
-                        <p className="text-xs text-gray-500 mb-3">SEO, SEM, Social Media, Analytics. Become an expert marketer.</p>
-                        <div className="flex items-center justify-between">
-                            <span className="text-purple-600 font-black text-lg">₹7,999</span>
-                            <button onClick={() => handleEnroll('Digital Marketing Masterclass', '₹7,999')} className="bg-purple-100 text-purple-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-purple-200 transition-colors">Enroll Now</button>
-                        </div>
-                    </div>
-                </div>
-            </AutoCarousel>
-        </div>
-    </div>
-
-    {/* STICKY BOTTOM ACTION */}
-    
-    {/* ENROLLMENT & PAYMENT MODAL */}
-    {enrollCourse && (
-        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center">
-            <div className="bg-white w-full max-w-md max-h-[90vh] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col animate-[slideUp_0.3s_ease-out]">
-                {/* Header */}
-                <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10 sm:rounded-t-3xl rounded-t-3xl">
-                    <div>
-                        <h2 className="text-lg font-black text-gray-900">Enrollment</h2>
-                        <p className="text-[10px] text-gray-500">{enrollCourse.name}</p>
-                    </div>
-                    <button onClick={() => setEnrollCourse(null)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200">
-                        <i className="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-
-                {/* Body */}
-                <div className="p-5 overflow-y-auto custom-scrollbar flex-1">
-                    {isSuccess ? (
-                        <div className="py-10 flex flex-col items-center text-center animate-[fadeIn_0.5s_ease-out]">
-                            <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-4xl mb-4 shadow-sm">
-                                <i className="fa-solid fa-check"></i>
-                            </div>
-                            <h3 className="text-xl font-black text-gray-900 mb-2">Enrollment Successful!</h3>
-                            <p className="text-sm text-gray-500 max-w-[250px] mx-auto mb-6">
-                                You have successfully enrolled in {enrollCourse.name}. You will receive a confirmation email shortly.
-                            </p>
-                            <button onClick={() => setEnrollCourse(null)} className="w-full py-3 bg-gray-900 text-white font-bold rounded-xl shadow-md">
-                                Back to Academy
-                            </button>
-                        </div>
-                    ) : (
-                        <form onSubmit={handlePayment} className="flex flex-col gap-4">
-                            <h3 className="text-sm font-bold text-gray-800">1. Student Details</h3>
-                            <div>
-                                <label className="block text-[11px] font-bold text-gray-700 mb-1">Full Name</label>
-                                <input required type="text" placeholder="Enter your name" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500" />
-                            </div>
-                            <div>
-                                <label className="block text-[11px] font-bold text-gray-700 mb-1">Email Address</label>
-                                <input required type="email" placeholder="Enter your email" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500" />
-                            </div>
-                            <div>
-                                <label className="block text-[11px] font-bold text-gray-700 mb-1">Phone Number</label>
-                                <input required type="tel" placeholder="Enter your phone" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500" />
-                            </div>
-
-                            <hr className="my-2 border-gray-100" />
-
-                            <h3 className="text-sm font-bold text-gray-800">2. Payment Summary</h3>
-                            <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-xs text-gray-600">Course Fee</span>
-                                    <span className="text-xs font-bold text-gray-900">{enrollCourse.price}</span>
-                                </div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-xs text-gray-600">GST (18%)</span>
-                                    <span className="text-xs font-bold text-gray-900">Included</span>
-                                </div>
-                                <div className="h-px bg-gray-200 my-2"></div>
-                                <div className="flex justify-between items-center">
-                                    <span className="font-black text-gray-900">Total</span>
-                                    <span className="font-black text-purple-600 text-lg">{enrollCourse.price}</span>
-                                </div>
-                            </div>
-                            
-                            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 text-center">
-                                <img src="/apex_payment_qr.png" alt="APEX Payment QR" className="mx-auto h-32 w-32 object-contain mb-2 rounded-lg shadow-sm" />
-                                <p className="text-[10px] text-purple-600 font-bold mb-1">Pay with any UPI App</p>
-                                <p className="text-xs font-black text-purple-800">apex@upi</p>
-                            </div>
-
-                            <button type="submit" disabled={isSubmitting} className="mt-2 w-full py-3.5 bg-purple-600 text-white font-bold rounded-xl shadow-lg shadow-purple-600/30 hover:bg-purple-700 active:scale-[0.98] transition-all flex justify-center items-center gap-2">
-                                {isSubmitting ? (
-                                    <><i className="fa-solid fa-circle-notch fa-spin"></i> Processing Payment...</>
-                                ) : (
-                                    <>Pay {enrollCourse.price} &amp; Enroll <i className="fa-solid fa-arrow-right"></i></>
-                                )}
-                            </button>
-                        </form>
-                    )}
-                </div>
-            </div>
-        </div>
-    )}
-
-    </>
-  );
+  useEffect(() => { setPurchases(canUseServiceCheckout('academy_enrollment')); setEnrollments([]); void refresh(); }, [user?._id, user?.uid]);
+  async function enroll(course: any) {
+    if (busy || !canUseServiceCheckout('academy_enrollment')) return;
+    setBusy(true); setError('');
+    try {
+      assertServiceCheckoutAllowed('academy_enrollment');
+      const Razorpay = await loadRazorpay();
+      const { data } = await api.post('/finance/razorpay/order', { category: 'academy_enrollment', amount: course.price, serviceName: course.title, metadata: { courseName: course.title } });
+      const checkout = new Razorpay({ key: data.keyId, order_id: data.order.id, amount: data.order.amount, currency: data.order.currency, name: 'APEX Academy',
+        handler: async (payment: any) => { try { await api.post('/finance/razorpay/verify', payment); await refresh(); } catch { setError('Enrollment is not confirmed. Do not pay again; contact support for reconciliation.'); } finally { setBusy(false); } },
+        modal: { ondismiss: () => setBusy(false) } });
+      checkout.on('payment.failed', () => { setBusy(false); setError('Payment failed. No course access has been confirmed.'); }); checkout.open();
+    } catch (e: any) { setError(e.response?.data?.error || 'Enrollment could not be started.'); setBusy(false); }
+  }
+  return <main className="pb-24">
+    <header className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3"><Link href="/" aria-label="Home"><i className="fas fa-arrow-left" /></Link><h1 className="text-lg font-black">APEX Academy</h1><button title="Refresh academy" aria-label="Refresh academy" onClick={() => void refresh()}><i className="fas fa-rotate-right" /></button></header>
+    {error && <p role="alert" className="px-4 py-3 text-xs text-red-700">{error}</p>}
+    <section className="px-4 py-4"><h2 className="mb-3 text-xs font-bold uppercase text-gray-500">My Courses</h2>{loaded && !enrollments.length && <p className="text-xs text-gray-500">No course enrollments yet.</p>}{enrollments.map(item => <a key={item._id} href={item.accessUrl} target="_blank" rel="noopener noreferrer" className="mb-2 flex items-center justify-between gap-3 rounded-lg border border-gray-100 bg-white p-3 text-sm font-bold">{item.title}<i className="fas fa-arrow-up-right-from-square" /></a>)}</section>
+    <section className="px-4 py-4"><h2 className="mb-3 text-xs font-bold uppercase text-gray-500">Courses</h2>{loaded && !courses.length && <p className="text-xs text-gray-500">No published courses are available.</p>}<div className="grid grid-cols-2 gap-3 md:grid-cols-4">{courses.map(course => <article key={course._id} className="overflow-hidden rounded-lg border border-gray-100 bg-white">{course.thumbnailUrl && <img src={course.thumbnailUrl} alt={course.title} className="aspect-video w-full object-cover" />}<div className="p-3"><h3 className="text-sm font-bold">{course.title}</h3><p className="mt-1 text-xs text-gray-500">{course.description}</p>{purchases && <button disabled={busy || !user || course.enrollmentAvailable !== true || Number(course.price) <= 0} onClick={() => void enroll(course)} className="mt-3 w-full rounded-lg bg-purple-100 px-2 py-2 text-xs font-bold text-purple-700 disabled:opacity-40">Enroll: INR {course.price}</button>}</div></article>)}</div></section>
+    <section className="px-4 py-4"><a href="https://www.youtube.com/@APEXGROUPS" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg bg-white p-3 text-sm font-bold"><img src="/apex-academy-india.png" alt="APEX Academy India" className="h-12 w-12 object-contain" />APEX Academy India <i className="fab fa-youtube text-red-600" /></a></section>
+  </main>;
 }

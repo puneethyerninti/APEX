@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import NavigationWrapper from "@/components/NavigationWrapper";
@@ -15,9 +15,8 @@ export const metadata: Metadata = {
   title: "APEX | Your Life. Simplified.",
   description: "One App, Unlimited Possibilities.",
   manifest: "/manifest.json",
-  themeColor: "#4c1d95",
-  viewport: "minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover",
 };
+export const viewport: Viewport = { themeColor: '#4c1d95', width: 'device-width', initialScale: 1, viewportFit: 'cover' };
 
 export default function RootLayout({
   children,
