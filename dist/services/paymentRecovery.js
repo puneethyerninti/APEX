@@ -10,7 +10,7 @@ const fulfillmentService_1 = require("./fulfillmentService");
 async function reconcileWalletAndMembershipPayments(io) {
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET)
         return;
-    const transactions = await Transaction_1.default.find({ category: { $in: ['add_money', 'wallet_recharge', 'matrimony'] },
+    const transactions = await Transaction_1.default.find({ category: { $in: ['add_money', 'wallet_recharge', 'matrimony', 'subscription', 'academy_enrollment'] },
         status: { $in: ['pending', 'completed'] }, 'metadata.fulfilled': { $ne: true },
         'metadata.fulfillmentError': { $exists: false },
         $or: [{ 'metadata.reconcileAfter': { $exists: false } }, { 'metadata.reconcileAfter': { $lte: new Date() } }]

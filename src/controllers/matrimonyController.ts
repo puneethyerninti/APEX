@@ -3,8 +3,9 @@ import mongoose from 'mongoose';
 import MatrimonyProfile from '../models/MatrimonyProfile';
 import Message from '../models/Message';
 import Transaction from '../models/Transaction';
-import { authorizeChat, activeMembership, normalizePlan, matrimonyPlans } from '../services/matrimonyPolicy';
+import { authorizeChat, activeMembership, normalizePlan, matrimonyPlans, blockedMembers } from '../services/matrimonyPolicy';
 import { persistChatMessage, publishChatMessage } from '../services/matrimonyMessages';
+import { extendMembership } from '../services/membershipExpiry';
 const owner = (req: Request) => String((req as any).user.id);
 const fail = (res: Response, e: any) => res.status(e.code === 11000 ? 409 : e.httpStatus || 503).json({ error: e.code === 11000 ? 'Profile changed. Refresh and try again.' : e.message || 'Service unavailable' });
 const membershipView = (profile: any) => profile ? { ...profile.toObject(), subscription: { ...profile.subscription, isActive: activeMembership(profile) } } : null;
@@ -16,13 +17,15 @@ export const getMyProfile = async (req: Request, res: Response) => {
 };
 export const getProfiles = async (req: Request, res: Response) => {
   try {
-    const profiles = await MatrimonyProfile.find({ ownerVerified: true, status: 'approved', user: { $ne: owner(req) } }).populate('user', 'name').limit(100);
+    const blocked = await blockedMembers(owner(req));
+    const profiles = await MatrimonyProfile.find({ ownerVerified: true, status: 'approved', user: { $nin: [owner(req), ...blocked] } }).populate('user', 'name').limit(100);
     res.json(profiles.map(p => ({ ...p.toObject(), subscription: { plan: p.subscription.plan, isActive: activeMembership(p) } })));
   } catch (e) { fail(res, e); }
 };
 export const createProfile = async (req: Request, res: Response) => {
   try {
     const age = Number(req.body.age);
+    if (![true, 'true'].includes(req.body.acceptedTerms)) return res.status(400).json({ error: 'Accept the terms and community safety rules before submitting your profile.' });
     const fields: any = {};
     if (!Number.isInteger(age) || age < 18 || age > 100) return res.status(400).json({ error: 'Enter a valid adult age.' });
     for (const field of ['height', 'religion', 'profession', 'location', 'bio', 'community']) {
@@ -91,7 +94,8 @@ export const getInbox = async (req: Request, res: Response) => {
       { $sort: { 'latestMessage.timestamp': -1, 'latestMessage._id': -1 } },
       { $limit: 100 }
     ]);
-    const otherIds = chats.map(c => c.latestMessage.senderId === owner(req) ? c.latestMessage.receiverId : c.latestMessage.senderId).filter(id => mongoose.isValidObjectId(id));
+    const blocked = await blockedMembers(owner(req));
+    const otherIds = chats.map(c => c.latestMessage.senderId === owner(req) ? c.latestMessage.receiverId : c.latestMessage.senderId).filter(id => mongoose.isValidObjectId(id) && !blocked.includes(id));
     const profiles = await MatrimonyProfile.find({ user: { $in: otherIds }, ownerVerified: true, status: 'approved' }).populate('user', 'name');
     const byOwner = new Map(profiles.map(p => [String((p.user as any)?._id || p.user), p]));
     res.json(chats.flatMap(c => {
@@ -113,8 +117,7 @@ export const handleMatrimonyUpgrade = async (userId: string, value: string, _met
       if (tx.metadata?.fulfilled) { result = tx.metadata.fulfillmentResult; return; }
       const profile = await MatrimonyProfile.findOne({ user: userId, ownerVerified: true, status: 'approved' }).session(session);
       if (!profile) throw new Error('Approved APEX matrimony profile required. Payment needs support reconciliation.');
-      const expiry = new Date(Math.max(Date.now(), profile.subscription.expiresAt?.getTime() || 0));
-      expiry.setUTCMonth(expiry.getUTCMonth() + matrimonyPlans[plan].months);
+      const expiry = extendMembership(new Date(Math.max(Date.now(), profile.subscription.expiresAt?.getTime() || 0)), matrimonyPlans[plan].months);
       profile.subscription = { plan: plan as any, isActive: true, expiresAt: expiry, paymentTransactionId: tx._id as mongoose.Types.ObjectId };
       await profile.save({ session });
       result = { profileId: profile._id.toString(), plan, expiresAt: expiry };

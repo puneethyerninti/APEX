@@ -27,6 +27,8 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
   if (transaction.status !== 'completed') throw new Error('Payment is not eligible for fulfillment');
   if (transaction.category === 'cab_payment') return fulfillCabPayment(transaction, appIo);
   if (transaction.category === 'matrimony') return handleMatrimonyUpgrade(transaction.user.toString(), metadata.plan, metadata, transaction);
+  if (transaction.category === 'subscription') return handleAPEXPlanUpgrade(transaction.user.toString(), metadata.plan, transaction);
+  if (transaction.category === 'academy_enrollment') return handleAcademyEnrollment(transaction.user.toString(), metadata, transaction);
   if (!['add_money', 'wallet_recharge'].includes(transaction.category)) {
     const claimed = await Transaction.findOneAndUpdate(
       { _id: transaction._id, status: 'completed', 'metadata.fulfilled': { $ne: true }, 'metadata.fulfillmentInProgress': { $ne: true } },
@@ -107,14 +109,14 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
         fulfillmentResult = await handleMatrimonyUpgrade(
           userIdStr, 
           metadata.plan || transaction.referenceId?.replace('Matrimony ', '').replace(' Plan', ''),
-          metadata
+          metadata, transaction
         );
         break;
 
       case 'subscription':
         fulfillmentResult = await handleAPEXPlanUpgrade(
           userIdStr, 
-          metadata.plan || transaction.referenceId
+          metadata.plan || transaction.referenceId, transaction
         );
         break;
 
@@ -123,7 +125,7 @@ export const fulfillOrder = async (transaction: any, appIo?: any) => {
         break;
 
       case 'academy_enrollment':
-        fulfillmentResult = await handleAcademyEnrollment(userIdStr, metadata);
+        fulfillmentResult = await handleAcademyEnrollment(userIdStr, metadata, transaction);
         break;
 
       case 'charity':

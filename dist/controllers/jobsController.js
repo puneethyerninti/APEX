@@ -21,6 +21,8 @@ exports.getJobs = getJobs;
 const createJob = async (req, res) => {
     try {
         const { title, company, location, type, salary, description } = req.body;
+        if ([title, company, location].some(value => typeof value !== 'string' || !value.trim() || value.length > 150) || typeof description !== 'string' || description.length > 5000 || type === 'Application')
+            return res.status(400).json({ error: 'Valid job details are required.' });
         const newJob = await Job_1.default.create({
             title,
             company,
@@ -48,6 +50,8 @@ exports.createJob = createJob;
 const applyJob = async (req, res) => {
     try {
         const { fullName, email, jobRole } = req.body;
+        if (typeof fullName !== 'string' || fullName.trim().length < 2 || fullName.length > 120 || typeof email !== 'string' || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || typeof jobRole !== 'string' || !jobRole.trim() || jobRole.length > 150)
+            return res.status(400).json({ error: 'Valid name, email and job role are required.' });
         const userId = req.user.id;
         // multer-s3 attaches the S3 URL to req.file.location
         const file = req.file;
@@ -70,7 +74,7 @@ const applyJob = async (req, res) => {
             io.to('admin_room').emit('admin_data_refresh');
         }
         if (userId) {
-            await (0, notificationController_1.createNotification)(userId, 'Application Submitted', `Your application for ${jobRole} has been successfully submitted.`, 'success');
+            await (0, notificationController_1.createNotification)(userId, 'Application Submitted', `Your application for ${jobRole} has been successfully submitted.`, 'success').catch(() => console.warn('Application saved; notification could not be delivered.'));
         }
         res.status(200).json({
             message: 'Application submitted successfully',

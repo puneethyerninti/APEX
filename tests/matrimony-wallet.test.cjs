@@ -8,6 +8,7 @@ const Transaction = require('../dist/models/Transaction').default;
 const finance = require('../dist/controllers/financeController');
 const matri = require('../dist/controllers/matrimonyController');
 const policy = require('../dist/services/matrimonyPolicy');
+const Block = require('../dist/models/UserBlock').default;
 const restores = [];
 function stub(object, key, value) { const original = object[key]; object[key] = value; restores.push(() => object[key] = original); }
 afterEach(() => { while (restores.length) restores.pop()(); });
@@ -35,6 +36,7 @@ test('profile validation does not fabricate default adult details', async () => 
   }
 });
 test('chat authorization rejects expired membership despite two approved profiles', async () => {
+  stub(Block, 'exists', async () => null);
   stub(Profile, 'find', async () => [{ user: a, status: 'approved', subscription: { isActive: true, expiresAt: new Date(0) } }, { user: b }]);
   await assert.rejects(policy.authorizeChat(a, 'match_' + a + '_' + b), /membership/);
 });

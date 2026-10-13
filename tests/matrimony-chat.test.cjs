@@ -1,11 +1,13 @@
-const {test,afterEach}=require('node:test');
+const {test,afterEach,beforeEach}=require('node:test');
 const assert=require('node:assert/strict');
 const Profile=require('../dist/models/MatrimonyProfile').default;
 const Message=require('../dist/models/Message').default;
 const controller=require('../dist/controllers/matrimonyController');
+const Block=require('../dist/models/UserBlock').default;
 const restores=[];
 function stub(obj,key,value){const old=obj[key];obj[key]=value;restores.push(()=>obj[key]=old);}
 afterEach(()=>{while(restores.length)restores.pop()();});
+beforeEach(()=>{stub(Block,'exists',async()=>null);stub(Block,'find',async()=>[]);});
 const a='000000000000000000000001',b='000000000000000000000002',c='000000000000000000000003';
 const room='match_'+a+'_'+b;
 function permit(){stub(Profile,'find',async()=>[{user:a,status:'approved',subscription:{isActive:true,expiresAt:new Date(Date.now()+60000)}},{user:b,status:'approved'}]);}
@@ -55,7 +57,7 @@ test('older-message cursors must belong to the same authorized room',async()=>{
 test('valid profile fields persist under the authenticated owner and await human approval',async()=>{
   let query,update;
   stub(Profile,'findOneAndUpdate',async(q,u)=>{query=q;update=u;return{subscription:{isActive:false},toObject:()=>u.$set};});
-  const r=res();await controller.createProfile(req({age:29,height:'170 cm',religion:'Hindu',community:'',profession:'Engineer',location:'Visakhapatnam',bio:'About me',user:b,status:'approved'}),r);
+  const r=res();await controller.createProfile(req({acceptedTerms:true,age:29,height:'170 cm',religion:'Hindu',community:'',profession:'Engineer',location:'Visakhapatnam',bio:'About me',user:b,status:'approved'}),r);
   assert.equal(r.code,200);assert.equal(query.user,a);assert.equal(update.$set.age,29);assert.equal(update.$set.status,'pending');assert.equal(update.$setOnInsert.user,a);assert.equal(update.$set.ownerVerified,true);
 });
 test('inbox groups conversations before limiting, includes unread counts and hides private subscription IDs',async()=>{

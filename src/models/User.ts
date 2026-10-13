@@ -12,6 +12,7 @@ export interface IUser extends Document {
   profilePicture?: string;
   fcmTokens?: string[];
   apexPlan: 'Free' | 'APEX Plus' | 'APEX Prime';
+  apexPlanExpiresAt?: Date;
   portfolioInvested: number;
   portfolioReturns: number;
   isOnline?: boolean;
@@ -43,6 +44,7 @@ const UserSchema = new Schema<IUser>(
     profilePicture: { type: String },
     fcmTokens: [{ type: String }],
     apexPlan: { type: String, enum: ['Free', 'APEX Plus', 'APEX Prime'], default: 'Free' },
+    apexPlanExpiresAt: { type: Date },
     portfolioInvested: { type: Number, default: 0 },
     portfolioReturns: { type: Number, default: 0 },
     // Driver fields

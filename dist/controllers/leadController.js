@@ -10,7 +10,7 @@ const createLead = async (req, res) => {
     try {
         const { name, mobile, serviceType } = req.body;
         const userId = req.user.id;
-        if (!name || !mobile || !serviceType) {
+        if (typeof name !== 'string' || !name.trim() || name.length > 120 || typeof mobile !== 'string' || !/^(?:\+91)?[6-9]\d{9}$/.test(mobile) || typeof serviceType !== 'string' || !serviceType.trim() || serviceType.length > 120) {
             return res.status(400).json({ error: 'Name, mobile, and service type are required' });
         }
         const newLead = new Lead_1.default({
@@ -25,7 +25,7 @@ const createLead = async (req, res) => {
             io.to('admin_room').emit('admin_data_refresh');
         }
         if (userId) {
-            await (0, notificationController_1.createNotification)(userId, `${serviceType} Request Received`, `Your request for ${serviceType} has been received. Our expert will contact you shortly.`, 'success');
+            await (0, notificationController_1.createNotification)(userId, `${serviceType} Request Received`, `Your request for ${serviceType} has been received. Our expert will contact you shortly.`, 'success').catch(() => console.warn('Lead saved; notification could not be delivered.'));
         }
         res.status(201).json({ success: true, lead: newLead });
     }

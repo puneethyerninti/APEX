@@ -10,6 +10,7 @@ const Message_1 = __importDefault(require("../models/Message"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const matrimonyPolicy_1 = require("../services/matrimonyPolicy");
 const matrimonyMessages_1 = require("../services/matrimonyMessages");
+const membershipExpiry_1 = require("../services/membershipExpiry");
 const owner = (req) => String(req.user.id);
 const fail = (res, e) => res.status(e.code === 11000 ? 409 : e.httpStatus || 503).json({ error: e.code === 11000 ? 'Profile changed. Refresh and try again.' : e.message || 'Service unavailable' });
 const membershipView = (profile) => profile ? { ...profile.toObject(), subscription: { ...profile.subscription, isActive: (0, matrimonyPolicy_1.activeMembership)(profile) } } : null;
@@ -25,7 +26,8 @@ const getMyProfile = async (req, res) => {
 exports.getMyProfile = getMyProfile;
 const getProfiles = async (req, res) => {
     try {
-        const profiles = await MatrimonyProfile_1.default.find({ ownerVerified: true, status: 'approved', user: { $ne: owner(req) } }).populate('user', 'name').limit(100);
+        const blocked = await (0, matrimonyPolicy_1.blockedMembers)(owner(req));
+        const profiles = await MatrimonyProfile_1.default.find({ ownerVerified: true, status: 'approved', user: { $nin: [owner(req), ...blocked] } }).populate('user', 'name').limit(100);
         res.json(profiles.map(p => ({ ...p.toObject(), subscription: { plan: p.subscription.plan, isActive: (0, matrimonyPolicy_1.activeMembership)(p) } })));
     }
     catch (e) {
@@ -36,6 +38,8 @@ exports.getProfiles = getProfiles;
 const createProfile = async (req, res) => {
     try {
         const age = Number(req.body.age);
+        if (![true, 'true'].includes(req.body.acceptedTerms))
+            return res.status(400).json({ error: 'Accept the terms and community safety rules before submitting your profile.' });
         const fields = {};
         if (!Number.isInteger(age) || age < 18 || age > 100)
             return res.status(400).json({ error: 'Enter a valid adult age.' });
@@ -131,7 +135,8 @@ const getInbox = async (req, res) => {
             { $sort: { 'latestMessage.timestamp': -1, 'latestMessage._id': -1 } },
             { $limit: 100 }
         ]);
-        const otherIds = chats.map(c => c.latestMessage.senderId === owner(req) ? c.latestMessage.receiverId : c.latestMessage.senderId).filter(id => mongoose_1.default.isValidObjectId(id));
+        const blocked = await (0, matrimonyPolicy_1.blockedMembers)(owner(req));
+        const otherIds = chats.map(c => c.latestMessage.senderId === owner(req) ? c.latestMessage.receiverId : c.latestMessage.senderId).filter(id => mongoose_1.default.isValidObjectId(id) && !blocked.includes(id));
         const profiles = await MatrimonyProfile_1.default.find({ user: { $in: otherIds }, ownerVerified: true, status: 'approved' }).populate('user', 'name');
         const byOwner = new Map(profiles.map(p => [String(p.user?._id || p.user), p]));
         res.json(chats.flatMap(c => {
@@ -163,8 +168,7 @@ const handleMatrimonyUpgrade = async (userId, value, _metadata, transaction) => 
             const profile = await MatrimonyProfile_1.default.findOne({ user: userId, ownerVerified: true, status: 'approved' }).session(session);
             if (!profile)
                 throw new Error('Approved APEX matrimony profile required. Payment needs support reconciliation.');
-            const expiry = new Date(Math.max(Date.now(), profile.subscription.expiresAt?.getTime() || 0));
-            expiry.setUTCMonth(expiry.getUTCMonth() + matrimonyPolicy_1.matrimonyPlans[plan].months);
+            const expiry = (0, membershipExpiry_1.extendMembership)(new Date(Math.max(Date.now(), profile.subscription.expiresAt?.getTime() || 0)), matrimonyPolicy_1.matrimonyPlans[plan].months);
             profile.subscription = { plan: plan, isActive: true, expiresAt: expiry, paymentTransactionId: tx._id };
             await profile.save({ session });
             result = { profileId: profile._id.toString(), plan, expiresAt: expiry };

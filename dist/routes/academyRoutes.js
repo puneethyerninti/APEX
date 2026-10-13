@@ -8,5 +8,6 @@ const authMiddleware_1 = require("../middleware/authMiddleware");
 const academyController_1 = require("../controllers/academyController");
 const router = express_1.default.Router();
 router.get('/courses', academyController_1.getCourses);
+router.get('/enrollments', authMiddleware_1.requireAuth, academyController_1.getMyEnrollments);
 router.post('/courses', authMiddleware_1.requireAdmin, academyController_1.createCourse);
 exports.default = router;

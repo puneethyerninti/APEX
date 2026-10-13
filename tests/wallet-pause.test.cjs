@@ -76,8 +76,8 @@ test('genuine APEX service checkout remains available without a wallet deposit',
   process.env.RAZORPAY_KEY_ID = 'rzp_test_fixture'; process.env.RAZORPAY_KEY_SECRET = 'isolated-test-secret';
   stub(User, 'findById', async () => ({ _id: id }));
   const provider = finance.getRazorpay(); let orders = 0;
-  stub(provider.orders, 'create', async options => { orders++; assert.equal(options.amount, 5100); return { id: 'order_service', amount: 5100, currency: 'INR' }; });
+  stub(provider.orders, 'create', async options => { orders++; assert.equal(options.amount, 9900); return { id: 'order_service', amount: 9900, currency: 'INR' }; });
   stub(Transaction, 'create', async record => { assert.equal(record.category, 'subscription'); assert.equal(record.type, 'debit'); assert.equal(record.user, id); });
-  const response = res(); await finance.createRazorpayOrder(req({ amount: 51, category: 'subscription', serviceName: 'APEX membership' }), response);
+  const response = res(); await finance.createRazorpayOrder(req({ amount: 51, category: 'subscription', serviceName: 'APEX membership', metadata: { plan: 'APEX Plus' } }), response);
   assert.equal(response.code, 200); assert.equal(orders, 1); assert.equal(response.body.order.id, 'order_service');
 });

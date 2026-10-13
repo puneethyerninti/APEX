@@ -202,6 +202,7 @@ const scheduleUtilityFulfillment = async (transaction: any, io: any) => {
 
 // Razorpay Order Creation (Strict)
 export const createRazorpayOrder = async (req: Request, res: Response) => {
+  try {
   let { amount, userId, category, serviceName, metadata } = req.body;
   if (['add_money', 'wallet_recharge'].includes(category)) return res.status(409).json({ error: 'New wallet deposits are paused. Your existing balance remains recorded. Pay personal recipients directly in your UPI app.' });
   if (typeof category !== 'string' || !category) return res.status(400).json({ error: 'Select a supported APEX service before checkout.' });
@@ -223,9 +224,17 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
   if (!supportedCategories.includes(category)) {
     return res.status(400).json({ error: 'This payment service is unavailable. Pay external merchants using your UPI app.' });
   }
+  if (category === 'charity') return res.status(409).json({ error: 'Donation collection is unavailable until an approved campaign and beneficiary are configured. No payment has been collected.' });
   const reservedMetadata = new Set(['fulfilled', 'fulfilledAt', 'fulfillmentResult', 'fulfillmentError', 'fulfillmentFailedAt', 'fulfillmentQueued', 'fulfillmentQueuedAt', 'fulfillmentInProgress', 'fulfillmentStartedAt', 'refundInfo', 'utilityTransactionId']);
   metadata = Object.fromEntries(Object.entries(metadata && typeof metadata === 'object' && !Array.isArray(metadata) ? metadata : {})
     .filter(([key]) => !reservedMetadata.has(key)));
+
+  if (category === 'subscription') {
+    const prices: Record<string, number> = { 'APEX Plus': 99, 'APEX Prime': 299 };
+    const plan = typeof metadata.plan === 'string' ? metadata.plan : '';
+    if (!Object.prototype.hasOwnProperty.call(prices, plan)) return res.status(400).json({ error: 'Select a valid APEX plan.' });
+    amount = prices[plan]; metadata = { plan };
+  }
 
   if (category === 'matrimony') {
     const plan = normalizePlan(metadata.plan);
@@ -236,20 +245,22 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
     metadata = { plan };
   }
   // Ensure course enrollment payments are true to their prices
-  if (category === 'academy_enrollment' && metadata?.courseName) {
-    const course = await Course.findOne({ title: metadata.courseName, status: 'active' });
+  if (category === 'academy_enrollment') {
+    if (typeof metadata.courseName !== 'string' || !metadata.courseName.trim()) return res.status(400).json({ error: 'Select a course before checkout.' });
+    const course = await Course.findOne({ title: metadata.courseName, status: 'active' }).select('+accessUrl');
     if (course) {
+      if (!course.accessUrl || !/^https:\/\//.test(course.accessUrl) || !Number.isFinite(Number(course.price)) || Number(course.price) <= 0 || Number(course.price) > 100000) return res.status(409).json({ error: 'This course is not available for paid enrollment.' });
       const actualPrice = course.price;
       if (amount !== actualPrice) {
         console.warn(`Price mismatch for ${metadata.courseName}. Received: ${amount}, Expected: ${actualPrice}. Overriding to true price.`);
       }
       amount = actualPrice; // Keep it true to its price
+      metadata = { courseId: String(course._id), courseName: course.title };
     } else {
       return res.status(400).json({ error: 'Invalid course selection' });
     }
   }
 
-  try {
     const options = {
       amount: Math.round(amount * 100), // convert to paise
       currency: "INR",

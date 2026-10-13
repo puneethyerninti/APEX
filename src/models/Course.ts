@@ -8,6 +8,7 @@ export interface ICourse extends Document {
   thumbnailUrl: string;
   instructor: string;
   status: 'active' | 'inactive';
+  accessUrl?: string;
 }
 
 const CourseSchema: Schema = new Schema(
@@ -18,6 +19,7 @@ const CourseSchema: Schema = new Schema(
     description: { type: String },
     thumbnailUrl: { type: String },
     instructor: { type: String },
+    accessUrl: { type: String, select: false },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
   },
   { timestamps: true }

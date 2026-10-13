@@ -5,17 +5,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleAPEXPlanUpgrade = exports.saveFCMToken = exports.sendEmailNotification = exports.updateUserProfile = exports.logoutSession = exports.getUserProfile = exports.exchangeFirebaseSession = exports.checkAdminOtpEligibility = void 0;
 const User_1 = __importDefault(require("../models/User"));
+const Transaction_1 = __importDefault(require("../models/Transaction"));
 const AuthSession_1 = __importDefault(require("../models/AuthSession"));
 const authSession_1 = require("../services/authSession");
 const socketManager_1 = require("../utils/socketManager");
 const auth_1 = require("firebase-admin/auth");
 const resend_1 = require("resend");
-const notificationController_1 = require("./notificationController");
+const mongoose_1 = __importDefault(require("mongoose"));
+const membershipExpiry_1 = require("../services/membershipExpiry");
 const resend = new resend_1.Resend(process.env.RESEND_API_KEY || 'mock_key');
 const publicProfile = (user) => ({
     _id: user._id, name: user.name, email: user.email?.endsWith('@apex.local') ? '' : user.email, phone: user.phone,
     profilePicture: user.profilePicture, role: user.role, walletBalance: user.walletBalance,
-    apexPlan: user.apexPlan, isPremium: user.apexPlan !== 'Free'
+    apexPlan: user.apexPlanExpiresAt && new Date(user.apexPlanExpiresAt).getTime() <= Date.now() ? 'Free' : user.apexPlan,
+    apexPlanExpiresAt: user.apexPlanExpiresAt,
+    isPremium: user.apexPlan !== 'Free' && (!user.apexPlanExpiresAt || new Date(user.apexPlanExpiresAt).getTime() > Date.now())
 });
 const checkAdminOtpEligibility = async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
@@ -210,15 +214,35 @@ const saveFCMToken = async (req, res) => {
     }
 };
 exports.saveFCMToken = saveFCMToken;
-const handleAPEXPlanUpgrade = async (userId, plan) => {
-    if (!userId || !plan)
-        throw new Error("User ID and plan are required");
-    const user = await User_1.default.findById(userId);
-    if (!user)
-        throw new Error("User not found");
-    user.apexPlan = plan;
-    await user.save();
-    await (0, notificationController_1.createNotification)(userId, 'Subscription Upgraded', `Welcome to ${plan}! You now have exclusive access to premium features.`, 'success');
-    return user;
+const handleAPEXPlanUpgrade = async (userId, plan, transaction) => {
+    const amount = plan === 'APEX Plus' ? 99 : plan === 'APEX Prime' ? 299 : 0;
+    if (!amount || !transaction?._id || transaction.status !== 'completed' || transaction.category !== 'subscription' || transaction.amount !== amount || String(transaction.user) !== userId)
+        throw new Error('Matching captured subscription payment required.');
+    const session = await mongoose_1.default.startSession();
+    let result;
+    try {
+        await session.withTransaction(async () => {
+            const tx = await Transaction_1.default.findById(transaction._id).session(session);
+            if (!tx || tx.status !== 'completed' || tx.category !== 'subscription' || tx.amount !== amount || String(tx.user) !== userId || tx.metadata?.plan !== plan)
+                throw new Error('Invalid subscription payment.');
+            if (tx.metadata?.fulfilled) {
+                result = tx.metadata.fulfillmentResult;
+                return;
+            }
+            const user = await User_1.default.findById(userId).session(session);
+            if (!user)
+                throw new Error('Account not found.');
+            const expiry = (0, membershipExpiry_1.extendMembership)(new Date(Math.max(Date.now(), user.apexPlanExpiresAt?.getTime() || 0)), 1);
+            user.apexPlan = plan;
+            user.apexPlanExpiresAt = expiry;
+            await user.save({ session });
+            result = { plan, expiresAt: expiry };
+            await Transaction_1.default.updateOne({ _id: tx._id }, { $set: { 'metadata.fulfilled': true, 'metadata.fulfilledAt': new Date(), 'metadata.fulfillmentResult': result } }, { session });
+        });
+    }
+    finally {
+        await session.endSession();
+    }
+    return result;
 };
 exports.handleAPEXPlanUpgrade = handleAPEXPlanUpgrade;

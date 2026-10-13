@@ -46,6 +46,7 @@ const UserSchema = new mongoose_1.Schema({
     profilePicture: { type: String },
     fcmTokens: [{ type: String }],
     apexPlan: { type: String, enum: ['Free', 'APEX Plus', 'APEX Prime'], default: 'Free' },
+    apexPlanExpiresAt: { type: Date },
     portfolioInvested: { type: Number, default: 0 },
     portfolioReturns: { type: Number, default: 0 },
     // Driver fields

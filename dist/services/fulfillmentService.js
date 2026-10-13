@@ -34,6 +34,10 @@ const fulfillOrder = async (transaction, appIo) => {
         return (0, travelsController_1.fulfillCabPayment)(transaction, appIo);
     if (transaction.category === 'matrimony')
         return (0, matrimonyController_1.handleMatrimonyUpgrade)(transaction.user.toString(), metadata.plan, metadata, transaction);
+    if (transaction.category === 'subscription')
+        return (0, userController_1.handleAPEXPlanUpgrade)(transaction.user.toString(), metadata.plan, transaction);
+    if (transaction.category === 'academy_enrollment')
+        return (0, academyController_1.handleAcademyEnrollment)(transaction.user.toString(), metadata, transaction);
     if (!['add_money', 'wallet_recharge'].includes(transaction.category)) {
         const claimed = await Transaction_1.default.findOneAndUpdate({ _id: transaction._id, status: 'completed', 'metadata.fulfilled': { $ne: true }, 'metadata.fulfillmentInProgress': { $ne: true } }, { $set: { 'metadata.fulfillmentInProgress': true, 'metadata.fulfillmentStartedAt': new Date() } }, { new: true });
         if (!claimed) {
@@ -98,16 +102,16 @@ const fulfillOrder = async (transaction, appIo) => {
                 });
                 break;
             case 'matrimony':
-                fulfillmentResult = await (0, matrimonyController_1.handleMatrimonyUpgrade)(userIdStr, metadata.plan || transaction.referenceId?.replace('Matrimony ', '').replace(' Plan', ''), metadata);
+                fulfillmentResult = await (0, matrimonyController_1.handleMatrimonyUpgrade)(userIdStr, metadata.plan || transaction.referenceId?.replace('Matrimony ', '').replace(' Plan', ''), metadata, transaction);
                 break;
             case 'subscription':
-                fulfillmentResult = await (0, userController_1.handleAPEXPlanUpgrade)(userIdStr, metadata.plan || transaction.referenceId);
+                fulfillmentResult = await (0, userController_1.handleAPEXPlanUpgrade)(userIdStr, metadata.plan || transaction.referenceId, transaction);
                 break;
             case 'travel_booking':
                 fulfillmentResult = await (0, travelsController_1.handleTravelBooking)(userIdStr, metadata);
                 break;
             case 'academy_enrollment':
-                fulfillmentResult = await (0, academyController_1.handleAcademyEnrollment)(userIdStr, metadata);
+                fulfillmentResult = await (0, academyController_1.handleAcademyEnrollment)(userIdStr, metadata, transaction);
                 break;
             case 'charity':
                 fulfillmentResult = { status: 'donated' };

@@ -22,7 +22,7 @@ const storage = (0, multer_s3_1.default)({
     s3: s3,
     bucket: process.env.AWS_S3_BUCKET || 'apex-uploads',
     metadata: function (req, file, cb) {
-        cb(null, { fieldName: file.fieldname });
+        cb(null, { fieldName: file.fieldname, ownerId: String(req.user?.id || '') });
     },
     key: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -32,7 +32,14 @@ const storage = (0, multer_s3_1.default)({
 exports.uploadToS3 = (0, multer_1.default)({
     storage,
     limits: {
-        fileSize: 10 * 1024 * 1024 // 10MB
+        fileSize: 5 * 1024 * 1024,
+        files: 1
+    },
+    fileFilter: (_req, file, cb) => {
+        const extensions = { 'application/pdf': '.pdf', 'application/msword': '.doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx' };
+        if (file.fieldname !== 'resume' || extensions[file.mimetype] !== path_1.default.extname(file.originalname).toLowerCase())
+            return cb(new Error('Only PDF, DOC or DOCX resumes are accepted.'));
+        cb(null, true);
     }
 });
 exports.uploadProfileImages = (0, multer_1.default)({

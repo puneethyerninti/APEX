@@ -28,6 +28,9 @@ import notificationRoutes from './routes/notificationRoutes';
 import leadRoutes from './routes/leadRoutes';
 import academyRoutes from './routes/academyRoutes';
 import utilityRoutes from './routes/utilityRoutes';
+import supportRoutes from './routes/supportRoutes';
+import UserBlock from './models/UserBlock';
+import AcademyEnrollment from './models/AcademyEnrollment';
 
 import Message from './models/Message';
 import { authorizeChat } from './services/matrimonyPolicy';
@@ -170,6 +173,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/academy', academyRoutes);
 app.use('/api/utility', utilityRoutes);
+app.use('/api/support', supportRoutes);
 
 // Routes Placeholder
 app.get('/', (req, res) => {
@@ -180,7 +184,7 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 const start = async () => {
   await connectDB();
-  await Promise.all([AuthSession.init(), Ride.init(), CabQuote.init(), RideSlot.init(), User.init(), WalletTransfer.init(), MatrimonyProfile.init(), Message.init()]);
+  await Promise.all([AuthSession.init(), Ride.init(), CabQuote.init(), RideSlot.init(), User.init(), WalletTransfer.init(), MatrimonyProfile.init(), Message.init(), UserBlock.init(), AcademyEnrollment.init()]);
   server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 };
 start().catch(() => { console.error('Backend startup failed. Check database configuration and indexes.'); process.exit(1); });

@@ -41,6 +41,7 @@ const CourseSchema = new mongoose_1.Schema({
     description: { type: String },
     thumbnailUrl: { type: String },
     instructor: { type: String },
+    accessUrl: { type: String, select: false },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
 }, { timestamps: true });
 exports.default = mongoose_1.default.model('Course', CourseSchema);

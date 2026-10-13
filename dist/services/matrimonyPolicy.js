@@ -4,10 +4,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activeMembership = exports.normalizePlan = exports.matrimonyPlans = void 0;
+exports.blockedMembers = blockedMembers;
 exports.roomParticipants = roomParticipants;
 exports.authorizeChat = authorizeChat;
 const mongoose_1 = __importDefault(require("mongoose"));
 const MatrimonyProfile_1 = __importDefault(require("../models/MatrimonyProfile"));
+const UserBlock_1 = __importDefault(require("../models/UserBlock"));
+async function blockedMembers(userId) {
+    const blocks = await UserBlock_1.default.find({ $or: [{ user: userId }, { blocked: userId }] });
+    return blocks.map(block => String(block.user) === userId ? String(block.blocked) : String(block.user));
+}
 exports.matrimonyPlans = {
     Silver: { amount: 5000, months: 3 }, Gold: { amount: 10000, months: 6 }, Diamond: { amount: 20000, months: 12 }
 };
@@ -30,6 +36,8 @@ function roomParticipants(room, userId) {
 }
 async function authorizeChat(userId, room) {
     const ids = roomParticipants(room, userId);
+    if (await UserBlock_1.default.exists({ $or: [{ user: ids[0], blocked: ids[1] }, { user: ids[1], blocked: ids[0] }] }))
+        throw Object.assign(new Error('This conversation is blocked.'), { httpStatus: 403 });
     const profiles = await MatrimonyProfile_1.default.find({ user: { $in: ids.map(id => new mongoose_1.default.Types.ObjectId(id)) }, ownerVerified: true, status: 'approved' });
     if (profiles.length !== 2 || !(0, exports.activeMembership)(profiles.find(p => p.user.toString() === userId)))
         throw Object.assign(new Error('An approved profile and active APEX membership are required.'), { httpStatus: 403 });

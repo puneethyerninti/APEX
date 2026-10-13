@@ -32,6 +32,9 @@ const notificationRoutes_1 = __importDefault(require("./routes/notificationRoute
 const leadRoutes_1 = __importDefault(require("./routes/leadRoutes"));
 const academyRoutes_1 = __importDefault(require("./routes/academyRoutes"));
 const utilityRoutes_1 = __importDefault(require("./routes/utilityRoutes"));
+const supportRoutes_1 = __importDefault(require("./routes/supportRoutes"));
+const UserBlock_1 = __importDefault(require("./models/UserBlock"));
+const AcademyEnrollment_1 = __importDefault(require("./models/AcademyEnrollment"));
 const Message_1 = __importDefault(require("./models/Message"));
 const matrimonyPolicy_1 = require("./services/matrimonyPolicy");
 const matrimonyMessages_1 = require("./services/matrimonyMessages");
@@ -155,6 +158,7 @@ app.use('/api/notifications', notificationRoutes_1.default);
 app.use('/api/leads', leadRoutes_1.default);
 app.use('/api/academy', academyRoutes_1.default);
 app.use('/api/utility', utilityRoutes_1.default);
+app.use('/api/support', supportRoutes_1.default);
 // Routes Placeholder
 app.get('/', (req, res) => {
     res.send('APEX Backend is running');
@@ -163,7 +167,7 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 const start = async () => {
     await (0, db_1.connectDB)();
-    await Promise.all([AuthSession_1.default.init(), Ride_1.default.init(), CabQuote_1.default.init(), RideSlot_1.default.init(), User_1.default.init(), WalletTransfer_1.default.init(), MatrimonyProfile_1.default.init(), Message_1.default.init()]);
+    await Promise.all([AuthSession_1.default.init(), Ride_1.default.init(), CabQuote_1.default.init(), RideSlot_1.default.init(), User_1.default.init(), WalletTransfer_1.default.init(), MatrimonyProfile_1.default.init(), Message_1.default.init(), UserBlock_1.default.init(), AcademyEnrollment_1.default.init()]);
     server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 };
 start().catch(() => { console.error('Backend startup failed. Check database configuration and indexes.'); process.exit(1); });

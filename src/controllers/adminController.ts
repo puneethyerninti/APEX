@@ -123,7 +123,7 @@ export const updateApprovalStatus = async (req: Request, res: Response) => {
       if (doc) userIdToNotify = doc.user;
       title = `Matrimony Profile ${status === 'approved' ? 'Approved' : 'Rejected'}`;
     } else if (type === 'realty') {
-      const doc = await Property.findByIdAndUpdate(id, { status: status === 'approved' ? 'active' : 'rejected' });
+      const doc = await Property.findByIdAndUpdate(id, { status: status === 'approved' ? 'active' : 'inactive' }, { runValidators: true });
       if (doc) userIdToNotify = doc.user;
       title = `Realty Listing ${status === 'approved' ? 'Approved' : 'Rejected'}`;
     }

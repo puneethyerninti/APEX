@@ -4,20 +4,18 @@ import { createNotification } from './notificationController';
 
 import Lead from '../models/Lead';
 import User from '../models/User';
+import mongoose from 'mongoose';
 
 export const submitInquiry = async (req: Request, res: Response) => {
   try {
-    const { propertyId, propertyTitle, contactData } = req.body;
+    const { propertyId, contactData } = req.body;
+    if (!mongoose.isValidObjectId(propertyId) || typeof contactData?.name !== 'string' || !contactData.name.trim() || contactData.name.length > 120 || typeof contactData.phone !== 'string' || !/^(?:\+91)?[6-9]\d{9}$/.test(contactData.phone) || (contactData.message && (typeof contactData.message !== 'string' || contactData.message.length > 2000))) return res.status(400).json({ error: 'Valid property and contact details are required.' });
+    const selected = await Property.findOne({ _id: propertyId, status: 'active' });
+    if (!selected) return res.status(404).json({ error: 'This property is no longer available.' });
+    const propertyTitle = selected.title;
     const userId = (req as any).user.id;
     
-    // Find the property to get the owner
-    let ownerId = null;
-    if (propertyId) {
-        const property = await Property.findById(propertyId);
-        if (property) ownerId = property.user;
-    }
-    
-    const io = req.app.get('io');
+    const ownerId = selected.user;
 
     // Save as a Lead for the Admin Dashboard
     const newLead = new Lead({
@@ -30,13 +28,12 @@ export const submitInquiry = async (req: Request, res: Response) => {
 
     // Notify the Property Owner
     if (ownerId) {
-      const ownerNotification = await createNotification(
+      await createNotification(
         ownerId.toString(),
         'New Property Inquiry',
         `${contactData?.name || 'Someone'} is interested in your property: ${propertyTitle}. Phone: ${contactData?.phone || 'N/A'}. Message: ${contactData?.message || 'N/A'}`,
         'success'
-      );
-      if (io) io.to(`user_${ownerId}`).emit('new_notification', ownerNotification);
+      ).catch(() => null);
     }
 
     // Notify the User who inquired
@@ -46,7 +43,7 @@ export const submitInquiry = async (req: Request, res: Response) => {
         'Inquiry Submitted',
         `Your inquiry regarding ${propertyTitle} has been received. The owner will contact you soon.`,
         'info'
-      );
+      ).catch(() => null);
     }
 
     res.status(201).json({ success: true, message: 'Inquiry submitted' });
@@ -66,6 +63,9 @@ export const createProperty = async (req: Request, res: Response) => {
     if (!userId || !listingType || !propertyType || !title || !price || !description || !phone) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+    if (!['sell', 'rent'].includes(listingType) || !['apartment', 'villa', 'plot', 'commercial'].includes(propertyType) || typeof title !== 'string' || title.length > 150 || typeof description !== 'string' || description.length > 5000 || !Number.isFinite(Number(price)) || Number(price) <= 0 || typeof phone !== 'string' || !/^(?:\+91)?[6-9]\d{9}$/.test(phone)) return res.status(400).json({ error: 'Enter valid property details.' });
+    if (images && (!Array.isArray(images) || images.length > 5 || images.some(image => typeof image !== 'string' || image.length > 1400000 || !/^(https:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(image)))) return res.status(400).json({ error: 'Use up to five JPEG, PNG or WebP photos under 1 MB each.' });
+    if ((longitude !== undefined || latitude !== undefined) && (!Number.isFinite(Number(longitude)) || !Number.isFinite(Number(latitude)) || Math.abs(Number(longitude)) > 180 || Math.abs(Number(latitude)) > 90)) return res.status(400).json({ error: 'Invalid property location.' });
 
     const user = await User.findById(userId);
     const status = user?.role === 'admin' ? 'active' : 'pending';
@@ -102,6 +102,7 @@ export const getPropertiesNearMe = async (req: Request, res: Response) => {
     if (!longitude || !latitude) {
       return res.status(400).json({ error: 'Longitude and latitude are required for nearby search' });
     }
+    if (!Number.isFinite(Number(longitude)) || !Number.isFinite(Number(latitude)) || Math.abs(Number(longitude)) > 180 || Math.abs(Number(latitude)) > 90 || !Number.isFinite(Number(maxDistance)) || Number(maxDistance) <= 0 || Number(maxDistance) > 100000 || (type && !['sell', 'rent'].includes(String(type)))) return res.status(400).json({ error: 'Invalid nearby search.' });
 
     const query: any = {
       location: {
@@ -131,7 +132,7 @@ export const getPropertiesNearMe = async (req: Request, res: Response) => {
 
 export const getAllProperties = async (req: Request, res: Response) => {
   try {
-    const properties = await Property.find({ status: 'active' }).sort({ createdAt: -1 }).populate('user', 'name profilePicture');
+    const properties = await Property.find({ status: 'active' }).sort({ createdAt: -1 }).populate('user', 'name profilePicture').limit(100);
     res.json({ properties });
   } catch (error) {
     console.error('getAllProperties Error:', error);

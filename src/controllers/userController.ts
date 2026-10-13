@@ -8,13 +8,17 @@ import { getIO } from '../utils/socketManager';
 import { getAuth } from 'firebase-admin/auth';
 import { Resend } from 'resend';
 import { createNotification } from './notificationController';
+import mongoose from 'mongoose';
+import { extendMembership } from '../services/membershipExpiry';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 'mock_key');
 
 const publicProfile = (user: any) => ({
   _id: user._id, name: user.name, email: user.email?.endsWith('@apex.local') ? '' : user.email, phone: user.phone,
   profilePicture: user.profilePicture, role: user.role, walletBalance: user.walletBalance,
-  apexPlan: user.apexPlan, isPremium: user.apexPlan !== 'Free'
+  apexPlan: user.apexPlanExpiresAt && new Date(user.apexPlanExpiresAt).getTime() <= Date.now() ? 'Free' : user.apexPlan,
+  apexPlanExpiresAt: user.apexPlanExpiresAt,
+  isPremium: user.apexPlan !== 'Free' && (!user.apexPlanExpiresAt || new Date(user.apexPlanExpiresAt).getTime() > Date.now())
 });
 
 export const checkAdminOtpEligibility = async (req: Request, res: Response) => {
@@ -187,21 +191,24 @@ export const saveFCMToken = async (req: Request, res: Response) => {
   }
 };
 
-export const handleAPEXPlanUpgrade = async (userId: string, plan: string) => {
-  if (!userId || !plan) throw new Error("User ID and plan are required");
-
-  const user = await User.findById(userId);
-  if (!user) throw new Error("User not found");
-
-  user.apexPlan = plan as any;
-  await user.save();
-
-  await createNotification(
-    userId,
-    'Subscription Upgraded',
-    `Welcome to ${plan}! You now have exclusive access to premium features.`,
-    'success'
-  );
-
-  return user;
+export const handleAPEXPlanUpgrade = async (userId: string, plan: string, transaction?: any) => {
+  const amount = plan === 'APEX Plus' ? 99 : plan === 'APEX Prime' ? 299 : 0;
+  if (!amount || !transaction?._id || transaction.status !== 'completed' || transaction.category !== 'subscription' || transaction.amount !== amount || String(transaction.user) !== userId) throw new Error('Matching captured subscription payment required.');
+  const session = await mongoose.startSession();
+  let result: any;
+  try {
+    await session.withTransaction(async () => {
+      const tx = await Transaction.findById(transaction._id).session(session);
+      if (!tx || tx.status !== 'completed' || tx.category !== 'subscription' || tx.amount !== amount || String(tx.user) !== userId || tx.metadata?.plan !== plan) throw new Error('Invalid subscription payment.');
+      if (tx.metadata?.fulfilled) { result = tx.metadata.fulfillmentResult; return; }
+      const user = await User.findById(userId).session(session);
+      if (!user) throw new Error('Account not found.');
+      const expiry = extendMembership(new Date(Math.max(Date.now(), user.apexPlanExpiresAt?.getTime() || 0)), 1);
+      user.apexPlan = plan as any; user.apexPlanExpiresAt = expiry;
+      await user.save({ session });
+      result = { plan, expiresAt: expiry };
+      await Transaction.updateOne({ _id: tx._id }, { $set: { 'metadata.fulfilled': true, 'metadata.fulfilledAt': new Date(), 'metadata.fulfillmentResult': result } }, { session });
+    });
+  } finally { await session.endSession(); }
+  return result;
 };

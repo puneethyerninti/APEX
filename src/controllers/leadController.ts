@@ -7,7 +7,7 @@ export const createLead = async (req: Request, res: Response) => {
     const { name, mobile, serviceType } = req.body;
     const userId = (req as any).user.id;
 
-    if (!name || !mobile || !serviceType) {
+    if (typeof name !== 'string' || !name.trim() || name.length > 120 || typeof mobile !== 'string' || !/^(?:\+91)?[6-9]\d{9}$/.test(mobile) || typeof serviceType !== 'string' || !serviceType.trim() || serviceType.length > 120) {
       return res.status(400).json({ error: 'Name, mobile, and service type are required' });
     }
 
@@ -31,7 +31,7 @@ export const createLead = async (req: Request, res: Response) => {
         `${serviceType} Request Received`,
         `Your request for ${serviceType} has been received. Our expert will contact you shortly.`,
         'success'
-      );
+      ).catch(() => console.warn('Lead saved; notification could not be delivered.'));
     }
 
     res.status(201).json({ success: true, lead: newLead });
