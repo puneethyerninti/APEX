@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import CreditCardCarousel from '@/components/CreditCardCarousel';
 import StorePromotions from '@/components/StorePromotions';
+import SupportEmailLink from '@/components/SupportEmailLink';
 import { useAppStore } from '@/store/useAppStore';
 import { api } from '@/services/api';
 import { canUseServiceCheckout } from '@/services/checkoutPolicy';
@@ -827,6 +828,7 @@ export default function Home() {
                                         <i className="fa-solid fa-headset mr-2"></i>9494273763
                                         <span className="text-[9px] text-apex-purple ml-1 font-bold uppercase tracking-widest">(24/7 Support)</span>
                                     </Link>
+                                    <SupportEmailLink className="col-span-2 py-2 text-xs font-semibold text-apex-purple underline underline-offset-4" />
                                     <Link href="/terms" className="text-gray-500 hover:text-apex-purple text-xs transition-colors mt-1">Terms of Service</Link>
                                     <Link href="/privacy" className="text-gray-500 hover:text-apex-purple text-xs transition-colors mt-1">Privacy Policy</Link>
                                     <Link href="/refunds" className="text-gray-500 hover:text-apex-purple text-xs transition-colors">Refund Policy</Link>
