@@ -1,0 +1,22 @@
+.rail {
+  --course-width: 236px;
+  display: flex;
+  position: relative;
+  gap: 12px;
+  margin: 16px 0 8px;
+  padding: 0 16px 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 16px;
+  scrollbar-width: none;
+}
+
+.rail::-webkit-scrollbar { display: none; }
+.rail:focus-visible { outline: 2px solid #7c3aed; outline-offset: -2px; }
+.card { flex: 0 0 var(--course-width); min-width: 0; scroll-snap-align: start; }
+.rail::after { content: ''; flex: 0 0 max(0px, calc(100% - var(--course-width) - 12px)); }
+
+@media (min-width: 768px) {
+  .rail { --course-width: 260px; }
+}
