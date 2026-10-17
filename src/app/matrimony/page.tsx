@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/services/api';
 import { loadRazorpay } from '@/services/razorpay';
@@ -8,6 +8,8 @@ import { useAppStore } from '@/store/useAppStore';
 import { SocketContext } from '@/context/SocketContext';
 import MatrimonyChat from '@/components/MatrimonyChat';
 import MemberSafety from '@/components/MemberSafety';
+import MatrimonyImage from '@/components/MatrimonyImage';
+import MatrimonyPhotoEditor from '@/components/MatrimonyPhotoEditor';
 
 const plans = [{ name: 'Silver', amount: 5000, months: 3 }, { name: 'Gold', amount: 10000, months: 6 }, { name: 'Diamond', amount: 20000, months: 12 }];
 const empty = { age: '', height: '', religion: '', community: '', profession: '', location: '', bio: '' };
@@ -21,12 +23,19 @@ export default function MatrimonyPage() {
   const [profile, setProfile] = useState<any>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [matchesLoaded, setMatchesLoaded] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(empty);
   const [photos, setPhotos] = useState<File[]>([]);
+  const [retainedPhotos, setRetainedPhotos] = useState<string[]>([]);
+  const [preparingPhotos, setPreparingPhotos] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [editingVersion, setEditingVersion] = useState(0);
+  const refreshSequence = useRef(0);
+  const saveController = useRef<AbortController | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [filters, setFilters] = useState({ community: '', religion: '', location: '', premium: false });
   const [filterPanel, setFilterPanel] = useState('');
@@ -37,24 +46,30 @@ export default function MatrimonyPage() {
   useEffect(() => setDigitalCheckout(canUseServiceCheckout('matrimony')), []);
   const refresh = useCallback(async () => {
     if (!uid) return;
-    const own = await api.get('/matrimony/profiles/me');
-    const all = await api.get('/matrimony/profiles');
+    const sequence = ++refreshSequence.current;
+    const [own, all] = await Promise.allSettled([api.get('/matrimony/profiles/me'), api.get('/matrimony/profiles')]);
     const active = useAppStore.getState().user;
-    if ((active?._id || active?.uid) !== uid) return;
-    setProfile(own.data); setMatches(all.data); setLoaded(true);
+    if ((active?._id || active?.uid) !== uid || sequence !== refreshSequence.current) return;
+    if (own.status === 'fulfilled') { setProfile(own.value.data); setLoaded(true); }
+    if (all.status === 'fulfilled') { setMatches(all.value.data); setMatchesLoaded(true); }
+    if (own.status === 'rejected') throw own.reason;
+    if (all.status === 'rejected') throw all.reason;
   }, [uid]);
   useEffect(() => {
-    setLoaded(false); setProfile(null); setMatches([]); setChat(null); setInbox(null);
+    setLoaded(false); setMatchesLoaded(false); setProfile(null); setMatches([]); setChat(null); setInbox(null);
     setEditing(false); setPhotos([]); setError(''); setNotice('');
+    setRetainedPhotos([]); setPreparingPhotos(false); setFormError(''); setAcceptedTerms(false); setBusy(false); setForm(empty);
+    return () => { refreshSequence.current++; const request = saveController.current; saveController.current = null; request?.abort(); };
   }, [uid]);
   useEffect(() => {
     if (!uid) return;
     let alive = true;
-    const run = () => refresh().catch(e => { if (alive) setError(errorText(e)); });
+    const run = () => refresh().then(() => { if (alive) setError(''); }).catch(e => { if (alive) setError(errorText(e)); });
     void run();
     const timer = setInterval(() => { if (!document.hidden) void run(); }, 15000);
     socket?.on('connect', run);
-    return () => { alive = false; clearInterval(timer); socket?.off('connect', run); };
+    socket?.on('matrimony_profile_changed', run); socket?.on('matrimony_profiles_changed', run);
+    return () => { alive = false; clearInterval(timer); socket?.off('connect', run); socket?.off('matrimony_profile_changed', run); socket?.off('matrimony_profiles_changed', run); };
   }, [uid, refresh, socket]);
   const inboxOpen = inbox !== null;
   useEffect(() => {
@@ -76,17 +91,24 @@ export default function MatrimonyPage() {
     return () => { alive = false; clearInterval(timer); socket?.off('receive_message', update); socket?.off('messages_read', update); socket?.off('connect', update); document.removeEventListener('visibilitychange', update); };
   }, [uid, inboxOpen, socket]);
   async function saveProfile(e: React.FormEvent) {
-    e.preventDefault(); setBusy(true); setError('');
+    e.preventDefault();
+    if (!uid || busy || preparingPhotos || saveController.current) return;
+    const controller = new AbortController(); saveController.current = controller;
+    refreshSequence.current++; setBusy(true); setFormError(''); setError('');
     try {
       const body = new FormData();
       body.append('acceptedTerms', String(acceptedTerms));
+      body.append('retainedImages', JSON.stringify(retainedPhotos));
+      body.append('expectedReviewVersion', String(editingVersion));
       Object.entries(form).forEach(([key, value]) => body.append(key, value));
       photos.forEach(photo => body.append('images', photo));
-      const res = await api.post('/matrimony/profile', body, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const res = await api.post('/matrimony/profile', body, { signal: controller.signal, headers: { 'Content-Type': undefined } });
       const active = useAppStore.getState().user;
-      if ((active?._id || active?.uid) !== uid) return;
+      if ((active?._id || active?.uid) !== uid || controller.signal.aborted) return;
+      refreshSequence.current++; setPhotos([]); setRetainedPhotos(res.data.images || []);
       setProfile(res.data); setEditing(false); setNotice('Your APEX profile is pending review.');
-    } catch (e) { setError(errorText(e)); } finally { setBusy(false); }
+    } catch (e) { if (!controller.signal.aborted) setFormError(errorText(e)); }
+    finally { if (saveController.current === controller) { saveController.current = null; if (!controller.signal.aborted) setBusy(false); } }
   }
   async function checkout(plan: typeof plans[number]) {
     if (busy) return;
@@ -97,7 +119,7 @@ export default function MatrimonyPage() {
       setNotice(profile?.status === 'pending' ? 'Your APEX profile is awaiting admin review. No payment has been collected.' : 'Submit your APEX profile for review before purchasing a membership. No payment has been collected.');
       if (!profile || profile.status !== 'pending') {
         setForm(Object.fromEntries(Object.keys(empty).map(key => [key, String(profile?.[key] || '')])) as typeof empty);
-        setPhotos([]); setEditing(true);
+        setPhotos([]); setRetainedPhotos(profile?.images || []); setEditingVersion(profile?.reviewVersion || 0); setFormError(''); setAcceptedTerms(false); setEditing(true);
       }
       document.getElementById('apex-profile')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
@@ -135,7 +157,7 @@ export default function MatrimonyPage() {
         </div>
       </section>
     </div>
-    {error && <p role="alert" className="mx-4 my-3 rounded-lg bg-red-50 p-3 text-red-800">{error}</p>}
+    {error && <p role="alert" className="mx-4 my-3 rounded-lg bg-red-50 p-3 text-xs text-red-800">{error}</p>}
     <section className="mx-auto mb-4 max-w-5xl px-3 md:px-4">
       <h2 className="mb-2 text-[11px] font-extrabold uppercase text-gray-500">Browse Profiles</h2>
       <div className="grid grid-cols-4 gap-2 md:max-w-sm">{[
@@ -157,9 +179,10 @@ export default function MatrimonyPage() {
       </div>)}</div>
     </section>}
     {!uid ? <p className="mx-auto max-w-5xl px-3 text-xs"><Link href="/login" className="text-pink-700 underline">Sign in</Link> to view APEX profiles.</p> : <div className="mx-auto max-w-5xl px-3 md:px-4">
-      <section id="apex-profile" className="scroll-mt-20 border-y border-gray-200 py-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-sm font-bold">My APEX Profile</h2><p className="mt-1 text-[11px] text-gray-500">{!loaded ? 'Updating profile' : profile ? 'Review: ' + profile.status : 'Not submitted'}</p>{profile?.subscription?.isActive && <p className="text-[11px] text-rose-600">{profile.subscription.plan} until {new Date(profile.subscription.expiresAt).toLocaleDateString()}</p>}</div><button disabled={!loaded || busy} onClick={() => { setForm(Object.fromEntries(Object.keys(empty).map(key => [key, String(profile?.[key] || '')])) as typeof empty); setPhotos([]); setEditing(!editing); }} className="rounded-full bg-white px-3 py-2 text-[11px] font-bold text-rose-600 shadow-sm disabled:opacity-40">{editing ? 'Cancel' : 'Edit APEX Profile'}</button></div>
+      <section id="apex-profile" className="scroll-mt-20 border-y border-gray-200 py-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-sm font-bold">My APEX Profile</h2><p className="mt-1 text-[11px] text-gray-500">{!loaded ? 'Updating profile' : profile ? 'Review: ' + profile.status : 'Not submitted'}</p>{profile?.subscription?.isActive && <p className="text-[11px] text-rose-600">{profile.subscription.plan} until {new Date(profile.subscription.expiresAt).toLocaleDateString()}</p>}</div><button disabled={!loaded || busy || preparingPhotos} onClick={() => { setForm(Object.fromEntries(Object.keys(empty).map(key => [key, String(profile?.[key] || '')])) as typeof empty); setPhotos([]); setRetainedPhotos(profile?.images || []); setEditingVersion(profile?.reviewVersion || 0); setFormError(''); setAcceptedTerms(false); setEditing(!editing); }} className="rounded-full bg-white px-3 py-2 text-[11px] font-bold text-rose-600 shadow-sm disabled:opacity-40">{editing ? 'Cancel' : 'Edit APEX Profile'}</button></div>
         {notice && <p role="status" className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{notice}</p>}
         {editing && <form onSubmit={saveProfile} className="mt-4 max-w-2xl space-y-4">
+          {formError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-xs text-red-800">{formError}</p>}
           <label className="flex items-start gap-2 text-xs"><input required type="checkbox" checked={acceptedTerms} onChange={e => setAcceptedTerms(e.target.checked)} />I am 18 or older and accept the <Link href="/terms" className="text-rose-600 underline">terms</Link> and <Link href="/safety" className="text-rose-600 underline">safety rules</Link>.</label>
           {profile?.status === 'approved' && <p className="text-xs text-amber-800">Changes need a new review before your profile is published again.</p>}
           <fieldset disabled={busy} className="grid grid-cols-2 gap-x-3 gap-y-3"><legend className="mb-2 text-xs font-bold text-gray-700">Personal Details</legend>{[
@@ -171,15 +194,12 @@ export default function MatrimonyPage() {
             { key: 'location', label: 'City', placeholder: 'Your city', required: true }
           ].map(field => <label key={field.key} className="min-w-0 text-[11px] font-semibold text-gray-600">{field.label}{field.required && <span className="ml-0.5 text-rose-600">*</span>}<input className="mt-1 block h-10 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-normal text-gray-900 outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100" placeholder={field.placeholder} required={field.required} type={field.key === 'age' ? 'number' : 'text'} min={field.key === 'age' ? 18 : undefined} max={field.key === 'age' ? 100 : undefined} maxLength={120} value={form[field.key as keyof typeof empty]} onChange={e => setForm({ ...form, [field.key]: e.target.value })} /></label>)}</fieldset>
           <label className="block text-[11px] font-semibold text-gray-600">About Me<textarea rows={3} placeholder="A little about you" disabled={busy} className="mt-1 block w-full resize-y rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-xs font-normal outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100" maxLength={2000} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} /><span className="mt-1 block text-right text-[10px] font-normal text-gray-400">{form.bio.length}/2000</span></label>
-          <div><label className="block text-[11px] font-semibold text-gray-600">Profile Photos<input disabled={busy} className="mt-1 block w-full rounded-lg border border-dashed border-rose-200 bg-white p-2 text-[11px] file:mr-3 file:rounded file:border-0 file:bg-rose-50 file:px-3 file:py-2 file:text-[11px] file:font-semibold file:text-rose-600" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e => {
-            const selected = Array.from(e.target.files || []);
-            if (selected.length > 5 || selected.some(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024)) { setError('Choose up to five JPEG, PNG or WebP photos, each under 5 MB.'); e.target.value = ''; setPhotos([]); return; }
-            setPhotos(selected); setError('');
-          }} /></label><p className="mt-1 text-[10px] text-gray-500">{photos.length ? `${photos.length} photos selected` : profile?.images?.length ? `${profile.images.length} existing photos kept unless replaced` : 'JPEG, PNG or WebP / up to 5 photos / 5 MB each'}</p></div>
-          <div className="flex items-center justify-end gap-2 border-t border-gray-200 pt-3"><button type="button" disabled={busy} onClick={() => setEditing(false)} className="px-3 py-2 text-xs font-semibold text-gray-500">Cancel</button><button disabled={busy} className="rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">{busy ? 'Saving...' : 'Submit for Review'}</button></div>
+          <MatrimonyPhotoEditor key={uid} existing={retainedPhotos} files={photos} onExistingChange={setRetainedPhotos} onFilesChange={setPhotos} onProcessingChange={setPreparingPhotos} disabled={busy} />
+          <div className="flex items-center justify-end gap-2 border-t border-gray-200 pt-3"><button type="button" disabled={busy} onClick={() => setEditing(false)} className="px-3 py-2 text-xs font-semibold text-gray-500">Cancel</button><button disabled={busy || preparingPhotos} className="rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">{busy ? 'Saving...' : preparingPhotos ? 'Preparing photos...' : 'Submit for Review'}</button></div>
         </form>}
+        {!editing && !!profile?.images?.length && <div className="mt-3 flex gap-2 overflow-x-auto">{profile.images.map((src: string, index: number) => <MatrimonyImage key={src} src={src} alt={`Your saved photo ${index + 1}`} className="h-24 w-20 shrink-0 rounded-lg object-cover" />)}</div>}
       </section>
-      <section className="py-4"><h2 className="mb-2 text-[11px] font-extrabold uppercase text-gray-500">New Matches</h2>{loaded && !filtered.length && <p className="text-xs text-gray-500">No approved profiles match your filters.</p>}<div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">{filtered.map(p => <article key={p._id} className="min-w-0 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">{p.images?.[0] ? <img alt={p.user?.name || 'Profile'} src={p.images[0]} className="aspect-[4/5] w-full object-cover" /> : <div className="flex aspect-[4/5] items-center justify-center bg-rose-50 text-4xl text-rose-300"><i aria-hidden="true" className="fas fa-user" /></div>}<div className="p-3"><MemberSafety userId={accountId(p)} onBlocked={() => { setMatches(old => old.filter(item => accountId(item) !== accountId(p))); void refresh(); }} /><h3 className="break-words text-sm font-extrabold">{p.user?.name || 'APEX Member'}</h3><p className="mt-1 break-words text-xs text-gray-500">{p.age} years, {p.location}</p><p className="mt-1 break-words text-xs text-gray-500">{p.profession}</p><button disabled={!profile?.subscription?.isActive} onClick={() => { setError(''); setChat(p); }} className="mt-3 w-full rounded-lg bg-rose-50 py-2 text-xs font-bold text-rose-600 disabled:opacity-40">Message</button></div></article>)}</div></section>
+      <section className="py-4"><h2 className="mb-2 text-[11px] font-extrabold uppercase text-gray-500">New Matches</h2>{matchesLoaded && !filtered.length && <p className="text-xs text-gray-500">No approved profiles match your filters.</p>}<div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">{filtered.map(p => <article key={p._id} className="min-w-0 overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm"><MatrimonyImage alt={p.user?.name || 'Profile'} src={p.images?.[0] || ''} className="aspect-[4/5] w-full object-cover text-4xl" /><div className="p-3"><MemberSafety userId={accountId(p)} onBlocked={() => { setMatches(old => old.filter(item => accountId(item) !== accountId(p))); void refresh(); }} /><h3 className="break-words text-sm font-extrabold">{p.user?.name || 'APEX Member'}</h3><p className="mt-1 break-words text-xs text-gray-500">{p.age} years, {p.location}</p><p className="mt-1 break-words text-xs text-gray-500">{p.profession}</p><button disabled={!profile?.subscription?.isActive} onClick={() => { setError(''); setChat(p); }} className="mt-3 w-full rounded-lg bg-rose-50 py-2 text-xs font-bold text-rose-600 disabled:opacity-40">Message</button></div></article>)}</div></section>
     </div>}
     {inbox && <div role="dialog" aria-label="Inbox" aria-modal="true" className="fixed inset-0 z-50 overflow-auto bg-white p-4"><div className="mx-auto max-w-xl"><button onClick={() => setInbox(null)} className="float-right h-10 w-10" aria-label="Close inbox" title="Close inbox"><i className="fas fa-times" /></button><h2 className="py-2 text-base font-bold">Messages</h2>{error && <p role="alert" className="py-2 text-xs text-red-700">{error}</p>}{inboxLoaded && !inbox.length && <p className="py-5 text-xs text-gray-500">No conversations yet.</p>}{inbox.map(item => <button key={item.latestMessage.roomId} onClick={() => { setInbox(null); setError(''); setChat(item.profile); }} className="block w-full border-b border-gray-100 py-3 text-left"><span className="flex items-center justify-between gap-2"><strong className="text-sm">{item.profile.user?.name || 'APEX Member'}</strong>{item.unreadCount > 0 && <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] text-white">{item.unreadCount} unread</span>}</span><p className="mt-1 truncate text-xs text-gray-500">{item.latestMessage.text}</p></button>)}</div></div>}
     {chat && uid && <MatrimonyChat key={uid + ':' + accountId(chat)} uid={uid} profile={chat} socket={socket} onClose={() => setChat(null)} />}

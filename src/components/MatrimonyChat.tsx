@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import { api } from '@/services/api';
 import MemberSafety from '@/components/MemberSafety';
-import { ChatMessage, PendingMessage, mergeMessages, readPending } from '@/services/matrimonyChat';
+import { ChatMessage, PendingMessage, fetchChatWindow, mergeMessages, readPending } from '@/services/matrimonyChat';
 
 export default function MatrimonyChat({ uid, profile, socket, onClose }: { uid: string; profile: any; socket?: Socket | null; onClose: () => void }) {
   const other = String(profile.user?._id || profile.user);
@@ -22,6 +22,8 @@ export default function MatrimonyChat({ uid, profile, socket, onClose }: { uid: 
   const list = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
   const sendingRef = useRef(false);
+  const syncCursor = useRef<string | null>(null);
+  const knownMessages = useRef<ChatMessage[]>([]);
 
   useEffect(() => {
     alive.current = true;
@@ -41,13 +43,19 @@ export default function MatrimonyChat({ uid, profile, socket, onClose }: { uid: 
       do {
         queued = false;
         try {
-          const { data } = await api.get<ChatMessage[]>('/matrimony/messages/' + room);
+          const previousCursor = syncCursor.current;
+          const window = await fetchChatWindow(async after => {
+            const { data } = await api.get<ChatMessage[]>('/matrimony/messages/' + room, after ? { params: { after } } : undefined);
+            return data;
+          }, previousCursor || knownMessages.current[0]?._id || null);
           if (!active) break;
+          const data = window.messages;
+          syncCursor.current = window.cursor;
           setMessages(old => mergeMessages(old, data, room)); setLoaded(true);
-          if (first) { setHasOlder(data.length === 200); first = false; }
-          const ids = data.filter(m => m.receiverId === uid && !m.isRead).map(m => m._id);
+          if (first || !previousCursor) { setHasOlder(window.initialWindowFull); first = false; }
+          const ids = [...new Set(data.filter(m => m.receiverId === uid && !m.isRead).map(m => m._id))];
           if (ids.length && !document.hidden) {
-            await api.put('/matrimony/messages/' + room + '/read', { messageIds: ids });
+            for (let offset = 0; offset < ids.length; offset += 200) await api.put('/matrimony/messages/' + room + '/read', { messageIds: ids.slice(offset, offset + 200) });
             if (active) setMessages(old => old.map(m => ids.includes(m._id) ? { ...m, isRead: true } : m));
           }
         } catch (e: any) { if (active) setError(e.response?.data?.error || 'Could not refresh messages.'); }
@@ -72,6 +80,7 @@ export default function MatrimonyChat({ uid, profile, socket, onClose }: { uid: 
   }, [room, uid, other, socket]);
 
   useEffect(() => {
+    knownMessages.current = messages;
     if (follow.current && list.current) list.current.scrollTop = list.current.scrollHeight;
   }, [messages]);
 

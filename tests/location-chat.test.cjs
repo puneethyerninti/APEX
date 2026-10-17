@@ -47,3 +47,20 @@ test('pending retry is restored only for the same room and valid content', () =>
   assert.equal(chat.readPending(storage,'key','other'),null);assert.equal(storage.removed,true);
   assert.equal(chat.readPending({getItem:()=>'{invalid',removeItem(){}},'key',room),null);
 });
+
+test('reconnection fills a gap larger than the latest 200 messages without losing its oldest unread message', async () => {
+  const history=Array.from({length:202},(_,i)=>message(String(i+1).padStart(24,'0'),i));
+  const calls=[];
+  const result=await chat.fetchChatWindow(async after=>{
+    calls.push(after);
+    return after ? history.slice(history.findIndex(m=>m._id===after)+1).slice(0,200) : history.slice(-200);
+  },history[0]._id);
+  const merged=chat.mergeMessages([history[0]],result.messages,room);
+  assert.equal(merged.length,202);assert.equal(merged[1]._id,history[1]._id);assert.equal(result.cursor,history[201]._id);assert.equal(calls.length,2);
+});
+
+test('normal chat refresh needs one history query and keeps read receipts current', async () => {
+  const history=[message('a',1),message('b',2,{isRead:true})];let calls=0;
+  const result=await chat.fetchChatWindow(async()=>{calls++;return history;},'a');
+  assert.equal(calls,1);assert.equal(result.cursor,'b');assert.equal(result.messages[1].isRead,true);
+});

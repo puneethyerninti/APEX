@@ -9,6 +9,25 @@ export interface ChatMessage {
 }
 export interface PendingMessage { key: string; text: string; room: string }
 
+export async function fetchChatWindow(fetchPage: (after?: string) => Promise<ChatMessage[]>, cursor: string | null) {
+  const latest = await fetchPage();
+  if (!cursor || latest.length < 200 || latest.some(message => message._id === cursor)) {
+    return { messages: latest, cursor: latest.at(-1)?._id || cursor, initialWindowFull: latest.length === 200 };
+  }
+  let after = cursor;
+  const recovered: ChatMessage[] = [];
+  // Backfill a suspended conversation without skipping directly to the latest 200 messages.
+  for (let page = 0; page < 5; page++) {
+    const batch = await fetchPage(after);
+    recovered.push(...batch);
+    after = batch.at(-1)?._id || after;
+    if (batch.length < 200 || batch.some(message => message._id === latest[0]._id)) {
+      return { messages: [...recovered, ...latest], cursor: latest.at(-1)?._id || after, initialWindowFull: latest.length === 200 };
+    }
+  }
+  return { messages: recovered, cursor: after, initialWindowFull: latest.length === 200 };
+}
+
 export function mergeMessages(current: ChatMessage[], incoming: ChatMessage[], room: string) {
   const byId = new Map<string, ChatMessage>();
   for (const message of [...current, ...incoming]) {

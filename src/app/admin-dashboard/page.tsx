@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { useRouter } from 'next/navigation';
 import { api } from '@/services/api';
 import CabDriverAdmin from '@/components/CabDriverAdmin';
+import MatrimonyImage from '@/components/MatrimonyImage';
 import { SocketContext } from '@/context/SocketContext';
 import { Line, Doughnut } from 'react-chartjs-2';
 import {
@@ -54,6 +55,7 @@ export default function AdminDashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'wallet' | 'portfolio' | 'job' | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [reviewPhoto, setReviewPhoto] = useState<{ src: string; alt: string } | null>(null);
   const [formData, setFormData] = useState({ amount: '', title: '', company: '', location: '' });
 
   const socketContext = useContext(SocketContext);
@@ -73,6 +75,8 @@ export default function AdminDashboardPage() {
   };
 
   const fetchAllData = async () => {
+    const requester = useAppStore.getState().user;
+    if (requester?.role !== 'admin') return;
     try {
       const [statsRes, approvalsRes, usersRes, transRes, travelsRes, storeRes, charityRes, leadsRes] = await Promise.all([
         api.get('/admin/stats'),
@@ -84,6 +88,8 @@ export default function AdminDashboardPage() {
         api.get('/admin/charity-donations').catch(() => ({ data: { donations: [] } })),
         api.get('/admin/leads').catch(() => ({ data: { leads: [] } }))
       ]);
+      const active = useAppStore.getState().user;
+      if (active?._id !== requester._id || active?.role !== 'admin') return;
       setDbStats(statsRes.data.stats);
       setPendingApprovals(approvalsRes.data);
       setUsers(usersRes.data.users);
@@ -98,9 +104,10 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    setIsAuthorized(true);
-    fetchAllData();
-  }, [user]);
+    setIsAuthorized(user?.role === 'admin'); setReviewPhoto(null);
+    setPendingApprovals({ jobs: [], profiles: [], realty: [] }); setDbStats(null); setUsers([]); setTransactions([]); setTravels([]); setStoreOrders([]); setCharityDonations([]); setLeads([]);
+    if (user?.role === 'admin') void fetchAllData();
+  }, [user?._id, user?.role]);
 
   useEffect(() => {
     if (isAuthorized && socket) {
@@ -129,13 +136,14 @@ export default function AdminDashboardPage() {
     }
   }, [isAuthorized, socket]);
 
-  const handleApproval = async (type: string, id: string, status: string) => {
+  const handleApproval = async (type: string, id: string, status: string, reviewVersion?: number) => {
     try {
-      await api.post('/admin/approvals/status', { type, id, status });
+      await api.post('/admin/approvals/status', { type, id, status, reviewVersion });
       window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `${type} marked as ${status}`, type: 'success' } }));
       fetchAllData();
-    } catch (error) {
-      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: `Failed to update ${type}`, type: 'error' } }));
+    } catch (error: any) {
+      window.dispatchEvent(new CustomEvent('showToast', { detail: { message: error.response?.data?.error || `Failed to update ${type}`, type: 'error' } }));
+      if (error.response?.status === 409) void fetchAllData();
     }
   };
 
@@ -635,11 +643,12 @@ export default function AdminDashboardPage() {
                                 <p><span className="font-semibold text-gray-700">Profession:</span> {p.profession || 'N/A'}</p>
                                 <p><span className="font-semibold text-gray-700">Religion:</span> {p.religion || 'N/A'}</p>
                                 <p><span className="font-semibold text-gray-700">Location:</span> {p.location || 'N/A'}</p>
-                                {p.bio && <p className="mt-1 line-clamp-2 text-gray-400 italic">"{p.bio}"</p>}
+                                {p.bio && <p className="mt-1 whitespace-pre-wrap break-words text-gray-600">{p.bio}</p>}
                             </div>
+                            {p.images?.length ? <div className="mb-3 grid grid-cols-3 gap-2">{p.images.map((src: string, index: number) => <button key={src} type="button" aria-label={`Review photo ${index + 1} of ${p.user?.name || 'member'}`} title="View full photo" onClick={() => setReviewPhoto({ src, alt: `Submitted photo ${index + 1} of ${p.user?.name || 'member'}` })}><MatrimonyImage src={src} alt={`Submitted photo ${index + 1}`} className="aspect-[4/5] w-full rounded-lg object-cover" /></button>)}</div> : <p className="mb-3 text-xs text-gray-500">No photos submitted.</p>}
                             <div className="flex gap-2">
-                              <button onClick={() => handleApproval('profile', p._id, 'approved')} className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-2.5 rounded-xl font-bold transition-colors">Approve</button>
-                              <button onClick={() => handleApproval('profile', p._id, 'rejected')} className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs py-2.5 rounded-xl font-bold transition-colors">Reject</button>
+                              <button onClick={() => handleApproval('profile', p._id, 'approved', p.reviewVersion || 0)} className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-2.5 rounded-xl font-bold transition-colors">Approve</button>
+                              <button onClick={() => handleApproval('profile', p._id, 'rejected', p.reviewVersion || 0)} className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs py-2.5 rounded-xl font-bold transition-colors">Reject</button>
                             </div>
                           </div>
                         ))}
@@ -1030,6 +1039,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Modals */}
+      {reviewPhoto && <div role="dialog" aria-modal="true" aria-label="Submitted profile photo" className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-black/80 p-4" onKeyDown={event => { if (event.key === 'Escape') setReviewPhoto(null); }}><button type="button" autoFocus aria-label="Close photo" title="Close photo" onClick={() => setReviewPhoto(null)} className="mb-3 flex h-10 w-10 items-center justify-center self-end rounded-lg bg-white text-gray-800"><i aria-hidden="true" className="fas fa-times" /></button><MatrimonyImage src={reviewPhoto.src} alt={reviewPhoto.alt} className="h-[75vh] w-full max-w-3xl object-contain" /></div>}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-[slideUp_0.3s_ease-out]">
