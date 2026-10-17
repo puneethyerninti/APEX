@@ -10,6 +10,7 @@ exports.authorizeChat = authorizeChat;
 const mongoose_1 = __importDefault(require("mongoose"));
 const MatrimonyProfile_1 = __importDefault(require("../models/MatrimonyProfile"));
 const UserBlock_1 = __importDefault(require("../models/UserBlock"));
+const User_1 = __importDefault(require("../models/User"));
 async function blockedMembers(userId) {
     const blocks = await UserBlock_1.default.find({ $or: [{ user: userId }, { blocked: userId }] });
     return blocks.map(block => String(block.user) === userId ? String(block.blocked) : String(block.user));
@@ -41,5 +42,7 @@ async function authorizeChat(userId, room) {
     const profiles = await MatrimonyProfile_1.default.find({ user: { $in: ids.map(id => new mongoose_1.default.Types.ObjectId(id)) }, ownerVerified: true, status: 'approved' });
     if (profiles.length !== 2 || !(0, exports.activeMembership)(profiles.find(p => p.user.toString() === userId)))
         throw Object.assign(new Error('An approved profile and active APEX membership are required.'), { httpStatus: 403 });
+    if (await User_1.default.countDocuments({ _id: { $in: ids }, isDisabled: { $ne: true } }) !== 2)
+        throw Object.assign(new Error('This conversation is unavailable.'), { httpStatus: 403 });
     return ids.find(id => id !== userId);
 }

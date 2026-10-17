@@ -37,6 +37,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const MatrimonyProfileSchema = new mongoose_1.Schema({
     user: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
     ownerVerified: { type: Boolean, default: true },
+    reviewVersion: { type: Number, default: 0 },
     community: String,
     age: { type: Number, required: true },
     height: { type: String },

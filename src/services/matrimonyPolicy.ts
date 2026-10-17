@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import MatrimonyProfile from '../models/MatrimonyProfile';
 import UserBlock from '../models/UserBlock';
+import User from '../models/User';
 export async function blockedMembers(userId: string) {
   const blocks = await UserBlock.find({ $or: [{ user: userId }, { blocked: userId }] });
   return blocks.map(block => String(block.user) === userId ? String(block.blocked) : String(block.user));
@@ -26,5 +27,6 @@ export async function authorizeChat(userId: string, room: unknown) {
   if (await UserBlock.exists({ $or: [{ user: ids[0], blocked: ids[1] }, { user: ids[1], blocked: ids[0] }] })) throw Object.assign(new Error('This conversation is blocked.'), { httpStatus: 403 });
   const profiles = await MatrimonyProfile.find({ user: { $in: ids.map(id => new mongoose.Types.ObjectId(id)) }, ownerVerified: true, status: 'approved' });
   if (profiles.length !== 2 || !activeMembership(profiles.find(p => p.user.toString() === userId))) throw Object.assign(new Error('An approved profile and active APEX membership are required.'), { httpStatus: 403 });
+  if (await User.countDocuments({ _id: { $in: ids }, isDisabled: { $ne: true } }) !== 2) throw Object.assign(new Error('This conversation is unavailable.'), { httpStatus: 403 });
   return ids.find(id => id !== userId)!;
 }

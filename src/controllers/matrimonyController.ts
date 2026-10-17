@@ -6,6 +6,8 @@ import Transaction from '../models/Transaction';
 import { authorizeChat, activeMembership, normalizePlan, matrimonyPlans, blockedMembers } from '../services/matrimonyPolicy';
 import { persistChatMessage, publishChatMessage } from '../services/matrimonyMessages';
 import { extendMembership } from '../services/membershipExpiry';
+import { saveProfileWithPhotos } from '../services/matrimonyPhotos';
+import User from '../models/User';
 const owner = (req: Request) => String((req as any).user.id);
 const fail = (res: Response, e: any) => res.status(e.code === 11000 ? 409 : e.httpStatus || 503).json({ error: e.code === 11000 ? 'Profile changed. Refresh and try again.' : e.message || 'Service unavailable' });
 const membershipView = (profile: any) => profile ? { ...profile.toObject(), subscription: { ...profile.subscription, isActive: activeMembership(profile) } } : null;
@@ -18,8 +20,17 @@ export const getMyProfile = async (req: Request, res: Response) => {
 export const getProfiles = async (req: Request, res: Response) => {
   try {
     const blocked = await blockedMembers(owner(req));
-    const profiles = await MatrimonyProfile.find({ ownerVerified: true, status: 'approved', user: { $nin: [owner(req), ...blocked] } }).populate('user', 'name').limit(100);
-    res.json(profiles.map(p => ({ ...p.toObject(), subscription: { plan: p.subscription.plan, isActive: activeMembership(p) } })));
+    const profiles = await MatrimonyProfile.aggregate([
+      { $match: { ownerVerified: true, status: 'approved', user: { $nin: [owner(req), ...blocked].map(id => new mongoose.Types.ObjectId(id)) } } },
+      { $sort: { updatedAt: -1, _id: -1 } },
+      { $lookup: { from: User.collection.name, localField: 'user', foreignField: '_id', as: 'member' } },
+      { $unwind: '$member' },
+      { $match: { 'member.isDisabled': { $ne: true } } },
+      { $limit: 100 },
+      { $set: { user: { _id: '$member._id', name: '$member.name' } } },
+      { $unset: 'member' }
+    ]);
+    res.json(profiles.map(p => ({ ...p, subscription: { plan: p.subscription?.plan || 'Free', isActive: !!activeMembership(p) } })));
   } catch (e) { fail(res, e); }
 };
 export const createProfile = async (req: Request, res: Response) => {
@@ -34,34 +45,39 @@ export const createProfile = async (req: Request, res: Response) => {
       fields[field] = value.trim();
     }
     if (!fields.profession || !fields.location || !fields.religion) return res.status(400).json({ error: 'Profession, city and religion are required.' });
-    const files = (req.files || []) as any[];
-    if (files.some(file => !/^image\/(jpeg|png|webp)$/.test(file.mimetype))) return res.status(400).json({ error: 'Only JPEG, PNG or WebP profile images are accepted.' });
-    const images = files.map(file => file.location).filter(value => typeof value === 'string' && value.startsWith('https://'));
-    const update: any = { ...fields, age, status: 'pending', ownerVerified: true };
-    if (images.length) update.images = images;
-    const profile = await MatrimonyProfile.findOneAndUpdate({ user: owner(req), ownerVerified: true }, { $set: update, $setOnInsert: { user: owner(req) } }, { upsert: true, new: true, runValidators: true });
+    const profile = await saveProfileWithPhotos(owner(req), { ...fields, age }, (req.files || []) as Express.Multer.File[], req.body.retainedImages, req.body.expectedReviewVersion);
     req.app.get('io')?.to('admin_room').emit('admin_data_refresh');
+    req.app.get('io')?.to('user_' + owner(req)).emit('matrimony_profile_changed');
+    req.app.get('io')?.emit('matrimony_profiles_changed');
     res.json(membershipView(profile));
-  } catch (e) { fail(res, e); }
+  } catch (e: any) {
+    if (e.httpStatus || e.code === 11000) return fail(res, e);
+    console.error('Matrimony profile save failed:', e.code || e.name || 'storage_error');
+    res.status(503).json({ error: 'Your profile could not be saved. Your changes are still in the form; please retry.' });
+  }
 };
 export const getMessages = async (req: Request, res: Response) => {
   try {
     await authorizeChat(owner(req), req.params.roomId);
     const query: any = { roomId: req.params.roomId };
-    if (req.query.before) {
-      if (typeof req.query.before !== 'string' || !/^[a-f0-9]{24}$/.test(req.query.before)) return res.status(400).json({ error: 'Invalid message cursor.' });
-      const anchor = await Message.findOne({ _id: req.query.before, roomId: req.params.roomId });
+    if (req.query.before && req.query.after) return res.status(400).json({ error: 'Use one message cursor at a time.' });
+    const cursor = req.query.after || req.query.before;
+    if (cursor) {
+      if (typeof cursor !== 'string' || !/^[a-f0-9]{24}$/.test(cursor)) return res.status(400).json({ error: 'Invalid message cursor.' });
+      const anchor = await Message.findOne({ _id: cursor, roomId: req.params.roomId });
       if (!anchor) return res.status(400).json({ error: 'Message cursor not found.' });
-      query.$or = [{ timestamp: { $lt: anchor.timestamp } }, { timestamp: anchor.timestamp, _id: { $lt: anchor._id } }];
+      const direction = req.query.after ? '$gt' : '$lt';
+      query.$or = [{ timestamp: { [direction]: anchor.timestamp } }, { timestamp: anchor.timestamp, _id: { [direction]: anchor._id } }];
     }
-    const messages = await Message.find(query).sort({ timestamp: -1, _id: -1 }).limit(200);
-    res.json(messages.reverse());
+    const order = req.query.after ? 1 : -1;
+    const messages = await Message.find(query).sort({ timestamp: order, _id: order }).limit(200);
+    res.json(req.query.after ? messages : messages.reverse());
   } catch (e) { chatFail(res, e); }
 };
 export const sendMessage = async (req: Request, res: Response) => {
   try {
     const message = await persistChatMessage(owner(req), req.params.roomId, req.body.text, req.body.clientMessageId);
-    publishChatMessage(req.app.get('io'), message);
+    await publishChatMessage(req.app.get('io'), message);
     res.json(message);
   } catch (e) { chatFail(res, e); }
 };
@@ -87,22 +103,22 @@ export const getInbox = async (req: Request, res: Response) => {
     if (req.params.userId !== owner(req)) return res.status(403).json({ error: 'Inbox access denied.' });
     const profile = await MatrimonyProfile.findOne({ user: owner(req), ownerVerified: true });
     if (!activeMembership(profile)) return res.status(403).json({ error: 'Active membership required.' });
+    const blocked = await blockedMembers(owner(req));
     const chats = await Message.aggregate([
       { $match: { $or: [{ senderId: owner(req) }, { receiverId: owner(req) }] } },
       { $sort: { timestamp: -1, _id: -1 } },
       { $group: { _id: '$roomId', latestMessage: { $first: '$$ROOT' }, unreadCount: { $sum: { $cond: [{ $and: [{ $eq: ['$receiverId', owner(req)] }, { $eq: [{ $ifNull: ['$isRead', false] }, false] }] }, 1, 0] } } } },
+      { $set: { otherId: { $cond: [{ $eq: ['$latestMessage.senderId', owner(req)] }, '$latestMessage.receiverId', '$latestMessage.senderId'] } } },
+      { $match: { otherId: { $nin: blocked } } },
+      { $set: { otherObjectId: { $convert: { input: '$otherId', to: 'objectId', onError: null, onNull: null } } } },
+      { $lookup: { from: MatrimonyProfile.collection.name, localField: 'otherObjectId', foreignField: 'user', pipeline: [{ $match: { ownerVerified: true, status: 'approved' } }], as: 'profile' } },
+      { $unwind: '$profile' },
+      { $lookup: { from: User.collection.name, localField: 'otherObjectId', foreignField: '_id', pipeline: [{ $match: { isDisabled: { $ne: true } } }, { $project: { name: 1 } }], as: 'member' } },
+      { $unwind: '$member' },
       { $sort: { 'latestMessage.timestamp': -1, 'latestMessage._id': -1 } },
       { $limit: 100 }
     ]);
-    const blocked = await blockedMembers(owner(req));
-    const otherIds = chats.map(c => c.latestMessage.senderId === owner(req) ? c.latestMessage.receiverId : c.latestMessage.senderId).filter(id => mongoose.isValidObjectId(id) && !blocked.includes(id));
-    const profiles = await MatrimonyProfile.find({ user: { $in: otherIds }, ownerVerified: true, status: 'approved' }).populate('user', 'name');
-    const byOwner = new Map(profiles.map(p => [String((p.user as any)?._id || p.user), p]));
-    res.json(chats.flatMap(c => {
-      const other = c.latestMessage.senderId === owner(req) ? c.latestMessage.receiverId : c.latestMessage.senderId;
-      const p = byOwner.get(other);
-      return p ? [{ latestMessage: c.latestMessage, unreadCount: c.unreadCount, profile: { ...p.toObject(), subscription: { plan: p.subscription.plan, isActive: activeMembership(p) } } }] : [];
-    }));
+    res.json(chats.map(c => ({ latestMessage: c.latestMessage, unreadCount: c.unreadCount, profile: { ...c.profile, user: c.member, subscription: { plan: c.profile.subscription?.plan || 'Free', isActive: !!activeMembership(c.profile) } } })));
   } catch (e) { chatFail(res, e); }
 };
 export const handleMatrimonyUpgrade = async (userId: string, value: string, _metadata?: any, transaction?: any) => {

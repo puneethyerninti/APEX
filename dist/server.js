@@ -27,6 +27,8 @@ const CabQuote_1 = __importDefault(require("./models/CabQuote"));
 const RideSlot_1 = __importDefault(require("./models/RideSlot"));
 const WalletTransfer_1 = __importDefault(require("./models/WalletTransfer"));
 const MatrimonyProfile_1 = __importDefault(require("./models/MatrimonyProfile"));
+const MatrimonyPhoto_1 = __importDefault(require("./models/MatrimonyPhoto"));
+const Notification_1 = __importDefault(require("./models/Notification"));
 const cabPolicy_1 = require("./services/cabPolicy");
 const notificationRoutes_1 = __importDefault(require("./routes/notificationRoutes"));
 const leadRoutes_1 = __importDefault(require("./routes/leadRoutes"));
@@ -41,7 +43,6 @@ const matrimonyMessages_1 = require("./services/matrimonyMessages");
 const paymentRecovery_1 = require("./services/paymentRecovery");
 const User_1 = __importDefault(require("./models/User"));
 const firebaseAdmin_1 = require("./firebaseAdmin");
-const notificationController_1 = require("./controllers/notificationController");
 dotenv_1.default.config();
 // Connect to Database
 // Initialize Firebase Admin for Push Notifications
@@ -94,24 +95,9 @@ io.on('connection', (socket) => {
             return;
         try {
             const newMessage = await (0, matrimonyMessages_1.persistChatMessage)(senderId, data?.roomId, data?.text, data?.clientMessageId);
-            const receiverId = newMessage.receiverId;
-            (0, matrimonyMessages_1.publishChatMessage)(io, newMessage);
+            await (0, matrimonyMessages_1.publishChatMessage)(io, newMessage);
             if (typeof acknowledge === 'function')
                 acknowledge({ success: true, message: newMessage.toObject() });
-            // Send global toast notification to receiver
-            try {
-                const sender = await User_1.default.findById(senderId);
-                const receiver = await User_1.default.findById(receiverId);
-                if (sender && receiver) {
-                    io.to(`user_${receiver._id}`).emit('system_notice', {
-                        message: `New message from ${sender.name}: ${data.text.length > 20 ? data.text.substring(0, 20) + '...' : data.text}`
-                    });
-                    await (0, notificationController_1.createNotification)(receiver._id.toString(), `Message from ${sender.name}`, data.text.length > 30 ? data.text.substring(0, 30) + '...' : data.text, 'info');
-                }
-            }
-            catch (err) {
-                console.error('Error fetching users for notification', err);
-            }
         }
         catch (err) {
             if (typeof acknowledge === 'function')
@@ -161,13 +147,14 @@ app.use('/api/utility', utilityRoutes_1.default);
 app.use('/api/support', supportRoutes_1.default);
 // Routes Placeholder
 app.get('/', (req, res) => {
+    res.setHeader('X-APEX-Matrimony-Storage', 'mongodb-v1');
     res.send('APEX Backend is running');
 });
 // Start server
 const PORT = process.env.PORT || 5000;
 const start = async () => {
     await (0, db_1.connectDB)();
-    await Promise.all([AuthSession_1.default.init(), Ride_1.default.init(), CabQuote_1.default.init(), RideSlot_1.default.init(), User_1.default.init(), WalletTransfer_1.default.init(), MatrimonyProfile_1.default.init(), Message_1.default.init(), UserBlock_1.default.init(), AcademyEnrollment_1.default.init()]);
+    await Promise.all([AuthSession_1.default.init(), Ride_1.default.init(), CabQuote_1.default.init(), RideSlot_1.default.init(), User_1.default.init(), WalletTransfer_1.default.init(), MatrimonyProfile_1.default.init(), MatrimonyPhoto_1.default.init(), Message_1.default.init(), Notification_1.default.init(), UserBlock_1.default.init(), AcademyEnrollment_1.default.init()]);
     server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 };
 start().catch(() => { console.error('Backend startup failed. Check database configuration and indexes.'); process.exit(1); });

@@ -6,6 +6,7 @@ export interface INotification extends Document {
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
   isRead: boolean;
+  sourceMessage?: mongoose.Types.ObjectId;
   createdAt: Date;
 }
 
@@ -15,9 +16,11 @@ const NotificationSchema = new Schema<INotification>(
     title: { type: String, required: true },
     message: { type: String, required: true },
     type: { type: String, enum: ['info', 'success', 'warning', 'error'], default: 'info' },
-    isRead: { type: Boolean, default: false }
+    isRead: { type: Boolean, default: false },
+    sourceMessage: { type: Schema.Types.ObjectId, ref: 'Message' }
   },
   { timestamps: true }
 );
 
+NotificationSchema.index({ sourceMessage: 1 }, { unique: true, partialFilterExpression: { sourceMessage: { $type: 'objectId' } } });
 export default mongoose.model<INotification>('Notification', NotificationSchema);

@@ -3,6 +3,7 @@ import User from '../models/User';
 import Transaction from '../models/Transaction';
 import Job from '../models/Job';
 import MatrimonyProfile from '../models/MatrimonyProfile';
+import { deleteProfileWithPhotos } from '../services/matrimonyPhotos';
 import Property from '../models/Property';
 import StoreOrder from '../models/StoreOrder';
 import CharityDonation from '../models/CharityDonation';
@@ -93,10 +94,10 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 export const getPendingApprovals = async (req: Request, res: Response) => {
   try {
     const jobs = await Job.find({ status: 'pending' }).populate('postedBy', 'name phone');
-    const profiles = await MatrimonyProfile.find({ status: 'pending' }).populate('user', 'name phone');
+    const profiles = await MatrimonyProfile.find({ status: 'pending', ownerVerified: true }).populate({ path: 'user', select: 'name phone', match: { isDisabled: { $ne: true } } });
     const realty = await Property.find({ status: 'pending' }).populate('user', 'name phone');
     
-    res.json({ jobs, profiles, realty });
+    res.json({ jobs, profiles: profiles.filter(profile => !!profile.user), realty });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error fetching pending approvals' });
@@ -119,8 +120,14 @@ export const updateApprovalStatus = async (req: Request, res: Response) => {
       if (doc) userIdToNotify = doc.postedBy;
       title = `Job ${status === 'approved' ? 'Approved' : 'Rejected'}`;
     } else if (type === 'profile') {
-      const doc = await MatrimonyProfile.findByIdAndUpdate(id, { status });
+      const version = req.body.reviewVersion;
+      if (!Number.isInteger(version) || version < 0) return res.status(409).json({ error: 'Refresh the review queue and inspect the current profile before approving it.' });
+      const versionFilter = version === 0 ? { $or: [{ reviewVersion: 0 }, { reviewVersion: { $exists: false } }] } : { reviewVersion: version };
+      const doc = await MatrimonyProfile.findOneAndUpdate({ _id: id, ownerVerified: true, status: 'pending', age: { $gte: 18, $lte: 100 }, ...versionFilter }, { $set: { status } }, { returnDocument: 'after' });
+      if (!doc) return res.status(409).json({ error: 'This profile changed or was already reviewed. Refresh and review its latest details and photos.' });
       if (doc) userIdToNotify = doc.user;
+      req.app.get('io')?.to('user_' + doc.user).emit('matrimony_profile_changed');
+      req.app.get('io')?.emit('matrimony_profiles_changed');
       title = `Matrimony Profile ${status === 'approved' ? 'Approved' : 'Rejected'}`;
     } else if (type === 'realty') {
       const doc = await Property.findByIdAndUpdate(id, { status: status === 'approved' ? 'active' : 'inactive' }, { runValidators: true });
@@ -142,6 +149,7 @@ export const updateApprovalStatus = async (req: Request, res: Response) => {
       }
     }
 
+    req.app.get('io')?.to('admin_room').emit('admin_data_refresh');
     res.json({ message: `${type} successfully ${status}` });
   } catch (error) {
     console.error(error);
@@ -197,7 +205,7 @@ export const deleteEntity = async (req: Request, res: Response) => {
   
   try {
     if (type === 'job') await Job.findByIdAndDelete(id);
-    else if (type === 'profile') await MatrimonyProfile.findByIdAndDelete(id);
+    else if (type === 'profile') await deleteProfileWithPhotos(String(id));
     else if (type === 'realty') await Property.findByIdAndDelete(id);
     else if (type === 'user') await User.findByIdAndDelete(id);
     else return res.status(400).json({ error: 'Invalid entity type' });

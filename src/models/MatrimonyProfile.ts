@@ -11,6 +11,7 @@ export interface IMatrimonyProfile extends Document {
   images: string[];
   community?: string;
   ownerVerified?: boolean;
+  reviewVersion?: number;
   status: 'pending' | 'approved' | 'rejected';
   subscription: {
     plan: 'Free' | 'Silver' | 'Gold' | 'Premium' | 'Diamond';
@@ -24,6 +25,7 @@ const MatrimonyProfileSchema = new Schema<IMatrimonyProfile>(
   {
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     ownerVerified: { type: Boolean, default: true },
+    reviewVersion: { type: Number, default: 0 },
     community: String,
     age: { type: Number, required: true },
     height: { type: String },

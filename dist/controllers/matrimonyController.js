@@ -11,6 +11,8 @@ const Transaction_1 = __importDefault(require("../models/Transaction"));
 const matrimonyPolicy_1 = require("../services/matrimonyPolicy");
 const matrimonyMessages_1 = require("../services/matrimonyMessages");
 const membershipExpiry_1 = require("../services/membershipExpiry");
+const matrimonyPhotos_1 = require("../services/matrimonyPhotos");
+const User_1 = __importDefault(require("../models/User"));
 const owner = (req) => String(req.user.id);
 const fail = (res, e) => res.status(e.code === 11000 ? 409 : e.httpStatus || 503).json({ error: e.code === 11000 ? 'Profile changed. Refresh and try again.' : e.message || 'Service unavailable' });
 const membershipView = (profile) => profile ? { ...profile.toObject(), subscription: { ...profile.subscription, isActive: (0, matrimonyPolicy_1.activeMembership)(profile) } } : null;
@@ -27,8 +29,17 @@ exports.getMyProfile = getMyProfile;
 const getProfiles = async (req, res) => {
     try {
         const blocked = await (0, matrimonyPolicy_1.blockedMembers)(owner(req));
-        const profiles = await MatrimonyProfile_1.default.find({ ownerVerified: true, status: 'approved', user: { $nin: [owner(req), ...blocked] } }).populate('user', 'name').limit(100);
-        res.json(profiles.map(p => ({ ...p.toObject(), subscription: { plan: p.subscription.plan, isActive: (0, matrimonyPolicy_1.activeMembership)(p) } })));
+        const profiles = await MatrimonyProfile_1.default.aggregate([
+            { $match: { ownerVerified: true, status: 'approved', user: { $nin: [owner(req), ...blocked].map(id => new mongoose_1.default.Types.ObjectId(id)) } } },
+            { $sort: { updatedAt: -1, _id: -1 } },
+            { $lookup: { from: User_1.default.collection.name, localField: 'user', foreignField: '_id', as: 'member' } },
+            { $unwind: '$member' },
+            { $match: { 'member.isDisabled': { $ne: true } } },
+            { $limit: 100 },
+            { $set: { user: { _id: '$member._id', name: '$member.name' } } },
+            { $unset: 'member' }
+        ]);
+        res.json(profiles.map(p => ({ ...p, subscription: { plan: p.subscription?.plan || 'Free', isActive: !!(0, matrimonyPolicy_1.activeMembership)(p) } })));
     }
     catch (e) {
         fail(res, e);
@@ -51,19 +62,17 @@ const createProfile = async (req, res) => {
         }
         if (!fields.profession || !fields.location || !fields.religion)
             return res.status(400).json({ error: 'Profession, city and religion are required.' });
-        const files = (req.files || []);
-        if (files.some(file => !/^image\/(jpeg|png|webp)$/.test(file.mimetype)))
-            return res.status(400).json({ error: 'Only JPEG, PNG or WebP profile images are accepted.' });
-        const images = files.map(file => file.location).filter(value => typeof value === 'string' && value.startsWith('https://'));
-        const update = { ...fields, age, status: 'pending', ownerVerified: true };
-        if (images.length)
-            update.images = images;
-        const profile = await MatrimonyProfile_1.default.findOneAndUpdate({ user: owner(req), ownerVerified: true }, { $set: update, $setOnInsert: { user: owner(req) } }, { upsert: true, new: true, runValidators: true });
+        const profile = await (0, matrimonyPhotos_1.saveProfileWithPhotos)(owner(req), { ...fields, age }, (req.files || []), req.body.retainedImages, req.body.expectedReviewVersion);
         req.app.get('io')?.to('admin_room').emit('admin_data_refresh');
+        req.app.get('io')?.to('user_' + owner(req)).emit('matrimony_profile_changed');
+        req.app.get('io')?.emit('matrimony_profiles_changed');
         res.json(membershipView(profile));
     }
     catch (e) {
-        fail(res, e);
+        if (e.httpStatus || e.code === 11000)
+            return fail(res, e);
+        console.error('Matrimony profile save failed:', e.code || e.name || 'storage_error');
+        res.status(503).json({ error: 'Your profile could not be saved. Your changes are still in the form; please retry.' });
     }
 };
 exports.createProfile = createProfile;
@@ -71,16 +80,21 @@ const getMessages = async (req, res) => {
     try {
         await (0, matrimonyPolicy_1.authorizeChat)(owner(req), req.params.roomId);
         const query = { roomId: req.params.roomId };
-        if (req.query.before) {
-            if (typeof req.query.before !== 'string' || !/^[a-f0-9]{24}$/.test(req.query.before))
+        if (req.query.before && req.query.after)
+            return res.status(400).json({ error: 'Use one message cursor at a time.' });
+        const cursor = req.query.after || req.query.before;
+        if (cursor) {
+            if (typeof cursor !== 'string' || !/^[a-f0-9]{24}$/.test(cursor))
                 return res.status(400).json({ error: 'Invalid message cursor.' });
-            const anchor = await Message_1.default.findOne({ _id: req.query.before, roomId: req.params.roomId });
+            const anchor = await Message_1.default.findOne({ _id: cursor, roomId: req.params.roomId });
             if (!anchor)
                 return res.status(400).json({ error: 'Message cursor not found.' });
-            query.$or = [{ timestamp: { $lt: anchor.timestamp } }, { timestamp: anchor.timestamp, _id: { $lt: anchor._id } }];
+            const direction = req.query.after ? '$gt' : '$lt';
+            query.$or = [{ timestamp: { [direction]: anchor.timestamp } }, { timestamp: anchor.timestamp, _id: { [direction]: anchor._id } }];
         }
-        const messages = await Message_1.default.find(query).sort({ timestamp: -1, _id: -1 }).limit(200);
-        res.json(messages.reverse());
+        const order = req.query.after ? 1 : -1;
+        const messages = await Message_1.default.find(query).sort({ timestamp: order, _id: order }).limit(200);
+        res.json(req.query.after ? messages : messages.reverse());
     }
     catch (e) {
         chatFail(res, e);
@@ -90,7 +104,7 @@ exports.getMessages = getMessages;
 const sendMessage = async (req, res) => {
     try {
         const message = await (0, matrimonyMessages_1.persistChatMessage)(owner(req), req.params.roomId, req.body.text, req.body.clientMessageId);
-        (0, matrimonyMessages_1.publishChatMessage)(req.app.get('io'), message);
+        await (0, matrimonyMessages_1.publishChatMessage)(req.app.get('io'), message);
         res.json(message);
     }
     catch (e) {
@@ -128,22 +142,22 @@ const getInbox = async (req, res) => {
         const profile = await MatrimonyProfile_1.default.findOne({ user: owner(req), ownerVerified: true });
         if (!(0, matrimonyPolicy_1.activeMembership)(profile))
             return res.status(403).json({ error: 'Active membership required.' });
+        const blocked = await (0, matrimonyPolicy_1.blockedMembers)(owner(req));
         const chats = await Message_1.default.aggregate([
             { $match: { $or: [{ senderId: owner(req) }, { receiverId: owner(req) }] } },
             { $sort: { timestamp: -1, _id: -1 } },
             { $group: { _id: '$roomId', latestMessage: { $first: '$$ROOT' }, unreadCount: { $sum: { $cond: [{ $and: [{ $eq: ['$receiverId', owner(req)] }, { $eq: [{ $ifNull: ['$isRead', false] }, false] }] }, 1, 0] } } } },
+            { $set: { otherId: { $cond: [{ $eq: ['$latestMessage.senderId', owner(req)] }, '$latestMessage.receiverId', '$latestMessage.senderId'] } } },
+            { $match: { otherId: { $nin: blocked } } },
+            { $set: { otherObjectId: { $convert: { input: '$otherId', to: 'objectId', onError: null, onNull: null } } } },
+            { $lookup: { from: MatrimonyProfile_1.default.collection.name, localField: 'otherObjectId', foreignField: 'user', pipeline: [{ $match: { ownerVerified: true, status: 'approved' } }], as: 'profile' } },
+            { $unwind: '$profile' },
+            { $lookup: { from: User_1.default.collection.name, localField: 'otherObjectId', foreignField: '_id', pipeline: [{ $match: { isDisabled: { $ne: true } } }, { $project: { name: 1 } }], as: 'member' } },
+            { $unwind: '$member' },
             { $sort: { 'latestMessage.timestamp': -1, 'latestMessage._id': -1 } },
             { $limit: 100 }
         ]);
-        const blocked = await (0, matrimonyPolicy_1.blockedMembers)(owner(req));
-        const otherIds = chats.map(c => c.latestMessage.senderId === owner(req) ? c.latestMessage.receiverId : c.latestMessage.senderId).filter(id => mongoose_1.default.isValidObjectId(id) && !blocked.includes(id));
-        const profiles = await MatrimonyProfile_1.default.find({ user: { $in: otherIds }, ownerVerified: true, status: 'approved' }).populate('user', 'name');
-        const byOwner = new Map(profiles.map(p => [String(p.user?._id || p.user), p]));
-        res.json(chats.flatMap(c => {
-            const other = c.latestMessage.senderId === owner(req) ? c.latestMessage.receiverId : c.latestMessage.senderId;
-            const p = byOwner.get(other);
-            return p ? [{ latestMessage: c.latestMessage, unreadCount: c.unreadCount, profile: { ...p.toObject(), subscription: { plan: p.subscription.plan, isActive: (0, matrimonyPolicy_1.activeMembership)(p) } } }] : [];
-        }));
+        res.json(chats.map(c => ({ latestMessage: c.latestMessage, unreadCount: c.unreadCount, profile: { ...c.profile, user: c.member, subscription: { plan: c.profile.subscription?.plan || 'Free', isActive: !!(0, matrimonyPolicy_1.activeMembership)(c.profile) } } })));
     }
     catch (e) {
         chatFail(res, e);

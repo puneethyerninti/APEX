@@ -39,6 +39,8 @@ const NotificationSchema = new mongoose_1.Schema({
     title: { type: String, required: true },
     message: { type: String, required: true },
     type: { type: String, enum: ['info', 'success', 'warning', 'error'], default: 'info' },
-    isRead: { type: Boolean, default: false }
+    isRead: { type: Boolean, default: false },
+    sourceMessage: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Message' }
 }, { timestamps: true });
+NotificationSchema.index({ sourceMessage: 1 }, { unique: true, partialFilterExpression: { sourceMessage: { $type: 'objectId' } } });
 exports.default = mongoose_1.default.model('Notification', NotificationSchema);

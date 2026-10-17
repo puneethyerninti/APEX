@@ -8,6 +8,7 @@ const User_1 = __importDefault(require("../models/User"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const Job_1 = __importDefault(require("../models/Job"));
 const MatrimonyProfile_1 = __importDefault(require("../models/MatrimonyProfile"));
+const matrimonyPhotos_1 = require("../services/matrimonyPhotos");
 const Property_1 = __importDefault(require("../models/Property"));
 const StoreOrder_1 = __importDefault(require("../models/StoreOrder"));
 const CharityDonation_1 = __importDefault(require("../models/CharityDonation"));
@@ -92,9 +93,9 @@ exports.getDashboardStats = getDashboardStats;
 const getPendingApprovals = async (req, res) => {
     try {
         const jobs = await Job_1.default.find({ status: 'pending' }).populate('postedBy', 'name phone');
-        const profiles = await MatrimonyProfile_1.default.find({ status: 'pending' }).populate('user', 'name phone');
+        const profiles = await MatrimonyProfile_1.default.find({ status: 'pending', ownerVerified: true }).populate({ path: 'user', select: 'name phone', match: { isDisabled: { $ne: true } } });
         const realty = await Property_1.default.find({ status: 'pending' }).populate('user', 'name phone');
-        res.json({ jobs, profiles, realty });
+        res.json({ jobs, profiles: profiles.filter(profile => !!profile.user), realty });
     }
     catch (error) {
         console.error(error);
@@ -117,9 +118,17 @@ const updateApprovalStatus = async (req, res) => {
             title = `Job ${status === 'approved' ? 'Approved' : 'Rejected'}`;
         }
         else if (type === 'profile') {
-            const doc = await MatrimonyProfile_1.default.findByIdAndUpdate(id, { status });
+            const version = req.body.reviewVersion;
+            if (!Number.isInteger(version) || version < 0)
+                return res.status(409).json({ error: 'Refresh the review queue and inspect the current profile before approving it.' });
+            const versionFilter = version === 0 ? { $or: [{ reviewVersion: 0 }, { reviewVersion: { $exists: false } }] } : { reviewVersion: version };
+            const doc = await MatrimonyProfile_1.default.findOneAndUpdate({ _id: id, ownerVerified: true, status: 'pending', age: { $gte: 18, $lte: 100 }, ...versionFilter }, { $set: { status } }, { returnDocument: 'after' });
+            if (!doc)
+                return res.status(409).json({ error: 'This profile changed or was already reviewed. Refresh and review its latest details and photos.' });
             if (doc)
                 userIdToNotify = doc.user;
+            req.app.get('io')?.to('user_' + doc.user).emit('matrimony_profile_changed');
+            req.app.get('io')?.emit('matrimony_profiles_changed');
             title = `Matrimony Profile ${status === 'approved' ? 'Approved' : 'Rejected'}`;
         }
         else if (type === 'realty') {
@@ -135,6 +144,7 @@ const updateApprovalStatus = async (req, res) => {
                 io.to(`user_${userIdToNotify}`).emit('new_notification', notification);
             }
         }
+        req.app.get('io')?.to('admin_room').emit('admin_data_refresh');
         res.json({ message: `${type} successfully ${status}` });
     }
     catch (error) {
@@ -188,7 +198,7 @@ const deleteEntity = async (req, res) => {
         if (type === 'job')
             await Job_1.default.findByIdAndDelete(id);
         else if (type === 'profile')
-            await MatrimonyProfile_1.default.findByIdAndDelete(id);
+            await (0, matrimonyPhotos_1.deleteProfileWithPhotos)(String(id));
         else if (type === 'realty')
             await Property_1.default.findByIdAndDelete(id);
         else if (type === 'user')

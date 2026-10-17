@@ -23,6 +23,8 @@ import CabQuote from './models/CabQuote';
 import RideSlot from './models/RideSlot';
 import WalletTransfer from './models/WalletTransfer';
 import MatrimonyProfile from './models/MatrimonyProfile';
+import MatrimonyPhoto from './models/MatrimonyPhoto';
+import Notification from './models/Notification';
 import { validLocation } from './services/cabPolicy';
 import notificationRoutes from './routes/notificationRoutes';
 import leadRoutes from './routes/leadRoutes';
@@ -102,30 +104,9 @@ io.on('connection', (socket: AuthenticatedSocket) => {
 
     try {
       const newMessage = await persistChatMessage(senderId, data?.roomId, data?.text, data?.clientMessageId);
-      const receiverId = newMessage.receiverId;
-      publishChatMessage(io, newMessage);
+      await publishChatMessage(io, newMessage);
       if (typeof acknowledge === 'function') acknowledge({ success: true, message: newMessage.toObject() });
 
-      // Send global toast notification to receiver
-      try {
-        const sender = await User.findById(senderId);
-        const receiver = await User.findById(receiverId);
-        
-        if (sender && receiver) {
-          io.to(`user_${receiver._id}`).emit('system_notice', {
-            message: `New message from ${sender.name}: ${data.text.length > 20 ? data.text.substring(0, 20) + '...' : data.text}`
-          });
-          
-          await createNotification(
-            receiver._id.toString(),
-            `Message from ${sender.name}`,
-            data.text.length > 30 ? data.text.substring(0, 30) + '...' : data.text,
-            'info'
-          );
-        }
-      } catch (err) {
-        console.error('Error fetching users for notification', err);
-      }
     } catch (err: any) {
       if (typeof acknowledge === 'function') acknowledge({ success: false, status: err.httpStatus || 503, error: err.httpStatus ? err.message : 'Messages are temporarily unavailable. Please retry.' });
     }
@@ -177,6 +158,7 @@ app.use('/api/support', supportRoutes);
 
 // Routes Placeholder
 app.get('/', (req, res) => {
+  res.setHeader('X-APEX-Matrimony-Storage', 'mongodb-v1');
   res.send('APEX Backend is running');
 });
 
@@ -184,7 +166,7 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 const start = async () => {
   await connectDB();
-  await Promise.all([AuthSession.init(), Ride.init(), CabQuote.init(), RideSlot.init(), User.init(), WalletTransfer.init(), MatrimonyProfile.init(), Message.init(), UserBlock.init(), AcademyEnrollment.init()]);
+  await Promise.all([AuthSession.init(), Ride.init(), CabQuote.init(), RideSlot.init(), User.init(), WalletTransfer.init(), MatrimonyProfile.init(), MatrimonyPhoto.init(), Message.init(), Notification.init(), UserBlock.init(), AcademyEnrollment.init()]);
   server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 };
 start().catch(() => { console.error('Backend startup failed. Check database configuration and indexes.'); process.exit(1); });
