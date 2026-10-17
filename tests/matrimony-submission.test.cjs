@@ -39,6 +39,7 @@ test('profile form waits for photo preparation, preserves edits on failure and v
   assert.match(source, /<MatrimonyPhotoEditor/);
   const admin = fs.readFileSync('src/app/admin-dashboard/page.tsx', 'utf8');
   assert.match(admin, /View full photo/);
+  assert.match(admin, /className="relative"><MatrimonyImage/);
   assert.match(admin, /reviewVersion \|\| 0/);
   assert.match(admin, /whitespace-pre-wrap break-words text-gray-600">\{p.bio\}/);
 });
