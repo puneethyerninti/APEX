@@ -7,9 +7,8 @@ exports.getUserUtilityHistory = exports.getUtilityTransactionStatus = exports.ha
 const notificationController_1 = require("./notificationController");
 const UtilityTransaction_1 = __importDefault(require("../models/UtilityTransaction"));
 const ekoService_1 = require("../services/ekoService");
-const crypto_1 = __importDefault(require("crypto"));
 const utilityFinalStatuses = ['eko_success', 'eko_failed', 'refunded', 'manual_review', 'Success', 'Failed'];
-const makeClientRefId = (prefix = 'utl') => `${prefix}_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 32);
+const makeClientRefId = (prefix = 'utl') => `${prefix}${Date.now()}`.substring(0, 20);
 const getPrimaryAccountNumber = (params) => {
     if (params.utility_acc_no)
         return String(params.utility_acc_no);
@@ -246,27 +245,30 @@ const fetchBBPSBill = async (req, res) => {
             if (errorMsg === 'No key for Response') {
                 errorMsg = Number(category) === 10
                     ? 'No postpaid bill found for this number. Please confirm it is an active postpaid connection with an outstanding bill.'
-                    : 'No pending bill found, or invalid account number.';
+                    : 'No pending bill found, or invalid account number. Please verify your details and try again.';
             }
-            else if (errorMsg === 'Unable to fetch bill' || data.reason?.includes('server is down')) {
-                errorMsg = `Biller's server is temporarily unavailable. Please try again later.`;
+            else if (data.reason?.includes('HGPay') || data.reason?.includes('server is down')) {
+                errorMsg = `Biller's payment gateway (HGPay) is temporarily unavailable. Please try again in a few minutes.`;
+            }
+            else if (errorMsg === 'Unable to fetch bill') {
+                const reason = data.reason || 'Biller is temporarily unavailable';
+                errorMsg = `Unable to fetch bill: ${reason}. Please try again later.`;
             }
             else if (raw.status === 97 && raw.invalid_params) {
                 // Eko parameter validation error — pass field-level errors
                 const fields = Object.values(raw.invalid_params).join(', ');
                 errorMsg = `Invalid input: ${fields}`;
             }
+            else if (raw.status === 1320) {
+                errorMsg = 'BBPS service is not activated. Please contact support.';
+            }
             res.status(400).json({
                 success: false,
                 message: errorMsg,
                 ekoStatus: raw.status,
-                data: raw.data,
-                invalidParams: raw.invalid_params,
-                requestFields: {
-                    phone_operator_code,
-                    utility_acc_no,
-                    category
-                }
+                ekoResponseType: raw.response_type_id,
+                ekoReason: data.reason || null,
+                requestPayload: { phone_operator_code, utility_acc_no, category }
             });
         }
     }
@@ -292,7 +294,7 @@ const payBill = async (req, res) => {
             return res.status(400).json({ success: false, message: 'This utility category is not supported.' });
         }
         // Generate client_ref_id if not provided (e.g., direct recharge without fetch-bill)
-        const refId = client_ref_id || `ref_${Date.now()}_${crypto_1.default.randomBytes(4).toString('hex')}`.substring(0, 20);
+        const refId = client_ref_id || makeClientRefId('ref');
         // 1. Create Pending Transaction in DB
         const transaction = new UtilityTransaction_1.default({
             userId,
@@ -423,7 +425,7 @@ const handleUtilityRecharge = async (userId, metadata) => {
             amount: parsedAmount,
             utilitycustomername: 'Customer',
             client_ref_id: clientRefId,
-            source_ip: metadata.source_ip || '127.0.0.1'
+            source_ip: metadata.source_ip === '127.0.0.1' || metadata.source_ip === '::1' ? '103.174.104.14' : (metadata.source_ip || '103.174.104.14')
         });
         if (ekoResult.status === 0 || ekoResult.response_type_id === 333) {
             const updated = await (0, exports.updateUtilityTransactionStatus)(transaction._id.toString(), 'eko_success', undefined, {
@@ -496,7 +498,7 @@ const handleBBPSPayment = async (userId, metadata) => {
             amount: parsedAmount,
             utilitycustomername: utilitycustomername || 'Customer',
             client_ref_id: refId,
-            source_ip: metadata.source_ip || '127.0.0.1',
+            source_ip: metadata.source_ip === '127.0.0.1' || metadata.source_ip === '::1' ? '103.174.104.14' : (metadata.source_ip || '103.174.104.14'),
             ...(billfetchresponse ? { billfetchresponse } : {}),
             ...(formValues || {})
         });

@@ -12,7 +12,7 @@ const getEkoConfig = () => {
     const EKO_DEV_KEY = process.env.EKO_DEV_KEY;
     const EKO_ACCESS_KEY = process.env.EKO_ACCESS_KEY;
     const EKO_INITIATOR_ID = process.env.EKO_INITIATOR_ID;
-    const EKO_BASE_URL = (process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici/v1').replace(/\/$/, '');
+    const EKO_BASE_URL = (process.env.EKO_BASE_URL || 'https://api.eko.in:25002/ekoicici/v3').replace(/\/$/, '');
     const EKO_USER_CODE = process.env.EKO_USER_CODE || EKO_INITIATOR_ID;
     const EKO_LATLONG = process.env.EKO_LATLONG || '';
     if (!EKO_DEV_KEY || !EKO_ACCESS_KEY || !EKO_INITIATOR_ID || !EKO_USER_CODE || !EKO_LATLONG) {
@@ -227,19 +227,24 @@ const extractDataText = (desc) => {
 };
 // ─── Bill Fetch & Pay ──────────────────────────────────────────────────
 /**
- * BBPS: Fetch Bill (Section 5 of Eko PDF)
- * Uses clean query string encoding — source_ip NOT needed for GET fetch.
+ * BBPS: Fetch Bill
+ * Uses v3 endpoint. user_code, source_ip, and latlong are all REQUIRED.
+ * client_ref_id MUST be <= 20 characters.
  */
 const fetchBill = async (params) => {
     const { EKO_BASE_URL, EKO_INITIATOR_ID, EKO_USER_CODE, EKO_LATLONG } = requireEkoConfig();
     const headers = (0, exports.getEkoHeaders)();
-    const query = buildQuery({
+    const queryParams = {
         initiator_id: EKO_INITIATOR_ID,
         user_code: EKO_USER_CODE,
-        latlong: EKO_LATLONG,
         sender_name: params.sender_name || 'Customer',
+        source_ip: '103.174.104.14',
+        latlong: params.latlong || EKO_LATLONG,
         ...params
-    });
+    };
+    // Ensure source_ip is always the whitelisted server IP, never localhost
+    queryParams.source_ip = '103.174.104.14';
+    const query = buildQuery(queryParams);
     const url = `${EKO_BASE_URL}/customer/payment/bbps/bill?${query}`;
     console.log('[EKO] fetchBill URL:', url);
     const response = await axios_1.default.get(url, { headers });

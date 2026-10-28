@@ -15,6 +15,7 @@ router.get('/users', adminController_1.getUsersList);
 router.get('/transactions', adminController_1.getAllTransactions);
 router.delete('/:type/:id', adminController_1.deleteEntity);
 router.post('/users/:id/wallet', adminController_1.updateUserWallet);
+router.post('/users/:id/portfolio', adminController_1.updateUserPortfolio);
 router.put('/transactions/:id/complete', adminController_1.completeTransaction);
 // New Routes
 router.get('/store-orders', adminController_1.getAllStoreOrders);
