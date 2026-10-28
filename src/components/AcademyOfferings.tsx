@@ -101,7 +101,7 @@ export default function AcademyOfferings() {
       <p className="max-w-64 text-[10px] leading-4 text-gray-500">Introductory fees. Confirm batch details with the academy.</p>
       <div className="flex shrink-0 items-center gap-2">
         <span className="w-7 text-right text-[10px] tabular-nums text-gray-500">{active + 1} / {academyOfferings.length}</span>
-        <button type="button" aria-label={reducedMotion ? 'Auto-scroll disabled for reduced motion' : paused ? 'Play course auto-scroll' : 'Pause course auto-scroll'} title={reducedMotion ? 'Auto-scroll disabled for reduced motion' : paused ? 'Play course auto-scroll' : 'Pause course auto-scroll'} disabled={reducedMotion} className={control + ' disabled:opacity-40'} onClick={() => setPaused(value => !value)}>
+        <button type="button" aria-label={reducedMotion ? 'Auto-scroll disabled for reduced motion' : paused ? 'Play course auto-scroll' : 'Pause course auto-scroll'} title={reducedMotion ? 'Auto-scroll disabled for reduced motion' : paused ? 'Play course auto-scroll' : 'Pause course auto-scroll'} disabled={reducedMotion} className="hidden" onClick={() => setPaused(value => !value)}>
           <i aria-hidden="true" className={paused || reducedMotion ? 'fas fa-play' : 'fas fa-pause'} />
         </button>
       </div>

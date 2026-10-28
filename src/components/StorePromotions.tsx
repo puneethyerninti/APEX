@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 
 export const storePromotions = [
+  { src: '/apex-store-hero.jpeg', alt: 'Big Dreams Bigger Market with APEX Store' },
+  { src: '/apex-driver-hero.jpeg', alt: 'Drive Your Vehicle Earn Your Future with APEX' },
   { src: '/promotions/apex-store-open.png', alt: 'APEX Store - We are open' },
   { src: '/promotions/apex-store-team-india.png', alt: 'APEX Store celebrates Team India champions' },
   { src: '/promotions/apex-store-sale.png', alt: 'APEX Store sale - 20% off' },
@@ -57,8 +59,9 @@ export default function StorePromotions() {
         className="flex h-10 w-10 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-apex-purple" onClick={() => setCurrent(index)}>
         <span className={`h-2 w-2 rounded-full ${current === index ? 'bg-apex-purple' : 'bg-gray-300'}`} />
       </button>)}
+      {/* Pause button hidden per client request */}
       <button type="button" aria-label={paused || reducedMotion ? 'Play slideshow' : 'Pause slideshow'} title={paused || reducedMotion ? 'Play slideshow' : 'Pause slideshow'}
-        className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-apex-purple"
+        className="hidden"
         onClick={() => { setPaused(!paused && !reducedMotion); setReducedMotion(false); }}>
         <i aria-hidden="true" className={paused || reducedMotion ? 'fa-solid fa-play' : 'fa-solid fa-pause'} />
       </button>
