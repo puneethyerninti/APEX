@@ -10,13 +10,13 @@ const source = fs.readFileSync('src/components/StorePromotions.tsx', 'utf8');
 const mod = new Module(__filename); mod.paths = module.paths;
 mod._compile(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 } }).outputText, __filename);
 
-test('slideshow renders all three supplied posters, uncropped, with stable sizing and accessible controls', () => {
+test('slideshow renders supplied posters, uncropped, with stable sizing and accessible controls', () => {
   const { default: Component, storePromotions } = mod.exports;
-  assert.equal(storePromotions.length, 3);
+  assert.equal(storePromotions.length, 5);
   for (const poster of storePromotions) assert.ok(fs.statSync('public' + poster.src).size > 0);
   const html = renderToStaticMarkup(React.createElement(Component));
-  assert.equal((html.match(/aria-roledescription="slide"/g) || []).length, 3);
-  assert.equal((html.match(/aria-hidden="true" class="absolute/g) || []).length, 2);
+  assert.equal((html.match(/aria-roledescription="slide"/g) || []).length, 5);
+  assert.equal((html.match(/aria-hidden="true" class="absolute/g) || []).length, 4);
   assert.match(html, /object-contain/); assert.match(html, /h-64/); assert.match(html, /md:h-80/);
   assert.match(html, /style="object-fit:contain"/);
   for (const label of ['Previous advertisement', 'Next advertisement', 'Show advertisement 3', 'Pause slideshow']) assert.ok(html.includes(label));

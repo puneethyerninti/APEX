@@ -2,8 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 
 export const storePromotions = [
-  { src: '/apex-store-hero.jpeg', alt: 'Big Dreams Bigger Market with APEX Store' },
-  { src: '/apex-driver-hero.jpeg', alt: 'Drive Your Vehicle Earn Your Future with APEX' },
+  { src: '/apex-store-banner.jpg', alt: 'Big Dreams Bigger Market with APEX Store' },
+  { src: '/apex-driver-banner.jpg', alt: 'Drive Your Vehicle Earn Your Future with APEX' },
   { src: '/promotions/apex-store-open.png', alt: 'APEX Store - We are open' },
   { src: '/promotions/apex-store-team-india.png', alt: 'APEX Store celebrates Team India champions' },
   { src: '/promotions/apex-store-sale.png', alt: 'APEX Store sale - 20% off' },
