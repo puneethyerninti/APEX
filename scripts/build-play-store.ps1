@@ -41,7 +41,7 @@ if (!(Test-Path -LiteralPath (Join-Path $root 'node_modules/.bin/next.cmd'))) { 
 if (!(Get-Command java -ErrorAction SilentlyContinue)) { throw 'Configure a compatible JDK before building Android.' }
 if ($env:NEXT_PUBLIC_NATIVE_PUSH_ENABLED -eq 'true') {
     $nativeConfig = Get-Content -Raw -LiteralPath (Join-Path $root 'android/app/google-services.json') | ConvertFrom-Json
-    if ($nativeConfig.project_info.project_id -ne 'apex-5b654' -or !($nativeConfig.client | Where-Object { $_.client_info.android_client_info.package_name -eq 'com.apex.app' })) { throw 'Native push requires the correct APEX Android Firebase configuration.' }
+    if ($nativeConfig.project_info.project_id -ne 'apex-5b654' -or !($nativeConfig.client | Where-Object { $_.client_info.android_client_info.package_name -eq 'shop.apextc.app' })) { throw 'Native push requires the correct APEX Android Firebase configuration.' }
 }
 
 $settings = @{

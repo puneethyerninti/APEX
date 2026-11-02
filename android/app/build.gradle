@@ -9,10 +9,10 @@ def uploadKeyPassword = System.getenv('APEX_KEY_PASSWORD')
 def hasUploadKey = [uploadStore, uploadAlias, uploadStorePassword, uploadKeyPassword].every { it }
 
 android {
-    namespace = "com.apex.app"
+    namespace = "shop.apextc.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.apex.app"
+        applicationId "shop.apextc.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode releaseCode ? releaseCode.toInteger() : 1

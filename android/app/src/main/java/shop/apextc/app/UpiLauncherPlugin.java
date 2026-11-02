@@ -1,4 +1,4 @@
-package com.apex.app;
+package shop.apextc.app;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;

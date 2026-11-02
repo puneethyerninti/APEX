@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.apex.app',
+  appId: 'shop.apextc.app',
   appName: 'APEX',
   webDir: 'out',
   includePlugins: process.env.NEXT_PUBLIC_NATIVE_PUSH_ENABLED === 'true'

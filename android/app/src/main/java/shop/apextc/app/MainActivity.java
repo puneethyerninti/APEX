@@ -1,4 +1,4 @@
-package com.apex.app;
+package shop.apextc.app;
 
 import com.getcapacitor.BridgeActivity;
 import android.os.Bundle;
