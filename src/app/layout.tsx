@@ -36,7 +36,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-slate-50 md:bg-gray-100 text-gray-800">
-        <div className="w-full max-w-[2000px] mx-auto bg-[#F4F6FB] min-h-screen relative shadow-[0_0_40px_rgba(0,0,0,0.05)] overflow-x-hidden md:border-x border-gray-200 pb-20 md:pb-0">
+        <div className="w-full max-w-[2000px] mx-auto bg-[#F4F6FB] min-h-screen relative shadow-[0_0_40px_rgba(0,0,0,0.05)] overflow-x-hidden md:border-x border-gray-200 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
           <Providers>
             <NavigationWrapper>
               {children}

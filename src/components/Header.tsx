@@ -81,7 +81,7 @@ export default function Header() {
   };
 
   return (
-    <div className="sticky top-0 z-50 bg-violet-700 border-b border-violet-800 shadow-sm" id="navbar">
+    <div className="sticky top-0 z-50 bg-violet-700 border-b border-violet-800 shadow-sm pt-[env(safe-area-inset-top,0px)]" id="navbar">
       {/* Top Row */}
       <div className="flex items-center justify-between px-4 py-2.5">
         <Link href="/" className="flex items-center gap-2 cursor-pointer group">

@@ -10,7 +10,7 @@ export default function CreditCardsPage() {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             {/* HEADER */}
-            <div className="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between shadow-sm">
+            <div className="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
                     <Link href="/finance" className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-colors">
                         <i className="fa-solid fa-arrow-left"></i>
