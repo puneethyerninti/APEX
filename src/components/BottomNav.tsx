@@ -8,53 +8,51 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-100 flex flex-col justify-center z-[45] shadow-[0_-4px_12px_rgba(0,0,0,0.05)] md:hidden pb-[env(safe-area-inset-bottom,0px)]">
-      <div className="h-14 flex justify-around items-center px-2">
-        <Link
-          href="/"
-          className={`flex flex-col items-center gap-0.5 font-bold text-[9px] transition-colors ${
-            pathname === "/" ? "text-apex-purple font-black" : "text-gray-400 hover:text-apex-purple"
-          }`}
-        >
-          <i className="fa-solid fa-house-chimney text-base"></i>
-          <span>Home</span>
-        </Link>
-        <Link
-          href="/finance"
-          className={`flex flex-col items-center gap-0.5 font-bold text-[9px] transition-colors ${
-            pathname === "/finance" ? "text-apex-purple font-black" : "text-gray-400 hover:text-apex-purple"
-          }`}
-        >
-          <i className="fa-solid fa-chart-line text-base"></i>
-          <span>Invest</span>
-        </Link>
-        {APEX_PAY_ENABLED && <Link
-          href="/payment?scan=true"
-          className="flex flex-col items-center justify-center gap-1"
-        >
-          <div className="flex items-center justify-center w-9 h-9 bg-apex-purple text-white rounded-full shadow-md shadow-apex-purple/30 transform transition-transform active:scale-95">
-            <i className="fa-solid fa-qrcode text-base"></i>
-          </div>
-          <span className="font-bold text-[9px] text-gray-400">Scan</span>
-        </Link>}
+    <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-100 h-[calc(3.5rem+env(safe-area-inset-bottom,0px))] pb-[env(safe-area-inset-bottom,0px)] flex justify-around items-center z-[45] px-2 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] md:hidden">
+      <Link
+        href="/"
+        className={`flex flex-col items-center gap-0.5 font-bold text-[9px] transition-colors ${
+          pathname === "/" ? "text-apex-purple font-black" : "text-gray-400 hover:text-apex-purple"
+        }`}
+      >
+        <i className="fa-solid fa-house-chimney text-base"></i>
+        <span>Home</span>
+      </Link>
+      <Link
+        href="/finance"
+        className={`flex flex-col items-center gap-0.5 font-bold text-[9px] transition-colors ${
+          pathname === "/finance" ? "text-apex-purple font-black" : "text-gray-400 hover:text-apex-purple"
+        }`}
+      >
+        <i className="fa-solid fa-chart-line text-base"></i>
+        <span>Invest</span>
+      </Link>
+      {APEX_PAY_ENABLED && <Link
+        href="/payment?scan=true"
+        className="flex flex-col items-center justify-center gap-1"
+      >
+        <div className="flex items-center justify-center w-9 h-9 bg-apex-purple text-white rounded-full shadow-md shadow-apex-purple/30 transform transition-transform active:scale-95">
+          <i className="fa-solid fa-qrcode text-base"></i>
+        </div>
+        <span className="font-bold text-[9px] text-gray-400">Scan</span>
+      </Link>}
 
-        <Link
-          href={APEX_PAY_ENABLED ? "/payment" : "/apex-tv"}
-          className={`flex flex-col items-center gap-0.5 font-bold text-[9px] transition-colors ${
-            pathname === "/payment" || (!APEX_PAY_ENABLED && pathname === "/apex-tv") ? "text-apex-purple font-black" : "text-gray-400 hover:text-apex-purple"
-          }`}
-        >
-          <i className={`fa-solid ${APEX_PAY_ENABLED ? "fa-indian-rupee-sign" : "fa-tv"} text-base`}></i>
-          <span>{APEX_PAY_ENABLED ? "Payments" : "APEX TV"}</span>
-        </Link>
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'account' }))}
-          className="flex flex-col items-center gap-0.5 text-gray-400 hover:text-apex-purple font-bold text-[9px] transition-colors border-none bg-none outline-none"
-        >
-          <i className="fa-solid fa-user-gear text-base"></i>
-          <span>Account</span>
-        </button>
-      </div>
+      <Link
+        href={APEX_PAY_ENABLED ? "/payment" : "/apex-tv"}
+        className={`flex flex-col items-center gap-0.5 font-bold text-[9px] transition-colors ${
+          pathname === "/payment" || (!APEX_PAY_ENABLED && pathname === "/apex-tv") ? "text-apex-purple font-black" : "text-gray-400 hover:text-apex-purple"
+        }`}
+      >
+        <i className={`fa-solid ${APEX_PAY_ENABLED ? "fa-indian-rupee-sign" : "fa-tv"} text-base`}></i>
+        <span>{APEX_PAY_ENABLED ? "Payments" : "APEX TV"}</span>
+      </Link>
+      <button
+        onClick={() => window.dispatchEvent(new CustomEvent('openModal', { detail: 'account' }))}
+        className="flex flex-col items-center gap-0.5 text-gray-400 hover:text-apex-purple font-bold text-[9px] transition-colors border-none bg-none outline-none"
+      >
+        <i className="fa-solid fa-user-gear text-base"></i>
+        <span>Account</span>
+      </button>
     </div>
   );
 }

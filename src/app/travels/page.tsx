@@ -125,8 +125,9 @@ export default function Page() {
         setPickup(resolved); setPickupText(resolved.address); setError('');
       } catch {
         if (generation !== gpsGeneration.current || gpsRequest.current !== controller) return;
-        gpsPoint.current = null;
-        setError('Could not resolve your GPS address. Tap location again or select a pickup address.');
+        setPickup({ lat: p.lat, lng: p.lng, address: `Current Location (${gpsAddress(p.lat, p.lng)})` });
+        setPickupText(`Current Location (${gpsAddress(p.lat, p.lng)})`);
+        setError('');
       } finally {
         clearTimeout(timeout);
         if (generation === gpsGeneration.current && gpsRequest.current === controller) setLocating(false);
@@ -142,11 +143,11 @@ export default function Page() {
   const labels: Record<string, string> = { searching: 'Finding a driver', accepted: 'Driver on the way', arrived: 'Driver arrived', in_progress: 'Trip in progress', completed: 'Trip completed', cancelled: 'Trip cancelled' };
   return <main className="relative h-[calc(100dvh-80px)] min-h-[360px] w-full overflow-hidden bg-gray-100 md:h-screen">
     <div className="absolute inset-0"><TravelsMap cabLocation={driverLocation || ride?.driverId?.currentLocation || null} userLocation={ride?.pickup || pickup} destination={ride?.dropoff || dropoff} routeGeometry={ride?.path || quote?.path} /></div>
-    <header className="absolute inset-x-0 top-0 z-20 flex items-center gap-3 border-b border-gray-100 bg-white/95 px-4 py-3 shadow-sm">
+    <header className="absolute inset-x-0 top-0 z-20 flex items-center gap-3 border-b border-gray-100 bg-white/95 px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] shadow-sm">
       <Link href="/" aria-label="Home" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600"><ArrowLeft size={22} /></Link><div className="flex-1"><h1 className="text-lg font-black text-gray-900">APEX Cabs</h1><p className="text-xs text-gray-500">Visakhapatnam</p></div>
       <button className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-purple-50 text-purple-600" title="Trip history" aria-label="Trip history" onClick={() => void run(async () => { const { data } = await api.get('/travels/history'); setHistory(data.bookings); setExpanded(true); })}><History size={22} /></button>
     </header>
-    <section className={'absolute inset-x-0 bottom-0 z-10 flex flex-col rounded-t-3xl bg-white shadow-[0_-8px_24px_rgba(0,0,0,0.12)] transition-[max-height] md:inset-x-auto md:bottom-6 md:left-6 md:w-96 md:rounded-2xl ' + (expanded ? 'max-h-[68%] md:max-h-[calc(100%-120px)]' : 'max-h-16')}>
+    <section className={'absolute inset-x-0 bottom-0 z-10 flex flex-col rounded-t-3xl bg-white shadow-[0_-8px_24px_rgba(0,0,0,0.12)] transition-[max-height] md:inset-x-auto md:bottom-6 md:left-6 md:w-96 md:rounded-2xl pb-[calc(1rem+env(safe-area-inset-bottom,0px))] ' + (expanded ? 'max-h-[68%] md:max-h-[calc(100%-120px)]' : 'max-h-16')}>
       <button aria-label={expanded ? 'Collapse booking panel' : 'Expand booking panel'} aria-expanded={expanded} onClick={() => setExpanded(!expanded)} className="flex h-12 shrink-0 flex-col items-center justify-center gap-1 text-xs font-semibold text-gray-500"><span className="h-1 w-10 rounded-full bg-gray-300" />{expanded ? 'Book a Ride' : ride ? labels[ride.status] : 'Book a Ride'}</button>
       <div className={expanded ? 'space-y-4 overflow-y-auto px-5 pb-5' : 'hidden'}>
       {error && <p role="alert" className="p-3 border border-red-200 bg-red-50 text-red-700 rounded-lg">{error}</p>}

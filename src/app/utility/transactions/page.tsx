@@ -135,7 +135,7 @@ function UtilityTransactionStatusContent() {
 
   return (
     <div className="min-h-screen bg-[#F4F6FB]">
-      <div className="bg-[#2D1B69] text-white p-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] flex items-center justify-between sticky top-0 z-50 shadow-md">
+      <div className="bg-[#2D1B69] text-white p-4 py-3 flex items-center justify-between sticky top-0 z-50 shadow-md">
         <button onClick={() => router.back()} className="text-white hover:text-gray-200 transition-colors p-2 -ml-2">
           <i className="fa-solid fa-arrow-left text-lg"></i>
         </button>
@@ -195,7 +195,7 @@ export default function UtilityTransactionStatusPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#F4F6FB]">
-        <div className="bg-[#2D1B69] text-white p-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] flex items-center justify-center sticky top-0 z-50 shadow-md">
+        <div className="bg-[#2D1B69] text-white p-4 py-3 flex items-center justify-center sticky top-0 z-50 shadow-md">
           <h1 className="text-[17px] font-bold">Utility Status</h1>
         </div>
         <div className="p-4">

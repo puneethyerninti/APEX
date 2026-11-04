@@ -141,7 +141,7 @@ export default function MatrimonyPage() {
   }
   const filtered = matches.filter(p => ['community', 'religion', 'location'].every(key => !(filters as any)[key] || p[key] === (filters as any)[key]) && (!filters.premium || p.subscription?.isActive));
   return <main className="pb-28 text-gray-900">
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-gray-100 bg-white px-4 py-2.5 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] md:px-6">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-gray-100 bg-white px-4 py-2.5 md:px-6">
       <Link href="/" aria-label="Home" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-50"><i className="fas fa-arrow-left" /></Link>
       <h1 className="text-center text-base font-extrabold">Anand Matrimony</h1>
       <button title="Messages" aria-label="Messages" onClick={() => { if (!uid) { setError('Sign in to open messages.'); return; } if (!profile?.subscription?.isActive) { setNotice('An approved APEX profile and active membership are required for messages.'); document.getElementById('apex-profile')?.scrollIntoView({ behavior: 'smooth' }); return; } setError(''); setInboxLoaded(false); setInbox([]); }} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600"><i className="fas fa-comment-alt" /></button>

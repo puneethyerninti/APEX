@@ -146,7 +146,7 @@ function ApexPay() {
   const close = (label: string, action: () => void) => <button type="button" title={label} aria-label={label} onClick={action} className="h-9 w-9 shrink-0 rounded-full bg-gray-100 text-gray-600"><i className="fas fa-times" /></button>;
 
   return <div className="min-h-screen bg-gray-50 pb-24 text-gray-900">
-    <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] shadow-sm">
+    <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3 shadow-sm">
       <div className="flex items-center gap-3"><Link href="/" aria-label="Home" className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-50"><i className="fas fa-arrow-left" /></Link><h1 className="text-lg font-black">APEX Pay</h1></div>
       <button title="Scan UPI QR" aria-label="Scan UPI QR" onClick={() => setScannerOpen(true)} className="h-9 w-9 rounded-full bg-emerald-50 text-emerald-600"><i className="fas fa-camera" /></button>
     </header>

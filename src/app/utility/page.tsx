@@ -573,7 +573,7 @@ export default function UtilityPage() {
 
   return (
     <>
-      <div className="bg-[#2D1B69] text-white p-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] flex items-center justify-between sticky top-0 z-50 shadow-md">
+      <div className="bg-[#2D1B69] text-white p-4 py-3 flex items-center justify-between sticky top-0 z-50 shadow-md">
         <button 
           onClick={handleBack} 
           className="text-white hover:text-gray-200 transition-colors p-2 -ml-2"
